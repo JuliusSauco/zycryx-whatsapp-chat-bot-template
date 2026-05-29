@@ -1,0 +1,31 @@
+# Directories
+.npm/
+.git/
+node_modules/
+BotSession/
+jadibot/
+tmp/
+dist/
+bin/
+coverage/
+logs/
+.idea/
+.claude/
+
+# Files
+package-lock.json
+yarn.lock
+*.js.map
+*.d.ts.map
+*.iml
+
+# Env files (no commitear credenciales)
+.env
+.env.local
+.env.dev
+.env.test
+.env.prod
+!.env.example
+
+# Local-only SQL with seed data or secrets
+database/local-*.sql

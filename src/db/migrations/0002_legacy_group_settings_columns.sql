@@ -1,0 +1,16 @@
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "antistatus" boolean DEFAULT false;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "modoadmin" boolean DEFAULT false;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "photowelcome" boolean DEFAULT false;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "photobye" boolean DEFAULT false;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "autolevelup" boolean DEFAULT true;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "antiporn" boolean DEFAULT false;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "nsfw_horario" text;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "swelcome" text;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "sbye" text;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "spromote" text;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "sdemote" text;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "sautorespond" text;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "banned" boolean DEFAULT false;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "expired" bigint DEFAULT 0;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "memory_ttl" integer DEFAULT 86400;
+ALTER TABLE "group_settings" ADD COLUMN IF NOT EXISTS "primary_bot" text;

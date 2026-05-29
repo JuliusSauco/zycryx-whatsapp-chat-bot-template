@@ -1,0 +1,13 @@
+declare module 'syntax-error';
+declare module 'qrcode';
+declare module 'cfonts';
+declare module 'node-gtts';
+declare module 'api-dylux';
+declare module 'hispamemes';
+declare module 'wa-sticker-formatter';
+declare module 'acrcloud';
+declare module 'human-readable';
+declare module 'fuzzysort';
+declare module 'readline-sync';
+declare module 'fluent-ffmpeg';
+declare module 'node-webpmux';

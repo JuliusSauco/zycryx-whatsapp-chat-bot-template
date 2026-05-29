@@ -1,0 +1,219 @@
+import {
+    DisconnectReason,
+    fetchLatestBaileysVersion,
+    makeWASocket,
+    useMultiFileAuthState
+} from '@whiskeysockets/baileys';
+import pino from 'pino';
+// @ts-ignore - pino default import
+import fs from 'fs';
+import qrcode from 'qrcode';
+import chalk from "chalk";
+import NodeCache from 'node-cache';
+import {callUpdate, groupsUpdate, handler, participantsUpdate} from '../core/handler.js';
+import type {BotMessage} from '../types/message.js';
+import {isOtherBotKey} from '../utils/message-filter.js';
+
+if (globalThis.conns instanceof Array) console.log()
+else globalThis.conns = []
+
+const cleanJid = (jid: string = ""): string => jid.replace(/:\d+/, "").split("@")[0];
+const msgRetryCounterCache = new NodeCache({stdTTL: 0, checkperiod: 0});
+const userDevicesCache = new NodeCache({stdTTL: 0, checkperiod: 0});
+const groupCache = new NodeCache({stdTTL: 3600, checkperiod: 300});
+let reintentos: Record<string, number> = {};
+
+export async function startSubBot(
+    m: BotMessage | null,
+    conn: any,
+    caption: string = '',
+    isCode: boolean = false,
+    phone: string = '',
+    chatId: string = '',
+    commandFlags: Record<string, boolean> = {}
+): Promise<void> {
+    const id = phone || (m?.sender || '').split('@')[0];
+    const sessionFolder = `./jadibot/${id}`;
+    const senderId = m?.sender;
+    const {state, saveCreds} = await useMultiFileAuthState(sessionFolder);
+    const {version} = await fetchLatestBaileysVersion();
+
+    console.info = () => {
+    }
+    const sock: any = makeWASocket({
+        logger: (pino as any)({level: 'silent'}),
+        printQRInTerminal: false,
+        browser: ['Windows', 'Chrome', ''] as any,
+        auth: state,
+        markOnlineOnConnect: true,
+        generateHighQualityLinkPreview: true,
+        syncFullHistory: false,
+        getMessage: async () => '' as any,
+        msgRetryCounterCache,
+        userDevicesCache: userDevicesCache as any,
+        cachedGroupMetadata: async (jid: string) => groupCache.get(jid),
+        version,
+        keepAliveIntervalMs: 60_000,
+        maxIdleTimeMs: 120_000,
+    } as any);
+
+    sock.groupCache = groupCache;
+    sock.ev.on('creds.update', saveCreds);
+    setupGroupEvents(sock);
+    sock.isInit = false
+    let isInit = true
+
+    sock.ev.on('connection.update', async ({connection, lastDisconnect, isNewLogin, qr}: any) => {
+        if (isNewLogin) sock.isInit = false
+
+        if (connection === 'open') {
+            sock.isInit = true
+            sock.userId = cleanJid(sock.user?.id?.split("@")[0])
+            const ownerName = sock.authState.creds.me?.name || "-";
+            sock.uptime = Date.now();
+            reintentos[sock.userId] = 0;
+            if (globalThis.conns.find((c: any) => c.userId === sock.userId)) return;
+            globalThis.conns.push(sock);
+
+            // Precarga de metadata de grupos para evitar IQs lentos en el primer comando.
+            void (async () => {
+                try {
+                    const groups = await sock.groupFetchAllParticipating();
+                    const entries = Object.entries(groups || {});
+                    for (const [jid, meta] of entries) {
+                        groupCache.set(jid, meta);
+                    }
+                    console.log(chalk.cyan(`📦 [SUB-BOT ${sock.userId}] Precargados ${entries.length} grupos en cache`));
+                } catch (e: any) {
+                    console.error(chalk.yellow(`⚠️ [SUB-BOT ${sock.userId}] No se pudo precargar grupos:`), e?.message || e);
+                }
+            })();
+
+            if (isCode && m?.chat && senderId?.endsWith("@s.whatsapp.net")) {
+                conn.sendMessage(m.chat, {text: `*Conectado exitosamente con WhatsApp ✅*\n\n*💻 Bot:* +${sock.userId}\n*👤 Dueño:* ${ownerName}\n\n*Nota: Con la nueva función de auto-reinicio (Beta)*, Si el bot principal se reinicia o se desactiva, los sub-bots se reiniciarán automáticamente, asegurando que sigan activos sin interrupciones.\n\n> *Unirte a nuestro canal para informarte de todas la Actualizaciónes/novedades sobre el bot*\n${info.nna}`}, {quoted: m});
+                delete commandFlags[senderId];
+            }
+            console.log(chalk.bold.cyanBright(`\n✅ SUB-BOT CONECTADO: ${sock.userId} `))
+        }
+
+        if (connection === 'close') {
+            const botId = sock.userId || id;
+            const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.reason || 0;
+            const intentos = reintentos[botId] || 0;
+            reintentos[botId] = intentos + 1;
+
+            if ([401, 403].includes(reason)) {
+                if (intentos < 5) {
+                    console.log(`${chalk.red(`[❌ SUB-BOT ${botId}] Conexión cerrada (código ${reason}) intento ${intentos}/5`)} → Reintentando...`);
+                    setTimeout(() => {
+                        startSubBot(m, conn, caption, isCode, phone, chatId, {});
+                    }, 3000);
+                } else {
+                    console.log(chalk.red(`[💥 SUB-BOT ${botId}] Falló tras 5 intentos. Eliminando sesión.`));
+                    try {
+                        fs.rmSync(sessionFolder, {recursive: true, force: true});
+                    } catch (e) {
+                        console.error(`[⚠️] No se pudo eliminar la carpeta ${sessionFolder}:`, e);
+                    }
+                    delete reintentos[botId];
+                }
+                return;
+            }
+
+            if ([DisconnectReason.connectionClosed, DisconnectReason.connectionLost, DisconnectReason.timedOut, DisconnectReason.connectionReplaced].includes(reason)) {
+                setTimeout(() => {
+                    startSubBot(m, conn, caption, isCode, phone, chatId, {});
+                }, 3000);
+                return;
+            }
+
+            setTimeout(() => {
+                startSubBot(m, conn, caption, isCode, phone, chatId, {});
+            }, 3000);
+        }
+
+        if (qr && !isCode && m && conn && senderId && commandFlags[senderId]) {
+            try {
+                const qrBuffer = await qrcode.toBuffer(qr, {scale: 8});
+                const msg = await conn.sendMessage(m.chat, {image: qrBuffer, caption: caption}, {quoted: m});
+                delete commandFlags[senderId];
+                setTimeout(() => conn.sendMessage(m.chat, {delete: msg.key}).catch(() => {
+                }), 60000);
+            } catch (err) {
+                console.error("[QR Error]", err);
+            }
+        }
+
+        if (qr && isCode && phone && conn && chatId && senderId && commandFlags[senderId]) {
+            try {
+                let codeGen = await sock.requestPairingCode(phone);
+                codeGen = codeGen.match(/.{1,4}/g)?.join("-") || codeGen;
+                const msg = await conn.sendMessage(chatId, {
+                    image: {url: 'https://cdn.skyultraplus.com/uploads/u4/9708a54ced0b5fed.jpg'},
+                    caption: caption
+                }, {quoted: m});
+                const msgCode = await conn.sendMessage(chatId, {text: codeGen}, {quoted: m});
+                delete commandFlags[senderId];
+                setTimeout(async () => {
+                    try {
+                        await conn.sendMessage(chatId, {delete: msg.key});
+                        await conn.sendMessage(chatId, {delete: msgCode.key});
+                    } catch {
+                    }
+                }, 60000);
+            } catch (err) {
+                console.error("[Código Error]", err);
+            }
+        }
+    });
+
+    process.on('uncaughtException', console.error);
+    process.on('unhandledRejection', console.error);
+
+    sock.ev.on("messages.upsert", async ({messages, type}: any) => {
+        if (type !== "notify") return;
+        for (const msg of messages) {
+            if (!msg.message) continue;
+            const start = Math.floor(sock.uptime / 1000);
+            if (msg.messageTimestamp < start || ((Date.now() / 1000) - msg.messageTimestamp) > 60) continue;
+            if (isOtherBotKey(msg.key.id)) continue;
+            try {
+                await handler(sock, msg);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    });
+
+    sock.ev.on("call", async (calls: any[]) => {
+        try {
+            for (const call of calls) {
+                await callUpdate(sock, call);
+            }
+        } catch (err) {
+            console.error(chalk.red("❌ Error procesando call.update:"), err);
+        }
+    });
+}
+
+function setupGroupEvents(sock: any): void {
+    sock.ev.on("group-participants.update", async (update: any) => {
+        console.log(update)
+        try {
+            await participantsUpdate(sock, update);
+        } catch (err) {
+            console.error("[ ❌ ] SUB-BOT Error procesando group-participants.update:", err);
+        }
+    });
+
+    sock.ev.on("groups.update", async (updates: any[]) => {
+        console.log(updates)
+        try {
+            for (const update of updates) {
+                await groupsUpdate(sock, update);
+            }
+        } catch (err) {
+            console.error("[ ❌ ] SUB-BOT Error procesando groups.update:", err);
+        }
+    });
+}

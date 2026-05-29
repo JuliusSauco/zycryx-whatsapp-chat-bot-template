@@ -1,0 +1,19 @@
+import {definePlugin} from '../core/define-plugin.js'
+
+export default definePlugin({
+    help: ['uptime'],
+    tags: ['main'],
+    command: /^uptime$/i,
+    async execute(m) {
+    const uptime = process.uptime() * 1000 // en milisegundos
+    const tiempo = clockString(uptime)
+    m.reply(`⏱️ *Uptime:* ${tiempo}`)
+    }
+})
+
+function clockString(ms: any) {
+    const h = isNaN(ms) ? '--' : Math.floor(ms / 3600000)
+    const m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60
+    const s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60
+    return [h, m, s].map((v: any) => v.toString().padStart(2, 0)).join(':')
+}
