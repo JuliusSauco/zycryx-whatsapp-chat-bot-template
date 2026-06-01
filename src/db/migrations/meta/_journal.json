@@ -50,6 +50,13 @@
       "when": 1780278200000,
       "tag": "0007_audio_responses",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1780280000000,
+      "tag": "0008_autoaccept_group_join_requests",
+      "breakpoints": true
     }
   ]
 }

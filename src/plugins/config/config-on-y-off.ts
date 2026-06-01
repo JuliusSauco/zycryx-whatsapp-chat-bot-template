@@ -1,7 +1,39 @@
-import {getGroupSettings, setGroupBooleanFlag} from '../../services/group-settings.service.js'
+import {getGroupSettings, setGroupAutoAcceptMode, setGroupBooleanFlag} from '../../services/group-settings.service.js'
 import {getSubbotConfig, setSubbotBooleanFlag} from '../../services/subbot.service.js'
 import {definePlugin} from '../../core/define-plugin.js'
-import type {GroupSettings} from '../../types/config.js'
+import type {AutoAcceptMode, GroupSettings} from '../../types/config.js'
+
+function getAutoAcceptModeLabel(mode?: AutoAcceptMode | null): string {
+    switch (mode || 'off') {
+        case 'on':
+            return '✅ Autoacepta en silencio';
+        case 'on_hidetag_admin':
+            return '✅ Autoacepta y avisa a admins';
+        case 'on_hidetag_all':
+            return '✅ Autoacepta y avisa al grupo';
+        case 'off_hidetag_admin':
+            return '❌ No autoacepta, avisa a admins';
+        case 'off_hidetag_all':
+            return '❌ No autoacepta, avisa al grupo';
+        default:
+            return '❌ No hace nada';
+    }
+}
+
+function resolveAutoAcceptMode(isEnable: boolean, args: string[]): AutoAcceptMode {
+    const flags = args.slice(1).map(arg => arg.toLowerCase());
+    const hidetagAdmin = flags.includes('--hidetagadmin') || flags.includes('--admin') || flags.includes('--admins');
+    const hidetagAll = flags.includes('--hidetag') || flags.includes('--todos') || flags.includes('--all');
+
+    if (isEnable) {
+        if (hidetagAdmin) return 'on_hidetag_admin';
+        if (hidetagAll) return 'on_hidetag_all';
+        return 'on';
+    }
+    if (hidetagAdmin) return 'off_hidetag_admin';
+    if (hidetagAll) return 'off_hidetag_all';
+    return 'off';
+}
 
 export default definePlugin({
     help: ['enable <opción>', 'disable <opción>'],
@@ -17,6 +49,7 @@ export default definePlugin({
     const cleanId = botId.replace(/:\d+/, '');
     const isSubbot = botId !== 'main'
     let isAll = false, isUser = false
+    let selectedAutoAcceptMode: AutoAcceptMode | null = null
     let chat: Partial<GroupSettings> = await getGroupSettings(chatId) || {};
     const getStatus = (flag: keyof GroupSettings) => m.isGroup ? (chat[flag] ? '✅' : '❌') : '⚠️';
 
@@ -37,6 +70,7 @@ export default definePlugin({
     menu += `🕵️ ANTIFAKE ${getStatus('antifake')}\n• Bloquear números de otros países\n• ${usedPrefix + command} antifake\n\n`;
     menu += `🔞 NSFW ${getStatus('modohorny')}\n• Contenido +18 en stickers/gifs\n• ${usedPrefix + command} modohorny\n\n`
     menu += `🔒 MODO SOLO ADMIN ${getStatus('modoadmin')}\n• Solo admins pueden usar comandos\n• ${usedPrefix + command} modoadmin\n\n`;
+    menu += `🛂 AUTOACEPTAR ${m.isGroup ? getAutoAcceptModeLabel(chat.autoAcceptMode) : '⚠️'}\n• Gestionar solicitudes de ingreso al grupo\n• ${usedPrefix}enable autoaceptar\n• ${usedPrefix}enable autoaceptar --hidetagadmin\n• ${usedPrefix}enable autoaceptar --hidetag\n• ${usedPrefix}disable autoaceptar\n• ${usedPrefix}disable autoaceptar --hidetagadmin\n• ${usedPrefix}disable autoaceptar --hidetag\n\n`;
 
     menu += `\n*『 FUNCIONES PARA OWNER 』*\n\n`;
     const botConfig = isSubbot ? await getSubbotConfig(botId) : null;
@@ -137,6 +171,17 @@ export default definePlugin({
             await setGroupBooleanFlag(chatId, 'modoadmin', isEnable)
             break
 
+        case 'autoaceptar':
+        case 'autoacept':
+        case 'autoaccept':
+        case 'aceptar':
+        case 'solicitudes':
+            if (!m.isGroup) throw '⚠️ Este comando solo se puede usar dentro de un grupo.'
+            if (!isAdmin) throw "⚠️ Solo los admins puede usar este comando.";
+            selectedAutoAcceptMode = resolveAutoAcceptMode(isEnable, args)
+            await setGroupAutoAcceptMode(chatId, selectedAutoAcceptMode)
+            break
+
         case 'antiprivate':
         case 'antiprivado':
             if (!isSubbot && !isOwner) return m.reply('❌ Solo el owner o subbots pueden cambiar esto.');
@@ -152,6 +197,9 @@ export default definePlugin({
             break;
         default:
             return m.reply(menu.trim());
+    }
+    if (selectedAutoAcceptMode) {
+        return m.reply(`🛂 La opción *autoaceptar* quedó configurada como:\n${getAutoAcceptModeLabel(selectedAutoAcceptMode)}`)
     }
     await m.reply(`🗂️ La opción *${type}* para ${isAll ? 'todo el bot' : isUser ? 'este usuario' : 'este chat'} fue *${isEnable ? 'activada' : 'desactivada'}* correctamente.`)
     }

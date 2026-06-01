@@ -71,10 +71,19 @@ export interface GroupSettings {
     expired: number;
     memory_ttl: number;
     primary_bot?: string | null;
+    autoAcceptMode?: AutoAcceptMode | null;
     // allow custom welcome/bye texts
     swelcome?: string | null;
     sbye?: string | null;
 }
+
+export type AutoAcceptMode =
+    | 'off'
+    | 'on'
+    | 'on_hidetag_admin'
+    | 'on_hidetag_all'
+    | 'off_hidetag_admin'
+    | 'off_hidetag_all';
 
 export interface Usuario {
     id: string;

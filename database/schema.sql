@@ -110,7 +110,10 @@ CREATE TABLE IF NOT EXISTS group_settings (
     memory_ttl    INTEGER   DEFAULT 86400,
 
     -- Bot primario del grupo
-    primary_bot   TEXT
+    primary_bot   TEXT,
+
+    -- Solicitudes de ingreso al grupo
+    autoaccept_mode TEXT DEFAULT 'off'
 );
 
 -- -----------------------------------------------------------

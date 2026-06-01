@@ -2,6 +2,7 @@ import {and, eq, lt, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {groupSettings} from '../../db/schema.js';
 import type {GroupSettingsRepository} from '../../ports/repositories.js';
+import type {AutoAcceptMode} from '../../types/config.js';
 
 export const groupSettingsRepository: GroupSettingsRepository = {
     async findByGroupId(groupId) {
@@ -41,6 +42,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             expired: row.expired ?? 0,
             memory_ttl: row.memoryTtl ?? 86400,
             primary_bot: row.primaryBot,
+            autoAcceptMode: (row.autoAcceptMode || 'off') as AutoAcceptMode,
         };
     },
 
@@ -107,6 +109,15 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             .onConflictDoUpdate({
                 target: groupSettings.groupId,
                 set: {[flag]: value},
+            });
+    },
+
+    async setAutoAcceptMode(groupId, mode) {
+        await orm.insert(groupSettings)
+            .values({groupId, autoAcceptMode: mode || 'off'})
+            .onConflictDoUpdate({
+                target: groupSettings.groupId,
+                set: {autoAcceptMode: mode || 'off'},
             });
     },
 

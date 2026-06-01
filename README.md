@@ -9,9 +9,9 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1?logo=postgresql&logoColor=white)
 ![npm](https://img.shields.io/badge/npm-package-CB3837?logo=npm&logoColor=white)
 
-Plantilla modular para construir bots de WhatsApp con TypeScript, Baileys, Drizzle ORM y PostgreSQL. El objetivo es tener una base reutilizable para varios proyectos que comparten core, arquitectura, persistencia, guards, subbots y utilidades, pero cambian marca, comandos, owners, textos, recursos multimedia y APIs externas.
+Plantilla modular para construir bots de WhatsApp con TypeScript, Baileys, Drizzle ORM y PostgreSQL. Esta base esta pensada para reutilizar core, arquitectura, persistencia, guards, subbots, observabilidad y utilidades entre varios proyectos, cambiando marca, comandos, textos, recursos multimedia, owners y APIs externas.
 
-El proyecto ya esta orientado a capas: los plugins no deberian consultar la base directamente; pasan por servicios, puertos y adapters. Actualmente el adapter estable es Drizzle + PostgreSQL. El adapter backend REST/GraphQL existe como scaffold preparado, pero queda pendiente hasta que haya contrato real del backend.
+El proyecto esta orientado a capas: los plugins no deberian consultar la base directamente; pasan por servicios, puertos y adapters. El adapter estable es Drizzle + PostgreSQL. El adapter backend REST/GraphQL existe como scaffold preparado para un contrato futuro.
 
 ## 📚 Contenido
 
@@ -27,19 +27,21 @@ El proyecto ya esta orientado a capas: los plugins no deberian consultar la base
 - [🔁 Flujo De Ejecucion](#flujo-de-ejecucion)
 - [🔌 Plugins](#plugins)
 - [🗄️ Base De Datos](#base-de-datos)
+- [📦 Recursos](#recursos)
+- [📊 Observabilidad](#observabilidad)
 - [🔐 Secretos](#secretos)
 - [🧪 Validacion](#validacion)
 - [📌 Estado Actual](#estado-actual)
-- [🧭 Puntos De Mejora](#puntos-de-mejora)
 
 <a id="caracteristicas"></a>
 ## ✨ Caracteristicas
 
 - Conexion a WhatsApp mediante Baileys.
-- Sistema modular de 174 plugins para comandos, hooks y funcionalidades.
+- Sistema modular de 175 plugins distribuidos por familia.
+- Loader de plugins recursivo con hot reload.
 - Router de comandos con resolucion exacta, regex y custom prefixes.
 - Plugins nuevos mediante `definePlugin`.
-- Compatibilidad con plugins legacy que exportan `before`.
+- Compatibilidad con hooks legacy que exportan `before`.
 - Guards centralizados para owners, admins, grupo/privado, modo admin, NSFW, ban y recursos.
 - Context builder para sender, metadata, permisos, settings de grupo y config del bot.
 - Persistencia con Drizzle ORM sobre PostgreSQL.
@@ -50,7 +52,9 @@ El proyecto ya esta orientado a capas: los plugins no deberian consultar la base
 - Soporte para `DB_SCHEMA` usando `search_path`.
 - Subbots con sesiones independientes.
 - Tareas programadas para reportes, expiracion de grupos y limpieza de memoria.
-- Utilidades para stickers, audio, video, descargas, conversiones, IA y scraping.
+- Recursos base en `src/data` y recursos mutables de audios en base de datos.
+- Observabilidad con `LOG_LEVEL` y logs de performance configurables.
+- Integracion opcional con VirusTotal para analisis de enlaces y archivos.
 - `src/**/*.ts` sin `any` ni `@ts-ignore`.
 
 <a id="tecnologias"></a>
@@ -65,11 +69,11 @@ El proyecto ya esta orientado a capas: los plugins no deberian consultar la base
 | PostgreSQL | Persistencia local. |
 | drizzle-kit | Generacion, migracion y Drizzle Studio. |
 | tsx | Ejecucion TypeScript en desarrollo. |
-| Pino | Logger usado por Baileys. |
+| Pino | Logger silencioso usado internamente por Baileys. |
 | Axios / node-fetch | Consumo de APIs externas. |
 | FFmpeg | Procesamiento multimedia. |
 | Jimp / node-webpmux / wa-sticker-formatter | Imagenes y stickers. |
-| cross-env | Scripts compatibles entre sistemas. |
+| cross-env | Scripts con variables de entorno. |
 
 <a id="requisitos"></a>
 ## 📋 Requisitos
@@ -146,12 +150,14 @@ BOT_BANNER_NAME=ZYCRYX BOT
 BOT_BANNER_AUTHOR=by: Zycryx
 BOT_REPOSITORY_URL=
 BOT_WEBSITE_URL=
-BOT_OWNER_NUMBERS=
-BOT_FIXED_OWNER_JIDS=
+BOT_OWNER_NUMBERS=573001112233,51999888777
+BOT_FIXED_OWNER_JIDS=573001112233@s.whatsapp.net,51999888777@s.whatsapp.net
 BOT_MOD_GROUP_ID=
 DEFAULT_MENU_IMAGE=./media/Menu2.jpg
 
 DATA_SOURCE=local
+LOG_LEVEL=command
+PERF_LOG_THRESHOLD_MS=750
 
 BACKEND_PROTOCOL=rest
 BACKEND_BASE_URL=
@@ -163,6 +169,8 @@ API_KEY=
 PERPLEXITY_API_KEYS=
 SPOTIFY_CLIENT_ID=
 SPOTIFY_CLIENT_SECRET=
+VIRUSTOTAL_API_KEY=
+VIRUSTOTAL_ENABLED=true
 
 DB_HOST=localhost
 DB_PORT=5432
@@ -170,8 +178,6 @@ DB_NAME=zycryx_bot
 DB_USER=postgres
 DB_PASSWORD=
 DB_SCHEMA=public
-
-PERF_LOG_THRESHOLD_MS=750
 ```
 
 Tambien puedes usar `DATABASE_URL`:
@@ -181,7 +187,21 @@ DATABASE_URL=postgresql://usuario:password@localhost:5432/zycryx_bot
 DB_SCHEMA=bot_dev
 ```
 
-`DB_SCHEMA` se aplica al cliente y a Drizzle Kit mediante `search_path`. No se valida contra `public`; el proyecto busca trabajar en el schema configurado.
+`DB_SCHEMA` se aplica al cliente y a Drizzle Kit mediante `search_path`. El proyecto trabaja sobre el schema configurado.
+
+### 👑 Owners
+
+`BOT_OWNER_NUMBERS` recibe numeros internacionales sin `+`, separados por coma:
+
+```env
+BOT_OWNER_NUMBERS=573001112233,51999888777
+```
+
+`BOT_FIXED_OWNER_JIDS` recibe JIDs completos. Estos owners pueden usar comandos marcados como `rowner`:
+
+```env
+BOT_FIXED_OWNER_JIDS=573001112233@s.whatsapp.net,51999888777@s.whatsapp.net
+```
 
 <a id="scripts"></a>
 ## 📜 Scripts
@@ -214,28 +234,39 @@ DB_SCHEMA=bot_dev
 ```text
 zycryx-whatsapp-chat-bot-template/
 ├── database/
-│   ├── legacy-to-drizzle-baseline.sql
-│   └── schema.sql
 ├── media/
-│   ├── gifs/
-│   ├── text/
-│   ├── Menu1.jpg
-│   ├── Menu2.jpg
-│   ├── Menu3.jpg
-│   └── Menu4.jpg
 ├── src/
 │   ├── adapters/
 │   │   ├── backend/
 │   │   └── drizzle/
 │   ├── core/
 │   ├── data/
+│   │   ├── game/
+│   │   └── nsfw/
 │   ├── db/
 │   │   └── migrations/
-│   ├── game/
 │   ├── guards/
 │   ├── lib/
-│   ├── nsfw/
 │   ├── plugins/
+│   │   ├── audio/
+│   │   ├── config/
+│   │   ├── converters/
+│   │   ├── downloads/
+│   │   ├── fun/
+│   │   ├── games/
+│   │   ├── group/
+│   │   ├── hooks/
+│   │   ├── info/
+│   │   ├── menus/
+│   │   ├── messages/
+│   │   ├── nsfw/
+│   │   ├── owner/
+│   │   ├── random/
+│   │   ├── rpg/
+│   │   ├── search/
+│   │   ├── stickers/
+│   │   ├── subbots/
+│   │   └── tools/
 │   ├── ports/
 │   ├── services/
 │   ├── types/
@@ -255,10 +286,10 @@ zycryx-whatsapp-chat-bot-template/
 | `src/adapters/drizzle/` | Implementacion local de repositorios con Drizzle. |
 | `src/core/` | Arranque, entorno, router, parser, handler, contexto y tareas. |
 | `src/db/` | Cliente, schema y migraciones Drizzle. |
-| `src/data/` | Datos estaticos para juegos, audios y NSFW. |
+| `src/data/` | Datos estaticos y seeds readonly. |
 | `src/guards/` | Validaciones previas a ejecutar comandos. |
-| `src/lib/` | Integraciones, loader de plugins, subbots, multimedia y scraping. |
-| `src/plugins/` | Comandos y hooks del bot. |
+| `src/lib/` | Integraciones, loader de plugins, subbots, multimedia, logs y scraping. |
+| `src/plugins/` | Comandos y hooks agrupados por familia. |
 | `src/ports/` | Contratos de repositorios. |
 | `src/services/` | Casos de uso y fachada de dominio. |
 | `src/types/` | Tipos compartidos del runtime. |
@@ -278,7 +309,7 @@ flowchart TD
     E --> H["core/message-parser.ts"]
     H --> I["core/router.ts"]
     I --> J["guards"]
-    J --> K["plugins"]
+    J --> K["plugins por familia"]
     K --> L["services"]
     L --> M["ports/repositories.ts"]
     M --> N["adapters/drizzle"]
@@ -299,7 +330,8 @@ Componentes principales:
 | `core/context-builder.ts` | Construye permisos, metadata, bot config y settings de grupo. |
 | `core/router.ts` | Resuelve comandos exactos, regex y custom prefixes. |
 | `core/define-plugin.ts` | Factory para plugins nuevos. |
-| `lib/plugins.ts` | Loader/hot reload de plugins y compatibilidad legacy. |
+| `lib/plugins.ts` | Loader recursivo y hot reload de plugins. |
+| `lib/logger.ts` | Logger con niveles configurables. |
 | `lib/simple.ts` | Normalizacion de mensajes y helpers custom de `conn`. |
 | `services/` | Capa de aplicacion usada por core/plugins. |
 | `ports/repositories.ts` | Contratos de persistencia. |
@@ -311,7 +343,7 @@ Componentes principales:
 
 ### 🔌 Plugin Architecture
 
-Los comandos viven como modulos independientes en `src/plugins`. Esto permite copiar la plantilla a otros bots y cambiar solo los comandos necesarios.
+Los comandos viven como modulos independientes dentro de `src/plugins/<familia>`. Esto permite copiar la plantilla a otros bots y cambiar solo las familias necesarias.
 
 ### 🎯 Command Pattern
 
@@ -355,6 +387,7 @@ Los repositorios Drizzle estan separados por agregado:
 ```text
 src/adapters/drizzle/
 ├── api-token.repository.ts
+├── audio-response.repository.ts
 ├── character.repository.ts
 ├── chat-memory.repository.ts
 ├── chat.repository.ts
@@ -392,7 +425,7 @@ WhatsApp message
   -> context-builder precarga contexto
   -> upsert chat / contador / usuario
   -> message-parser extrae prefijo, comando, args y text
-  -> before hooks legacy o definePlugin
+  -> before hooks
   -> router resuelve plugin
   -> guards validan permisos y recursos
   -> plugin ejecuta accion
@@ -408,7 +441,7 @@ WhatsApp message
 La forma recomendada para nuevos plugins es `definePlugin`:
 
 ```ts
-import {definePlugin} from '../core/define-plugin.js';
+import {definePlugin} from '../../core/define-plugin.js';
 
 export default definePlugin({
     command: ['ping', 'p'],
@@ -423,14 +456,13 @@ export default definePlugin({
 Tambien se soportan hooks previos:
 
 ```ts
-import {definePlugin} from '../core/define-plugin.js';
+import {definePlugin} from '../../core/define-plugin.js';
 
 export default definePlugin({
     tags: ['group'],
     runBeforeOnCommand: true,
     async before(m, {conn}) {
         if (!m.isGroup) return;
-        // validacion previa
     },
     async execute() {
         return;
@@ -471,7 +503,8 @@ El schema vive en `src/db/schema.ts` y actualmente incluye:
 - `reportes`;
 - `chat_memory`;
 - `stats`;
-- `api_tokens`.
+- `api_tokens`;
+- `audio_responses`.
 
 Para una base nueva:
 
@@ -515,6 +548,54 @@ token_b64 text not null
 ```
 
 El servicio `api-token.service.ts` decodifica `token_b64` y mantiene cache en memoria.
+
+<a id="recursos"></a>
+## 📦 Recursos
+
+`src/data` contiene recursos base readonly:
+
+- `src/data/audios.json`;
+- `src/data/characters.json`;
+- `src/data/game/*.json`;
+- `src/data/nsfw/*.json`.
+
+Los audios personalizados ya no se escriben en `src/data/audios.json`. El flujo actual es:
+
+```text
+src/data/audios.json -> seed base
+audio_responses      -> overrides, altas y bajas dinamicas
+audio-response.service.ts -> merge de seed + DB
+```
+
+Los comandos `addaudios` y `delaudios` persisten cambios en PostgreSQL mediante `audio_responses`.
+
+<a id="observabilidad"></a>
+## 📊 Observabilidad
+
+El logger soporta niveles configurables:
+
+```env
+LOG_LEVEL=command
+PERF_LOG_THRESHOLD_MS=750
+```
+
+Niveles disponibles:
+
+| Nivel | Uso |
+|---|---|
+| `error` | Solo errores. |
+| `warn` | Advertencias y errores. |
+| `info` | Estado operativo general. |
+| `command` | Incluye comandos recibidos. |
+| `debug` | Incluye performance, eventos de grupo y diagnostico. |
+| `trace` | Maximo detalle. |
+
+Para diagnosticar latencia:
+
+```env
+LOG_LEVEL=debug
+PERF_LOG_THRESHOLD_MS=300
+```
 
 <a id="secretos"></a>
 ## 🔐 Secretos
@@ -560,113 +641,27 @@ npm run serve:local
 <a id="estado-actual"></a>
 ## 📌 Estado Actual
 
-Estado del proyecto despues del ultimo analisis:
-
 - Persistencia migrada a Drizzle ORM.
 - Repositorios Drizzle separados por agregado.
 - Plugins y core consumen servicios/puertos, no SQL directo.
 - `api_tokens` migrado a Drizzle.
+- `audio_responses` almacena audios dinamicos.
 - Backend REST/GraphQL preparado como adapter pendiente, no activo por defecto.
-- Loader de plugins soporta `definePlugin` y hooks legacy `before`.
+- Loader de plugins recursivo con soporte para carpetas por familia.
+- Plugins organizados en 19 familias.
+- Observabilidad configurable con `LOG_LEVEL`.
+- VirusTotal integrado como hook configurable.
 - `src/**/*.ts` sin `any` ni `@ts-ignore`.
 - Build y typecheck pasan.
-- Hay 174 plugins TypeScript.
-
-<a id="puntos-de-mejora"></a>
-## 🧭 Puntos De Mejora
-
-### 🧪 1. Agregar pruebas automatizadas
-
-Prioridad alta:
-
-- `message-parser`;
-- `router`;
-- guards;
-- servicios de usuarios, wallet y grupos;
-- migraciones Drizzle;
-- loader de plugins legacy/definePlugin.
-
-Stack recomendado: Vitest + fixtures de mensajes Baileys + PostgreSQL de integracion para repositorios.
-
-### 🧱 2. Modularizar plugins por dominio
-
-Hoy todos los plugins viven en `src/plugins`. Funciona, pero el volumen ya es alto. Cuando termines la reduccion de deuda, una estructura por familias haria mas facil mantener comandos:
-
-```text
-src/plugins/
-├── ai/
-├── downloads/
-├── group/
-├── owner/
-├── rpg/
-├── stickers/
-└── fun/
-```
-
-Para migrarlo sin romper el loader, primero hay que hacerlo recursivo y despues mover familias gradualmente.
-
-### 🌐 3. Definir contrato backend antes de implementarlo
-
-No conviene implementar REST/GraphQL sin contrato. Recomendacion:
-
-```text
-1. Mantener DATA_SOURCE=local con Drizzle.
-2. Diseñar OpenAPI o schema GraphQL.
-3. Implementar backend adapter metodo por metodo.
-4. Probar ambos adapters con la misma suite de servicios.
-```
-
-### ⚙️ 4. Mover trabajos pesados a cola
-
-Descargas, conversiones, scraping, IA y stickers pueden bloquear el proceso principal. Opciones:
-
-- BullMQ + Redis si hay alto volumen.
-- pg-boss si quieres aprovechar PostgreSQL.
-- Worker threads para conversiones locales pesadas.
-
-### 🛡️ 5. Endurecer seguridad operacional
-
-- Rate limit por usuario/chat/comando.
-- Auditoria de comandos owner/admin.
-- Allowlist para subbots.
-- Validacion estricta de URLs antes de scraping.
-- Desactivar comandos de ejecucion remota por defecto en templates publicos.
-
-### 📊 6. Observabilidad
-
-Ya existe log `[PERF]`. Seria valioso agregar:
-
-- tiempos por adapter/repository;
-- conteo de errores por plugin;
-- metricas de cola;
-- tracing simple por `messageId`.
-
-### 📦 7. Preparar monorepo si aparece panel web
-
-Si el proyecto crece hacia backend + panel:
-
-```text
-apps/
-├── bot/
-├── api/
-└── admin/
-
-packages/
-├── shared/
-├── database/
-└── bot-contracts/
-```
-
-### 🧹 8. Normalizar recursos duplicados
-
-Hay datos repetidos entre `src/data`, `src/game`, `src/nsfw` y archivos JSON en raiz de `src`. Conviene consolidar una sola fuente para evitar divergencias.
 
 ## ✅ Buenas Practicas Para Nuevos Bots
 
 - Copiar `.env.example` y completar secretos solo en archivos ignorados.
 - Mantener `DATA_SOURCE=local` hasta que el backend tenga contrato estable.
 - Crear nuevos comandos con `definePlugin`.
+- Ubicar cada plugin dentro de su familia.
 - Usar servicios existentes antes de crear nuevos accesos a datos.
 - No agregar SQL directo en plugins.
+- No escribir recursos mutables dentro de `src/data`.
 - Ejecutar `typecheck`, `build` y busqueda de `any/@ts-ignore` antes de subir.
 - Documentar APIs externas nuevas en `.env.example`.

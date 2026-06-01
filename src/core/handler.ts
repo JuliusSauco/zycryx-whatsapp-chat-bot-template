@@ -23,6 +23,7 @@ import type {ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
 import type {GroupMetadata, GroupParticipant, WASocket} from '@whiskeysockets/baileys';
 import type {HandlerContext} from './context-builder.js';
+import type {AutoAcceptMode} from '../types/config.js';
 
 type ParticipantUpdateItem = string | {
     id?: string;
@@ -41,6 +42,15 @@ interface GroupUpdate {
     subject?: string;
     desc?: string;
     picture?: string;
+}
+
+interface GroupJoinRequest {
+    id: string;
+    author?: string;
+    participant: string;
+    participantPn?: string;
+    action: string;
+    method?: string;
 }
 
 interface CallUpdate {
@@ -104,6 +114,15 @@ function getGroupMentionJids(participants: GroupParticipant[]): string[] {
         const withPhone = participant as GroupParticipant & {phoneNumber?: string};
         return withPhone.phoneNumber || participant.id;
     }));
+}
+
+function getGroupAdminMentionJids(participants: GroupParticipant[]): string[] {
+    return uniqueJids(participants
+        .filter(participant => participant.admin === 'admin' || participant.admin === 'superadmin' || participant.isAdmin || participant.isSuperAdmin)
+        .map((participant) => {
+            const withPhone = participant as GroupParticipant & {phoneNumber?: string};
+            return withPhone.phoneNumber || participant.id;
+        }));
 }
 
 async function downloadImageBuffer(url: string | null): Promise<Buffer | null> {
@@ -454,6 +473,65 @@ export async function groupsUpdate(conn: EventConn, {id, subject, desc, picture}
         }
     } catch (err: unknown) {
         logError(chalk.red("❌ Error en groupsUpdate:"), err);
+    }
+}
+
+export async function groupJoinRequest(conn: EventConn, request: GroupJoinRequest) {
+    const {id, participant, participantPn, action} = request;
+    try {
+        if (!id || !participant || action !== 'created') return;
+
+        const settings = await getGroupSettings(id);
+        const mode = (settings?.autoAcceptMode || 'off') as AutoAcceptMode;
+        if (mode === 'off') return;
+
+        let metadata: GroupMetadata | null = await conn.groupMetadata(id).catch(() => null);
+        if (metadata) {
+            groupMetaCache.set(id, metadata);
+            conn?.groupCache?.set?.(id, metadata);
+        } else {
+            metadata = groupMetaCache.get(id) || null;
+        }
+        if (!metadata) {
+            logWarn(chalk.yellow(`[AUTOACEPTAR] Sin metadata para ${id}, se omite solicitud de ${participant}`));
+            return;
+        }
+
+        const groupName = metadata.subject || 'Grupo';
+        const metaParticipants = metadata.participants || [];
+        const participantJid = participantPn || participant;
+        const resolved = resolveMention(participantJid, metaParticipants);
+        const userJid = resolved.mentionJid || participantJid;
+        const userTag = resolved.tag || `@${participantJid.split('@')[0]}`;
+        const admins = getGroupAdminMentionJids(metaParticipants);
+        const everyone = getGroupMentionJids(metaParticipants);
+
+        const shouldApprove = mode === 'on' || mode === 'on_hidetag_admin' || mode === 'on_hidetag_all';
+        const mentionTargets = mode.endsWith('_admin')
+            ? uniqueJids([userJid, ...admins])
+            : mode.endsWith('_all')
+                ? uniqueJids([userJid, ...everyone])
+                : [userJid];
+
+        if (shouldApprove) {
+            await conn.groupRequestParticipantsUpdate(id, [participantJid], 'approve');
+            if (mode !== 'on') {
+                await conn.sendMessage(id, {
+                    text: `🛂✅ ${userTag} fue *aceptado automaticamente* en *${groupName}*.\n\n✨ La solicitud de ingreso ya fue aprobada.`,
+                    contextInfo: {mentionedJid: mentionTargets}
+                });
+            }
+            logInfo(chalk.green(`[AUTOACEPTAR] Solicitud aprobada para ${userTag} en "${groupName}"`));
+            return;
+        }
+
+        await conn.sendMessage(id, {
+            text: `🛂⏳ ${userTag} quiere ingresar a *${groupName}*.\n\n👥 Un administrador necesita *aceptar participante* para completar la solicitud.`,
+            contextInfo: {mentionedJid: mentionTargets}
+        });
+        logInfo(chalk.cyan(`[AUTOACEPTAR] Solicitud notificada para ${userTag} en "${groupName}"`));
+    } catch (err: unknown) {
+        logError(chalk.red(`❌ Error en groupJoinRequest - Grupo: ${id} | Participante: ${participant}`), err);
     }
 }
 

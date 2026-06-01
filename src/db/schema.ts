@@ -76,6 +76,7 @@ export const groupSettings = pgTable('group_settings', {
     expired: bigint('expired', {mode: 'number'}).default(0),
     memoryTtl: integer('memory_ttl').default(86400),
     primaryBot: text('primary_bot'),
+    autoAcceptMode: text('autoaccept_mode').default('off'),
 });
 
 export const chats = pgTable('chats', {

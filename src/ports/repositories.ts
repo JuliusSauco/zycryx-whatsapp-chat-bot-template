@@ -225,6 +225,7 @@ export interface GroupSettingsRepository {
         nsfw_horario: string | null;
     } | null>;
     setBooleanFlag(groupId: string, flag: string, value: boolean): Promise<void>;
+    setAutoAcceptMode(groupId: string, mode: GroupSettings['autoAcceptMode']): Promise<void>;
     setTextMessage(input: {
         groupId: string;
         type: 'welcome' | 'bye' | 'promote' | 'demote';

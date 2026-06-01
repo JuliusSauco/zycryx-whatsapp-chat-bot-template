@@ -6,6 +6,7 @@ import {
     setCachedGroupSettings,
 } from '../lib/db-cache.js';
 import {repositories} from './data-source.js';
+import type {AutoAcceptMode} from '../types/config.js';
 
 export interface ContextGroupSettings {
     banned: boolean;
@@ -55,6 +56,11 @@ export async function getGroupSettings(chatId: string) {
 
 export async function setGroupBooleanFlag(chatId: string, flag: string, value: boolean): Promise<void> {
     await repositories.groupSettings.setBooleanFlag(chatId, flag, value);
+    invalidateGroupSettings(chatId);
+}
+
+export async function setGroupAutoAcceptMode(chatId: string, mode: AutoAcceptMode): Promise<void> {
+    await repositories.groupSettings.setAutoAcceptMode(chatId, mode || 'off');
     invalidateGroupSettings(chatId);
 }
 

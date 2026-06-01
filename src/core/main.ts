@@ -8,7 +8,7 @@ import type {Logger} from "pino";
 import NodeCache from 'node-cache';
 import {startSubBot} from "../lib/subbot.js";
 import "./config.js";
-import {callUpdate, groupsUpdate, handler, participantsUpdate} from "./handler.js";
+import {callUpdate, groupJoinRequest, groupsUpdate, handler, participantsUpdate} from "./handler.js";
 import {loadPlugins} from '../lib/plugins.js';
 import {isOtherBotKey} from '../utils/message-filter.js';
 import {startScheduledTasks} from './scheduled-tasks.js';
@@ -334,6 +334,14 @@ async function startBot() {
                 }
             } catch (err: unknown) {
                 logError(chalk.red("❌ Error procesando groups.update:"), err);
+            }
+        });
+
+        sock.ev.on("group.join-request", async (request) => {
+            try {
+                await groupJoinRequest(sock, request);
+            } catch (err: unknown) {
+                logError(chalk.red("❌ Error procesando group.join-request:"), err);
             }
         });
     }
