@@ -1,10 +1,12 @@
 import {canLevelUp} from '../lib/levelling.js'
 import {getGroupSettings} from '../services/group-settings.service.js'
 import {getWallet, setUserLevelRole} from '../services/wallet.service.js'
+import type {ExtendedConn} from '../types/context.js'
+import type {BotMessage} from '../types/message.js'
 
 const multiplier = 650
 
-export async function before(m: any, {conn}: any) {
+export async function before(m: BotMessage, {conn}: {conn: ExtendedConn}) {
     const chat = await getGroupSettings(m.chat)
     if (!chat?.autolevelup) return
     const user = await getWallet(m.sender)
@@ -22,15 +24,13 @@ export async function before(m: any, {conn}: any) {
         user.level = currentLevel
         user.role = newRole
 
-        conn.reply(m.chat, [`*「 FELICIDADES LEVEL UP 🆙🥳 」*\n\nFelicidades subiste de nivel sigue asi 👏\n\n*• NIVEL:* ${before} ⟿ ${user.level}\n*• RANGO:* ${user.role}\n\n_*Para ver tu XP en tiempo real coloca el comando #level*_`, `@${m.sender.split`@`[0]} Ohhh pa has alcanzado el siguiente nivel\n*• NIVEL:* ${before} ⟿ ${user.level}\n\n_*Para ver quien es esta el top coloca el comando #lb*_`, `Que pro @${m.sender.split`@`[0]} has alcanzado un nuevo nivel 🙌\n\n*• Nuevo nivel:* ${user.level}\n*• Nivel anterior:* ${before}\n`].getRandom(), m, {
+        const senderMention = `@${m.sender.split('@')[0]}`
+        conn.reply(m.chat, [`*「 FELICIDADES LEVEL UP 🆙🥳 」*\n\nFelicidades subiste de nivel sigue asi 👏\n\n*• NIVEL:* ${before} ⟿ ${user.level}\n*• RANGO:* ${user.role}\n\n_*Para ver tu XP en tiempo real coloca el comando #level*_`, `${senderMention} Ohhh pa has alcanzado el siguiente nivel\n*• NIVEL:* ${before} ⟿ ${user.level}\n\n_*Para ver quien es esta el top coloca el comando #lb*_`, `Que pro ${senderMention} has alcanzado un nuevo nivel 🙌\n\n*• Nuevo nivel:* ${user.level}\n*• Nivel anterior:* ${before}\n`].getRandom(), m, {
             contextInfo: {
                 externalAdReply: {
-                    mediaUrl: null,
                     mediaType: 1,
-                    description: null,
                     title: info.wm,
                     body: ' 💫 𝐒𝐮𝐩𝐞𝐫 𝐁𝐨𝐭 𝐃𝐞 𝐖𝐡𝐚𝐭𝐬𝐚𝐩𝐩 🥳 ',
-                    previewType: 0,
                     thumbnail: m.pp,
                     sourceUrl: info.md
                 }
@@ -64,7 +64,7 @@ export async function before(m: any, {conn}: any) {
     }
 }
 
-export function getRole(level: any) {
+export function getRole(level: number) {
     const ranks = ['NOVATO(A)', 'APRENDIS', 'EXPLORADOR(A)', 'MAESTRO(A)', 'IRON', 'PLATA', 'ORO', 'LEYENDA', 'ESTELAR', 'DIAMANTE', 'TOP ASTRAL', 'ÉLITE GLOBAL']
     const subLevels = ['V', 'IV', 'III', 'II', 'I']
     const roles = []

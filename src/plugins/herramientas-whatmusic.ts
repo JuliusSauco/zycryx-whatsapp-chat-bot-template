@@ -3,6 +3,34 @@ import acrcloud from 'acrcloud';
 import {definePlugin} from '../core/define-plugin.js';
 import {ENV} from '../core/env.js';
 
+interface AcrArtist {
+    name: string;
+}
+
+interface AcrGenre {
+    name: string;
+}
+
+interface AcrMusicResult {
+    title?: string;
+    artists?: AcrArtist[];
+    album?: {
+        name?: string;
+    };
+    genres?: AcrGenre[];
+    release_date?: string;
+}
+
+interface AcrIdentifyResult {
+    status: {
+        code: number;
+        msg: string;
+    };
+    metadata?: {
+        music?: AcrMusicResult[];
+    };
+}
+
 function createAcrClient() {
     if (!ENV.ACR_ACCESS_KEY || !ENV.ACR_ACCESS_SECRET) return null;
     return new acrcloud({
@@ -27,16 +55,18 @@ export default definePlugin({
         const media = await q.download();
         const ext = mime.split('/')[1];
         fs.writeFileSync(`./tmp/${m.sender}.${ext}`, media);
-        const res = await acr.identify(fs.readFileSync(`./tmp/${m.sender}.${ext}`));
+        const res = await acr.identify(fs.readFileSync(`./tmp/${m.sender}.${ext}`)) as AcrIdentifyResult;
         const {code, msg} = res.status;
         if (code !== 0) throw msg;
-        const {title, artists, album, genres, release_date} = res.metadata.music[0];
+        const music = res.metadata?.music?.[0];
+        if (!music) throw 'No encontrado';
+        const {title, artists, album, genres, release_date} = music;
         const txt = `*\`RESULTADOS DE LA BÚSQUEDA*\`
 
 • 📌 𝐓𝐢𝐭𝐮𝐥𝐨: ${title}
-• 👨‍🎤 𝐀𝐫𝐭𝐢𝐬𝐭𝐚: ${artists !== undefined ? artists.map((v: any) => v.name).join(', ') : 'No encontrado'}
-• 💾 𝐀𝐥𝐛𝐮𝐦: ${album.name || 'No encontrado'}
-• 🌐 𝐆𝐞𝐧𝐞𝐫𝐨: ${genres !== undefined ? genres.map((v: any) => v.name).join(', ') : 'No encontrado'}
+• 👨‍🎤 𝐀𝐫𝐭𝐢𝐬𝐭𝐚: ${artists !== undefined ? artists.map((v) => v.name).join(', ') : 'No encontrado'}
+• 💾 𝐀𝐥𝐛𝐮𝐦: ${album?.name || 'No encontrado'}
+• 🌐 𝐆𝐞𝐧𝐞𝐫𝐨: ${genres !== undefined ? genres.map((v) => v.name).join(', ') : 'No encontrado'}
 • 📆 𝐅𝐞𝐜𝐡𝐚 𝐝𝐞 𝐥𝐚𝐧𝐳𝐚𝐦𝐢𝐞𝐧𝐭𝐨: ${release_date || 'No encontrado'}
 `.trim();
         fs.unlinkSync(`./tmp/${m.sender}.${ext}`);

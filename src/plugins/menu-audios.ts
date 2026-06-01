@@ -3,11 +3,11 @@ import path from 'path';
 import {definePlugin} from '../core/define-plugin.js';
 
 const audiosPath = path.resolve('./src/audios.json');
-let audios = {};
+type AudioConfig = Record<string, Record<string, unknown>>;
+let audios: AudioConfig = {};
 try {
-    // @ts-ignore
-    audios = JSON.parse(fs.readFileSync(audiosPath));
-} catch (e: any) {
+    audios = JSON.parse(fs.readFileSync(audiosPath, 'utf-8')) as AudioConfig;
+} catch (e: unknown) {
     console.error('[❌] Error cargando media/audios.json:', e);
 }
 
@@ -22,12 +22,10 @@ export default definePlugin({
     const tipo = isPrincipal ? 'Bot Oficial' : 'Sub Bot';
     const taguser = '@' + m.sender.split('@')[0];
     const chatId = m.chat?.trim();
-    // @ts-ignore
     const globalAudios = Object.keys(audios.global || {}).sort();
-    // @ts-ignore
     const localAudios = Object.keys(audios[chatId] || {}).sort();
-    const listaGlobal = globalAudios.map((v: any) => `* 🔊  _${v}_`).join('\n');
-    const listaLocal = localAudios.map((v: any) => `* 🔊  _${v}_`).join('\n');
+    const listaGlobal = globalAudios.map((v) => `* 🔊  _${v}_`).join('\n');
+    const listaLocal = localAudios.map((v) => `* 🔊  _${v}_`).join('\n');
 
     let str = `\`Hola ${taguser} 💖彡\`
 
@@ -38,7 +36,6 @@ ${listaGlobal} ${listaLocal.length > 0 ? `\n\n---\n\n\`<LISTA LOCAL/>\`\n\n${lis
 
 *🅛🅞🅛🅘🅑🅞🅣-🅜🅓*`.trim();
 
-    const pp = fs.readFileSync('./media/Menu2.jpg');
     await conn.sendMessage(m.chat, {
         text: str,
         contextInfo: {

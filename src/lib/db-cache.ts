@@ -17,9 +17,9 @@ interface CacheEntry<T> {
     expiresAt: number;
 }
 
-const subbotConfigCache = new Map<string, CacheEntry<any>>();
-const groupContextSettingsCache = new Map<string, CacheEntry<any>>();
-const groupFullSettingsCache = new Map<string, CacheEntry<any>>();
+const subbotConfigCache = new Map<string, CacheEntry<unknown>>();
+const groupContextSettingsCache = new Map<string, CacheEntry<unknown>>();
+const groupFullSettingsCache = new Map<string, CacheEntry<unknown>>();
 
 export function getCachedSubbotConfig<T>(botId: string): T | null {
     const entry = subbotConfigCache.get(botId);

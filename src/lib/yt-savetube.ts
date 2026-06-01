@@ -25,9 +25,33 @@ interface SavetubeResponse {
 interface SavetubeRequestResponse {
     status: boolean;
     code: number;
-    data?: any;
+    data?: unknown;
     error?: string;
 }
+
+interface SavetubeInfoData {
+    data?: string;
+}
+
+interface SavetubeDownloadData {
+    data?: {
+        downloadUrl?: string;
+        downloaded?: boolean;
+    };
+}
+
+interface SavetubeDecryptedData {
+    key: string;
+    title?: string;
+    thumbnail?: string;
+    duration: number;
+}
+
+const getErrorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
+const getStatusCode = (error: unknown): number => {
+    if (axios.isAxiosError(error)) return error.response?.status || 500;
+    return 500;
+};
 
 const savetube = {
     api: {
@@ -51,7 +75,7 @@ const savetube = {
             return Buffer.from(matches!.join(''), 'hex');
         },
 
-        decrypt: async (enc: string): Promise<any> => {
+        decrypt: async (enc: string): Promise<SavetubeDecryptedData> => {
             try {
                 const secretKey = 'C5D58EF67A7584E4A29F6C35BBC4EB12';
                 const data = Buffer.from(enc, 'base64');
@@ -63,9 +87,9 @@ const savetube = {
                 let decrypted = decipher.update(content);
                 decrypted = Buffer.concat([decrypted, decipher.final()]);
 
-                return JSON.parse(decrypted.toString());
-            } catch (error: any) {
-                throw new Error(`${error.message}`);
+                return JSON.parse(decrypted.toString()) as SavetubeDecryptedData;
+            } catch (error: unknown) {
+                throw new Error(getErrorMessage(error));
             }
         }
     },
@@ -94,7 +118,7 @@ const savetube = {
         return null;
     },
 
-    request: async (endpoint: string, data: any = {}, method: string = 'post'): Promise<SavetubeRequestResponse> => {
+    request: async (endpoint: string, data: Record<string, unknown> = {}, method: string = 'post'): Promise<SavetubeRequestResponse> => {
         try {
             const {data: response} = await axios({
                 method,
@@ -108,11 +132,11 @@ const savetube = {
                 code: 200,
                 data: response
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
                 status: false,
-                code: error.response?.status || 500,
-                error: error.message
+                code: getStatusCode(error),
+                error: getErrorMessage(error)
             };
         }
     },
@@ -123,7 +147,7 @@ const savetube = {
         return {
             status: true,
             code: 200,
-            data: response.data.cdn
+            data: (response.data as {cdn?: string}).cdn
         };
     },
 
@@ -165,13 +189,15 @@ const savetube = {
         try {
             const cdnx = await savetube.getCDN();
             if (!cdnx.status) return cdnx;
-            const cdn = cdnx.data;
+            const cdn = String(cdnx.data || '');
 
             const result = await savetube.request(`https://${cdn}${savetube.api.info}`, {
                 url: `https://www.youtube.com/watch?v=${id}`
             });
             if (!result.status) return result;
-            const decrypted = await savetube.crypto.decrypt(result.data.data);
+            const infoData = result.data as SavetubeInfoData;
+            if (!infoData.data) return {status: false, code: 500, error: 'Respuesta invalida de Savetube'};
+            const decrypted = await savetube.crypto.decrypt(infoData.data);
 
             const dl = await savetube.request(`https://${cdn}${savetube.api.download}`, {
                 id: id,
@@ -188,20 +214,20 @@ const savetube = {
                     type: format === 'mp3' ? 'audio' : 'video',
                     format: format,
                     thumbnail: decrypted.thumbnail || `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
-                    download: dl.data.data.downloadUrl,
+                    download: ((dl.data as SavetubeDownloadData).data?.downloadUrl) || '',
                     id: id,
                     key: decrypted.key,
                     duration: decrypted.duration,
                     quality: format === 'mp3' ? '128' : format,
-                    downloaded: dl.data.data.downloaded || false
+                    downloaded: ((dl.data as SavetubeDownloadData).data?.downloaded) || false
                 }
             };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
                 status: false,
                 code: 500,
-                error: error.message
+                error: getErrorMessage(error)
             };
         }
     }

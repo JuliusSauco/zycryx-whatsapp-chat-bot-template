@@ -2,20 +2,39 @@ import {
     DisconnectReason,
     fetchLatestBaileysVersion,
     makeWASocket,
-    useMultiFileAuthState
+    useMultiFileAuthState,
+    type WAMessage,
+    type WASocket
 } from '@whiskeysockets/baileys';
 import pino from 'pino';
-// @ts-ignore - pino default import
+import type {Logger} from 'pino';
 import fs from 'fs';
 import qrcode from 'qrcode';
 import chalk from "chalk";
 import NodeCache from 'node-cache';
 import {callUpdate, groupsUpdate, handler, participantsUpdate} from '../core/handler.js';
 import type {BotMessage} from '../types/message.js';
+import type {ExtendedConn} from '../types/context.js';
 import {isOtherBotKey} from '../utils/message-filter.js';
 
 if (globalThis.conns instanceof Array) console.log()
 else globalThis.conns = []
+
+type BotSocket = WASocket & {
+    groupCache?: NodeCache;
+    isInit?: boolean;
+    userId?: string;
+    uptime?: number;
+};
+
+type DisconnectErrorLike = {
+    output?: {
+        statusCode?: number;
+    };
+};
+
+type SocketConfig = Parameters<typeof makeWASocket>[0];
+const createPino = pino as unknown as (options: {level: string}) => Logger;
 
 const cleanJid = (jid: string = ""): string => jid.replace(/:\d+/, "").split("@")[0];
 const msgRetryCounterCache = new NodeCache({stdTTL: 0, checkperiod: 0});
@@ -25,7 +44,7 @@ let reintentos: Record<string, number> = {};
 
 export async function startSubBot(
     m: BotMessage | null,
-    conn: any,
+    conn: ExtendedConn | null,
     caption: string = '',
     isCode: boolean = false,
     phone: string = '',
@@ -40,22 +59,22 @@ export async function startSubBot(
 
     console.info = () => {
     }
-    const sock: any = makeWASocket({
-        logger: (pino as any)({level: 'silent'}),
+    const sock = makeWASocket({
+        logger: createPino({level: 'silent'}),
         printQRInTerminal: false,
-        browser: ['Windows', 'Chrome', ''] as any,
+        browser: ['Windows', 'Chrome', ''] as [string, string, string],
         auth: state,
         markOnlineOnConnect: true,
         generateHighQualityLinkPreview: true,
         syncFullHistory: false,
-        getMessage: async () => '' as any,
+        getMessage: async () => undefined,
         msgRetryCounterCache,
-        userDevicesCache: userDevicesCache as any,
+        userDevicesCache: userDevicesCache as unknown as SocketConfig['userDevicesCache'],
         cachedGroupMetadata: async (jid: string) => groupCache.get(jid),
         version,
         keepAliveIntervalMs: 60_000,
         maxIdleTimeMs: 120_000,
-    } as any);
+    } as SocketConfig & {maxIdleTimeMs: number}) as BotSocket;
 
     sock.groupCache = groupCache;
     sock.ev.on('creds.update', saveCreds);
@@ -63,7 +82,7 @@ export async function startSubBot(
     sock.isInit = false
     let isInit = true
 
-    sock.ev.on('connection.update', async ({connection, lastDisconnect, isNewLogin, qr}: any) => {
+    sock.ev.on('connection.update', async ({connection, lastDisconnect, isNewLogin, qr}) => {
         if (isNewLogin) sock.isInit = false
 
         if (connection === 'open') {
@@ -72,7 +91,7 @@ export async function startSubBot(
             const ownerName = sock.authState.creds.me?.name || "-";
             sock.uptime = Date.now();
             reintentos[sock.userId] = 0;
-            if (globalThis.conns.find((c: any) => c.userId === sock.userId)) return;
+            if (globalThis.conns.find((c) => c.userId === sock.userId)) return;
             globalThis.conns.push(sock);
 
             // Precarga de metadata de grupos para evitar IQs lentos en el primer comando.
@@ -84,12 +103,13 @@ export async function startSubBot(
                         groupCache.set(jid, meta);
                     }
                     console.log(chalk.cyan(`📦 [SUB-BOT ${sock.userId}] Precargados ${entries.length} grupos en cache`));
-                } catch (e: any) {
-                    console.error(chalk.yellow(`⚠️ [SUB-BOT ${sock.userId}] No se pudo precargar grupos:`), e?.message || e);
+                } catch (e: unknown) {
+                    const message = e instanceof Error ? e.message : String(e);
+                    console.error(chalk.yellow(`⚠️ [SUB-BOT ${sock.userId}] No se pudo precargar grupos:`), message);
                 }
             })();
 
-            if (isCode && m?.chat && senderId?.endsWith("@s.whatsapp.net")) {
+            if (isCode && m?.chat && conn && senderId?.endsWith("@s.whatsapp.net")) {
                 conn.sendMessage(m.chat, {text: `*Conectado exitosamente con WhatsApp ✅*\n\n*💻 Bot:* +${sock.userId}\n*👤 Dueño:* ${ownerName}\n\n*Nota: Con la nueva función de auto-reinicio (Beta)*, Si el bot principal se reinicia o se desactiva, los sub-bots se reiniciarán automáticamente, asegurando que sigan activos sin interrupciones.\n\n> *Unirte a nuestro canal para informarte de todas la Actualizaciónes/novedades sobre el bot*\n${info.nna}`}, {quoted: m});
                 delete commandFlags[senderId];
             }
@@ -98,7 +118,7 @@ export async function startSubBot(
 
         if (connection === 'close') {
             const botId = sock.userId || id;
-            const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.reason || 0;
+            const reason = (lastDisconnect?.error as DisconnectErrorLike | undefined)?.output?.statusCode || 0;
             const intentos = reintentos[botId] || 0;
             reintentos[botId] = intentos + 1;
 
@@ -170,22 +190,23 @@ export async function startSubBot(
     process.on('uncaughtException', console.error);
     process.on('unhandledRejection', console.error);
 
-    sock.ev.on("messages.upsert", async ({messages, type}: any) => {
+    sock.ev.on("messages.upsert", async ({messages, type}) => {
         if (type !== "notify") return;
         for (const msg of messages) {
             if (!msg.message) continue;
-            const start = Math.floor(sock.uptime / 1000);
-            if (msg.messageTimestamp < start || ((Date.now() / 1000) - msg.messageTimestamp) > 60) continue;
+            const start = Math.floor((sock.uptime || Date.now()) / 1000);
+            const messageTimestamp = Number(msg.messageTimestamp || 0);
+            if (messageTimestamp < start || ((Date.now() / 1000) - messageTimestamp) > 60) continue;
             if (isOtherBotKey(msg.key.id)) continue;
             try {
-                await handler(sock, msg);
+                await handler(sock as unknown as ExtendedConn, msg as unknown as BotMessage);
             } catch (err) {
                 console.error(err);
             }
         }
     });
 
-    sock.ev.on("call", async (calls: any[]) => {
+    sock.ev.on("call", async (calls) => {
         try {
             for (const call of calls) {
                 await callUpdate(sock, call);
@@ -196,8 +217,8 @@ export async function startSubBot(
     });
 }
 
-function setupGroupEvents(sock: any): void {
-    sock.ev.on("group-participants.update", async (update: any) => {
+function setupGroupEvents(sock: BotSocket): void {
+    sock.ev.on("group-participants.update", async (update) => {
         console.log(update)
         try {
             await participantsUpdate(sock, update);
@@ -206,11 +227,12 @@ function setupGroupEvents(sock: any): void {
         }
     });
 
-    sock.ev.on("groups.update", async (updates: any[]) => {
+    sock.ev.on("groups.update", async (updates) => {
         console.log(updates)
         try {
             for (const update of updates) {
-                await groupsUpdate(sock, update);
+                if (!update.id) continue;
+                await groupsUpdate(sock, {...update, id: update.id});
             }
         } catch (err) {
             console.error("[ ❌ ] SUB-BOT Error procesando groups.update:", err);

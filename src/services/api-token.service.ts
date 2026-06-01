@@ -11,8 +11,9 @@ export async function getDecodedApiToken(name: string): Promise<string | null> {
         if (tokenB64) {
             token = Buffer.from(tokenB64, 'base64').toString('utf8').trim();
         }
-    } catch (e: any) {
-        console.error(`[API_TOKEN] error leyendo token '${name}':`, e?.message || e);
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        console.error(`[API_TOKEN] error leyendo token '${name}':`, message);
     }
 
     tokenCache.set(name, token);

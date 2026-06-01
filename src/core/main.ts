@@ -4,6 +4,7 @@ import path from "path";
 import chalk from "chalk";
 import readlineSync from "readline-sync";
 import pino from "pino";
+import type {Logger} from "pino";
 import NodeCache from 'node-cache';
 import {startSubBot} from "../lib/subbot.js";
 import "./config.js";
@@ -11,6 +12,21 @@ import {callUpdate, groupsUpdate, handler, participantsUpdate} from "./handler.j
 import {loadPlugins} from '../lib/plugins.js';
 import {isOtherBotKey} from '../utils/message-filter.js';
 import {startScheduledTasks} from './scheduled-tasks.js';
+import type {ExtendedConn} from '../types/context.js';
+import type {BotMessage} from '../types/message.js';
+
+type BotSocket = baileys.WASocket & {
+    groupCache?: NodeCache;
+};
+
+type DisconnectErrorLike = {
+    output?: {
+        statusCode?: number;
+    };
+};
+
+type SocketConfig = Parameters<typeof baileys.makeWASocket>[0];
+const createPino = pino as unknown as (options: {level: string}) => Logger;
 
 await loadPlugins();
 startScheduledTasks();
@@ -83,7 +99,7 @@ async function main() {
     if (hayCredencialesPrincipal || !haySubbotsActivos) {
         try {
             await startBot();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(chalk.red("❌ Error al iniciar bot principal:"), err);
         }
     } else {
@@ -108,8 +124,9 @@ async function cargarSubbots() {
         try {
             reconectando.add(userId);
             await startSubBot(null, null, "Auto reconexión", false, userId, '');
-        } catch (e: any) {
-            console.log(chalk.red(`❌ Falló la carga de ${userId}:`, e.message));
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : String(e);
+            console.log(chalk.red(`❌ Falló la carga de ${userId}:`, message));
         } finally {
             reconectando.delete(userId);
         }
@@ -133,32 +150,33 @@ async function startBot() {
     };
     const sock = baileys.makeWASocket({
         printQRInTerminal: !usarCodigo && !fs.existsSync(BOT_CREDS_PATH),
-        logger: (pino as any)({level: 'silent'}),
-        browser: ['Windows', 'Chrome', ''] as any,
+        logger: createPino({level: 'silent'}),
+        browser: ['Windows', 'Chrome', ''] as [string, string, string],
         auth: {
             creds: state.creds,
-            keys: baileys.makeCacheableSignalKeyStore(state.keys, (pino as any)({level: 'silent'}))
+            keys: baileys.makeCacheableSignalKeyStore(state.keys, createPino({level: 'silent'}))
         },
         markOnlineOnConnect: false,
         generateHighQualityLinkPreview: true,
         syncFullHistory: false,
-        getMessage: async () => '' as any,
-        msgRetryCounterCache: msgRetryCounterCache as any,
-        userDevicesCache: userDevicesCache as any,
+        getMessage: async () => undefined,
+        msgRetryCounterCache: msgRetryCounterCache,
+        userDevicesCache: userDevicesCache as unknown as SocketConfig['userDevicesCache'],
 //msgRetryCounterMap,
         cachedGroupMetadata: async (jid: string) => groupCache.get(jid),
         version: version,
         defaultQueryTimeoutMs: 30_000,
         keepAliveIntervalMs: 55000,
-    } as any);
+    });
 
-    (sock as any).groupCache = groupCache;
+    const botSock = sock as BotSocket;
+    botSock.groupCache = groupCache;
     globalThis.conn = sock;
-    setupGroupEvents(sock);
+    setupGroupEvents(botSock);
     sock.ev.on("creds.update", saveCreds);
 
     sock.ev.on("connection.update", async ({connection, lastDisconnect}) => {
-        const code = (lastDisconnect?.error as any)?.output?.statusCode || 0;
+        const code = (lastDisconnect?.error as DisconnectErrorLike | undefined)?.output?.statusCode || 0;
 
         if (connection === "open") {
             console.log(chalk.bold.greenBright('\n▣─────────────────────────────···\n│\n│❧ 𝙲𝙾𝙽𝙴𝙲𝚃𝙰𝙳𝙾 𝙲𝙾𝚁𝚁𝙴𝙲𝚃𝙰𝙼𝙴𝙽𝚃𝙴 𝙰𝙻 𝚆𝙷𝙰𝚃𝚂𝙰𝙿𝙿 ✅\n│\n▣─────────────────────────────···'));
@@ -166,14 +184,15 @@ async function startBot() {
             // Precarga de metadata de todos los grupos para evitar IQs lentos en el primer uso.
             void (async () => {
                 try {
-                    const groups = await (sock as any).groupFetchAllParticipating();
+                    const groups = await sock.groupFetchAllParticipating();
                     const entries = Object.entries(groups || {});
                     for (const [jid, meta] of entries) {
                         groupCache.set(jid, meta);
                     }
                     console.log(chalk.cyan(`📦 Precargados ${entries.length} grupos en cache`));
-                } catch (e: any) {
-                    console.error(chalk.yellow("⚠️ No se pudo precargar metadata de grupos:"), e?.message || e);
+                } catch (e: unknown) {
+                    const message = e instanceof Error ? e.message : String(e);
+                    console.error(chalk.yellow("⚠️ No se pudo precargar metadata de grupos:"), message);
                 }
             })();
         }
@@ -216,7 +235,7 @@ async function startBot() {
             for (const call of calls) {
                 await callUpdate(sock, call);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(chalk.red("❌ Error procesando call.update:"), err);
         }
     });
@@ -239,7 +258,7 @@ async function startBot() {
                 }
             })
 //console.log(chalk.gray(`┏━━━━━━⪻♻️ AUTO-CLEAR 🗑️⪼━━━━━━•\n┃→ ARCHIVOS DE LA CARPETA TMP ELIMINADOS\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━•`));
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error cleaning temporary files:', err);
         }
     }, 30 * 1000);
@@ -288,7 +307,7 @@ async function startBot() {
                         } else if (ageMs > 30 * 60 * 1000 && !isActive) {
                             fs.unlinkSync(fullPath);
                         }
-                    } catch (err: any) {
+                    } catch (err: unknown) {
                         console.error(chalk.red(`[⚠] Error al limpiar archivo ${file}:`), err);
                     }
                 }
@@ -297,38 +316,39 @@ async function startBot() {
         console.log(chalk.bold.cyanBright(`\n╭» 🟠 ARCHIVOS 🟠\n│→ Sesiones y pre-keys viejas limpiadas\n╰―――――――――――――――――――――――――――――― 🗑️♻️`));
     }, 10 * 60 * 1000); // cada 10 minutos
 
-    function setupGroupEvents(sock: any) {
-        sock.ev.on("group-participants.update", async (update: any) => {
+    function setupGroupEvents(sock: BotSocket) {
+        sock.ev.on("group-participants.update", async (update) => {
             console.log(update)
             try {
                 await participantsUpdate(sock, update);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error(chalk.red("❌ Error procesando group-participants.update:"), err);
             }
         });
 
-        sock.ev.on("groups.update", async (updates: any[]) => {
+        sock.ev.on("groups.update", async (updates) => {
             console.log(updates)
             try {
                 for (const update of updates) {
-                    await groupsUpdate(sock, update);
+                    if (!update.id) continue;
+                    await groupsUpdate(sock, {...update, id: update.id});
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error(chalk.red("❌ Error procesando groups.update:"), err);
             }
         });
     }
 }
 
-function enqueueMessage(sock: any, msg: any): void {
+function enqueueMessage(sock: baileys.WASocket, msg: baileys.WAMessage): void {
     const chatId = msg.key?.remoteJid || msg.key?.participant || 'unknown';
     const previous = chatQueues.get(chatId) || Promise.resolve();
     const current = previous
         .catch(() => undefined)
         .then(async () => {
             try {
-                await handler(sock, msg);
-            } catch (err: any) {
+                await handler(sock as unknown as ExtendedConn, msg as unknown as BotMessage);
+            } catch (err: unknown) {
                 console.error(err);
             }
         });

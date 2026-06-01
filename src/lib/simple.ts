@@ -2,6 +2,7 @@ import * as baileys from "@whiskeysockets/baileys";
 import {fileTypeFromBuffer} from 'file-type'
 import fetch from 'node-fetch';
 import type {BotMessage} from '../types/message.js';
+import type {ExtendedConn, MediaInput, MessageContent, QuotedMessage, SendMessageOptions} from '../types/context.js';
 import {getUserName} from '../services/user.service.js';
 
 const {
@@ -14,9 +15,36 @@ const {
 
 const DEFAULT_PROFILE_PICTURE_URL = 'https://telegra.ph/file/33bed21a0eaa789852c30.jpg';
 
-export async function smsg(conn: any, m: any): Promise<BotMessage> {
+type MessageRecord = Record<string, unknown>;
+type FileTypeResult = {ext?: string; mime?: string};
+type ExternalAdReplyLike = {
+    thumbnail?: unknown;
+    thumbnailUrl?: unknown;
+    [key: string]: unknown;
+};
+type ContextInfoLike = {
+    externalAdReply?: ExternalAdReplyLike;
+    [key: string]: unknown;
+};
+type AlbumMedia = {
+    type: 'image' | 'video';
+    data: unknown;
+};
+type GeneratedMessageWithContext = baileys.WAMessage & {
+    message: baileys.WAMessage['message'] & {
+        messageContextInfo?: unknown;
+    };
+};
+type AsyncIterableStream = AsyncIterable<Buffer | Uint8Array>;
+type BaileysMessageContent = Parameters<typeof generateWAMessage>[1];
+type BaileysMessageOptions = Parameters<typeof generateWAMessage>[2];
+
+function getContextInfo(options: SendMessageOptions): ContextInfoLike | undefined {
+    return options.contextInfo as ContextInfoLike | undefined;
+}
+
+export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessage> {
     if (!m) return m;
-    const M = proto.WebMessageInfo;
 
     if (!m.mentionedJid) m.mentionedJid = m.message?.extendedTextMessage?.contextInfo?.mentionedJid || []
     if (!m.quoted && m.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
@@ -24,19 +52,19 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         const quotedMessage = {
             key: {
                 id: ctx.stanzaId,
-                fromMe: ctx.participant === conn.user?.jid,
+                fromMe: ctx.participant === conn.user?.id,
                 remoteJid: m.chat,
-                participant: ctx.participant,
+                participant: ctx.participant || undefined,
             },
-            message: ctx.quotedMessage,
+            message: ctx.quotedMessage || {},
             messageTimestamp: m.messageTimestamp,
-            participant: ctx.participant,
-            sender: ctx.participant,
+            participant: ctx.participant || undefined,
+            sender: ctx.participant || '',
             chat: m.chat,
         };
         m.quoted = {
             ...quotedMessage,
-            download: () => downloadMediaMessage(quotedMessage as any, 'buffer', {}),
+            download: () => downloadMediaMessage(quotedMessage as baileys.WAMessage, 'buffer', {}),
         };
     }
 
@@ -44,16 +72,16 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
     m.chatDB = m.chatDB || {};
 
     if (m.quoted && m.quoted.message && typeof m.quoted.message === 'object') {
-        const keys = Object.keys(m.quoted.message);
+            const keys = Object.keys(m.quoted.message);
         if (keys.length > 0) {
             const type = keys[0];
-            const media = m?.quoted.message[type];
+            const media = (m.quoted.message as MessageRecord)[type] as {mimetype?: string} | undefined;
 
             if (type?.includes('image')) m.quoted.mimetype = 'image';
             else if (type?.includes('video')) m.quoted.mimetype = 'video';
             else if (type?.includes('sticker')) m.quoted.mimetype = 'image/webp';
             else if (type?.includes('audio')) m.quoted.mimetype = 'audio';
-            else if (type?.includes('document')) m.quoted.mimetype = media.mimetype || 'application/octet-stream';
+            else if (type?.includes('document')) m.quoted.mimetype = media?.mimetype || 'application/octet-stream';
         }
     }
 
@@ -66,21 +94,20 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
             else if (type && type.includes('sticker')) m.mimetype = 'image/webp';
             else if (type && type.includes('audio')) m.mimetype = 'audio';
             else if (type && type.includes('document')) {
-                const msgMedia = messageContent[type];
+                const msgMedia = (messageContent as MessageRecord)[type] as {mimetype?: string} | undefined;
                 m.mimetype = msgMedia?.mimetype || 'application/octet-stream';
             }
         }
     }
 
     if (m.key) {
-        m.id = m.key.id;
-        m.chat = m.key.remoteJid;
-        m.fromMe = m.key.fromMe;
+        m.id = m.key.id || '';
+        m.chat = m.key.remoteJid || '';
+        m.fromMe = !!m.key.fromMe;
         m.isGroup = m.chat?.endsWith('@g.us') || false;
-        let senderJid = m.fromMe ? conn.user.id : m.key.participant || m.key.remoteJid;
-
         const rawJid = m.key.participant || (m.key.remoteJid && !m.key.remoteJid.endsWith("@g.us") ? m.key.remoteJid : "")
-        const altJid = m.key.participantAlt || m.key.remoteJidAlt || ""
+        const keyWithAlt = m.key as typeof m.key & {participantAlt?: string; remoteJidAlt?: string};
+        const altJid = keyWithAlt.participantAlt || keyWithAlt.remoteJidAlt || ""
 
         m.lid = rawJid?.includes("@lid") ? rawJid : altJid?.includes("@lid") ? altJid : ""
 
@@ -88,7 +115,7 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
 
         m.sender = m.key.fromMe ? (conn.user?.id || "").replace(/:\d+$/, "") : realJid
 
-        m.who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.id : m.sender;
+        m.who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user?.id || m.sender : m.sender;
         m.pp = m.pp || DEFAULT_PROFILE_PICTURE_URL;
     }
 
@@ -96,7 +123,7 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         const messageContent = m.message || (m.quoted && m.quoted.message);
         if (!messageContent) throw new Error('No se encontró contenido para descargar');
         const type = Object.keys(messageContent)[0];
-        const stream = await downloadContentFromMessage(messageContent[type], type.includes('image') ? 'image' : type.includes('video') ? 'video' : 'document');
+        const stream = await downloadContentFromMessage((messageContent as MessageRecord)[type] as baileys.DownloadableMessage, type.includes('image') ? 'image' : type.includes('video') ? 'video' : 'document');
         return await streamToBuffer(stream);
     };
 
@@ -107,7 +134,7 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         return jid;
     };
 
-    conn.getName = async (jid: string, withoutContact: boolean = false, m: any = null): Promise<string | null> => {
+    conn.getName = async (jid: string, withoutContact: boolean = false, m: BotMessage | null = null): Promise<string | null> => {
         if (!jid) return null;
         jid = conn.decodeJid ? conn.decodeJid(jid) : jid;
         try {
@@ -116,7 +143,7 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
                 return metadata.subject || (withoutContact ? null : jid.split('@')[0]);
             } else {
                 if (jid === '0@s.whatsapp.net') return 'WhatsApp';
-                if (conn.user?.jid && jid === conn.user.jid) return conn.user.name || jid.split('@')[0];
+                if (conn.user?.id && jid === conn.user.id) return conn.user.name || jid.split('@')[0];
                 if (m?.pushName && m?.sender === jid) return m.pushName;
 
                 const nombre = await getUserName(jid);
@@ -136,11 +163,12 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         };
     }
 
-    if (!(conn as any).__zycryxSendMessageWrapped) {
+    if (!conn.__zycryxSendMessageWrapped) {
         const originalSendMessage = conn.sendMessage.bind(conn);
-        conn.sendMessage = async function (jid: string, content: any, options: any = {}) {
+        conn.sendMessage = async function (jid: string, content: MessageContent, options: SendMessageOptions = {}) {
+            const messageContent = content as MessageRecord;
             const contextInfoDefault = {
-                mentionedJid: await conn.parseMention(content?.text || content?.caption || ''),
+                mentionedJid: await conn.parseMention(String(messageContent.text || messageContent.caption || '')),
                 isForwarded: true,
                 forwardingScore: 1,
                 forwardedNewsletterMessageInfo: {
@@ -153,13 +181,13 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
                 }
             };
 
-            if (!content.contextInfo) {
-                content.contextInfo = contextInfoDefault;
+            if (!messageContent.contextInfo) {
+                messageContent.contextInfo = contextInfoDefault;
             }
 
-            return originalSendMessage(jid, content, options);
+            return originalSendMessage(jid, messageContent, options);
         };
-        (conn as any).__zycryxSendMessageWrapped = true;
+        conn.__zycryxSendMessageWrapped = true;
     }
 
     conn.parseMention = async (text: string = ''): Promise<string[]> => {
@@ -173,7 +201,7 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         }
     };
 
-    conn.reply = async (chatId: string, text: string, quoted: any = null, options: any = {}) => {
+    conn.reply = async (chatId: string, text: string, quoted: QuotedMessage = null, options: SendMessageOptions = {}) => {
         const contextInfo = {
             mentionedJid: await conn.parseMention(text),
             isForwarded: true,
@@ -192,12 +220,12 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
 
     m.react = async (emoji: string) => {
         if (!emoji) return;
-        await conn.sendMessage(m.chat || m.key.remoteJid, {
+        await conn.sendMessage(m.chat || m.key.remoteJid || '', {
             react: {text: emoji, key: m.key}
         });
     };
 
-    const defaultContextInfo = async (caption: string, conn: any) => ({
+    const defaultContextInfo = async (caption: string, conn: ExtendedConn): Promise<ContextInfoLike> => ({
         mentionedJid: await conn.parseMention(caption),
         isForwarded: true,
         forwardingScore: 1,
@@ -211,7 +239,7 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         }
     });
 
-    function formatExternalAdReply(obj: any = {}): any {
+    function formatExternalAdReply(obj: ExternalAdReplyLike = {}): ExternalAdReplyLike {
         if (!obj.thumbnailUrl && obj.thumbnail) {
             obj.thumbnailUrl = obj.thumbnail;
             delete obj.thumbnail;
@@ -222,8 +250,8 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         };
     }
 
-    conn.sendFile = async function (jid: string, path: Buffer | string, filename: string = '', caption: string = '', quoted: any = null, ptt: boolean = false, options: any = {}) {
-        const contextInfo = options.contextInfo ?? await defaultContextInfo(caption, this);
+    conn.sendFile = async function (jid: string, path: MediaInput, filename: string = '', caption: string = '', quoted: QuotedMessage = null, ptt: boolean = false, options: SendMessageOptions = {}) {
+        const contextInfo = getContextInfo(options) ?? await defaultContextInfo(caption, this);
         if (contextInfo.externalAdReply) contextInfo.externalAdReply = formatExternalAdReply(contextInfo.externalAdReply);
         delete options.contextInfo;
 
@@ -233,8 +261,8 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         };
 
         if (Buffer.isBuffer(path)) {
-            const fileInfo = await fileTypeFromBuffer(path) || {} as any;
-            const ext = (filename.includes('.') ? filename.split('.').pop()! : getCleanExt(path as any)).toLowerCase();
+            const fileInfo = await fileTypeFromBuffer(path) || {} as FileTypeResult;
+            const ext = (filename.includes('.') ? filename.split('.').pop()! : 'bin').toLowerCase();
             const mime = fileInfo.mime || 'application/octet-stream';
             const fileName = filename || `file.${ext}`;
 
@@ -261,7 +289,7 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
                 if (!res.ok) throw new Error(`Error HTTP ${res.status}: ${res.statusText}`);
                 const buffer = Buffer.from(await res.arrayBuffer());
 
-                const fileInfo = await fileTypeFromBuffer(buffer) || {} as any;
+                const fileInfo = await fileTypeFromBuffer(buffer) || {} as FileTypeResult;
                 const mime = fileInfo.mime || 'application/octet-stream';
                 const ext = (typeof filename === 'string' && filename.includes('.') ? filename.split('.').pop()! : getCleanExt(path)).toLowerCase();
                 const fileName = filename || `file.${ext}`;
@@ -282,15 +310,16 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
                     contextInfo,
                     ...options,
                 }, {quoted});
-            } catch (e: any) {
-                console.error(e.message);
-                return null;
+            } catch (e: unknown) {
+                console.error(e instanceof Error ? e.message : e);
+                return this.sendMessage(jid, {text: caption || filename || 'No se pudo enviar el archivo'}, {quoted});
             }
         }
+        return this.sendMessage(jid, {text: caption || filename || 'Archivo no soportado'}, {quoted});
     };
 
-    conn.sendImage = async function (jid: string, path: string, caption: string = '', quoted: any = null, options: any = {}) {
-        const contextInfo = options.contextInfo ?? await defaultContextInfo(caption, this);
+    conn.sendImage = async function (jid: string, path: MediaInput, caption: string = '', quoted: QuotedMessage = null, options: SendMessageOptions = {}) {
+        const contextInfo = getContextInfo(options) ?? await defaultContextInfo(caption, this);
         if (contextInfo.externalAdReply) contextInfo.externalAdReply = formatExternalAdReply(contextInfo.externalAdReply);
         delete options.contextInfo;
 
@@ -302,8 +331,8 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         }, {quoted});
     };
 
-    conn.sendVideo = async function (jid: string, path: string, caption: string = '', quoted: any = null, options: any = {}) {
-        const contextInfo = options.contextInfo ?? await defaultContextInfo(caption, this);
+    conn.sendVideo = async function (jid: string, path: MediaInput, caption: string = '', quoted: QuotedMessage = null, options: SendMessageOptions = {}) {
+        const contextInfo = getContextInfo(options) ?? await defaultContextInfo(caption, this);
         if (contextInfo.externalAdReply) contextInfo.externalAdReply = formatExternalAdReply(contextInfo.externalAdReply);
         delete options.contextInfo;
 
@@ -320,10 +349,10 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         caption: string = '',
         fakeNumber: string = '0@s.whatsapp.net',
         fakeCaption: string = '',
-        quoted: any = null,
-        options: any = {}
+        quoted: QuotedMessage = null,
+        options: SendMessageOptions = {}
     ) {
-        const contextInfo = options.contextInfo ?? await defaultContextInfo(caption, this);
+        const contextInfo = getContextInfo(options) ?? await defaultContextInfo(caption, this);
         if (contextInfo.externalAdReply) contextInfo.externalAdReply = formatExternalAdReply(contextInfo.externalAdReply);
         delete options.contextInfo;
 
@@ -346,8 +375,8 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         });
     };
 
-    conn.sendAudio = async function (jid: string, path: string, quoted: any = null, options: any = {}) {
-        const contextInfo = options.contextInfo ?? await defaultContextInfo('', this);
+    conn.sendAudio = async function (jid: string, path: MediaInput, quoted: QuotedMessage = null, options: SendMessageOptions = {}) {
+        const contextInfo = getContextInfo(options) ?? await defaultContextInfo('', this);
         if (contextInfo.externalAdReply) contextInfo.externalAdReply = formatExternalAdReply(contextInfo.externalAdReply);
         delete options.contextInfo;
 
@@ -359,44 +388,45 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         }, {quoted});
     };
 
-    conn.sendAlbumMessage = async function (jid: string, medias: any[] = [], caption: string = '', quoted: any = null) {
+    conn.sendAlbumMessage = async function (jid: string, medias: MessageContent[] = [], caption: string = '', quoted: QuotedMessage = null) {
         if (!Array.isArray(medias) || medias.length === 0) {
             throw new Error("No se proporcionaron medios válidos.");
         }
+        const albumMedias = medias as AlbumMedia[];
+        const quotedMessage = quoted && typeof quoted === 'object' ? quoted as BotMessage : null;
 
         const album = generateWAMessageFromContent(jid, {
             albumMessage: {
-                expectedImageCount: medias.filter((media: any) => media.type === "image").length,
-                expectedVideoCount: medias.filter((media: any) => media.type === "video").length,
-                ...(quoted ? {
+                expectedImageCount: albumMedias.filter((media) => media.type === "image").length,
+                expectedVideoCount: albumMedias.filter((media) => media.type === "video").length,
+                ...(quotedMessage ? {
                     contextInfo: {
-                        remoteJid: quoted.key.remoteJid,
-                        fromMe: quoted.key.fromMe,
-                        stanzaId: quoted.key.id,
-                        participant: quoted.key.participant || quoted.key.remoteJid,
-                        quotedMessage: quoted.message
+                        remoteJid: quotedMessage.key.remoteJid,
+                        stanzaId: quotedMessage.key.id,
+                        participant: quotedMessage.key.participant || quotedMessage.key.remoteJid,
+                        quotedMessage: quotedMessage.message
                     }
                 } : {})
             }
-        } as any, {quoted} as any);
+        } as baileys.proto.IMessage, {quoted: quotedMessage || undefined} as unknown as Parameters<typeof generateWAMessageFromContent>[2]);
 
         await this.relayMessage(album.key.remoteJid!, album.message!, {
             messageId: album.key.id!
         });
 
         for (let i = 0; i < medias.length; i++) {
-            const {type, data} = medias[i];
-            const mediaPayload: any = {};
+            const {type, data} = albumMedias[i];
+            const mediaPayload: Record<string, unknown> = {};
             mediaPayload[type] = data;
             if (i === 0 && caption) {
                 mediaPayload.caption = caption;
             }
 
-            const mediaMessage = await generateWAMessage(album.key.remoteJid!, mediaPayload, {
+            const mediaMessage = await generateWAMessage(album.key.remoteJid!, mediaPayload as BaileysMessageContent, {
                 upload: this.waUploadToServer
-            } as any);
+            } as BaileysMessageOptions);
 
-            (mediaMessage as any).message.messageContextInfo = {
+            (mediaMessage as GeneratedMessageWithContext).message.messageContextInfo = {
                 messageAssociation: {
                     associationType: 1,
                     parentMessageKey: album.key
@@ -408,11 +438,11 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
             });
         }
 
-        return album;
+        return album as unknown as baileys.proto.WebMessageInfo;
     };
 
-    conn.sendDocument = async function (jid: string, path: string, filename: string = 'file', quoted: any = null, options: any = {}) {
-        const contextInfo = options.contextInfo ?? await defaultContextInfo('', this);
+    conn.sendDocument = async function (jid: string, path: MediaInput, filename: string = 'file', quoted: QuotedMessage = null, options: SendMessageOptions = {}) {
+        const contextInfo = getContextInfo(options) ?? await defaultContextInfo('', this);
         if (contextInfo.externalAdReply) contextInfo.externalAdReply = formatExternalAdReply(contextInfo.externalAdReply);
         delete options.contextInfo;
 
@@ -425,8 +455,8 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         }, {quoted});
     };
 
-    conn.sendSticker = async (jid: string, path: any, quoted: any = null, options: any = {}) => {
-        const contextInfo = options.contextInfo ?? await defaultContextInfo('', conn)
+    conn.sendSticker = async (jid: string, path: MediaInput, quoted: QuotedMessage = null, options: SendMessageOptions = {}) => {
+        const contextInfo = getContextInfo(options) ?? await defaultContextInfo('', conn)
         if (contextInfo.externalAdReply) contextInfo.externalAdReply = formatExternalAdReply(contextInfo.externalAdReply)
         delete options.contextInfo;
 
@@ -441,8 +471,8 @@ export async function smsg(conn: any, m: any): Promise<BotMessage> {
         )
     }
 
-    conn.sendPtt = async (jid: string, path: string, quoted: any = null, options: any = {}) => {
-        const contextInfo = options.contextInfo || {};
+    conn.sendPtt = async (jid: string, path: MediaInput, quoted: QuotedMessage = null, options: SendMessageOptions = {}) => {
+        const contextInfo = getContextInfo(options) || {};
         delete options.contextInfo;
 
         return conn.sendMessage(
@@ -467,8 +497,8 @@ function cleanJid(jid: string): string {
     return jid.replace(/:\d+/, '').replace('@s.whatsapp.net', '') + '@s.whatsapp.net';
 }
 
-async function streamToBuffer(stream: any): Promise<Buffer> {
+async function streamToBuffer(stream: AsyncIterableStream): Promise<Buffer> {
     const chunks: Buffer[] = [];
-    for await (const chunk of stream) chunks.push(chunk);
+    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
     return Buffer.concat(chunks);
 }

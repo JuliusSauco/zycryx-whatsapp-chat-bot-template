@@ -1,7 +1,7 @@
 import {startSubBot} from '../lib/subbot.js';
 import {definePlugin} from '../core/define-plugin.js';
 
-let commandFlags = {};
+const commandFlags: Record<string, boolean> = {};
 
 export default definePlugin({
     help: ['jadibot', 'serbot', 'code'],
@@ -9,7 +9,6 @@ export default definePlugin({
     command: /^(serbot|code|jadibot|qr)$/i,
     register: false,
     async execute(m, {conn, command}) {
-    // @ts-ignore
     commandFlags[m.sender] = true;
 
     const rtx = `*🔰 LoliBot-MD 🔰*\nㅤㅤㅤㅤSer sub bot\n\n*Con otro telefono que tengas o en la PC escanea este QR para convertirte en un sub bot*\n\n*1. Haga clic en los tres puntos en la esquina superior derecha*\n*2. Toca WhatsApp Web*\n*3. Escanee este código QR*\n*Este código QR expira en 45 segundos!*\n\n> *⚠️ No nos hacemos responsable del mal uso que se le pueda dar.*`;

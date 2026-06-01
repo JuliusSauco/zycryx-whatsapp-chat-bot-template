@@ -1,13 +1,83 @@
 import WebSocket from "ws";
 import axios from 'axios';
+import {createHash} from 'crypto';
 import {wrapper} from 'axios-cookiejar-support';
 import * as cheerio from 'cheerio';
 import {CookieJar} from 'tough-cookie';
 import {ENV} from '../core/env.js';
 
+type UnknownRecord = Record<string, unknown>;
+type ChatMessage = {role: string; content: string; id?: string};
+type ScraperResult = UnknownRecord & {
+    status?: boolean;
+    code?: number;
+    success?: boolean;
+    error?: string;
+    data?: UnknownRecord & {response?: string};
+    result?: UnknownRecord & {
+        pins?: unknown;
+        title?: string;
+        type?: string;
+        download?: string;
+        thumbnail?: string;
+    };
+};
+type BlackboxResult = ScraperResult & {
+    data: UnknownRecord & {response: string; source?: unknown[]};
+    error?: string;
+};
+type PinterestSearchResult = ScraperResult & {
+    result: UnknownRecord & {pins: unknown[]};
+};
+type DownloadScraperResult = ScraperResult & {
+    result: UnknownRecord & {
+        title?: string;
+        type?: string;
+        download?: string;
+        thumbnail?: string;
+    };
+};
+type ValidationError = UnknownRecord & {
+    param: string;
+    error: string;
+};
+type PinterestImage = {url?: string; width?: number; height?: number};
+type PinterestVideo = {url?: string; width?: number; height?: number; file_size?: number};
+type AmdlLinkResult = ScraperResult & {id?: string};
+type AmdlFileInfo = UnknownRecord & {
+    worker?: string;
+    file?: string;
+    title?: string;
+    thumbnail?: string;
+    duration?: number;
+    uploader?: string;
+};
+type CaptchaChallenge = {
+    algorithm: string;
+    challenge: string;
+    salt: string;
+    maxnumber: number;
+    signature: string;
+};
+type YtdownProgress = ScraperResult & {
+    download_url?: string;
+    progress?: number;
+    text?: string;
+};
+type StdoutWithCursor = NodeJS.WriteStream & {
+    clearLine?: () => void;
+    cursorTo?: (x: number) => void;
+};
+
+const errorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
+const axiosStatus = (error: unknown): number => axios.isAxiosError(error) ? error.response?.status || 500 : 500;
+const axiosData = (error: unknown): unknown => axios.isAxiosError(error) ? error.response?.data : undefined;
+const asRecord = (value: unknown): UnknownRecord => value && typeof value === 'object' ? value as UnknownRecord : {};
+const modelConfig = (model: string): UnknownRecord | undefined => (perplexity.api.models as Record<string, UnknownRecord>)[model];
+
 //-------------------[IA BLACKBOXAI]--------------------
 
-async function blackboxAi(query: string): Promise<any> {
+async function blackboxAi(query: string): Promise<BlackboxResult> {
     try {
         const headers = {
             'Accept': '*/*',
@@ -80,7 +150,7 @@ async function blackboxAi(query: string): Promise<any> {
             headers
         });
 
-        const raw = postRes.data;
+        const raw = String(postRes.data);
         const parsed = raw.split('$~~~$');
         if (parsed.length === 1) {
             return {
@@ -93,13 +163,13 @@ async function blackboxAi(query: string): Promise<any> {
             };
         } else if (parsed.length >= 3) {
             const resultText = parsed[2].trim();
-            const resultSources = JSON.parse(parsed[1]);
+            const resultSources = JSON.parse(parsed[1]) as UnknownRecord[];
             return {
                 creator: "elrebelde21",
                 status: true,
                 data: {
                     response: resultText,
-                    source: resultSources.map((s: any) => ({
+                    source: resultSources.map((s) => ({
                         link: s.link,
                         title: s.title,
                         snippet: s.snippet,
@@ -110,12 +180,13 @@ async function blackboxAi(query: string): Promise<any> {
         } else {
             throw new Error("Format response tidak dikenali.");
         }
-    } catch (err: any) {
-        console.error("Terjadi kesalahan:", err.message);
+    } catch (err: unknown) {
+        console.error("Terjadi kesalahan:", errorMessage(err));
         return {
             creator: "elrebelde21",
             status: false,
-            error: err.message
+            data: {response: '', source: []},
+            error: errorMessage(err)
         };
     }
 }
@@ -124,7 +195,7 @@ async function blackboxAi(query: string): Promise<any> {
 
 const exoml = {
     getRandom: () => {
-        const gen = (length: number, charSet: any = {}) => {
+        const gen = (length: number, charSet: Partial<Record<'lowerCase' | 'upperCase' | 'symbol' | 'number', boolean>> = {}) => {
             const l = "abcdefghijklmnopqrstuvwxyz" // lowercase
             const u = l.toUpperCase() // uppercase
             const s = "-_" // symbol
@@ -153,7 +224,7 @@ const exoml = {
         return {id, chatId, userId, antiBotId}
     },
 
-    generate: async (messages: any[], systemPrompt: string, model: string) => {
+    generate: async (messages: ChatMessage[], systemPrompt: string, model: string) => {
 
         const body = JSON.stringify(
             {
@@ -291,8 +362,8 @@ const perplexity = {
         }
     },
 
-    isParams: (messages: any, model: string, temperature: number): any[] => {
-        const errors = [];
+    isParams: (messages: unknown, model: string, temperature: number): ValidationError[] => {
+        const errors: ValidationError[] = [];
 
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
             errors.push({
@@ -304,7 +375,7 @@ const perplexity = {
                 }]
             });
         } else {
-            messages.forEach((msg, index) => {
+            messages.forEach((msg: Partial<ChatMessage>, index: number) => {
                 if (!msg.role || !msg.content) {
                     errors.push({
                         param: `messages[${index}]`,
@@ -324,7 +395,7 @@ const perplexity = {
                 error: 'Literally modelnya kagak diisi bree?? Minimal input lah 1 mah 🗿',
                 available: Object.keys(perplexity.api.models)
             });
-        } else if (!((perplexity.api.models as any)[model])) {
+        } else if (!modelConfig(model)) {
             errors.push({
                 param: 'model',
                 error: 'Model yang lu pilih kagak ada bree! Pilih aja salah satu dari list ini yak ..',
@@ -358,16 +429,16 @@ const perplexity = {
 
     delay: (ms: number) => new Promise(resolve => setTimeout(resolve, ms)),
 
-    retry: async (operation: () => Promise<any>, attempt: number = 1): Promise<any> => {
+    retry: async <T>(operation: () => Promise<T>, attempt: number = 1): Promise<T> => {
         try {
             return await operation();
-        } catch (error: any) {
+        } catch (error: unknown) {
             if (attempt >= perplexity.api.retry.maxAttempts) {
                 throw error;
             }
 
             console.log(`🔄 Ngetry attempt yang ke-${attempt}, nunggu ${perplexity.api.retry.delayMs}ms yak bree 😂...`);
-            console.error(error.message);
+            console.error(errorMessage(error));
 
             await perplexity.delay(perplexity.api.retry.delayMs * attempt);
             return await perplexity.retry(operation, attempt + 1);
@@ -388,7 +459,7 @@ const perplexity = {
         };
     },
 
-    chat: async (messages: any[], model: string = 'sonar', temperature: number = 0.7): Promise<any> => {
+    chat: async (messages: ChatMessage[], model: string = 'sonar', temperature: number = 0.7): Promise<ScraperResult> => {
         const ve = perplexity.isParams(messages, model, temperature);
         if (ve.length > 0) {
             return {
@@ -423,18 +494,18 @@ const perplexity = {
                         response: response.data.choices[0].message.content,
                         model: {
                             name: model,
-                            ...((perplexity.api.models as any)[model])
+                        ...modelConfig(model)
                         }
                     }
                 };
 
-            } catch (error: any) {
+            } catch (error: unknown) {
                 const e = {
                     status: false,
-                    code: error.response?.status || 500,
+                    code: axiosStatus(error),
                     result: {
                         error: 'Error bree 🗿',
-                        details: `${error.message}`,
+                        details: errorMessage(error),
                         solution: 'Coba lagi nanti aja bree, sapa tau berhasil nanti 😂'
                     }
                 };
@@ -443,7 +514,7 @@ const perplexity = {
         });
     },
 
-    stream: async (messages: any[], model: string = 'sonar', temperature: number = 0.7, onChunk: (chunk: string) => void): Promise<any> => {
+    stream: async (messages: ChatMessage[], model: string = 'sonar', temperature: number = 0.7, onChunk: (chunk: string) => void): Promise<ScraperResult> => {
         const ve = perplexity.isParams(messages, model, temperature);
         if (ve.length > 0) {
             return {
@@ -517,18 +588,18 @@ const perplexity = {
                         response: pull,
                         model: {
                             name: model,
-                            ...((perplexity.api.models as any)[model])
+                            ...modelConfig(model)
                         }
                     }
                 };
 
-            } catch (error: any) {
+            } catch (error: unknown) {
                 const e = {
                     status: false,
-                    code: error.response?.status || 500,
+                    code: axiosStatus(error),
                     result: {
                         error: 'Streamingnya error bree 😑',
-                        details: error.message,
+                        details: errorMessage(error),
                         solution: 'Reset ulang aja dah streamingnya bree 🔄'
                     }
                 };
@@ -601,18 +672,19 @@ const pinterest = {
                 return cookies.join('; ');
             }
             return null;
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
             return null;
         }
     },
 
-    search: async (query: string, limit: number = 10): Promise<any> => {
+    search: async (query: string, limit: number = 10): Promise<PinterestSearchResult> => {
         if (!query) {
             return {
                 status: false,
                 code: 400,
                 result: {
+                    pins: [],
                     message: "[ ❌ ] ¡Hermano, qué escribiste? ¿El query está literalmente vacío? ¿Crees que tengo un tercer ojo para adivinar? ¡Esfuérzate un poco, por favor!"
                 }
             };
@@ -625,6 +697,7 @@ const pinterest = {
                     status: false,
                     code: 400,
                     result: {
+                        pins: [],
                         message: "[ ❌ ] No pude obtener las cookies, intenta de nuevo más tarde, ¿ya?"
                     }
                 };
@@ -651,10 +724,13 @@ const pinterest = {
                 params: params
             });
 
-            const container: any[] = [];
-            const results = data.resource_response.data.results.filter((v: any) => v.images?.orig);
+            const container: UnknownRecord[] = [];
+            const results = (data.resource_response.data.results as UnknownRecord[]).filter((v) => asRecord(asRecord(v.images).orig));
 
-            results.forEach((result: any) => {
+            results.forEach((result) => {
+                const images = asRecord(result.images);
+                const pinner = asRecord(result.pinner);
+                const videos = asRecord(result.videos);
                 container.push({
                     id: result.id,
                     title: result.title || "",
@@ -662,21 +738,21 @@ const pinterest = {
                     pin_url: `https://pinterest.com/pin/${result.id}`,
                     media: {
                         images: {
-                            orig: result.images.orig,
-                            small: result.images['236x'],
-                            medium: result.images['474x'],
-                            large: result.images['736x']
+                            orig: images.orig,
+                            small: images['236x'],
+                            medium: images['474x'],
+                            large: images['736x']
                         },
                         video: result.videos ? {
-                            video_list: result.videos.video_list,
-                            duration: result.videos.duration,
-                            video_url: result.videos.video_url
+                            video_list: videos.video_list,
+                            duration: videos.duration,
+                            video_url: videos.video_url
                         } : null
                     },
                     uploader: {
-                        username: result.pinner.username,
-                        full_name: result.pinner.full_name,
-                        profile_url: `https://pinterest.com/${result.pinner.username}`
+                        username: pinner.username,
+                        full_name: pinner.full_name,
+                        profile_url: `https://pinterest.com/${pinner.username}`
                     }
                 });
             });
@@ -686,6 +762,7 @@ const pinterest = {
                     status: false,
                     code: 404,
                     result: {
+                        pins: [],
                         message: `[ ❌ ] ¡Qué desastre, hermano! No encontré nada con "${query}". En serio, tus habilidades de búsqueda necesitan mejorar, sin ofender, ¡esfuérzate más!`
                     }
                 };
@@ -701,18 +778,19 @@ const pinterest = {
                 }
             };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
                 status: false,
-                code: error.response?.status || 500,
+                code: axiosStatus(error),
                 result: {
+                    pins: [],
                     message: "[ ❌ ] ¡El servidor está en caos, hermano! Me molestas todo el tiempo, necesita un descanso. Intenta de nuevo más tarde, ¿ok?"
                 }
             };
         }
     },
 
-    download: async (pinUrl: string): Promise<any> => {
+    download: async (pinUrl: string): Promise<ScraperResult> => {
         if (!pinUrl) {
             return {
                 status: false,
@@ -785,13 +863,13 @@ const pinterest = {
             }
 
             const pd = data.resource_response.data;
-            const mediaUrls: any[] = [];
+            const mediaUrls: UnknownRecord[] = [];
 
             if (pd.videos) {
-                const videoFormats = Object.values(pd.videos.video_list)
-                    .sort((a: any, b: any) => b.width - a.width);
+                const videoFormats = Object.values(pd.videos.video_list as Record<string, PinterestVideo>)
+                    .sort((a, b) => (b.width || 0) - (a.width || 0));
 
-                videoFormats.forEach((video: any) => {
+                videoFormats.forEach((video) => {
                     mediaUrls.push({
                         type: 'video',
                         quality: `${video.width}x${video.height}`,
@@ -814,15 +892,16 @@ const pinterest = {
                     'thumbnail': pd.images['170x']
                 };
 
-                Object.entries(imge).forEach(([quality, image]: [string, any]) => {
-                    if (image) {
+                Object.entries(imge).forEach(([quality, image]) => {
+                    const imageInfo = image as PinterestImage | undefined;
+                    if (imageInfo) {
                         mediaUrls.push({
                             type: 'image',
                             quality: quality,
-                            width: image.width,
-                            height: image.height,
-                            url: image.url,
-                            size: `${image.width}x${image.height}`
+                            width: imageInfo.width,
+                            height: imageInfo.height,
+                            url: imageInfo.url,
+                            size: `${imageInfo.width}x${imageInfo.height}`
                         });
                     }
                 });
@@ -920,8 +999,8 @@ const pinterest = {
                 }
             };
 
-        } catch (error: any) {
-            if (error.response?.status === 404) {
+        } catch (error: unknown) {
+            if (axiosStatus(error) === 404) {
                 return {
                     status: false,
                     code: 404,
@@ -933,7 +1012,7 @@ const pinterest = {
 
             return {
                 status: false,
-                code: error.response?.status || 500,
+                code: axiosStatus(error),
                 result: {
                     message: "[ ❌ ] ¡El servidor está en caos, hermano! Me molestas todo el tiempo, necesita un descanso. Intenta de nuevo más tarde, ¿ok?"
                 }
@@ -941,7 +1020,7 @@ const pinterest = {
         }
     },
 
-    profile: async (username: string): Promise<any> => {
+    profile: async (username: string): Promise<ScraperResult> => {
         if (!username) {
             return {
                 status: false,
@@ -1064,8 +1143,8 @@ const pinterest = {
                 }
             };
 
-        } catch (error: any) {
-            if (error.response?.status === 404) {
+        } catch (error: unknown) {
+            if (axiosStatus(error) === 404) {
                 return {
                     status: false,
                     code: 404,
@@ -1077,7 +1156,7 @@ const pinterest = {
 
             return {
                 status: false,
-                code: error.response?.status || 500,
+                code: axiosStatus(error),
                 result: {
                     message: "[ ❌ ] ¡El servidor está en caos, hermano! Me molestas todo el tiempo, necesita un descanso. Intenta de nuevo más tarde, ¿ok?"
                 }
@@ -1100,7 +1179,7 @@ const amdl = {
         'User-Agent': 'Postify/1.0.0',
     },
     jar: new CookieJar(),
-    client: wrapper(axios.create({jar: new CookieJar()} as any) as any),
+    client: wrapper(axios.create({jar: new CookieJar()} as unknown as Parameters<typeof axios.create>[0])),
 
     ytRegex: /^((?:https?:)?\/\/)?((?:www|m|music)\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(?:embed\/)?(?:v\/)?(?:shorts\/)?([a-zA-Z0-9_-]{11})/,
 
@@ -1111,7 +1190,7 @@ const amdl = {
 
     captcha: {
         hashChallenge: async function (salt: string, number: number, algorithm: string): Promise<string> {
-            return (crypto as any).createHash(algorithm.toLowerCase()).update(salt + number).digest('hex');
+            return createHash(algorithm.toLowerCase()).update(salt + number).digest('hex');
         },
 
         verifyChallenge: async function (challengeData: string, salt: string, algorithm: string, maxNumber: number): Promise<{
@@ -1126,7 +1205,7 @@ const amdl = {
             throw new Error('Fallo en la verificación de Captcha.');
         },
 
-        solve: async function (challenge: any): Promise<string> {
+        solve: async function (challenge: CaptchaChallenge): Promise<string> {
             const {algorithm, challenge: challengeData, salt, maxnumber, signature} = challenge;
             const solution = await this.verifyChallenge(challengeData, salt, algorithm, maxnumber);
             return Buffer.from(
@@ -1142,7 +1221,7 @@ const amdl = {
         },
     },
 
-    isUrl: async function (url: string): Promise<any> {
+    isUrl: async function (url: string): Promise<AmdlLinkResult> {
         if (!url) {
             return {
                 status: false,
@@ -1170,10 +1249,10 @@ const amdl = {
         };
     },
 
-    convert: async function (url: string, format: string, quality: string, isAudio: boolean = false): Promise<any> {
+    convert: async function (url: string, format: string, quality: string, isAudio: boolean = false): Promise<DownloadScraperResult> {
         try {
             const linkx = await this.isUrl(url);
-            if (!linkx.status) return linkx;
+            if (!linkx.status) return {...linkx, result: linkx.result || {}} as DownloadScraperResult;
 
             const formatx = isAudio ? this.formats.audio : this.formats.video;
             if (!quality || !formatx.includes(quality)) {
@@ -1232,7 +1311,7 @@ const amdl = {
             const endpoint = isAudio ? '/convertAudio' : '/convertVideo';
             const res = await this.client.post(`${base}${endpoint}`, form, {
                 headers: {
-                    ...(form as any).getHeaders ? (form as any).getHeaders() : {},
+                    ...(typeof (form as unknown as {getHeaders?: () => UnknownRecord}).getHeaders === 'function' ? (form as unknown as {getHeaders: () => UnknownRecord}).getHeaders() : {}),
                     ...this.headers,
                     Origin: base,
                     Referer: `${base}/`
@@ -1249,8 +1328,8 @@ const amdl = {
                 };
             }
 
-            const ws: any = await this.connect(res.data.message, isAudio);
-            const dlink = `${base}/dl/${ws.worker}/${res.data.message}/${encodeURIComponent(ws.file)}`;
+            const ws = await this.connect(res.data.message, isAudio);
+            const dlink = `${base}/dl/${ws.worker || ''}/${res.data.message}/${encodeURIComponent(ws.file || '')}`;
 
             return {
                 status: true,
@@ -1268,7 +1347,7 @@ const amdl = {
                 }
             };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
                 status: false,
                 code: 500,
@@ -1279,9 +1358,9 @@ const amdl = {
         }
     },
 
-    connect: async function (id: string, isAudio: boolean = false): Promise<any> {
+    connect: async function (id: string, isAudio: boolean = false): Promise<AmdlFileInfo> {
         return new Promise((resolve, reject) => {
-            const ws: any = new (WebSocket as any)(`wss://${isAudio ? 'amp3' : 'amp4'}.cc/ws`, ['json'], {
+            const ws = new WebSocket(`wss://${isAudio ? 'amp3' : 'amp4'}.cc/ws`, ['json'], {
                 headers: {
                     ...this.headers,
                     Origin: `https://${isAudio ? 'amp3' : 'amp4'}.cc`
@@ -1289,7 +1368,7 @@ const amdl = {
                 rejectUnauthorized: false,
             });
 
-            let fileInfo: any = {};
+            let fileInfo: AmdlFileInfo = {};
             let timeoutId = setTimeout(() => {
                 ws.close();
                 reject({
@@ -1302,8 +1381,8 @@ const amdl = {
             }, 30000);
 
             ws.on('open', () => ws.send(id));
-            ws.on('message', (data: any) => {
-                const res = JSON.parse(data);
+            ws.on('message', (data: WebSocket.RawData) => {
+                const res = JSON.parse(data.toString()) as AmdlFileInfo & {event?: string; done?: boolean};
                 if (res.event === 'query' || res.event === 'queue') {
                     fileInfo = {
                         thumbnail: res.thumbnail,
@@ -1317,7 +1396,7 @@ const amdl = {
                     resolve({...fileInfo, ...res});
                 }
             });
-            ws.on('error', (err: any) => {
+            ws.on('error', (_err: unknown) => {
                 clearTimeout(timeoutId);
                 reject({
                     status: false,
@@ -1330,7 +1409,7 @@ const amdl = {
         });
     },
 
-    download: async function (url: string, format: string = '720p'): Promise<any> {
+    download: async function (url: string, format: string = '720p'): Promise<DownloadScraperResult> {
         try {
             const isAudio = format === 'mp3';
             return await this.convert(
@@ -1339,7 +1418,7 @@ const amdl = {
                 isAudio ? '128k' : format,
                 isAudio
             );
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
                 status: false,
                 code: 500,
@@ -1388,19 +1467,19 @@ const ytdown = {
         return null;
     },
 
-    request: async (endpoint: string, params: any = {}): Promise<any> => {
+    request: async (endpoint: string, params: UnknownRecord = {}): Promise<UnknownRecord> => {
         try {
             const {data} = await axios.get(`${ytdown.api.base}${endpoint}`, {
                 params, headers: ytdown.headers, withCredentials: true
             });
             return data;
-        } catch (error: any) {
-            console.error(error.message, error.response?.data);
+        } catch (error: unknown) {
+            console.error(errorMessage(error), axiosData(error));
             throw error;
         }
     },
 
-    download: async (link: string, format: string): Promise<any> => {
+    download: async (link: string, format: string): Promise<ScraperResult> => {
         if (!link) return {error: "[ ❌ ] ¿Dónde está el link? ¡No puedo descargar sin un link, por favor!"};
         if (!ytdown.isUrl(link)) return {error: "[ ❌ ] ¿Qué link metiste, hermano? ¡Solo links de YouTube, que eso es lo que quieres descargar!"};
         if (!format || !ytdown.formats.includes(format)) return {
@@ -1417,27 +1496,27 @@ const ytdown = {
                 url: `https://www.youtube.com/watch?v=${id}`
             });
             return ytdown.handler(response, format, id);
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
-                error: `[ ❌ ] ${error.message}`,
-                details: error.response?.data
+                error: `[ ❌ ] ${errorMessage(error)}`,
+                details: axiosData(error)
             };
         }
     },
 
-    handler: async (data: any, format: string, id: string): Promise<any> => {
-        if (!data.success) return {error: data.message || "[ ❌ ] Error"};
+    handler: async (data: UnknownRecord, format: string, id: string): Promise<ScraperResult> => {
+        if (!data.success) return {error: String(data.message || "[ ❌ ] Error")};
         if (!data.id) return {error: "[ ❌ ] ¡No hay ID de descarga, hermano! Así no puedo continuar el proceso, ¡qué risa!"};
 
         try {
-            const pr = await ytdown.checkProgress(data.id);
+            const pr = await ytdown.checkProgress(String(data.id));
             return pr.success ? ytdown.final(data, pr, format, id) : pr;
-        } catch (error: any) {
-            return {error: `[ ❌ ] ${error.message}`};
+        } catch (error: unknown) {
+            return {error: `[ ❌ ] ${errorMessage(error)}`};
         }
     },
 
-    checkProgress: async (id: string): Promise<any> => {
+    checkProgress: async (id: string): Promise<YtdownProgress> => {
         let attempts = 0, lastProgress = -1;
         process.stdout.write("[ ✨ ] Progreso: [                              ] 0%");
 
@@ -1461,7 +1540,7 @@ const ytdown = {
 
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 attempts++;
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error("\n", error);
                 attempts++;
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1475,17 +1554,17 @@ const ytdown = {
         const barLength = 30;
         const filledLength = Math.round(barLength * progress / 100);
         const bar = '█'.repeat(filledLength) + ' '.repeat(barLength - filledLength);
-        (process.stdout as any).clearLine();
-        (process.stdout as any).cursorTo(0);
+        (process.stdout as unknown as StdoutWithCursor).clearLine?.();
+        (process.stdout as unknown as StdoutWithCursor).cursorTo?.(0);
         process.stdout.write(`[ ✨ ] Progreso: [${bar}] ${progress}%\n\n`);
     },
 
-    final: (init: any, pro: any, formats: string, id: string) => ({
+    final: (init: UnknownRecord, pro: YtdownProgress, formats: string, id: string): ScraperResult => ({
         success: true,
         title: init.title || "[ ❌ ] No sé",
         type: ['360', '480', '720', '1080', '1440', '2160'].includes(formats) ? 'video' : 'audio',
         formats,
-        thumbnail: init.info?.image || `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
+        thumbnail: asRecord(init.info).image || `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
         download: pro.download_url || "[ ❌ ] No sé",
         id: id
     })

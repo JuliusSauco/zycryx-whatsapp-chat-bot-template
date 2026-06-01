@@ -1,10 +1,29 @@
 import moment from 'moment-timezone'
 import {xpRange} from '../lib/levelling.js'
-import fs from "fs";
 import {countUsers, getUserById} from '../services/user.service.js';
 import {definePlugin} from '../core/define-plugin.js';
+import type {Plugin} from '../types/plugin.js';
+import type {proto} from '@whiskeysockets/baileys';
 
-const cooldowns = new Map()
+interface MenuCooldown {
+    lastUsed: number;
+    menuMessage: proto.WebMessageInfo | null;
+}
+
+type MenuPlugin = Plugin & {
+    disabled?: boolean;
+    premium?: boolean;
+};
+
+interface HelpEntry {
+    help: Array<string | undefined>;
+    tags: Array<string | undefined>;
+    prefix: boolean;
+    limit?: number;
+    premium?: boolean;
+}
+
+const cooldowns = new Map<string, MenuCooldown>()
 const COOLDOWN_DURATION = 180000
 
 const tags = {
@@ -66,7 +85,7 @@ export default definePlugin({
         try {
             const senderTag = m.sender ? `@${m.sender.split('@')[0]}` : '@usuario';
             await conn.reply(chatId, `⚠️ Hey ${senderTag}, pendejo, ahí está el menú 🙄\n> Solo se enviará cada 3 minutos para evitar spam, Desplázate hacia arriba para verlo completo. 👆`, chatData.menuMessage || m);
-        } catch (err: any) {
+        } catch (err: unknown) {
             return;
         }
         return;
@@ -81,7 +100,7 @@ export default definePlugin({
     let user;
     try {
         user = await getUserById(m.sender) || {limite: 0, level: 0, exp: 0, role: '-'};
-    } catch (err: any) {
+    } catch (err: unknown) {
         user = {limite: 0, level: 0, exp: 0, role: '-'};
     }
 
@@ -91,7 +110,7 @@ export default definePlugin({
         const userCounts = await countUsers();
         totalreg = userCounts.total;
         rtotalreg = userCounts.registered;
-    } catch (err: any) {
+    } catch (err: unknown) {
     }
     const toUsers = toNum(totalreg);
     const toUserReg = toNum(rtotalreg);
@@ -106,31 +125,25 @@ export default definePlugin({
         BoTag = jidNum;
     }
 
-    // @ts-ignore
-    const multiplier = "750" || 1.5;
-    // @ts-ignore
+    const multiplier = 750;
     const {min, xp, max} = xpRange(user.level || 0, multiplier);
 
-    const help = Object.values(global.plugins).filter((p: any) => !p.disabled).map(plugin => ({
+    const help: HelpEntry[] = Object.values(global.plugins as Record<string, MenuPlugin>).filter((p) => !p.disabled).map(plugin => ({
         help: Array.isArray(plugin.help) ? plugin.help : [plugin.help],
         tags: Array.isArray(plugin.tags) ? plugin.tags : [plugin.tags],
         prefix: 'customPrefix' in plugin,
         limit: plugin.limit,
-        // @ts-ignore
         premium: plugin.premium
     }));
 
     const categoryRequested = args[0]?.toLowerCase();
-    // @ts-ignore
-    const validTags = categoryRequested && tags[categoryRequested] ? [categoryRequested] : Object.keys(tags);
+    const validTags: Array<keyof typeof tags> = categoryRequested && isMenuTag(categoryRequested) ? [categoryRequested] : Object.keys(tags) as Array<keyof typeof tags>;
     let text = defaultMenu.before;
 
     for (const tag of validTags) {
-        // @ts-ignore
         const comandos = help.filter(menu => menu.tags && menu.tags.includes(tag) && menu.help);
         if (!comandos.length) continue;
 
-        // @ts-ignore
         text += '\n' + defaultMenu.header.replace(/%category/g, tags[tag]) + '\n';
         for (const plugin of comandos) {
             for (const helpCmd of plugin.help) {
@@ -161,10 +174,8 @@ export default definePlugin({
         BoTag: BoTag,
     };
 
-    // @ts-ignore
-    text = String(text).replace(new RegExp(`%(${Object.keys(replace).join('|')})`, 'g'), (_, key) => replace[key] ?? '');
+    text = String(text).replace(new RegExp(`%(${Object.keys(replace).join('|')})`, 'g'), (_, key: keyof typeof replace) => String(replace[key] ?? ''));
     try {
-        let pp = fs.readFileSync('./media/Menu2.jpg');
         const menuMessage = await conn.sendMessage(chatId, {
             text: text,
             contextInfo: {
@@ -173,20 +184,24 @@ export default definePlugin({
         }, {quoted: m});
         cooldowns.set(chatId, {lastUsed: now, menuMessage: menuMessage})
         m.react('🙌');
-    } catch (err: any) {
+    } catch (err: unknown) {
         m.react('❌')
         console.error(err);
     }
     }
 })
 
-const clockString = (ms: any) => {
+const clockString = (ms: number) => {
     const h = isNaN(ms) ? '--' : Math.floor(ms / 3600000)
     const m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60
     const s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60
-    return [h, m, s].map((v: any) => v.toString().padStart(2, 0)).join(':')
+    return [h, m, s].map((v) => v.toString().padStart(2, '0')).join(':')
 }
 
-const toNum = (n: any) => (n >= 1_000_000) ? (n / 1_000_000).toFixed(1) + 'M'
+const toNum = (n: number) => (n >= 1_000_000) ? (n / 1_000_000).toFixed(1) + 'M'
     : (n >= 1_000) ? (n / 1_000).toFixed(1) + 'k'
         : n.toString()
+
+function isMenuTag(value: string): value is keyof typeof tags {
+    return value in tags;
+}

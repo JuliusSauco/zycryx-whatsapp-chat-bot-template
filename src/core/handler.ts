@@ -18,6 +18,37 @@ import {incrementCommandUsage} from '../services/stats.service.js';
 import {getSubbotConfig} from '../services/subbot.service.js';
 import {getGroupSettings} from '../services/group-settings.service.js';
 import {ENV} from './env.js';
+import type {ExtendedConn} from '../types/context.js';
+import type {BotMessage} from '../types/message.js';
+import type {GroupMetadata, GroupParticipant, WASocket} from '@whiskeysockets/baileys';
+import type {HandlerContext} from './context-builder.js';
+
+type ParticipantUpdateItem = string | {
+    id?: string;
+    phoneNumber?: string;
+};
+
+interface GroupParticipantsUpdate {
+    id: string;
+    participants: ParticipantUpdateItem[];
+    action: string;
+    author?: string | {id?: string} | null;
+}
+
+interface GroupUpdate {
+    id: string;
+    subject?: string;
+    desc?: string;
+    picture?: string;
+}
+
+interface CallUpdate {
+    from: string;
+}
+
+type EventConn = WASocket & {
+    groupCache?: ExtendedConn['groupCache'];
+};
 
 const processedMessages = new Set<string>();
 
@@ -63,12 +94,7 @@ function pickRandom<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-export async function participantsUpdate(conn: any, {id, participants, action, author}: {
-    id: string;
-    participants: any[];
-    action: string;
-    author?: any
-}) {
+export async function participantsUpdate(conn: EventConn, {id, participants, action, author}: GroupParticipantsUpdate) {
     try {
         if (!id || !Array.isArray(participants) || !action) {
             console.log(chalk.yellow(`[GRUPO-EVENTO] descartado: id=${id} action=${action} participants=${JSON.stringify(participants)}`));
@@ -81,7 +107,7 @@ export async function participantsUpdate(conn: any, {id, participants, action, a
         // se da bienvenida sin importar cómo entró el participante.
 
         // Fetch fresco para incluir al nuevo participante; si falla, caer al cache.
-        let metadata = await conn.groupMetadata(id).catch(() => null);
+        let metadata: GroupMetadata | null = await conn.groupMetadata(id).catch(() => null);
         if (metadata) {
             groupMetaCache.set(id, metadata);
             conn?.groupCache?.set?.(id, metadata);
@@ -96,7 +122,7 @@ export async function participantsUpdate(conn: any, {id, participants, action, a
         const botJidClean = (conn.user?.id || "").replace(/:\d+/, "")
         const botLidClean = (conn.user?.lid || "").replace(/:\d+/, "")
 
-        const isBotAdmin = metadata.participants.some((p: any) => {
+        const isBotAdmin = metadata.participants.some((p) => {
             const cleanId = p.id?.replace(/:\d+/, "");
             return (
                 (cleanId === botJidClean || cleanId === botLidClean) &&
@@ -173,7 +199,7 @@ export async function participantsUpdate(conn: any, {id, participants, action, a
             let ppUrl: string | null = null;
             if (action !== "add" && action !== "remove") {
                 try {
-                    ppUrl = await conn.profilePictureUrl(participant, "image");
+                    ppUrl = await conn.profilePictureUrl(participant, "image") || null;
                 } catch {
                     ppUrl = null;
                 }
@@ -198,17 +224,17 @@ export async function participantsUpdate(conn: any, {id, participants, action, a
                                     image: welcomeImage,
                                     caption: msg,
                                     contextInfo: {mentionedJid: [userJid]}
-                                }, {quoted: null})
+                                })
                             } else {
                                 // Fallback si Menu1.jpg no está disponible en disco.
                                 console.log(chalk.yellow(`[WELCOME] Menu1.jpg no encontrado en ${DEFAULT_PP_PATH} — se envía solo texto`));
                                 await conn.sendMessage(id, {
                                     text: msg,
                                     contextInfo: {mentionedJid: [userJid]}
-                                }, {quoted: null})
+                                })
                             }
                             console.log(chalk.green(`[WELCOME] ✅ bienvenida enviada a ${userTag} en "${groupName}"`));
-                        } catch (e: any) {
+                        } catch (e: unknown) {
                             console.error(chalk.red(`[WELCOME] ❌ falló el envío a ${userTag} en ${id}:`), e);
                         }
                     } else {
@@ -224,7 +250,7 @@ export async function participantsUpdate(conn: any, {id, participants, action, a
                             await markBotLeftGroup(id, botJid);
                             console.log(`[DEBUG] El bot fue eliminado del grupo ${id}. Marcado como 'joined = false'.`);
                         }
-                    } catch (err: any) {
+                    } catch (err: unknown) {
                         console.error("❌ Error en 'remove':", err);
                     }
 
@@ -245,16 +271,16 @@ export async function participantsUpdate(conn: any, {id, participants, action, a
                                     image: byeImage,
                                     caption: msg,
                                     contextInfo: {mentionedJid: [userJid]}
-                                }, {quoted: null})
+                                })
                             } else {
                                 // Fallback si Menu1.jpg no está disponible en disco.
                                 await conn.sendMessage(id, {
                                     text: msg,
                                     contextInfo: {mentionedJid: [userJid]}
-                                }, {quoted: null})
+                                })
                             }
                             console.log(chalk.green(`[BYE] 👋 despedida enviada a ${userTag} en "${groupName}"`));
-                        } catch (e: any) {
+                        } catch (e: unknown) {
                             console.error(chalk.red(`[BYE] ❌ falló el envío a ${userJid} en ${id}:`), e);
                         }
                     } else {
@@ -288,7 +314,7 @@ export async function participantsUpdate(conn: any, {id, participants, action, a
                                     sourceUrl: "skyultraplus.com"
                                 }
                             }
-                        }, {quoted: null})
+                        })
                     }
                     break
 
@@ -318,28 +344,23 @@ export async function participantsUpdate(conn: any, {id, participants, action, a
                                     sourceUrl: "skyultraplus.com"
                                 }
                             }
-                        }, {quoted: null})
+                        })
                     }
                     break
             }
         }
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(chalk.red(`❌ Error en participantsUpdate - Acción: ${action} | Grupo: ${id}`), err);
     }
 }
 
-export async function groupsUpdate(conn: any, {id, subject, desc, picture}: {
-    id: string;
-    subject?: string;
-    desc?: string;
-    picture?: string
-}) {
+export async function groupsUpdate(conn: EventConn, {id, subject, desc, picture}: GroupUpdate) {
     try {
         const botId = conn.user?.id;
-        const botConfig = await getSubbotConfig(botId)
+        const botConfig = await getSubbotConfig(botId || '')
         const modo = botConfig.mode || "public";
         const botJid = conn.user?.id?.replace(/:\d+@/, "@");
-        const isCreator = global.owner.map(([v]) => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(botJid);
+        const isCreator = global.owner.map(([v]) => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(botJid || '');
 
         const settings = await getGroupSettings(id) || {
             welcome: true,
@@ -352,7 +373,7 @@ export async function groupsUpdate(conn: any, {id, subject, desc, picture}: {
         groupMetaCache.set(id, metadata);
         conn?.groupCache?.set?.(id, metadata);
         const groupName = subject || metadata.subject || "Grupo";
-        const isBotAdmin = metadata.participants.some((p: any) => p.id.includes(botJid) && p.admin);
+        const isBotAdmin = metadata.participants.some((p) => p.id.includes(botJid || '') && p.admin);
 
         let message = "";
         if (subject) {
@@ -366,27 +387,26 @@ export async function groupsUpdate(conn: any, {id, subject, desc, picture}: {
         if (message && settings.detect) {
             await conn.sendMessage(id, {text: message});
         }
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(chalk.red("❌ Error en groupsUpdate:"), err);
     }
 }
 
-export async function callUpdate(conn: any, call: any) {
+export async function callUpdate(conn: WASocket, call: CallUpdate) {
     try {
         const callerId = call.from;
-        const userTag = `@${callerId.split("@")[0]}`;
-        const botConfig = await getSubbotConfig(conn.user?.id);
+        const botConfig = await getSubbotConfig(conn.user?.id || '');
         if (!botConfig.anti_call) return;
         await conn.sendMessage(callerId, {
             text: `🚫 Está prohibido hacer llamadas, serás bloqueado...`
         });
         await conn.updateBlockStatus(callerId, "block");
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(chalk.red("❌ Error en callUpdate:"), err);
     }
 }
 
-export async function handler(conn: any, m: any) {
+export async function handler(conn: ExtendedConn, m: BotMessage) {
     const perfStart = performance.now();
     const marks: Record<string, number> = {};
     const chatId = m.key?.remoteJid || "";
@@ -439,7 +459,7 @@ export async function handler(conn: any, m: any) {
         try {
             const result = await plugin.before!(m, {conn, isOwner: ctx.isOwner});
             if (result === false) return;
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(chalk.red(e));
         }
     }
@@ -493,7 +513,7 @@ export async function handler(conn: any, m: any) {
         markPerf(marks, 'plugin', perfStart);
         logPerfIfSlow(marks, perfStart, parsed.command, chatId);
 
-    } catch (e: any) {
+    } catch (e: unknown) {
         if (typeof e === 'string') {
             await m.reply(e);
             return;
@@ -516,7 +536,7 @@ function logPerfIfSlow(marks: Record<string, number>, start: number, command: st
     console.log(chalk.yellow(`[PERF] total=${total}ms cmd=${command || '-'} chat=${chatId} ${chunks}`));
 }
 
-function isDuplicate(m: any): boolean {
+function isDuplicate(m: BotMessage): boolean {
     const hash = crypto.createHash("md5").update(m.key.id + (m.key.remoteJid || "")).digest("hex");
     if (processedMessages.has(hash)) return true;
     processedMessages.add(hash);
@@ -524,7 +544,7 @@ function isDuplicate(m: any): boolean {
     return false;
 }
 
-function upsertChat(chatId: string, conn: any): void {
+function upsertChat(chatId: string, conn: ExtendedConn): void {
     upsertActiveChat({
         chatId,
         isGroup: chatId.endsWith('@g.us'),
@@ -533,7 +553,7 @@ function upsertChat(chatId: string, conn: any): void {
     }).catch(console.error);
 }
 
-function trackMessageCount(m: any, ctx: {
+function trackMessageCount(m: BotMessage, ctx: {
     chatId: string;
     sender: string;
     botJid: string;
@@ -550,14 +570,7 @@ function trackMessageCount(m: any, ctx: {
     incrementMessageCount(ctx.sender, ctx.chatId).catch(console.error);
 }
 
-async function antifakeCheck(conn: any, m: any, ctx: {
-    chatId: string;
-    isGroup: boolean;
-    isAdmin: boolean;
-    isBotAdmin: boolean;
-    botJid: string;
-    groupSettings: { antifake: boolean };
-}): Promise<boolean> {
+async function antifakeCheck(conn: ExtendedConn, m: BotMessage, ctx: Pick<HandlerContext, 'chatId' | 'isGroup' | 'isAdmin' | 'isBotAdmin' | 'botJid' | 'groupSettings'>): Promise<boolean> {
     if (!ctx.isGroup || !m.sender || !isUserJid(m.sender)) return false;
     // Lectura en memoria (sin query) — group_settings ya viene precargado en el ctx.
     if (!ctx.groupSettings?.antifake) return false;
@@ -576,13 +589,13 @@ async function antifakeCheck(conn: any, m: any, ctx: {
         });
         await conn.groupParticipantsUpdate(ctx.chatId, [m.sender], "remove");
         return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(err);
     }
     return false;
 }
 
-async function upsertUser(m: any): Promise<void> {
+async function upsertUser(m: BotMessage): Promise<void> {
     try {
         // Identidad unificada — misma lógica que context-builder.resolveSender.
         const info = resolveSenderInfo(m);
@@ -595,7 +608,7 @@ async function upsertUser(m: any): Promise<void> {
         if (!m.sender) return;
 
         await upsertUserService({id: m.sender, nombre: userName, num, lid: m.lid});
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(err);
     }
 }

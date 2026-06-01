@@ -67,7 +67,7 @@ async function sticker4(img: Buffer, url?: string): Promise<Buffer> {
     return result.data;
 }
 
-async function sticker5(img: Buffer, url?: string, packname?: string, author?: string, categories: string[] = [''], extra: Record<string, any> = {}): Promise<Buffer> {
+async function sticker5(img: Buffer, url?: string, packname?: string, author?: string, categories: string[] = [''], extra: Record<string, unknown> = {}): Promise<Buffer> {
     const {Sticker} = await import('wa-sticker-formatter');
     const stickerMetadata = {type: 'default', pack: packname, author, categories, ...extra};
     return (new Sticker(img ? img : url, stickerMetadata)).toBuffer();
@@ -105,7 +105,7 @@ async function sticker6(img: Buffer, url?: string): Promise<Buffer> {
                     await fs.promises.unlink(outputPath);
                     resolve(buffer);
                 })
-                .on('error', async (err: any) => {
+                .on('error', async (err: unknown) => {
                     console.error('❌ ffmpeg video error:', err);
                     await fs.promises.unlink(inputPath).catch(() => {
                     });
@@ -150,7 +150,7 @@ async function sticker7(img: Buffer, url?: string): Promise<Buffer> {
                     await fs.promises.unlink(outputPath);
                     resolve(buffer);
                 })
-                .on('error', async (err: any) => {
+                .on('error', async (err: unknown) => {
                     console.error('❌ ffmpeg video error (sticker7):', err);
                     await fs.promises.unlink(inputPath).catch(() => {
                     });
@@ -163,7 +163,7 @@ async function sticker7(img: Buffer, url?: string): Promise<Buffer> {
     });
 }
 
-async function addExif(webpSticker: Buffer, packname: string, author: string, categories: string[] = [''], extra: Record<string, any> = {}): Promise<Buffer> {
+async function addExif(webpSticker: Buffer, packname: string, author: string, categories: string[] = [''], extra: Record<string, unknown> = {}): Promise<Buffer> {
     const img = new webp.Image();
     const stickerPackId = crypto.randomBytes(32).toString('hex');
     const json = {
@@ -182,7 +182,8 @@ async function addExif(webpSticker: Buffer, packname: string, author: string, ca
 }
 
 async function sticker(img: Buffer | false | null, url: string | false | null, packname: string, author: string): Promise<Buffer> {
-    let lastError: any, stiker: any;
+    let lastError: unknown = null;
+    let stiker: Buffer | string | null = null;
     for (const fn of [sticker6, sticker7, sticker5, sticker4, sticker2, sticker3]) {
 
         try {
@@ -200,10 +201,6 @@ async function sticker(img: Buffer | false | null, url: string | false | null, p
                     }
                 }
                 if (stiker.length > 100) return stiker;
-            }
-
-            if (typeof stiker === 'string' && stiker.includes('html')) {
-                continue;
             }
 
         } catch (err) {

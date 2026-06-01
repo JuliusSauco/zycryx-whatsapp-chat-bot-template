@@ -166,14 +166,14 @@ ${pref}menu
         userNationality = null;
     }
 
-    let user = await getUserById(who) || {registered: false};
+    const user = await getUserById(who);
     const input = text.trim()
     const step = estados[who]?.step || 0
     let name2 = m.pushName || 'loli'
     const rtotalreg = (await countUsers()).registered;
 
     if (command === 'reg' || command === 'verify' || command === 'verificar') {
-        if (user.registered) return m.reply(`*Ya estás registrado 🤨*`)
+        if (user?.registered) return m.reply(`*Ya estás registrado 🤨*`)
         if (estados[who]?.step) return m.reply('⚠️ Ya tienes un registro en curso. Completa el registro respondiendo el paso anterior.')
         if (!Reg.test(text)) return m.reply(`*⚠️ ¿No sabes cómo usar este comando?* Usa de la siguiente manera:\n\n*${usedPrefix + command} nombre.edad*\n*• Ejemplo:* ${usedPrefix + command} ${name2}.16`)
 
@@ -193,15 +193,15 @@ ${pref}menu
     }
 
     if (command == 'nserie' || command == 'myns' || command == 'sn') {
-        const sn = user.serialNumber || user.serial_number || createHash('md5').update(m.sender).digest('hex');
+        const sn = user?.serialNumber || user?.serial_number || createHash('md5').update(m.sender).digest('hex');
         await conn.fakeReply(m.chat, sn, '0@s.whatsapp.net', `⬇️ ᴇsᴛᴇ ᴇs sᴜs ɴᴜᴍᴇʀᴏ ᴅᴇʟ sᴇʀɪᴇ ⬇️`, 'status@broadcast')
 //m.reply(sn);
     }
 
     if (command == 'unreg') {
         if (!args[0]) return m.reply(`✳️ *Ingrese número de serie*\nVerifique su número de serie con el comando...\n\n*${usedPrefix}nserie*`)
-        const user2 = await getUserById(m.sender) || {};
-        const sn = user2.serialNumber || user2.serial_number || createHash('md5').update(m.sender).digest('hex');
+        const user2 = await getUserById(m.sender);
+        const sn = user2?.serialNumber || user2?.serial_number || createHash('md5').update(m.sender).digest('hex');
         if (args[0] !== sn) return m.reply('⚠️ *Número de serie incorrecto*')
         await unregisterUser(m.sender);
         await conn.fakeReply(m.chat, `😢 Ya no estas registrado`, '0@s.whatsapp.net', `ᴿᵉᵍᶦˢᵗʳᵒ ᵉˡᶦᵐᶦⁿᵃᵈᵒ`, 'status@broadcast')

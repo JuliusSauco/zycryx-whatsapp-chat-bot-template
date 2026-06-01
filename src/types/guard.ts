@@ -1,9 +1,11 @@
 import type {HandlerContext} from '../core/context-builder.js';
+import type {ExtendedConn} from './context.js';
+import type {BotMessage} from './message.js';
 import type {Plugin} from './plugin.js';
 
 export interface GuardContext {
-    m: any;
-    conn: any;
+    m: BotMessage;
+    conn: ExtendedConn;
     ctx: HandlerContext;
     plugin: Plugin;
 }

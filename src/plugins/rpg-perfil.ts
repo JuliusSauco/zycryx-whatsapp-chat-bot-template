@@ -37,7 +37,8 @@ export default definePlugin({
     const biot = bio.status || 'Sin Info'
     const profilePic = await conn.profilePictureUrl(who, 'image').catch(() => 'https://telegra.ph/file/9d38415096b6c46bf03f8.jpg') as string
     const buffer = await (await fetch(profilePic)).buffer()
-    const {exp, limite, nombre, registered, edad, level, marry, gender, birthday} = user
+    const {exp, limite, nombre, registered, edad, marry, gender, birthday} = user
+    const level = user.level ?? 0
     const {min, xp, max} = xpRange(level, global.multiplier || 1)
     const sn = createHash('md5').update(String(who)).digest('hex')
     const phone = formatPhoneNumber(who)

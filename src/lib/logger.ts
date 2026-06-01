@@ -1,5 +1,11 @@
 import chalk from "chalk";
-import type {WASocket} from "@whiskeysockets/baileys";
+
+interface LoggerConnection {
+    user?: {
+        id?: string;
+        name?: string;
+    };
+}
 
 const LogLevel = {
     ERROR: 0,
@@ -10,7 +16,7 @@ const LogLevel = {
 const CURRENT_LOG_LEVEL: number = LogLevel.COMMAND;
 
 interface LogCommandParams {
-    conn: WASocket;
+    conn: LoggerConnection;
     sender: string;
     chatId: string;
     isGroup: boolean;
@@ -19,7 +25,7 @@ interface LogCommandParams {
 }
 
 interface LogMessageParams {
-    conn: WASocket;
+    conn: LoggerConnection;
     sender: string;
     chatId: string;
     isGroup: boolean;
@@ -27,18 +33,17 @@ interface LogMessageParams {
     timestamp?: Date;
 }
 
-function formatBotLabel(conn: WASocket): string {
-    const jidRaw = (conn as any)?.user?.id || "";
+function formatBotLabel(conn: LoggerConnection): string {
+    const jidRaw = conn.user?.id || "";
     const jidClean = jidRaw.replace(/:\d+/, "").split("@")[0];
-    const name = (conn as any)?.user?.name?.trim() || jidClean;
-    const isSubbot = globalThis.conns?.some((c: any) => c.user?.id === (conn as any)?.user?.id);
+    const name = conn.user?.name?.trim() || jidClean;
+    const isSubbot = globalThis.conns?.some((c) => c.user?.id === conn.user?.id);
     const label = `${chalk.yellowBright("+" + jidClean)} ${chalk.cyanBright("-")} ${chalk.bold(name)}${isSubbot ? chalk.magenta(" (sub bot)") : ""}`;
     return label;
 }
 
-function logCommand({conn, timestamp, sender, chatId, isGroup, command}: LogCommandParams): void {
+function logCommand({conn, sender, isGroup, command}: LogCommandParams): void {
     if (CURRENT_LOG_LEVEL < LogLevel.COMMAND) return;
-    const ts = new Date(timestamp || Date.now()).toLocaleString("es-AR");
     const botLabel = formatBotLabel(conn);
 
     console.log(
@@ -49,9 +54,8 @@ function logCommand({conn, timestamp, sender, chatId, isGroup, command}: LogComm
     );
 }
 
-function logMessage({conn, timestamp, sender, chatId, isGroup, text}: LogMessageParams): void {
+function logMessage({conn, sender, isGroup, text}: LogMessageParams): void {
     if (CURRENT_LOG_LEVEL < LogLevel.MESSAGE) return;
-    const ts = new Date(timestamp || Date.now()).toLocaleString("es-AR");
     const botLabel = formatBotLabel(conn);
 
     console.log(

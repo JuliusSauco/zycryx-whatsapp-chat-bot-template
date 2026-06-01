@@ -35,6 +35,48 @@ export interface UserWallet {
     ryTime: number;
 }
 
+export interface UserRecord {
+    id: string;
+    nombre: string | null;
+    registered: boolean | null;
+    num: string | null;
+    lid: string | null;
+    banned: boolean | null;
+    razonBan: string | null;
+    avisosBan: number | null;
+    warnPv: boolean | null;
+    warn: number | null;
+    warnAntiporn: number | null;
+    warnEstado: number | null;
+    edad: number | null;
+    gender: string | null;
+    birthday: string | null;
+    money: number | null;
+    limite: number | null;
+    exp: number | null;
+    banco: number | null;
+    level: number | null;
+    role: string | null;
+    regTime: Date | null;
+    serialNumber: string | null;
+    serial_number?: string | null;
+    stickerPackname: string | null;
+    stickerAuthor: string | null;
+    ryTime: number | null;
+    lastwork: number | null;
+    lastmiming: number | null;
+    lastclaim: number | null;
+    dailystreak: number | null;
+    lastcofre: number | null;
+    lastrob: number | null;
+    lastslut: number | null;
+    timevot: number | null;
+    wait: number | null;
+    crime: number | null;
+    marry: string | null;
+    marryRequest: string | null;
+}
+
 export interface UserStickerSettings {
     sticker_packname: string | null;
     sticker_author: string | null;
@@ -79,7 +121,7 @@ export interface CompleteRegistrationInput {
 }
 
 export interface UserRepository {
-    findById(userId: string): Promise<any | null>;
+    findById(userId: string): Promise<UserRecord | null>;
     findNameById(userId: string): Promise<string | null>;
     findWallet(userId: string): Promise<UserWallet | null>;
     listWallets(): Promise<UserWallet[]>;

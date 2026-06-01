@@ -12,11 +12,11 @@ export default definePlugin({
     let _muptime
     if (process.send) {
         process.send('uptime')
-        // @ts-ignore
-        _muptime = await new Promise(resolve => {
+        const uptimeMessage = await new Promise<unknown>(resolve => {
             process.once('message', resolve)
             setTimeout(resolve, 1000)
-        }) * 1000
+        })
+        _muptime = typeof uptimeMessage === 'number' ? uptimeMessage * 1000 : undefined
     }
     let fkontak = {
         "key": {
@@ -43,13 +43,13 @@ export default definePlugin({
     }
 })
 
-function pickRandom(list: any) {
+function pickRandom<T>(list: T[]): T {
     return list[Math.floor(Math.random() * list.length)]
 }
 
-function clockString(ms: any) {
+function clockString(ms: number) {
     let h = isNaN(ms) ? '--' : Math.floor(ms / 3600000)
     let m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60
     let s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60
-    return [h, m, s].map((v: any) => v.toString().padStart(2, 0)).join(':')
+    return [h, m, s].map((v) => v.toString().padStart(2, '0')).join(':')
 }

@@ -2,6 +2,9 @@ import type {Guard} from '../types/guard.js';
 import {SILENT_REJECT} from '../types/guard.js';
 import {cleanJid, isUserJid} from '../utils/jid.js';
 import {getUserBanInfo, registerBanNotice} from '../services/user.service.js';
+import type {BotMessage} from '../types/message.js';
+
+type MessageKeyWithAlt = BotMessage['key'] & {participantAlt?: string};
 
 /** Verifica si el usuario está baneado. Envía aviso (máx 3) y corta. */
 export const banGuard: Guard = async ({m, conn, ctx}) => {
@@ -9,8 +12,9 @@ export const banGuard: Guard = async ({m, conn, ctx}) => {
         let rawSender = m.sender || m.key?.participant || "";
         let senderId: string;
 
-        if (rawSender.endsWith("@lid") && m.key?.participantAlt && isUserJid(m.key.participantAlt)) {
-            senderId = m.key.participantAlt;
+        const key = m.key as MessageKeyWithAlt;
+        if (rawSender.endsWith("@lid") && key.participantAlt && isUserJid(key.participantAlt)) {
+            senderId = key.participantAlt;
         } else {
             senderId = rawSender;
         }
@@ -34,7 +38,7 @@ export const banGuard: Guard = async ({m, conn, ctx}) => {
             }
             return SILENT_REJECT;
         }
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error("❌ Error al verificar baneo:", e);
     }
 

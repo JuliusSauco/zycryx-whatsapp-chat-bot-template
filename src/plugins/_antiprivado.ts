@@ -1,11 +1,12 @@
 import {getSubbotConfig} from '../services/subbot.service.js'
 import {getPrivateWarn, setPrivateWarn} from '../services/user.service.js'
+import type {ExtendedConn} from '../types/context.js'
+import type {BotMessage} from '../types/message.js'
 
 const comandosPermitidos = ['code', 'serbot', 'jadibot', 'bots', 'piedra', 'tijera', 'papel']
 
-export async function before(m: any, {conn, isOwner}: any) {
-    // @ts-ignore
-    const botId = conn.user?.id || globalThis.conn.user.id
+export async function before(m: BotMessage, {conn, isOwner}: {conn: ExtendedConn; isOwner: boolean}) {
+    const botId = conn.user?.id || globalThis.conn.user?.id || ''
     const config = await getSubbotConfig(botId)
     const chatId = m.chat || m.key?.remoteJid || ''
     const sender = m.sender
@@ -50,7 +51,7 @@ export async function before(m: any, {conn, isOwner}: any) {
         }
 
         return false
-    } catch (e: any) {
+    } catch (e: unknown) {
         return false
     }
 }

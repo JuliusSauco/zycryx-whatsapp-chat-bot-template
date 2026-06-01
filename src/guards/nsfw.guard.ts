@@ -30,8 +30,10 @@ export const nsfwGuard: Guard = async ({m, conn, ctx, plugin}) => {
                         sourceUrl: info.md,
                         thumbnail: m.pp
                     }
-                }
-            }, {quoted: m, ephemeralExpiration: 24 * 60 * 100, disappearingMessagesInChat: 24 * 60 * 100});
+                },
+                ephemeralExpiration: 24 * 60 * 100,
+                disappearingMessagesInChat: 24 * 60 * 100
+            });
         } catch {
             await conn.sendMessage(ctx.chatId, {
                 text: modohorny

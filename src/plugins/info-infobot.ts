@@ -13,7 +13,7 @@ const format = sizeFormatter({
     std: 'JEDEC',
     decimalPlaces: 2,
     keepTrailingZeroes: false,
-    render: (literal: any, symbol: any) => `${literal} ${symbol}B`
+    render: (literal: string | number, symbol: string) => `${literal} ${symbol}B`
 })
 
 const getCpuUsage = () => {
@@ -22,10 +22,10 @@ const getCpuUsage = () => {
     return ((load / cores) * 100).toFixed(2) + '%'
 }
 
-const getFolderSize = (folderPath: any) => {
+const getFolderSize = (folderPath: string) => {
     let totalSize = 0
 
-    function calculateSize(directory: any) {
+    function calculateSize(directory: string) {
         const files = fs.readdirSync(directory)
         for (const file of files) {
             const filePath = path.join(directory, file)
@@ -64,7 +64,6 @@ export default definePlugin({
     command: /^(infobot|informacionbot|infololi)$/i,
     register: true,
     async execute(m, {conn}) {
-    const legacyConn = conn as any;
     const start = speed();
     const subbotsCount = (global.conns || []).filter(sock => {
         const id = sock?.userId || sock?.user?.id?.split('@')[0]
@@ -79,10 +78,10 @@ export default definePlugin({
     const gruposSalidos = totalGrupos - gruposUnidos;
     const privates = botChats.privateChats;
     const chatsTotales = totalGrupos + privates;
-    const totalPlugins = Object.values(global.plugins).filter((p: any) => p.help && p.tags).length;
+    const totalPlugins = Object.values(global.plugins).filter((p) => p.help && p.tags).length;
     const latencia = speed() - start;
     const uptime = process.uptime() * 1000;
-    const config = await getSubbotConfig(legacyConn.user?.id || legacyConn.user?.jid);
+    const config = await getSubbotConfig(conn.user?.id || '');
     const prefijos = Array.isArray(config.prefix) ? config.prefix.join(' ') : config.prefix;
     const modo = config.mode === 'private' ? 'Private' : 'Públic';
     const userCounts = await countUsers();
@@ -119,8 +118,7 @@ export default definePlugin({
 ▣ *Uptime:* ${sistema.tiempoActividad}`;
     await conn.sendMessage(m.chat, {
         text: teks,
-        contextInfo: {
-            mentionedJid: null,
+            contextInfo: {
             forwardingScore: 1,
             isForwarded: true,
             forwardedNewsletterMessageInfo: {
@@ -130,30 +128,28 @@ export default definePlugin({
             externalAdReply: {
                 mediaUrl: [info.nna, info.nna2, info.md].getRandom(),
                 mediaType: 2,
-                description: null,
                 title: `INFO - BOT`,
-                previewType: 0,
                 thumbnailUrl: "https://telegra.ph/file/39fb047cdf23c790e0146.jpg",
                 sourceUrl: info.yt
-            } as any
+            }
         }
     }, {quoted: m})
     }
 })
 
-const toNum = (n: any) => {
+const toNum = (n: number) => {
     if (!n || isNaN(n)) return '0'
     return n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + 'M' :
         n >= 1_000 ? (n / 1_000).toFixed(1) + 'k' : n.toString()
 }
 
-const humanFileSize = (bytes: any) => {
+const humanFileSize = (bytes: number) => {
     const units = ['B', 'KB', 'MB', 'GB', 'TB']
     const i = Math.floor(Math.log(bytes) / Math.log(1024))
     return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${units[i]}`
 }
 
-const toTime = (ms: any) => {
+const toTime = (ms: number) => {
     const d = Math.floor(ms / 86400000)
     const h = Math.floor(ms / 3600000) % 24
     const m = Math.floor(ms / 60000) % 60

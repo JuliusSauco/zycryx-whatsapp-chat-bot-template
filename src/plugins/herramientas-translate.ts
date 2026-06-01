@@ -2,6 +2,10 @@ import fetch from 'node-fetch';
 import {definePlugin} from '../core/define-plugin.js';
 import {ENV} from '../core/env.js';
 
+interface TranslateResponse {
+    translatedText?: string;
+}
+
 export default definePlugin({
     help: ['traducir', 'translate'],
     tags: ['tools'],
@@ -30,8 +34,7 @@ export default definePlugin({
 
     if (!text && m.quoted && m.quoted.text) text = m.quoted.text;
 
-    // @ts-ignore
-    if (!text) return m.reply(msg);
+    if (!text) return m.reply(`⚠️ *Uso correcto del comando:*\n${usedPrefix + command} es Hello`);
 
     try {
         const res = await fetch("https://tr.skyultraplus.com/translate", {
@@ -47,12 +50,12 @@ export default definePlugin({
             headers: {"Content-Type": "application/json"}
         });
 
-        const json = await res.json() as any;
+        const json = await res.json() as TranslateResponse;
 
         if (!json || !json.translatedText) throw '❌ No se pudo traducir.';
 
         await m.reply(`*Traducción:*\n${json.translatedText}`);
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error(e);
         await m.reply('*[❗𝐈𝐍𝐅𝐎❗] ERROR, VUELVA A INTENTARLO*');
     }

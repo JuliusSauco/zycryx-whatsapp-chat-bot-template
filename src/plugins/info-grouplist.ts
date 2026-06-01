@@ -1,5 +1,10 @@
 import {definePlugin} from '../core/define-plugin.js';
 import {listJoinedGroupIdsByBot} from '../services/chat.service.js';
+import type {GroupParticipant} from '@whiskeysockets/baileys';
+
+type GroupParticipantWithPhone = GroupParticipant & {
+    phoneNumber?: string;
+};
 
 export default definePlugin({
     help: ['groups', 'grouplist'],
@@ -19,7 +24,10 @@ export default definePlugin({
             if (!metadata) continue;
             const botNumber = (conn.user?.id || '').split(':')[0].replace(/[^0-9]/g, '');
 
-            const bot = metadata.participants.find((u: any) => u.id?.includes(botNumber) || u.phoneNumber?.includes(botNumber)) as any || {};
+            const bot = metadata.participants.find((u) => {
+                const participant = u as GroupParticipantWithPhone;
+                return participant.id?.includes(botNumber) || participant.phoneNumber?.includes(botNumber);
+            }) as GroupParticipantWithPhone | undefined;
             const isBotAdmin = bot?.admin === 'admin' || bot?.admin === 'superadmin';
             const isParticipant = Boolean(bot?.id);
             const participantStatus = isParticipant ? '✅ *Estoy aquí*' : '❌ *No estoy aquí*';
@@ -43,7 +51,7 @@ export default definePlugin({
         }
 
         m.reply(`_*\`ESTÁ EN ESTOS GRUPOS:\`*_\n> *• Total grupo:* ${grupos.length}\n\n${txt}`.trim());
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(err);
     }
     }

@@ -1,7 +1,8 @@
 import fetch from 'node-fetch';
 import {definePlugin} from '../core/define-plugin.js';
+import type {GroupParticipant} from '@whiskeysockets/baileys';
 
-let toM = (a: any) => '@' + a.split('@')[0]
+let toM = (a: string) => '@' + a.split('@')[0]
 export default definePlugin({
     help: ["love", "gay2", "lesbiana", "pajero", "pajera", "puto", "puta", "manco", "manca", "rata", "prostituta", "prostituto", "amigorandom", "amistad", "regalar", "formarpareja", "gay", "personalidad", "pregunta", "ship", "topgays", "top", "topputos", "toplindos", "toppajer@s", "topshipost", "toppanafresco", "topgrasa", "topintegrantes", "topfamos@s", "topsostero", "top5parejas", "Doxxeo", "doxxeo", "follar"],
     tags: ['game'],
@@ -20,8 +21,8 @@ export default definePlugin({
     }
     try {
 
-        let user = (a: any) => '@' + a.split('@')[0] //'@' + a.split('@')[0]
-        let ps = metadata.participants.map((v: any) => v.id)
+        let user = (a: string) => '@' + a.split('@')[0] //'@' + a.split('@')[0]
+        let ps = metadata.participants.map((v: GroupParticipant) => v.id)
         let a = ps.getRandom()
         let b = ps.getRandom()
         let c = ps.getRandom()
@@ -173,109 +174,14 @@ Sof02s32inf14.1e100.net
             let who
             if (m.isGroup) who = m.mentionedJid[0] ? m.mentionedJid[0] : m.sender
             else who = m.sender
-            let member = participants.map((u: any) => u.id)
+            let member = participants.map((u: GroupParticipant) => u.id)
             let me = m.sender
             let jodoh = member[Math.floor(Math.random() * member.length)]
-            let random = `${Math.floor(Math.random() * 100)}`
-            let gay = random
-            // @ts-ignore
-            if (gay < 20) {
-                gay = 'Usted es hetero 🤪🤙'
-                // @ts-ignore
-            } else if (gay == 21) {
-                gay = 'Mas o menos 🤔'
-                // @ts-ignore
-            } else if (gay == 23) {
-                gay = 'Mas o menos 🤔'
-                // @ts-ignore
-            } else if (gay == 24) {
-                // @ts-ignore
-                ga = 'Mas o menos 🤔'
-                // @ts-ignore
-            } else if (gay == 25) {
-                gay = 'Mas o menos 🤔'
-                // @ts-ignore
-            } else if (gay == 26) {
-                gay = 'Mas o menos 🤔'
-                // @ts-ignore
-            } else if (gay == 27) {
-                gay = 'Mas o menos 🤔'
-                // @ts-ignore
-            } else if (gay == 28) {
-                gay = 'Mas o menos 🤔'
-                // @ts-ignore
-            } else if (gay == 29) {
-                gay = 'Mas o menos 🤔'
-                // @ts-ignore
-            } else if (gay == 30) {
-                gay = 'Mas o menos 🤔'
-                // @ts-ignore
-            } else if (gay == 31) {
-                gay = 'Tengo mi dudas 😑'
-                // @ts-ignore
-            } else if (gay == 32) {
-                gay = 'Tengo mi dudas 😑'
-                // @ts-ignore
-            } else if (gay == 33) {
-                gay = 'Tengo mi dudas 😑'
-                // @ts-ignore
-            } else if (gay == 34) {
-                gay = 'Tengo mi dudas 😑'
-                // @ts-ignore
-            } else if (gay == 35) {
-                gay = 'Tengo mi dudas 😑'
-                // @ts-ignore
-            } else if (gay == 36) {
-                gay = 'Tengo mi dudas 😑'
-                // @ts-ignore
-            } else if (gay == 37) {
-                gay = 'Tengo mi dudas 😑'
-                // @ts-ignore
-            } else if (gay == 38) {
-                gay = 'Tengo mi dudas 😑'
-                // @ts-ignore
-            } else if (gay == 39) {
-                gay = 'Tengo mi dudas 😑'
-                // @ts-ignore
-            } else if (gay == 40) {
-                gay = 'Tengo mi dudas 😑'
-                // @ts-ignore
-            } else if (gay == 41) {
-                gay = 'Tengo razon? 😏'
-                // @ts-ignore
-            } else if (gay == 42) {
-                gay = 'Tengo razon? 😏'
-                // @ts-ignore
-            } else if (gay == 43) {
-                gay = 'Tengo razon? 😏'
-                // @ts-ignore
-            } else if (gay == 44) {
-                gay = 'Tengo razon? 😏'
-                // @ts-ignore
-            } else if (gay == 45) {
-                gay = 'Tengo razon? 😏'
-                // @ts-ignore
-            } else if (gay == 46) {
-                gay = 'Tengo razon? 😏'
-                // @ts-ignore
-            } else if (gay == 47) {
-                gay = 'Tengo razon? 😏'
-                // @ts-ignore
-            } else if (gay == 48) {
-                gay = 'Tengo razon? 😏'
-                // @ts-ignore
-            } else if (gay == 49) {
-                gay = 'Tengo razon? 😏'
-                // @ts-ignore
-            } else if (gay == 50) {
-                gay = 'Eres o no? 🧐'
-                // @ts-ignore
-            } else if (gay > 51) {
-                gay = 'Usted es gay 🥸'
-            }
+            const gayScore = Math.floor(Math.random() * 100)
+            let gay = getGayLabel(gayScore)
 //let kah = ra[Math.floor(Math.random() * ra.length)]
-            let jawab = `@${who.split("@")[0]} Es 🏳️‍🌈 ${random}% Gay\n\n${gay}`;
-            const avatar = await conn.profilePictureUrl(who, 'image').catch((_: any) => 'https://telegra.ph/file/24fa902ead26340f3df2c.png');
+            let jawab = `@${who.split("@")[0]} Es 🏳️‍🌈 ${gayScore}% Gay\n\n${gay}`;
+            const avatar = await conn.profilePictureUrl(who, 'image').catch(() => 'https://telegra.ph/file/24fa902ead26340f3df2c.png');
 
             const imageRes = await fetch(`https://some-random-api.com/canvas/gay?avatar=${encodeURIComponent(String(avatar))}`);
             const buffer = await imageRes.buffer();
@@ -300,8 +206,7 @@ Sof02s32inf14.1e100.net
 
         if (command == 'gay2') {
             if (!text) return m.reply(`🤔 𝙋𝙚𝙣𝙙𝙚𝙟𝙤 𝙚𝙩𝙞𝙦𝙪𝙚𝙩𝙖𝙨 𝙖𝙡 𝙡𝙖 𝙥𝙚𝙧𝙨𝙤𝙣𝙖 𝙘𝙤𝙣 𝙚𝙡 @Tag`)
-            // @ts-ignore
-            let juego = `_*${text.toUpperCase()}* *ES* *${(500).getRandom()}%* *GAY*_ 🏳️‍🌈`.trim()
+            let juego = `_*${text.toUpperCase()}* *ES* *${randomPercent()}%* *GAY*_ 🏳️‍🌈`.trim()
             await conn.reply(m.chat, juego, m, m.mentionedJid ? {mentions: m.mentionedJid} : {})
         }
 
@@ -309,8 +214,7 @@ Sof02s32inf14.1e100.net
 
         if (command == 'lesbiana') {
             if (!text) return m.reply(`🤔 𝙋𝙚𝙣𝙙𝙚𝙟𝙤 𝙚𝙩𝙞𝙦𝙪𝙚𝙩𝙖𝙨 𝙖𝙡 𝙡𝙖 𝙥𝙚𝙧𝙨𝙤𝙣𝙖 𝙘𝙤𝙣 𝙚𝙡 @Tag`)
-            // @ts-ignore
-            let juego = `_*${text.toUpperCase()}* *ES* *${(500).getRandom()}%* *${command.replace('how', '').toUpperCase()}*_ 🏳️‍🌈`.trim()
+            let juego = `_*${text.toUpperCase()}* *ES* *${randomPercent()}%* *${command.replace('how', '').toUpperCase()}*_ 🏳️‍🌈`.trim()
             await conn.reply(m.chat, juego, m, m.mentionedJid ? {mentions: m.mentionedJid} : {})
         }
 
@@ -318,8 +222,7 @@ Sof02s32inf14.1e100.net
 
         if (command == 'pajero') {
             if (!text) return m.reply(`🤔 𝙋𝙚𝙣𝙙𝙚𝙟𝙤 𝙚𝙩𝙞𝙦𝙪𝙚𝙩𝙖𝙨 𝙖𝙡 𝙡𝙖 𝙥𝙚𝙧𝙨𝙤𝙣𝙖 𝙘𝙤𝙣 𝙚𝙡 @Tag`)
-            // @ts-ignore
-            let juego = `_*${text.toUpperCase()}* *ES* *${(500).getRandom()}%* *${command.replace('how', '').toUpperCase()}*_ 😏💦`.trim()
+            let juego = `_*${text.toUpperCase()}* *ES* *${randomPercent()}%* *${command.replace('how', '').toUpperCase()}*_ 😏💦`.trim()
             await conn.reply(m.chat, juego, m, m.mentionedJid ? {mentions: m.mentionedJid} : {})
         }
 
@@ -327,8 +230,7 @@ Sof02s32inf14.1e100.net
 
         if (command == 'pajera') {
             if (!text) return m.reply(`🤔 𝙋𝙚𝙣𝙙𝙚𝙟𝙤 𝙚𝙩𝙞𝙦𝙪𝙚𝙩𝙖𝙨 𝙖𝙡 𝙡𝙖 𝙥𝙚𝙧𝙨𝙤𝙣𝙖 𝙘𝙤𝙣 𝙚𝙡 @Tag`)
-            // @ts-ignore
-            let juego = `_*${text.toUpperCase()}* *ES* *${(500).getRandom()}%* *${command.replace('how', '').toUpperCase()}*_ 😏💦`.trim()
+            let juego = `_*${text.toUpperCase()}* *ES* *${randomPercent()}%* *${command.replace('how', '').toUpperCase()}*_ 😏💦`.trim()
             await conn.reply(m.chat, juego, m, m.mentionedJid ? {mentions: m.mentionedJid} : {})
         }
 
@@ -336,8 +238,7 @@ Sof02s32inf14.1e100.net
 
         if (command == 'puto') {
             if (!text) return m.reply(`🤔 𝙋𝙚𝙣𝙙𝙚𝙟𝙤 𝙚𝙩𝙞𝙦𝙪𝙚𝙩𝙖𝙨 𝙖𝙡 𝙡𝙖 𝙥𝙚𝙧𝙨𝙤𝙣𝙖 𝙘𝙤𝙣 𝙚𝙡 @Tag`)
-            // @ts-ignore
-            let juego = `_*${text.toUpperCase()}* *ES* *${(500).getRandom()}%* *${command.replace('how', '').toUpperCase()},* *MÁS INFORMACIÓN A SU PRIVADO 🔥🥵 XD*_`.trim()
+            let juego = `_*${text.toUpperCase()}* *ES* *${randomPercent()}%* *${command.replace('how', '').toUpperCase()},* *MÁS INFORMACIÓN A SU PRIVADO 🔥🥵 XD*_`.trim()
             await conn.reply(m.chat, juego, m, m.mentionedJid ? {mentions: m.mentionedJid} : {})
         }
 
@@ -345,8 +246,7 @@ Sof02s32inf14.1e100.net
 
         if (command == 'puta') {
             if (!text) return m.reply(`🤔 𝙋𝙚𝙣𝙙𝙚𝙟𝙤 𝙚𝙩𝙞𝙦𝙪𝙚𝙩𝙖𝙨 𝙖𝙡 𝙡𝙖 𝙥𝙚𝙧𝙨𝙤𝙣𝙖 𝙘𝙤𝙣 𝙚𝙡 @Tag`)
-            // @ts-ignore
-            let juego = `_*${text.toUpperCase()}* *ES* *${(500).getRandom()}%* *${command.replace('how', '').toUpperCase()},* *MÁS INFORMACIÓN A SU PRIVADO 🔥🥵 XD*_`.trim()
+            let juego = `_*${text.toUpperCase()}* *ES* *${randomPercent()}%* *${command.replace('how', '').toUpperCase()},* *MÁS INFORMACIÓN A SU PRIVADO 🔥🥵 XD*_`.trim()
             await conn.reply(m.chat, juego, m, m.mentionedJid ? {mentions: m.mentionedJid} : {})
         }
 
@@ -354,8 +254,7 @@ Sof02s32inf14.1e100.net
 
         if (command == 'manco') {
             if (!text) return m.reply(`🤔 𝙋𝙚𝙣𝙙𝙚𝙟𝙤 𝙚𝙩𝙞𝙦𝙪𝙚𝙩𝙖𝙨 𝙖𝙡 𝙡𝙖 𝙥𝙚𝙧𝙨𝙤𝙣𝙖 𝙘𝙤𝙣 𝙚𝙡 @Tag`)
-            // @ts-ignore
-            let juego = `_*${text.toUpperCase()}* *ES* *${(500).getRandom()}%* *${command.replace('how', '').toUpperCase()} 💩*_`.trim()
+            let juego = `_*${text.toUpperCase()}* *ES* *${randomPercent()}%* *${command.replace('how', '').toUpperCase()} 💩*_`.trim()
             await conn.reply(m.chat, juego, m, m.mentionedJid ? {mentions: m.mentionedJid} : {})
         }
 
@@ -363,8 +262,7 @@ Sof02s32inf14.1e100.net
 
         if (command == 'manca') {
             if (!text) return m.reply(`🤔 𝙋𝙚𝙣𝙙𝙚𝙟𝙤 𝙚𝙩𝙞𝙦𝙪𝙚𝙩𝙖𝙨 𝙖𝙡 𝙡𝙖 𝙥𝙚𝙧𝙨𝙤𝙣𝙖 𝙘𝙤𝙣 𝙚𝙡 @Tag`)
-            // @ts-ignore
-            let juego = `_*${text.toUpperCase()}* *ES* *${(500).getRandom()}%* *${command.replace('how', '').toUpperCase()} 💩*_`.trim()
+            let juego = `_*${text.toUpperCase()}* *ES* *${randomPercent()}%* *${command.replace('how', '').toUpperCase()} 💩*_`.trim()
             await conn.reply(m.chat, juego, m, m.mentionedJid ? {mentions: m.mentionedJid} : {})
         }
 
@@ -372,8 +270,7 @@ Sof02s32inf14.1e100.net
 
         if (command == 'rata') {
             if (!text) return m.reply(`🤔 𝙋𝙚𝙣𝙙𝙚𝙟𝙤 𝙚𝙩𝙞𝙦𝙪𝙚𝙩𝙖𝙨 𝙖𝙡 𝙡𝙖 𝙥𝙚𝙧𝙨𝙤𝙣𝙖 𝙘𝙤𝙣 𝙚𝙡 @Tag`)
-            // @ts-ignore
-            let juego = `_*${text.toUpperCase()}* *ES* *${(500).getRandom()}%* *${command.replace('how', '').toUpperCase()} 🐁 COME QUESO 🧀*_`.trim()
+            let juego = `_*${text.toUpperCase()}* *ES* *${randomPercent()}%* *${command.replace('how', '').toUpperCase()} 🐁 COME QUESO 🧀*_`.trim()
             await conn.reply(m.chat, juego, m, m.mentionedJid ? {mentions: m.mentionedJid} : {})
         }
 
@@ -381,8 +278,7 @@ Sof02s32inf14.1e100.net
 
         if (command == 'prostituto') {
             if (!text) return m.reply(`🤔 𝙋𝙚𝙣𝙙𝙚𝙟𝙤 𝙚𝙩𝙞𝙦𝙪𝙚𝙩𝙖𝙨 𝙖𝙡 𝙡𝙖 𝙥𝙚𝙧𝙨𝙤𝙣𝙖 𝙘𝙤𝙣 𝙚𝙡 @Tag`)
-            // @ts-ignore
-            let juego = `_*${text.toUpperCase()}* *ES* *${(500).getRandom()}%* *${command.replace('how', '').toUpperCase()} 🫦👅, QUIEN QUIERE DE SUS SERVICIOS? XD*_`.trim()
+            let juego = `_*${text.toUpperCase()}* *ES* *${randomPercent()}%* *${command.replace('how', '').toUpperCase()} 🫦👅, QUIEN QUIERE DE SUS SERVICIOS? XD*_`.trim()
             await conn.reply(m.chat, juego, m, m.mentionedJid ? {mentions: m.mentionedJid} : {})
         }
 
@@ -390,8 +286,7 @@ Sof02s32inf14.1e100.net
 
         if (command == 'prostituta') {
             if (!text) return m.reply(`🤔 𝙋𝙚𝙣𝙙𝙚𝙟𝙤 𝙚𝙩𝙞𝙦𝙪𝙚𝙩𝙖𝙨 𝙖𝙡 𝙡𝙖 𝙥𝙚𝙧𝙨𝙤𝙣𝙖 𝙘𝙤𝙣 𝙚𝙡 @Tag`)
-            // @ts-ignore
-            let juego = `_*${text.toUpperCase()}* *ES* *${(500).getRandom()}%* *${command.replace('how', '').toUpperCase()} 🫦👅, QUIEN QUIERE DE SUS SERVICIOS? XD*_`.trim()
+            let juego = `_*${text.toUpperCase()}* *ES* *${randomPercent()}%* *${command.replace('how', '').toUpperCase()} 🫦👅, QUIEN QUIERE DE SUS SERVICIOS? XD*_`.trim()
             await conn.reply(m.chat, juego, m, m.mentionedJid ? {mentions: m.mentionedJid} : {})
         }
 
@@ -409,7 +304,7 @@ Sof02s32inf14.1e100.net
 //------------------------------------------------------------------------------------    
         if (command == 'top') {
             if (!text) return m.reply(`𝙔 𝙚𝙡 𝙩𝙚𝙭𝙩𝙤? 🤔\n📍 Ejemplo: ${usedPrefix}top nedro`)
-            let ps = metadata.participants.map((v: any) => v.id)
+            let ps = metadata.participants.map((v: GroupParticipant) => v.id)
             let a = ps.getRandom()
             let b = ps.getRandom()
             let c = ps.getRandom()
@@ -654,7 +549,7 @@ Tan enamorados 😍, para cuando la familia 🥰
 Genial! 💝, están de Luna de miel 🥵✨❤️‍🔥`
             m.reply(top, null, {mentions: conn.parseMention(top)})
         }
-    } catch (e: any) {
+    } catch (e: unknown) {
 //await conn.reply(m.chat, `${lenguajeGB['smsMalError3']()}#report ${lenguajeGB['smsMensError2']()} ${usedPrefix + command}\n\n${wm}`, fkontak, m)
 //console.log(`❗❗ ${lenguajeGB['smsMensError2']()} ${usedPrefix + command} ❗❗`)
         console.log(e)
@@ -662,25 +557,31 @@ Genial! 💝, están de Luna de miel 🥵✨❤️‍🔥`
     }
 })
 
-function pickRandom(list: any) {
+function pickRandom<T>(list: T[]): T {
     return list[Math.floor(Math.random() * list.length)]
 }
 
-const delay = (ms: any) => new Promise((resolve) => setTimeout(resolve, ms))
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-function msToTime(duration: any) {
-    // @ts-ignore
-    var milliseconds = parseInt((duration % 1000) / 100),
-        seconds = Math.floor((duration / 1000) % 60),
-        minutes = Math.floor((duration / (1000 * 60)) % 60),
-        hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
-    // @ts-ignore
-    hours = (hours < 10) ? "0" + hours : hours
-    // @ts-ignore
-    minutes = (minutes < 10) ? "0" + minutes : minutes
-    // @ts-ignore
-    seconds = (seconds < 10) ? "0" + seconds : seconds
-    return hours + " Hora(s) " + minutes + " Minuto(s)"
+function msToTime(duration: number) {
+    const minutes = Math.floor((duration / (1000 * 60)) % 60)
+    const hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
+    const formattedHours = hours < 10 ? "0" + hours : String(hours)
+    const formattedMinutes = minutes < 10 ? "0" + minutes : String(minutes)
+    return formattedHours + " Hora(s) " + formattedMinutes + " Minuto(s)"
+}
+
+function randomPercent(): number {
+    return Math.floor(Math.random() * 500)
+}
+
+function getGayLabel(score: number): string {
+    if (score < 20) return 'Usted es hetero 🤪🤙'
+    if (score <= 30) return 'Mas o menos 🤔'
+    if (score <= 40) return 'Tengo mi dudas 😑'
+    if (score <= 49) return 'Tengo razon? 😏'
+    if (score === 50) return 'Eres o no? 🧐'
+    return 'Usted es gay 🥸'
 }
 
 //conn.sendHydrated(m.chat, juego, wm, null, md, '𝙂𝙖𝙩𝙖𝘽𝙤𝙩-𝙈𝘿', null, null, [

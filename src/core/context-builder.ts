@@ -15,6 +15,8 @@ import type {GroupMetadata, GroupParticipant} from '@whiskeysockets/baileys';
 import {getSubbotConfig, updateSubbotTipo} from '../services/subbot.service.js';
 import {clearPrimaryBot, getContextGroupSettings} from '../services/group-settings.service.js';
 import type {SubbotConfig} from '../types/config.js';
+import type {ExtendedConn} from '../types/context.js';
+import type {BotMessage} from '../types/message.js';
 import {cleanJid, isGroupJid, resolveSenderInfo} from '../utils/jid.js';
 import {FIXED_OWNERS, GROUP_META_CACHE_TTL} from '../utils/constants.js';
 
@@ -63,7 +65,7 @@ const EMPTY_GROUP_SETTINGS: GroupSettings = {
  * Llama `getSubbotConfig()`, `getCachedGroupMetadata()` y la query de
  * `group_settings` en PARALELO para minimizar latencia total.
  */
-export async function buildContext(conn: any, m: any): Promise<HandlerContext> {
+export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<HandlerContext> {
     const chatId: string = m.key?.remoteJid || "";
     const botId: string = conn.user?.id || "";
     const isGroup = isGroupJid(chatId);
@@ -143,10 +145,10 @@ export async function buildContext(conn: any, m: any): Promise<HandlerContext> {
 // ---- Funciones internas ----
 
 /** Resuelve m.sender y m.lid a partir del key del mensaje, usando el helper unificado. */
-function resolveSender(conn: any, m: any, chatId: string): void {
+function resolveSender(conn: ExtendedConn, m: BotMessage, chatId: string): void {
     const info = resolveSenderInfo(m);
     m.sender = info.sender || chatId;
-    m.lid = info.lid;
+    m.lid = info.lid || "";
 
     if (m.key?.fromMe) {
         m.sender = conn.user?.id ? cleanJid(conn.user.id) : m.sender;
@@ -154,7 +156,7 @@ function resolveSender(conn: any, m: any, chatId: string): void {
 }
 
 /** Obtiene metadata de grupo del cache o la solicita al server. */
-async function getCachedGroupMetadata(conn: any, chatId: string): Promise<GroupMetadata> {
+async function getCachedGroupMetadata(conn: ExtendedConn, chatId: string): Promise<GroupMetadata> {
     if (groupMetaCache.has(chatId)) {
         return groupMetaCache.get(chatId)!;
     }
@@ -194,7 +196,7 @@ function buildAdminIds(participants: GroupParticipant[]): string[] {
 }
 
 /** Construye las variantes de JID del sender para comparación con adminIds. */
-function buildSenderJids(m: any): string[] {
+function buildSenderJids(m: BotMessage): string[] {
     const jids: string[] = [];
     if (m.user?.id) jids.push(cleanJid(m.user.id));
     if (m.user?.lid) jids.push(cleanJid(m.user.lid));
@@ -219,7 +221,7 @@ async function checkGroupRestrictions(
     const primaryBot = settings.primary_bot;
     if (!primaryBot || isAdmin) return false;
 
-    const botExists = participants.some((p: any) => p.id === primaryBot);
+    const botExists = participants.some((p) => p.id === primaryBot);
     if (!botExists) {
         // Si el primary_bot ya no está en el grupo, limpiar la setting (fire-and-forget).
         clearPrimaryBot(chatId);

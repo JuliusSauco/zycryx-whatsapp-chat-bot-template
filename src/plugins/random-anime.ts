@@ -105,7 +105,7 @@ export default definePlugin({
                 if (isNSFW && item.nsfwApi) {
                     apiPath = `https://api.waifu.pics/nsfw/${item.nsfwApi}`
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error('❌ Error al verificar NSFW:', err)
             }
             const res = await fetch(apiPath)
@@ -132,7 +132,7 @@ export default definePlugin({
             return
         }
 
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('[❌ ERROR IMG]', e)
         m.reply('❌ Error al enviar imagen.')
     }

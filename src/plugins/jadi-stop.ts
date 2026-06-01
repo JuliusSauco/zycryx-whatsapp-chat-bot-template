@@ -29,7 +29,7 @@ export default definePlugin({
         setTimeout(() => {
             m.reply("✅ *Sesión del SubBot finalizada correctamente.*\nPuedes volver a conectarte usando `/jadibot` o `/serbot`.");
         }, 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(`❌ Error al cerrar el subbot ${cleanId}:`, err);
         await m.reply("❌ Ocurrió un error al cerrar la sesión del SubBot.");
     }

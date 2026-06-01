@@ -2,22 +2,34 @@ import fetch from 'node-fetch';
 import {exoml} from '../lib/scraper.js';
 import {chatCompletion} from '../lib/ai.js';
 import {ensureSystemPrompt, getAiMemory, getAiPromptSettings, saveAiMemory} from '../services/chat-memory.service.js';
+import type {ExtendedConn} from '../types/context.js';
+import type {BotMessage} from '../types/message.js';
 
 const MAX_TURNS = 12;
 
-export async function before(m: any, {conn}: any) {
-    const botIds = [conn.user?.id, conn.user?.lid].filter(Boolean).map(j => j.split('@')[0].split(':')[0]);
+interface TextApiResponse {
+    data?: string;
+}
 
+interface MessageContextInfo {
+    participant?: string;
+    remoteJid?: string;
+}
+
+export async function before(m: BotMessage, {conn}: {conn: ExtendedConn}) {
+    const botIds = [conn.user?.id, conn.user?.lid].filter((j): j is string => Boolean(j)).map(j => j.split('@')[0].split(':')[0]);
+
+    const contextInfo = m.msg?.contextInfo as MessageContextInfo | undefined;
     const mentioned = [...(m.mentionedJid || []),
-        m.msg?.contextInfo?.participant,
-        m.msg?.contextInfo?.remoteJid].filter(Boolean);
+        contextInfo?.participant,
+        contextInfo?.remoteJid].filter((j): j is string => Boolean(j));
 
     const mention = mentioned.some(j => {
         const num = j?.split('@')[0]?.split(':')[0];
         return botIds.includes(num);
     });
 
-    function formatForWhatsApp(text: any) {
+    function formatForWhatsApp(text: string) {
         return text
             .replace(/\*\*/g, "*")
             .replace(/\_\_/g, "_")
@@ -41,7 +53,7 @@ export async function before(m: any, {conn}: any) {
 
     await conn.sendPresenceUpdate("composing", m.chat);
     const chatId = m.chat;
-    const query = m.text;
+    const query = m.text || '';
     const {systemPrompt, ttl} = await getAiPromptSettings(chatId);
     let memory = ensureSystemPrompt(await getAiMemory(chatId, ttl), systemPrompt);
 
@@ -61,11 +73,10 @@ export async function before(m: any, {conn}: any) {
         try {
             // Pasar el texto del usuario (string), NO el array `memory` (daba [object Object]).
             let gpt = await fetch(`${info.apis}/ia/gptprompt?text=${encodeURIComponent(query)}&prompt=${encodeURIComponent(systemPrompt)}`);
-            let res = await gpt.json();
-            // @ts-ignore
-            result = res.data;
-        } catch (err: any) {
-            console.error('[AUTORESP] fallback gptprompt falló, usando exoml:', err?.message || err);
+            let res = await gpt.json() as TextApiResponse;
+            result = res.data || '';
+        } catch (err: unknown) {
+            console.error('[AUTORESP] fallback gptprompt falló, usando exoml:', err instanceof Error ? err.message : err);
             try {
                 result = await exoml.generate(memory, systemPrompt, 'llama-4-scout');
             } catch {
@@ -79,8 +90,8 @@ export async function before(m: any, {conn}: any) {
     memory.push({role: 'assistant', content: result});
     try {
         await saveAiMemory(chatId, memory);
-    } catch (e: any) {
-        console.error("❌ No se pudo guardar memoria:", e.message);
+    } catch (e: unknown) {
+        console.error("❌ No se pudo guardar memoria:", e instanceof Error ? e.message : e);
     }
 
     const formatted = formatForWhatsApp(result)

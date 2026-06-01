@@ -11,9 +11,9 @@ export default definePlugin({
     }
 })
 
-function clockString(ms: any) {
+function clockString(ms: number) {
     const h = isNaN(ms) ? '--' : Math.floor(ms / 3600000)
     const m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60
     const s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60
-    return [h, m, s].map((v: any) => v.toString().padStart(2, 0)).join(':')
+    return [h, m, s].map((v) => v.toString().padStart(2, '0')).join(':')
 }

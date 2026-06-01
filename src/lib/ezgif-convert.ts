@@ -3,23 +3,23 @@ import axios from 'axios';
 
 interface ConvertConfig {
     url: string;
-    params: Record<string, any>;
+    params: Record<string, unknown>;
     req_params: string[];
     split: { start: string; end: string };
     either_params: string[];
 }
 
 interface ConvertFields {
-    type: string;
-    file?: any;
+    type?: string;
+    file?: unknown;
     filename?: string;
     url?: string;
 
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 interface OverlayFields {
-    file: any;
+    file: Buffer | Uint8Array;
     filename: string;
     overlay: { file: Buffer; filename: string };
     x?: number;
@@ -42,8 +42,39 @@ interface RenderFields {
     'fader-frames'?: number;
     loop?: number;
 
-    [key: string]: any;
+    [key: string]: unknown;
 }
+
+interface MultipartFormData {
+    append(name: string, value: unknown, options?: {filename?: string}): void;
+}
+
+interface ResponseWithRedirect {
+    request?: {
+        res?: {
+            responseUrl?: string;
+        };
+    };
+}
+
+const appendMultipart = (form: FormData, name: string, value: unknown, filename: string): void => {
+    (form as unknown as MultipartFormData).append(name, value, {filename});
+};
+
+const getRedirectUrl = (response: unknown): string => String((response as ResponseWithRedirect)?.request?.res?.responseUrl || '');
+
+const throwAxiosError = (error: unknown): never => {
+    if (axios.isAxiosError(error) && error.response) {
+        const data = typeof error.response.data === 'string' && error.response.data.length
+            ? error.response.data
+            : "Try again. If it continues, report to the creator.";
+        throw new Error(JSON.stringify({
+            statusCode: error.response.status,
+            data,
+        }, null, 4));
+    }
+    throw new Error("Oops, something unknown happened! :(");
+};
 
 const linksConvert: Record<string, ConvertConfig> = {
     "video-gif": {
@@ -509,24 +540,23 @@ const linksConvert: Record<string, ConvertConfig> = {
 async function convert(fields: ConvertFields | 'list'): Promise<string | string[]> {
     if (typeof fields === 'string' && fields?.toLowerCase() === 'list') return Object.keys(linksConvert);
 
-    let type = linksConvert?.[(fields as ConvertFields)?.type];
-    if (!type) throw new Error(`Invalid conversion type "${(fields as ConvertFields)?.type}"`);
+    const requestedType = (fields as ConvertFields).type;
+    let type = requestedType ? linksConvert?.[requestedType] : undefined;
+    if (!type) throw new Error(`Invalid conversion type "${requestedType}"`);
     const opts = fields as ConvertFields;
     let form = new FormData();
 
     if (opts?.file) {
         if (!opts.filename) throw new Error(`filename must be provided to upload files.(with extension)`);
-        (form as any).append('new-image', opts.file, {
-            filename: opts.filename,
-        });
+        appendMultipart(form, 'new-image', opts.file, opts.filename);
     } else if (opts?.url) {
         form.append('new-image-url', opts.url);
     } else throw new Error('Either file or url field is required.');
 
-    delete (opts as any).type;
-    delete (opts as any).file;
-    delete (opts as any).filename;
-    delete (opts as any).url;
+    delete opts.type;
+    delete opts.file;
+    delete opts.filename;
+    delete opts.url;
 
     let org_keys = Object.keys(opts);
     if (type.req_params) {
@@ -549,23 +579,9 @@ async function convert(fields: ConvertFields | 'list'): Promise<string | string[
             'Content-Type': 'multipart/form-data',
         },
         data: form,
-    }).catch(function (error: any) {
-        if (error.response) {
-            throw new Error(
-                JSON.stringify({
-                        statusCode: error.response.status,
-                        data: error.response.data.length ? error.response.data : "Try again. If it continues, report to the creator.",
-                    },
-                    null,
-                    4
-                )
-            );
-        } else {
-            throw new Error("Oops, something unknown happened! :(");
-        }
-    });
+    }).catch(throwAxiosError);
 
-    let redir = String((link as any)?.request?.res?.responseUrl);
+    let redir = getRedirectUrl(link);
     if (!redir) throw new Error(`Oops! Something unknown happened!`);
     let id = redir.split('/')[redir.split('/').length - 1];
     type.params.file = id;
@@ -580,21 +596,7 @@ async function convert(fields: ConvertFields | 'list'): Promise<string | string[
             ...type.params,
             ...opts,
         } as Record<string, string>),
-    }).catch(function (error: any) {
-        if (error.response) {
-            throw new Error(
-                JSON.stringify({
-                        statusCode: error.response.status,
-                        data: error.response.data.length ? error.response.data : "Try again. If it continues, report to the creator.",
-                    },
-                    null,
-                    4
-                )
-            );
-        } else {
-            throw new Error("Oops, something unknown happened! :(");
-        }
-    });
+    }).catch(throwAxiosError);
 
     let img_url = `https:${(image?.data?.toString()?.split(type.split.start)?.[1]?.split(type.split.end)?.[0])?.replace('https:', '')}`;
     if (img_url.includes('undefined')) throw new Error(`Something unknown happened here... please report to the creator`);
@@ -604,9 +606,7 @@ async function convert(fields: ConvertFields | 'list'): Promise<string | string[
 async function overlay(fields: OverlayFields): Promise<string> {
     let form = new FormData();
     let form_over = new FormData();
-    (form as any).append('new-image', fields.file, {
-        filename: fields.filename,
-    });
+    appendMultipart(form, 'new-image', fields.file, fields.filename);
 
     let link = await axios({
         method: 'post',
@@ -615,24 +615,13 @@ async function overlay(fields: OverlayFields): Promise<string> {
             'Content-Type': 'multipart/form-data',
         },
         data: form
-    }).catch(function (error: any) {
-        if (error.response) {
-            throw new Error(JSON.stringify({
-                statusCode: error.response.status,
-                data: error.response.data.length ? error.response.data : "Try again. If it continues, report to the creator."
-            }, null, 4))
-        } else {
-            throw new Error("Oops, something unknown happened! :(")
-        }
-    });
+    }).catch(throwAxiosError);
 
-    let redir = String((link as any)?.request?.res?.responseUrl);
+    let redir = getRedirectUrl(link);
     if (!redir) throw new Error(`Oops! Something unknown happened!`);
     let id = redir.split('/')[redir.split('/').length - 1];
 
-    (form_over as any).append('new-overlay', Buffer.from(fields.overlay.file), {
-        filename: `${fields.overlay.filename}`,
-    });
+    appendMultipart(form_over, 'new-overlay', Buffer.from(fields.overlay.file), `${fields.overlay.filename}`);
     form_over.append('overlay', 'Upload image!');
 
     let link_over = await axios({
@@ -642,18 +631,9 @@ async function overlay(fields: OverlayFields): Promise<string> {
             'Content-Type': 'multipart/form-data',
         },
         data: form_over
-    }).catch(function (error: any) {
-        if (error.response) {
-            throw new Error(JSON.stringify({
-                statusCode: error.response.status,
-                data: error.response.data.length ? error.response.data : "Try again. If it continues, report to the creator."
-            }, null, 4))
-        } else {
-            throw new Error("Oops, something unknown happened! :(")
-        }
-    });
+    }).catch(throwAxiosError);
 
-    let redir_over = String((link_over as any)?.request?.res?.responseUrl);
+    let redir_over = getRedirectUrl(link_over);
     if (!redir_over) throw new Error(`Oops! Something unknown happened!`);
     let id_over = redir_over.split('/')[redir_over.split('/').length - 1];
 
@@ -669,16 +649,7 @@ async function overlay(fields: OverlayFields): Promise<string> {
             posX: String(fields.x || 0),
             posY: String(fields.y || 0)
         })
-    }).catch(function (error: any) {
-        if (error.response) {
-            throw new Error(JSON.stringify({
-                statusCode: error.response.status,
-                data: error.response.data.length ? error.response.data : "Try again. If it continues, report to the creator."
-            }, null, 4))
-        } else {
-            throw new Error("Oops, something unknown happened! :(")
-        }
-    });
+    }).catch(throwAxiosError);
 
     let img_url = `https:${(image?.data?.toString()?.split('<img src="')?.[1]?.split('" style="width:')?.[0])?.replace('https:', '')}`;
     if (img_url.includes('undefined')) throw new Error(`Something unknown happened here... please report to the creator`);
@@ -697,7 +668,7 @@ async function render(fields: RenderFields): Promise<string> {
     let type = linksRender?.[fields?.type];
     let form = new FormData();
     if (!type) throw new Error(`Invalid rendering type "${fields?.type}"`);
-    const default_: Record<string, any> = {
+    const default_: Record<string, unknown> & {'delays[]': number[]; 'files[]': string[]} = {
         delay: 20,
         dfrom: 1,
         dto: 5,
@@ -707,18 +678,16 @@ async function render(fields: RenderFields): Promise<string> {
         'delays[]': [] as number[],
         'files[]': [] as string[]
     };
-    const merged: Record<string, any> = {
+    const merged = {
         ...default_,
         ...fields
-    };
+    } as Record<string, unknown> & {'delays[]': number[]; 'files[]': string[]};
 
     for (let i = 0; i < fields.files.length; i++) {
         if (!fields.files[i].data) throw new Error(`File buffer not provided for files[${i}]`);
         if (!fields.files[i].name) throw new Error(`File name not provided for files[${i}]`);
-        (form as any).append('files[]', fields.files[i].data, {
-            filename: fields.files[i].name
-        });
-        merged['delays[]'].push(fields.files[i].delay ?? merged.delay);
+        appendMultipart(form, 'files[]', fields.files[i].data, fields.files[i].name);
+        merged['delays[]'].push(fields.files[i].delay ?? Number(merged.delay || 0));
     }
 
     delete merged.type;
@@ -734,18 +703,9 @@ async function render(fields: RenderFields): Promise<string> {
             'Content-Type': 'multipart/form-data',
         },
         data: form
-    }).catch(function (error: any) {
-        if (error.response) {
-            throw new Error(JSON.stringify({
-                statusCode: error.response.status,
-                data: error.response.data.length ? error.response.data : "Try again. If it continues, report to the creator."
-            }, null, 4))
-        } else {
-            throw new Error("Oops, something unknown happened! :(")
-        }
-    });
+    }).catch(throwAxiosError);
 
-    let redir = String((link as any)?.request?.res?.responseUrl);
+    let redir = getRedirectUrl(link);
     let html = await axios.get(redir);
     merged.file = redir.split('/')[redir.split('/').length - 1];
     html.data.toString().split('(drag and drop frames to change order)')[1].split('<p class="options"><strong>Toggle a range of frames:</strong>')[0].split('<span class="frame-tools">').slice(0, -1).map((i: string) => i.split('value="')[1].split('" name="files[]"')[0]).forEach((e: string) => {
@@ -758,16 +718,7 @@ async function render(fields: RenderFields): Promise<string> {
             'Content-Type': 'application/x-www-form-urlencoded'
         },
         data: new URLSearchParams(merged as Record<string, string>)
-    }).catch(function (error: any) {
-        if (error.response) {
-            throw new Error(JSON.stringify({
-                statusCode: error.response.status,
-                data: error.response.data.length ? error.response.data : "Try again. If it continues, report to the creator."
-            }, null, 4))
-        } else {
-            throw new Error("Oops, something unknown happened! :(")
-        }
-    });
+    }).catch(throwAxiosError);
 
     let img_url = `https:${(image?.data?.toString()?.split('<img src="')?.[1]?.split('" style="width')?.[0])?.replace('https:', '')}`;
     if (img_url.includes('undefined')) throw new Error(`Something unknown happened here... please report to the creator`);

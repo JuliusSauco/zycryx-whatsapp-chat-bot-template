@@ -145,7 +145,7 @@ export default definePlugin({
             return
         }
         m.reply('❌ Fuente NSFW no soportada.')
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('[NSFW ERROR]', e)
         m.reply('❌ Error al enviar imagen/video +18.')
     }

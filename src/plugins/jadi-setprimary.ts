@@ -14,7 +14,7 @@ export default definePlugin({
         try {
             await setPrimaryBot(m.chat, null);
             await m.reply("✅ El bot primario ha sido eliminado de este grupo. Ahora cualquier subbot puede responder.");
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
         }
         return;
@@ -30,7 +30,7 @@ export default definePlugin({
                 mentions: [mentioned]
             }, {quoted: m});
             await setPrimaryBot(m.chat, mentioned);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
         }
     } else {

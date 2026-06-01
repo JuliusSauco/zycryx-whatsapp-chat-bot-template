@@ -24,21 +24,21 @@ export function startScheduledTasks(): void {
 async function handleExpiredGroups(): Promise<void> {
     try {
         const conn = globalThis.conn;
-        if (!conn || typeof (conn as any).groupLeave !== 'function') return;
+        if (!conn || typeof conn.groupLeave !== 'function') return;
 
         const rows = await listExpiredGroups(Date.now());
 
         for (const {group_id} of rows) {
             try {
-                await (conn as any).sendMessage(group_id, {
+                await conn.sendMessage(group_id, {
                     text: pickRandom([
-                        `*${(conn as any).user?.name}*, me voy del grupo. Fue un gusto estar aqui.`,
+                        `*${conn.user?.name}*, me voy del grupo. Fue un gusto estar aqui.`,
                         'El tiempo configurado para este grupo finalizo. Me retiro.',
-                        `*${(conn as any).user?.name}*, saliendo automaticamente por expiracion del grupo.`
+                        `*${conn.user?.name}*, saliendo automaticamente por expiracion del grupo.`
                     ])
                 });
                 await delay(3000);
-                await (conn as any).groupLeave(group_id);
+                await conn.groupLeave(group_id);
                 await clearGroupExpiration(group_id);
                 console.log(`[AUTO-LEAVE] Bot salio automaticamente del grupo: ${group_id}`);
             } catch (err) {
@@ -56,10 +56,10 @@ async function forwardPendingReports(): Promise<void> {
 
     try {
         const conn = globalThis.conn;
-        if (!conn || typeof (conn as any).sendMessage !== 'function') return;
+        if (!conn || typeof conn.sendMessage !== 'function') return;
 
         try {
-            await (conn as any).groupMetadata(modGroupId);
+            await conn.groupMetadata(modGroupId);
         } catch {
             return;
         }
@@ -71,7 +71,7 @@ async function forwardPendingReports(): Promise<void> {
             const header = row.tipo === 'sugerencia' ? '*SUGERENCIA*' : '*REPORTE*';
             const label = row.tipo === 'sugerencia' ? '*Sugerencia:*' : '*Mensaje:*';
             const txt = `${header}\n\n*Usuario:* wa.me/${row.sender_id.split('@')[0]}\n${label} ${row.mensaje}`;
-            await (conn as any).sendMessage(modGroupId, {text: txt});
+            await conn.sendMessage(modGroupId, {text: txt});
             await deleteReport(row.id);
         }
     } catch (err) {

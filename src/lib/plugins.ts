@@ -5,21 +5,33 @@ import chalk from "chalk"
 import syntaxerror from 'syntax-error'
 import {format} from 'util'
 import {router} from '../core/router.js'
+import type {Plugin} from '../types/plugin.js'
 
 const __libDir = dirname(fileURLToPath(import.meta.url))
 const pluginFolder = join(__libDir, '..', 'plugins')
 const pluginFilter = (filename: string): boolean => /\.(js|ts)$/.test(filename) && !filename.endsWith('.d.ts')
 globalThis.plugins = {}
 
+type PluginModule = {
+    default?: Plugin;
+    before?: Plugin['before'];
+} & Partial<Plugin>;
+
+function asPluginModule(value: unknown): PluginModule {
+    return value && typeof value === 'object' ? value as PluginModule : {};
+}
+
+function normalizePlugin(module: PluginModule): Plugin {
+    const base = module.default || (async () => undefined) as Plugin;
+    return Object.assign(base, module);
+}
+
 export async function loadPlugins(): Promise<void> {
     for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
         try {
             const pathFile = pathToFileURL(join(pluginFolder, filename)).href
-            const module = await import(`${pathFile}?update=${Date.now()}`)
-            let plugin: any = module.default || module
-            if (typeof module.before === 'function') {
-                plugin = {...plugin, before: module.before}
-            }
+            const module = asPluginModule(await import(`${pathFile}?update=${Date.now()}`))
+            const plugin = normalizePlugin(module)
 
             globalThis.plugins[filename] = plugin
 
@@ -34,12 +46,13 @@ export async function loadPlugins(): Promise<void> {
     router.registerAll(globalThis.plugins)
 }
 
-const reload = async (_: any, filename: string): Promise<void> => {
+const reload = async (_eventType: string, filename: string | Buffer | null): Promise<void> => {
+    if (typeof filename !== 'string') return
     if (!pluginFilter(filename)) return
 
     const fullPath = join(pluginFolder, filename)
     if (existsSync(fullPath)) {
-        const err = syntaxerror(readFileSync(fullPath) as any, filename, {
+        const err = syntaxerror(readFileSync(fullPath, 'utf8'), filename, {
             sourceType: 'module',
             allowAwaitOutsideFunction: true
         })
@@ -51,11 +64,8 @@ const reload = async (_: any, filename: string): Promise<void> => {
 
         try {
             const pathFile = pathToFileURL(fullPath).href
-            const module = await import(`${pathFile}?update=${Date.now()}`)
-            let plugin: any = module.default || module
-            if (typeof module.before === 'function') {
-                plugin = {...plugin, before: module.before}
-            }
+            const module = asPluginModule(await import(`${pathFile}?update=${Date.now()}`))
+            const plugin = normalizePlugin(module)
 
             globalThis.plugins[filename] = plugin
             router.registerAll(globalThis.plugins)
@@ -70,4 +80,4 @@ const reload = async (_: any, filename: string): Promise<void> => {
     }
 }
 
-watch(pluginFolder, reload as any)
+watch(pluginFolder, reload)

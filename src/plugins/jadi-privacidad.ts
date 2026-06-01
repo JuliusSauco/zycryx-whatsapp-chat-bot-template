@@ -26,7 +26,7 @@ export default definePlugin({
             await setSubbotBooleanFlag(botId, 'prestar', prestarVal);
             return m.reply(prestarVal ? '✅ *Prestar bot activado.*\n> Los usuarios pueden usar el bot para unirlo a grupos.' : '✅ *Prestar bot desactivado.*\n> Los usuarios no podrán unir el bot a grupos.');
         }
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(err);
     }
     }

@@ -18,6 +18,9 @@ declare module 'readline-sync';
 declare module 'fluent-ffmpeg';
 declare module 'node-webpmux';
 declare module 'qs';
+declare module 'similarity' {
+    export default function similarity(a: string, b: string): number;
+}
 declare module 'yt-search' {
     export interface YouTubeSearchVideo {
         type?: string;

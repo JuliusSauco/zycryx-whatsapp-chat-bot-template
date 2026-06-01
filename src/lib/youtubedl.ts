@@ -21,9 +21,23 @@ interface OgmpResponse {
 interface OgmpRequestResponse {
     status: boolean;
     code: number;
-    data?: any;
+    data?: unknown;
     error?: string;
 }
+
+interface OgmpInitData {
+    le?: boolean;
+    i?: string;
+    e?: boolean;
+    s?: string;
+    t?: string;
+}
+
+const getErrorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
+const getStatusCode = (error: unknown): number => {
+    if (axios.isAxiosError(error)) return error.response?.status || 500;
+    return 500;
+};
 
 const ogmp3 = {
     api: {
@@ -105,7 +119,7 @@ const ogmp3 = {
         return null;
     },
 
-    request: async (endpoint: string, data: any = {}, method: string = 'post'): Promise<OgmpRequestResponse> => {
+    request: async (endpoint: string, data: Record<string, unknown> = {}, method: string = 'post'): Promise<OgmpRequestResponse> => {
         try {
             const ae = Object.values(ogmp3.api.endpoints);
             const be = ae[Math.floor(Math.random() * ae.length)];
@@ -123,11 +137,11 @@ const ogmp3 = {
                 code: 200,
                 data: response
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
                 status: false,
-                code: error.response?.status || 500,
-                error: error.message
+                code: getStatusCode(error),
+                error: getErrorMessage(error)
             };
         }
     },
@@ -143,16 +157,16 @@ const ogmp3 = {
             });
 
             return response;
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
                 status: false,
                 code: 500,
-                error: error.message
+                error: getErrorMessage(error)
             };
         }
     },
 
-    async checkProgress(data: any): Promise<any> {
+    async checkProgress(data: OgmpInitData): Promise<OgmpInitData | null> {
         try {
             let attempts = 0;
             let maxAttempts = 300;
@@ -160,13 +174,14 @@ const ogmp3 = {
             while (attempts < maxAttempts) {
                 attempts++;
 
+                if (!data.i) return null;
                 const res = await this.checkStatus(data.i);
                 if (!res.status) {
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     continue;
                 }
 
-                const stat = res.data;
+                const stat = res.data as OgmpInitData;
                 if (stat.s === "C") {
                     return stat;
                 }
@@ -259,7 +274,7 @@ const ogmp3 = {
                     continue;
                 }
 
-                const data = resx.data;
+                const data = resx.data as OgmpInitData;
                 if (data.le) {
                     return {
                         status: false,
@@ -285,7 +300,7 @@ const ogmp3 = {
                     };
                 }
 
-                if (data.s === "C") {
+                if (data.s === "C" && data.i) {
                     return {
                         status: true,
                         code: 200,
@@ -302,7 +317,7 @@ const ogmp3 = {
                 }
 
                 const prod = await ogmp3.checkProgress(data);
-                if (prod && prod.s === "C") {
+                if (prod && prod.s === "C" && prod.i) {
                     return {
                         status: true,
                         code: 200,
@@ -325,11 +340,11 @@ const ogmp3 = {
                 error: "Estoy exhausto, idiota... Ya intenté hacer la solicitud varias veces y sigue sin funcionar, así que dejaré la solicitud para más tarde, ¡hasta luego! 😂"
             };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
                 status: false,
                 code: 500,
-                error: error.message
+                error: getErrorMessage(error)
             };
         }
     }

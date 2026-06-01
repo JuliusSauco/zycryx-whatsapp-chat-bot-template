@@ -1,5 +1,6 @@
 import {getSubbotConfig} from '../services/subbot.service.js'
 import {definePlugin} from '../core/define-plugin.js'
+import type {GroupParticipant} from '@whiskeysockets/baileys'
 
 export default definePlugin({
     help: ['bots'],
@@ -15,34 +16,29 @@ export default definePlugin({
 
     if (!activos.length) return m.reply("❌ No hay subbots conectados en este momento.")
     let mensaje = `🤖 *SubBots activos: ${activos.length}*\n\n`
-    const participantes = m.isGroup ? (await conn.groupMetadata(m.chat).catch(() => ({participants: []}))).participants || [] : []
+    const participantes: GroupParticipant[] = m.isGroup ? (await conn.groupMetadata(m.chat).catch(() => ({participants: []}))).participants || [] : []
 
     for (const sock of activos) {
         const userId = sock.user?.id
         if (!userId) continue
         const cleanId = userId.replace(/:\d+/, '').split('@')[0]
         const configId = userId.replace(/:\d+/, '')
-        // @ts-ignore
-        const nombre = sock.user.name || "-"
-        let config = {}
+        const nombre = sock.user?.name || "-"
+        let config
         try {
             config = await getSubbotConfig(configId)
-        } catch (e: any) {
+        } catch (e: unknown) {
             config = {prefix: ["/", ".", "#"], mode: "public"}
         }
 
-        // @ts-ignore
         const modo = config.mode === "private" ? "Private" : "Public"
-        // @ts-ignore
         const prefijos = Array.isArray(config.prefix) ? config.prefix : [config.prefix]
-        const prefText = prefijos.map((p: any) => `\`${p}\``).join(", ")
+        const prefText = prefijos.map((p) => `\`${p}\``).join(", ")
         const mainPrefix = (prefijos[0] === "") ? "" : prefijos[0]
         const textoMenu = mainPrefix ? `${mainPrefix}menu` : "menu"
         const uptime = sock.uptime ? formatearMs(Date.now() - sock.uptime) : "Desconocido"
-        const estaEnGrupo = participantes.some((p: any) => p.id === userId)
-        // @ts-ignore
+        const estaEnGrupo = participantes.some((p) => p.id === userId)
         const mostrarNumero = !config.privacy
-        // @ts-ignore
         const mostrarPrestar = config.prestar && !config.privacy
         let lineaBot = `• ${mostrarNumero ? `wa.me/${cleanId}?text=${encodeURIComponent(textoMenu)} (${nombre})` : `(${nombre})`}\n`
         mensaje += lineaBot
@@ -56,7 +52,7 @@ export default definePlugin({
     }
 })
 
-function formatearMs(ms: any) {
+function formatearMs(ms: number) {
     const segundos = Math.floor(ms / 1000)
     const minutos = Math.floor(segundos / 60)
     const horas = Math.floor(minutos / 60)

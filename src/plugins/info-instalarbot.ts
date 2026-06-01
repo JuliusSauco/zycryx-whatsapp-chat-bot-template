@@ -1,4 +1,3 @@
-import {generateWAMessageFromContent} from '@whiskeysockets/baileys'
 import {definePlugin} from '../core/define-plugin.js'
 
 export default definePlugin({
@@ -7,16 +6,6 @@ export default definePlugin({
     command: /^(instalarbot)/i,
     register: true,
     async execute(m, {conn}) {
-    let fkontak = {
-        "key": {
-            "participants": "0@s.whatsapp.net",
-            "remoteJid": "status@broadcast",
-            "fromMe": false,
-            "id": "Halo"
-        },
-        "message": {"contactMessage": {"vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`}},
-        "participant": "0@s.whatsapp.net"
-    }
     let texto = `*◄┢┅͜͡✇⟬↯ື ►ஜ۩💥۩ஜ◄ ↯ື⟭✇͜͡┅┧►*
 
 💕 𝙑𝙄𝘿𝙀𝙊 𝘿𝙀 𝙄𝙉𝙎𝙏𝘼𝙇𝘼𝘾𝙄𝙊𝙉
@@ -106,23 +95,18 @@ https://whatsapp.com/channel/0029VakUvreFHWpyWUr4Jr0g
 * \`\`\`npm start\`\`\`
 
 > *◄┢┅͜͡✇⟬↯ື ►ஜ۩💥۩ஜ◄ ↯ື⟭✇͜͡┅┧►*`
-    const legacyConn = conn as any
-    let aa = {quoted: m, userJid: legacyConn.user.id}
-    let prep = generateWAMessageFromContent(m.chat, {
-        extendedTextMessage: {
-            text: texto,
-            contextInfo: {
-                externalAdReply: {
-                    title: info.wm,
-                    body: "Video tutorial",
-                    thumbnailUrl: m.pp,
-                    mediaUrl: 'https://youtu.be/z2kHwbu8e8s?si=2z3Fur9U4ccN7EwA',
-                    mediaType: 2
-                }, mentionedJid: [m.sender]
-            }
+    return conn.sendMessage(m.chat, {
+        text: texto,
+        contextInfo: {
+            externalAdReply: {
+                title: info.wm,
+                body: "Video tutorial",
+                thumbnailUrl: m.pp,
+                mediaUrl: 'https://youtu.be/z2kHwbu8e8s?si=2z3Fur9U4ccN7EwA',
+                mediaType: 2
+            },
+            mentionedJid: [m.sender]
         }
-    }, aa)
-    if (!prep.message) return
-    conn.relayMessage(m.chat, prep.message, {messageId: prep.key.id ?? undefined, mentions: [m.sender]} as any)
+    }, {quoted: m})
     }
 })

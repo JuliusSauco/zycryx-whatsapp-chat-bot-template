@@ -2,6 +2,35 @@ import fetch from 'node-fetch'
 import {Blob, FormData} from 'formdata-node'
 import {fileTypeFromBuffer} from 'file-type'
 
+type FetchBody = NonNullable<Parameters<typeof fetch>[1]>['body'];
+type UploadFileItem = {url?: string; src?: string};
+
+interface FileIoResponse {
+    success?: boolean;
+    link?: string;
+}
+
+interface RestfulApiResponse {
+    files?: UploadFileItem[];
+}
+
+interface QuaxUploadResponse {
+    success?: boolean;
+    files?: UploadFileItem[];
+}
+
+interface GenericUploadResponse {
+    success?: boolean;
+    files?: UploadFileItem[];
+    id?: string;
+    status?: string;
+    data?: {
+        server?: string;
+        downloadPage?: string;
+        url?: string;
+    };
+}
+
 const fileIO = async (buffer: Buffer): Promise<string> => {
     const result = await fileTypeFromBuffer(buffer) || {} as { ext?: string; mime?: string }
     const {ext, mime} = result
@@ -10,10 +39,10 @@ const fileIO = async (buffer: Buffer): Promise<string> => {
     form.append('file', blob, 'tmp.' + ext)
     const res = await fetch('https://file.io/?expires=1d', {
         method: 'POST',
-        body: form as any,
+        body: form as unknown as FetchBody,
     })
-    const json = await res.json() as any
-    if (!json.success) throw json
+    const json = await res.json() as FileIoResponse
+    if (!json.success || !json.link) throw json
     return json.link
 }
 
@@ -28,13 +57,13 @@ const RESTfulAPI = async (inp: Buffer | Buffer[]): Promise<string | string[]> =>
     }
     const res = await fetch('https://storage.restfulapi.my.id/upload', {
         method: 'POST',
-        body: form as any,
+        body: form as unknown as FetchBody,
     })
-    let json: any = await res.text()
+    let json: unknown = await res.text()
     try {
-        json = JSON.parse(json)
-        if (!Array.isArray(inp)) return json.files[0].url
-        return json.files.map((res: any) => res.url)
+        const parsed = JSON.parse(String(json)) as RestfulApiResponse
+        if (!Array.isArray(inp)) return parsed.files?.[0]?.url || ''
+        return (parsed.files || []).map((res) => res.url || '')
     } catch (e) {
         throw json
     }
@@ -48,11 +77,11 @@ const quax = async (buffer: Buffer): Promise<string> => {
     form.append('files[]', blob, 'file.' + ext)
     const res = await fetch('https://qu.ax/upload.php', {
         method: 'POST',
-        body: form as any,
+        body: form as unknown as FetchBody,
     })
-    const json = await res.json() as any
+    const json = await res.json() as QuaxUploadResponse
     if (!json?.success) throw '❌ Error al subir a qu.ax'
-    return json.files[0].url
+    return json.files?.[0]?.url || ''
 }
 
 const catbox = async (buffer: Buffer): Promise<string> => {
@@ -64,7 +93,7 @@ const catbox = async (buffer: Buffer): Promise<string> => {
     form.append('fileToUpload', blob, 'file.' + ext)
     const res = await fetch('https://catbox.moe/user/api.php', {
         method: 'POST',
-        body: form as any,
+        body: form as unknown as FetchBody,
     })
     const url = await res.text()
     if (!url.startsWith('https://')) throw new Error('❌ Error al subir a catbox')
@@ -76,7 +105,7 @@ const uguu = async (buffer: Buffer): Promise<string> => {
     const {ext} = result
     const form = new FormData()
     form.append('file', new Blob([buffer]), 'file.' + ext)
-    const res = await fetch('https://uguu.se/api.php?d=upload-tool', {method: 'POST', body: form as any})
+    const res = await fetch('https://uguu.se/api.php?d=upload-tool', {method: 'POST', body: form as unknown as FetchBody})
     const url = await res.text()
     if (!url.startsWith('https://')) throw '❌ Error al subir a uguu'
     return url
@@ -87,30 +116,31 @@ const filechan = async (buffer: Buffer): Promise<string> => {
     const {ext} = result
     const form = new FormData()
     form.append('file', new Blob([buffer]), 'file.' + ext)
-    const res = await fetch('https://api.filechan.org/upload', {method: 'POST', body: form as any})
-    const json = await res.json() as any
+    const res = await fetch('https://api.filechan.org/upload', {method: 'POST', body: form as unknown as FetchBody})
+    const json = await res.json() as GenericUploadResponse
     if (!json?.success || !json?.files?.length) throw '❌ Error al subir a filechan'
-    return json.files[0].url
+    return json.files[0].url || ''
 }
 
 const pixeldrain = async (buffer: Buffer): Promise<string> => {
     const form = new FormData()
     form.append('file', new Blob([buffer]))
-    const res = await fetch('https://pixeldrain.com/api/file', {method: 'POST', body: form as any})
-    const json = await res.json() as any
+    const res = await fetch('https://pixeldrain.com/api/file', {method: 'POST', body: form as unknown as FetchBody})
+    const json = await res.json() as GenericUploadResponse
     if (!json?.success || !json?.id) throw '❌ Error al subir a pixeldrain'
     return `https://pixeldrain.com/u/${json.id}`
 }
 
 const gofile = async (buffer: Buffer): Promise<string> => {
     const getServer = await fetch('https://api.gofile.io/getServer')
-    const {data} = await getServer.json() as any
+    const {data} = await getServer.json() as GenericUploadResponse
+    if (!data?.server) throw '❌ Error al obtener servidor de Gofile'
     const form = new FormData()
     form.append('file', new Blob([buffer]))
-    const res = await fetch(`https://${data.server}.gofile.io/uploadFile`, {method: 'POST', body: form as any})
-    const json = await res.json() as any
+    const res = await fetch(`https://${data.server}.gofile.io/uploadFile`, {method: 'POST', body: form as unknown as FetchBody})
+    const json = await res.json() as GenericUploadResponse
     if (!json?.status || json.status !== 'ok') throw '❌ Error al subir a Gofile'
-    return json.data.downloadPage
+    return json.data?.downloadPage || ''
 }
 
 const krakenfiles = async (buffer: Buffer): Promise<string> => {
@@ -118,10 +148,10 @@ const krakenfiles = async (buffer: Buffer): Promise<string> => {
     const {ext} = result
     const form = new FormData()
     form.append('file', new Blob([buffer]), 'file.' + ext)
-    const res = await fetch('https://api.krakenfiles.com/v2/file/upload', {method: 'POST', body: form as any})
-    const json = await res.json() as any
+    const res = await fetch('https://api.krakenfiles.com/v2/file/upload', {method: 'POST', body: form as unknown as FetchBody})
+    const json = await res.json() as GenericUploadResponse
     if (!json?.success) throw '❌ Error al subir a KrakenFiles'
-    return json.data.url
+    return json.data?.url || ''
 }
 
 const telegraph = async (buffer: Buffer): Promise<string> => {
@@ -129,8 +159,8 @@ const telegraph = async (buffer: Buffer): Promise<string> => {
     const {ext} = result
     const form = new FormData()
     form.append('file', new Blob([buffer]), 'file.' + ext)
-    const res = await fetch('https://telegra.ph/upload', {method: 'POST', body: form as any})
-    const json = await res.json() as any
+    const res = await fetch('https://telegra.ph/upload', {method: 'POST', body: form as unknown as FetchBody})
+    const json = await res.json() as UploadFileItem[]
     if (!Array.isArray(json)) throw '❌ Error al subir a Telegraph'
     return 'https://telegra.ph' + json[0].src
 }

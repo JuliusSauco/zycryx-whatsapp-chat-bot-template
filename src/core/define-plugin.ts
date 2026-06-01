@@ -62,7 +62,7 @@ export interface PluginDefinition {
  */
 export function definePlugin(def: PluginDefinition): Plugin {
     // La función principal es `execute`, que se vuelve el callable del plugin
-    const fn = def.execute as any as Plugin;
+    const fn = def.execute as unknown as Plugin;
 
     // Copiar todas las propiedades de metadata al objeto función
     if (def.command !== undefined) fn.command = def.command;
