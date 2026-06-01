@@ -1,8 +1,9 @@
 import './env.js';
 import cfonts from 'cfonts';
 import {ENV} from './env.js';
+import {logInfo} from '../lib/logger.js';
 
-console.log('Iniciando 🚀🚀🚀')
+logInfo('Iniciando 🚀🚀🚀')
 
 cfonts.say(ENV.BOT_BANNER_NAME, {
     font: 'chrome',

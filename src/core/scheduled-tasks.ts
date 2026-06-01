@@ -6,6 +6,7 @@ import {
     listExpiredGroups,
     listPendingReports,
 } from '../services/runtime-tasks.service.js';
+import {logDebug, logError, logInfo} from '../lib/logger.js';
 
 let started = false;
 
@@ -40,13 +41,13 @@ async function handleExpiredGroups(): Promise<void> {
                 await delay(3000);
                 await conn.groupLeave(group_id);
                 await clearGroupExpiration(group_id);
-                console.log(`[AUTO-LEAVE] Bot salio automaticamente del grupo: ${group_id}`);
+                logInfo(`[AUTO-LEAVE] Bot salio automaticamente del grupo: ${group_id}`);
             } catch (err) {
-                console.error('[AUTO-LEAVE] Error procesando grupo expirado:', err);
+                logError('[AUTO-LEAVE] Error procesando grupo expirado:', err);
             }
         }
     } catch (err) {
-        console.error('[AUTO-LEAVE] Error general:', err);
+        logError('[AUTO-LEAVE] Error general:', err);
     }
 }
 
@@ -75,7 +76,7 @@ async function forwardPendingReports(): Promise<void> {
             await deleteReport(row.id);
         }
     } catch (err) {
-        console.error('[REPORT/SUGGE SYSTEM ERROR]', err);
+        logError('[REPORT/SUGGE SYSTEM ERROR]', err);
     }
 }
 
@@ -83,9 +84,9 @@ async function cleanExpiredChatMemory(): Promise<void> {
     try {
         const deleted = await cleanExpiredChatMemories();
         for (const chatId of deleted) {
-            console.log(`[MEMORY] Memoria del grupo ${chatId} eliminada automaticamente`);
+            logDebug(`[MEMORY] Memoria del grupo ${chatId} eliminada automaticamente`);
         }
     } catch (err) {
-        console.error('Error limpiando memorias expiradas:', err);
+        logError('Error limpiando memorias expiradas:', err);
     }
 }

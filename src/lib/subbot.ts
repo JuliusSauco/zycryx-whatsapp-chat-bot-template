@@ -13,12 +13,12 @@ import qrcode from 'qrcode';
 import chalk from "chalk";
 import NodeCache from 'node-cache';
 import {callUpdate, groupsUpdate, handler, participantsUpdate} from '../core/handler.js';
+import {logError, logInfo, logWarn} from './logger.js';
 import type {BotMessage} from '../types/message.js';
 import type {ExtendedConn} from '../types/context.js';
 import {isOtherBotKey} from '../utils/message-filter.js';
 
-if (globalThis.conns instanceof Array) console.log()
-else globalThis.conns = []
+if (!(globalThis.conns instanceof Array)) globalThis.conns = []
 
 type BotSocket = WASocket & {
     groupCache?: NodeCache;
@@ -102,10 +102,10 @@ export async function startSubBot(
                     for (const [jid, meta] of entries) {
                         groupCache.set(jid, meta);
                     }
-                    console.log(chalk.cyan(`📦 [SUB-BOT ${sock.userId}] Precargados ${entries.length} grupos en cache`));
+                    logInfo(chalk.cyan(`📦 [SUB-BOT ${sock.userId}] Precargados ${entries.length} grupos en cache`));
                 } catch (e: unknown) {
                     const message = e instanceof Error ? e.message : String(e);
-                    console.error(chalk.yellow(`⚠️ [SUB-BOT ${sock.userId}] No se pudo precargar grupos:`), message);
+                    logWarn(chalk.yellow(`⚠️ [SUB-BOT ${sock.userId}] No se pudo precargar grupos:`), message);
                 }
             })();
 
@@ -113,7 +113,7 @@ export async function startSubBot(
                 conn.sendMessage(m.chat, {text: `*Conectado exitosamente con WhatsApp ✅*\n\n*💻 Bot:* +${sock.userId}\n*👤 Dueño:* ${ownerName}\n\n*Nota: Con la nueva función de auto-reinicio (Beta)*, Si el bot principal se reinicia o se desactiva, los sub-bots se reiniciarán automáticamente, asegurando que sigan activos sin interrupciones.\n\n> *Unirte a nuestro canal para informarte de todas la Actualizaciónes/novedades sobre el bot*\n${info.nna}`}, {quoted: m});
                 delete commandFlags[senderId];
             }
-            console.log(chalk.bold.cyanBright(`\n✅ SUB-BOT CONECTADO: ${sock.userId} `))
+            logInfo(chalk.bold.cyanBright(`\n✅ SUB-BOT CONECTADO: ${sock.userId} `))
         }
 
         if (connection === 'close') {
@@ -124,16 +124,16 @@ export async function startSubBot(
 
             if ([401, 403].includes(reason)) {
                 if (intentos < 5) {
-                    console.log(`${chalk.red(`[❌ SUB-BOT ${botId}] Conexión cerrada (código ${reason}) intento ${intentos}/5`)} → Reintentando...`);
+                    logWarn(`${chalk.red(`[❌ SUB-BOT ${botId}] Conexión cerrada (código ${reason}) intento ${intentos}/5`)} → Reintentando...`);
                     setTimeout(() => {
                         startSubBot(m, conn, caption, isCode, phone, chatId, {});
                     }, 3000);
                 } else {
-                    console.log(chalk.red(`[💥 SUB-BOT ${botId}] Falló tras 5 intentos. Eliminando sesión.`));
+                    logError(chalk.red(`[💥 SUB-BOT ${botId}] Falló tras 5 intentos. Eliminando sesión.`));
                     try {
                         fs.rmSync(sessionFolder, {recursive: true, force: true});
                     } catch (e) {
-                        console.error(`[⚠️] No se pudo eliminar la carpeta ${sessionFolder}:`, e);
+                        logError(`[⚠️] No se pudo eliminar la carpeta ${sessionFolder}:`, e);
                     }
                     delete reintentos[botId];
                 }
@@ -160,7 +160,7 @@ export async function startSubBot(
                 setTimeout(() => conn.sendMessage(m.chat, {delete: msg.key}).catch(() => {
                 }), 60000);
             } catch (err) {
-                console.error("[QR Error]", err);
+                logError("[QR Error]", err);
             }
         }
 
@@ -182,13 +182,13 @@ export async function startSubBot(
                     }
                 }, 60000);
             } catch (err) {
-                console.error("[Código Error]", err);
+                logError("[Código Error]", err);
             }
         }
     });
 
-    process.on('uncaughtException', console.error);
-    process.on('unhandledRejection', console.error);
+    process.on('uncaughtException', logError);
+    process.on('unhandledRejection', logError);
 
     sock.ev.on("messages.upsert", async ({messages, type}) => {
         if (type !== "notify") return;
@@ -201,7 +201,7 @@ export async function startSubBot(
             try {
                 await handler(sock as unknown as ExtendedConn, msg as unknown as BotMessage);
             } catch (err) {
-                console.error(err);
+                logError(err);
             }
         }
     });
@@ -212,30 +212,28 @@ export async function startSubBot(
                 await callUpdate(sock, call);
             }
         } catch (err) {
-            console.error(chalk.red("❌ Error procesando call.update:"), err);
+            logError(chalk.red("❌ Error procesando call.update:"), err);
         }
     });
 }
 
 function setupGroupEvents(sock: BotSocket): void {
     sock.ev.on("group-participants.update", async (update) => {
-        console.log(update)
         try {
             await participantsUpdate(sock, update);
         } catch (err) {
-            console.error("[ ❌ ] SUB-BOT Error procesando group-participants.update:", err);
+            logError("[ ❌ ] SUB-BOT Error procesando group-participants.update:", err);
         }
     });
 
     sock.ev.on("groups.update", async (updates) => {
-        console.log(updates)
         try {
             for (const update of updates) {
                 if (!update.id) continue;
                 await groupsUpdate(sock, {...update, id: update.id});
             }
         } catch (err) {
-            console.error("[ ❌ ] SUB-BOT Error procesando groups.update:", err);
+            logError("[ ❌ ] SUB-BOT Error procesando groups.update:", err);
         }
     });
 }

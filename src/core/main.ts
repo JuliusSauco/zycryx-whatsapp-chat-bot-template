@@ -12,6 +12,7 @@ import {callUpdate, groupsUpdate, handler, participantsUpdate} from "./handler.j
 import {loadPlugins} from '../lib/plugins.js';
 import {isOtherBotKey} from '../utils/message-filter.js';
 import {startScheduledTasks} from './scheduled-tasks.js';
+import {logDebug, logError, logInfo, logWarn} from '../lib/logger.js';
 import type {ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
 
@@ -52,7 +53,7 @@ console.error = (...args) => {
     if (args[0]?.toString().includes("Closing stale open session")) {
         spamCount++;
         if (spamCount > 50) {
-            console.log("⚠️ Detectado loop de sesiones, reiniciando bot...");
+            logWarn("⚠️ Detectado loop de sesiones, reiniciando bot...");
             process.exit(1);
         }
     }
@@ -86,7 +87,7 @@ async function main() {
 //readlineSync.question(chalk.yellow("Elige una opción (1 o 2): "));
         usarCodigo = opcion === "2";
         if (usarCodigo) {
-            console.log(chalk.yellow("Ingresa tu número (ej: +521234567890): "));
+            logInfo(chalk.yellow("Ingresa tu número (ej: +521234567890): "));
             numero = readlineSync.question("").replace(/[^0-9]/g, '');
             if (numero.startsWith('52') && !numero.startsWith('521')) {
                 numero = '521' + numero.slice(2);
@@ -100,10 +101,10 @@ async function main() {
         try {
             await startBot();
         } catch (err: unknown) {
-            console.error(chalk.red("❌ Error al iniciar bot principal:"), err);
+            logError(chalk.red("❌ Error al iniciar bot principal:"), err);
         }
     } else {
-        console.log(chalk.yellow("⚠️ Subbots activos detectados. Bot principal desactivado automáticamente."));
+        logWarn(chalk.yellow("⚠️ Subbots activos detectados. Bot principal desactivado automáticamente."));
     }
 }
 
@@ -126,7 +127,7 @@ async function cargarSubbots() {
             await startSubBot(null, null, "Auto reconexión", false, userId, '');
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : String(e);
-            console.log(chalk.red(`❌ Falló la carga de ${userId}:`, message));
+            logWarn(chalk.red(`❌ Falló la carga de ${userId}: ${message}`));
         } finally {
             reconectando.delete(userId);
         }
@@ -179,7 +180,7 @@ async function startBot() {
         const code = (lastDisconnect?.error as DisconnectErrorLike | undefined)?.output?.statusCode || 0;
 
         if (connection === "open") {
-            console.log(chalk.bold.greenBright('\n▣─────────────────────────────···\n│\n│❧ 𝙲𝙾𝙽𝙴𝙲𝚃𝙰𝙳𝙾 𝙲𝙾𝚁𝚁𝙴𝙲𝚃𝙰𝙼𝙴𝙽𝚃𝙴 𝙰𝙻 𝚆𝙷𝙰𝚃𝚂𝙰𝙿𝙿 ✅\n│\n▣─────────────────────────────···'));
+            logInfo(chalk.bold.greenBright('\n▣─────────────────────────────···\n│\n│❧ 𝙲𝙾𝙽𝙴𝙲𝚃𝙰𝙳𝙾 𝙲𝙾𝚁𝚁𝙴𝙲𝚃𝙰𝙼𝙴𝙽𝚃𝙴 𝙰𝙻 𝚆𝙷𝙰𝚃𝚂𝙰𝙿𝙿 ✅\n│\n▣─────────────────────────────···'));
 
             // Precarga de metadata de todos los grupos para evitar IQs lentos en el primer uso.
             void (async () => {
@@ -189,19 +190,19 @@ async function startBot() {
                     for (const [jid, meta] of entries) {
                         groupCache.set(jid, meta);
                     }
-                    console.log(chalk.cyan(`📦 Precargados ${entries.length} grupos en cache`));
+                    logInfo(chalk.cyan(`📦 Precargados ${entries.length} grupos en cache`));
                 } catch (e: unknown) {
                     const message = e instanceof Error ? e.message : String(e);
-                    console.error(chalk.yellow("⚠️ No se pudo precargar metadata de grupos:"), message);
+                    logWarn(chalk.yellow("⚠️ No se pudo precargar metadata de grupos:"), message);
                 }
             })();
         }
 
         if (connection === "close") {
             if ([401, 440, 428, 405].includes(code)) {
-                console.log(chalk.red(`❌ Error de sesión (${code}) inválida. Borra la carpeta "BotSession" y vuelve a conectar.`));
+                logError(chalk.red(`❌ Error de sesión (${code}) inválida. Borra la carpeta "BotSession" y vuelve a conectar.`));
             }
-            console.log(chalk.yellow("♻️ Conexión cerrada. Reintentando en 3s..."));
+            logWarn(chalk.yellow("♻️ Conexión cerrada. Reintentando en 3s..."));
             setTimeout(() => startBot(), 3000);
         }
     });
@@ -213,7 +214,7 @@ async function startBot() {
         setTimeout(async () => {
             try {
                 const code = await sock.requestPairingCode(numero);
-                console.log(chalk.yellow('Código de emparejamiento:'), chalk.greenBright(code));
+                logInfo(chalk.yellow('Código de emparejamiento:'), chalk.greenBright(code));
             } catch {
             }
         }, 2000);
@@ -236,7 +237,7 @@ async function startBot() {
                 await callUpdate(sock, call);
             }
         } catch (err: unknown) {
-            console.error(chalk.red("❌ Error procesando call.update:"), err);
+            logError(chalk.red("❌ Error procesando call.update:"), err);
         }
     });
 
@@ -259,12 +260,12 @@ async function startBot() {
             })
 //console.log(chalk.gray(`┏━━━━━━⪻♻️ AUTO-CLEAR 🗑️⪼━━━━━━•\n┃→ ARCHIVOS DE LA CARPETA TMP ELIMINADOS\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━•`));
         } catch (err: unknown) {
-            console.error('Error cleaning temporary files:', err);
+            logError('Error cleaning temporary files:', err);
         }
     }, 30 * 1000);
 
     setInterval(() => {
-        console.log('♻️ Reiniciando bot automáticamente...');
+        logWarn('♻️ Reiniciando bot automáticamente...');
         process.exit(0);
     }, 10800000) //3hs
 //3600000
@@ -308,33 +309,31 @@ async function startBot() {
                             fs.unlinkSync(fullPath);
                         }
                     } catch (err: unknown) {
-                        console.error(chalk.red(`[⚠] Error al limpiar archivo ${file}:`), err);
+                        logError(chalk.red(`[⚠] Error al limpiar archivo ${file}:`), err);
                     }
                 }
             }
         }
-        console.log(chalk.bold.cyanBright(`\n╭» 🟠 ARCHIVOS 🟠\n│→ Sesiones y pre-keys viejas limpiadas\n╰―――――――――――――――――――――――――――――― 🗑️♻️`));
+        logDebug(chalk.bold.cyanBright(`\n╭» 🟠 ARCHIVOS 🟠\n│→ Sesiones y pre-keys viejas limpiadas\n╰―――――――――――――――――――――――――――――― 🗑️♻️`));
     }, 10 * 60 * 1000); // cada 10 minutos
 
     function setupGroupEvents(sock: BotSocket) {
         sock.ev.on("group-participants.update", async (update) => {
-            console.log(update)
             try {
                 await participantsUpdate(sock, update);
             } catch (err: unknown) {
-                console.error(chalk.red("❌ Error procesando group-participants.update:"), err);
+                logError(chalk.red("❌ Error procesando group-participants.update:"), err);
             }
         });
 
         sock.ev.on("groups.update", async (updates) => {
-            console.log(updates)
             try {
                 for (const update of updates) {
                     if (!update.id) continue;
                     await groupsUpdate(sock, {...update, id: update.id});
                 }
             } catch (err: unknown) {
-                console.error(chalk.red("❌ Error procesando groups.update:"), err);
+                logError(chalk.red("❌ Error procesando groups.update:"), err);
             }
         });
     }
@@ -349,7 +348,7 @@ function enqueueMessage(sock: baileys.WASocket, msg: baileys.WAMessage): void {
             try {
                 await handler(sock as unknown as ExtendedConn, msg as unknown as BotMessage);
             } catch (err: unknown) {
-                console.error(err);
+                logError(err);
             }
         });
 

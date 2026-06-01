@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS group_settings (
     antifake      BOOLEAN   DEFAULT false,
     antilink      BOOLEAN   DEFAULT false,
     antilink2     BOOLEAN   DEFAULT false,
+    virustotal    BOOLEAN   DEFAULT false,
     modohorny     BOOLEAN   DEFAULT false,
     audios        BOOLEAN   DEFAULT false,
     "antiStatus"  BOOLEAN   DEFAULT false,

@@ -3,7 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import chalk from "chalk";
 import crypto from "crypto";
-import {logCommand} from "../lib/logger.js";
+import fetch from 'node-fetch';
+import {logCommand, logDebug, logError, logInfo, logWarn} from "../lib/logger.js";
 import {smsg} from "../lib/simple.js";
 import {parseMessage} from './message-parser.js';
 import {buildContext, groupMetaCache} from './context-builder.js';
@@ -94,14 +95,68 @@ function pickRandom<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function uniqueJids(jids: Array<string | null | undefined>): string[] {
+    return [...new Set(jids.filter((jid): jid is string => !!jid && jid.includes('@')))];
+}
+
+function getGroupMentionJids(participants: GroupParticipant[]): string[] {
+    return uniqueJids(participants.map((participant) => {
+        const withPhone = participant as GroupParticipant & {phoneNumber?: string};
+        return withPhone.phoneNumber || participant.id;
+    }));
+}
+
+async function downloadImageBuffer(url: string | null): Promise<Buffer | null> {
+    if (!url) return null;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) return null;
+        return Buffer.from(await response.arrayBuffer());
+    } catch {
+        return null;
+    }
+}
+
+async function getProfilePictureUrl(conn: EventConn, jid: string): Promise<string | null> {
+    try {
+        return await conn.profilePictureUrl(jid, 'image') || null;
+    } catch {
+        return null;
+    }
+}
+
+async function getParticipantImageBuffer(conn: EventConn, participantJid: string, userJid: string): Promise<Buffer | null> {
+    const participantUrl = await getProfilePictureUrl(conn, participantJid)
+        || (participantJid !== userJid ? await getProfilePictureUrl(conn, userJid) : null);
+    return downloadImageBuffer(participantUrl);
+}
+
+async function getGroupImageBuffer(conn: EventConn, groupId: string): Promise<Buffer | null> {
+    return downloadImageBuffer(await getProfilePictureUrl(conn, groupId));
+}
+
+async function getGroupEventImageBuffer(conn: EventConn, groupId: string, participantJid: string, userJid: string, preferGroupPhoto = false): Promise<Buffer | null> {
+    const firstImage = preferGroupPhoto
+        ? await getGroupImageBuffer(conn, groupId)
+        : await getParticipantImageBuffer(conn, participantJid, userJid);
+    if (firstImage) return firstImage;
+
+    const secondImage = preferGroupPhoto
+        ? await getParticipantImageBuffer(conn, participantJid, userJid)
+        : await getGroupImageBuffer(conn, groupId);
+    if (secondImage) return secondImage;
+
+    return getDefaultPpBuffer();
+}
+
 export async function participantsUpdate(conn: EventConn, {id, participants, action, author}: GroupParticipantsUpdate) {
     try {
         if (!id || !Array.isArray(participants) || !action) {
-            console.log(chalk.yellow(`[GRUPO-EVENTO] descartado: id=${id} action=${action} participants=${JSON.stringify(participants)}`));
+            logDebug(chalk.yellow(`[GRUPO-EVENTO] descartado: id=${id} action=${action} participants=${JSON.stringify(participants)}`));
             return;
         }
         if (!conn?.user?.id) return;
-        console.log(chalk.cyan(`[GRUPO-EVENTO] action=${action} grupo=${id} participantes=${participants.length}`));
+        logDebug(chalk.cyan(`[GRUPO-EVENTO] action=${action} grupo=${id} participantes=${participants.length}`));
         // El welcome/bye/promote/demote depende sólo de los settings del grupo,
         // no del modo (public/private) del bot: si el grupo tiene welcome activado,
         // se da bienvenida sin importar cómo entró el participante.
@@ -115,7 +170,7 @@ export async function participantsUpdate(conn: EventConn, {id, participants, act
             metadata = groupMetaCache.get(id) || null;
         }
         if (!metadata) {
-            console.error(chalk.red(`❌ participantsUpdate: sin metadata para ${id}, se omite`));
+            logWarn(chalk.red(`❌ participantsUpdate: sin metadata para ${id}, se omite`));
             return;
         }
         const groupName = metadata.subject || "Grupo"
@@ -136,7 +191,7 @@ export async function participantsUpdate(conn: EventConn, {id, participants, act
             antifake: false
         }
         if (action === "add") {
-            console.log(chalk.cyan(`[WELCOME] grupo=${id} settings.welcome=${settings.welcome} (isBotAdmin=${isBotAdmin})`));
+            logDebug(chalk.cyan(`[WELCOME] grupo=${id} settings.welcome=${settings.welcome} (isBotAdmin=${isBotAdmin})`));
         }
 
         const arabicCountryCodes = ['+91', '+92', '+222', '+93', '+265', '+213', '+225', '+240', '+241', '+61', '+249', '+62', '+966', '+229', '+244', '+40', '+49', '+20', '+963', '+967', '+234', '+256', '+243', '+210', '+249', , '+212', '+971', '+974', '+968', '+965', '+962', '+961', '+964', '+970'];
@@ -194,8 +249,7 @@ export async function participantsUpdate(conn: EventConn, {id, participants, act
                 }
             }
 
-            // Foto de perfil: sólo se necesita para promote/demote.
-            // welcome y bye usan siempre Menu1.jpg, así que ahí no se consulta.
+            // Foto de perfil: promote/demote usan thumbnail por URL; welcome resuelve buffer con fallback.
             let ppUrl: string | null = null;
             if (action !== "add" && action !== "remove") {
                 try {
@@ -209,36 +263,40 @@ export async function participantsUpdate(conn: EventConn, {id, participants, act
                 case "add":
                     if (settings.welcome) {
                         const groupDesc = metadata.desc || "*ᴜɴ ɢʀᴜᴘᴏ ɢᴇɴɪᴀ😸*\n *sɪɴ ʀᴇɢʟᴀ 😉*"
-                        // El mensaje viene siempre de media/text/welcome.txt.
-                        const raw = getWelcomeText()
+                        const raw = settings.sWelcome || getWelcomeText()
                         const msg = raw
                             .replace(/@user/gi, userTag)
                             .replace(/@group|@subject/gi, groupName)
                             .replace(/@desc/gi, groupDesc)
+                        const mentionedJid = settings.welcomeHidetag
+                            ? uniqueJids([...getGroupMentionJids(metaParticipants), userJid])
+                            : [userJid]
 
-                        // El welcome usa SIEMPRE la imagen Menu1.jpg (sin foto de perfil).
-                        const welcomeImage = getDefaultPpBuffer();
+                        const welcomeImage = settings.photowelcome
+                            ? await getGroupEventImageBuffer(conn, id, participant, userJid, settings.welcomeGroupPhoto)
+                            : null;
                         try {
                             if (welcomeImage) {
                                 await conn.sendMessage(id, {
                                     image: welcomeImage,
                                     caption: msg,
-                                    contextInfo: {mentionedJid: [userJid]}
+                                    contextInfo: {mentionedJid}
                                 })
                             } else {
-                                // Fallback si Menu1.jpg no está disponible en disco.
-                                console.log(chalk.yellow(`[WELCOME] Menu1.jpg no encontrado en ${DEFAULT_PP_PATH} — se envía solo texto`));
+                                if (settings.photowelcome) {
+                                    logDebug(chalk.yellow(`[WELCOME] Sin foto de usuario, grupo ni archivo (${DEFAULT_PP_PATH}) — se envía solo texto`));
+                                }
                                 await conn.sendMessage(id, {
                                     text: msg,
-                                    contextInfo: {mentionedJid: [userJid]}
+                                    contextInfo: {mentionedJid}
                                 })
                             }
-                            console.log(chalk.green(`[WELCOME] ✅ bienvenida enviada a ${userTag} en "${groupName}"`));
+                            logInfo(chalk.green(`[WELCOME] ✅ bienvenida enviada a ${userTag} en "${groupName}"`));
                         } catch (e: unknown) {
-                            console.error(chalk.red(`[WELCOME] ❌ falló el envío a ${userTag} en ${id}:`), e);
+                            logError(chalk.red(`[WELCOME] ❌ falló el envío a ${userTag} en ${id}:`), e);
                         }
                     } else {
-                        console.log(chalk.yellow(`[WELCOME] omitido — welcome desactivado en "${groupName}"`));
+                        logDebug(chalk.yellow(`[WELCOME] omitido — welcome desactivado en "${groupName}"`));
                     }
                     break
 
@@ -248,43 +306,48 @@ export async function participantsUpdate(conn: EventConn, {id, participants, act
                         const botJid = (conn.user?.id || "").replace(/:\d+/, "");
                         if (participant.replace(/:\d+/, "") === botJid) {
                             await markBotLeftGroup(id, botJid);
-                            console.log(`[DEBUG] El bot fue eliminado del grupo ${id}. Marcado como 'joined = false'.`);
+                            logDebug(`[DEBUG] El bot fue eliminado del grupo ${id}. Marcado como 'joined = false'.`);
                         }
                     } catch (err: unknown) {
-                        console.error("❌ Error en 'remove':", err);
+                        logError("❌ Error en 'remove':", err);
                     }
 
                     if (settings.welcome) {
                         const groupDesc = metadata.desc || "Sin descripción"
-                        // El mensaje viene siempre de media/text/bye.txt.
-                        const raw = getByeText()
+                        const raw = settings.sBye || getByeText()
                         const msg = raw
                             .replace(/@user/gi, userTag)
                             .replace(/@group/gi, groupName)
                             .replace(/@desc/gi, groupDesc)
+                        const mentionedJid = settings.byeHidetag
+                            ? uniqueJids([...getGroupMentionJids(metaParticipants), userJid])
+                            : [userJid]
 
-                        // El bye usa SIEMPRE la imagen Menu1.jpg (misma que el welcome).
-                        const byeImage = getDefaultPpBuffer();
+                        const byeImage = settings.photobye
+                            ? await getGroupEventImageBuffer(conn, id, participant, userJid, settings.byeGroupPhoto)
+                            : null;
                         try {
                             if (byeImage) {
                                 await conn.sendMessage(id, {
                                     image: byeImage,
                                     caption: msg,
-                                    contextInfo: {mentionedJid: [userJid]}
+                                    contextInfo: {mentionedJid}
                                 })
                             } else {
-                                // Fallback si Menu1.jpg no está disponible en disco.
+                                if (settings.photobye) {
+                                    logDebug(chalk.yellow(`[BYE] Sin foto de usuario, grupo ni archivo (${DEFAULT_PP_PATH}) — se envía solo texto`));
+                                }
                                 await conn.sendMessage(id, {
                                     text: msg,
-                                    contextInfo: {mentionedJid: [userJid]}
+                                    contextInfo: {mentionedJid}
                                 })
                             }
-                            console.log(chalk.green(`[BYE] 👋 despedida enviada a ${userTag} en "${groupName}"`));
+                            logInfo(chalk.green(`[BYE] 👋 despedida enviada a ${userTag} en "${groupName}"`));
                         } catch (e: unknown) {
-                            console.error(chalk.red(`[BYE] ❌ falló el envío a ${userJid} en ${id}:`), e);
+                            logError(chalk.red(`[BYE] ❌ falló el envío a ${userJid} en ${id}:`), e);
                         }
                     } else {
-                        console.log(chalk.yellow(`[BYE] omitido — welcome desactivado en "${groupName}"`));
+                        logDebug(chalk.yellow(`[BYE] omitido — welcome desactivado en "${groupName}"`));
                     }
                     break
 
@@ -350,7 +413,7 @@ export async function participantsUpdate(conn: EventConn, {id, participants, act
             }
         }
     } catch (err: unknown) {
-        console.error(chalk.red(`❌ Error en participantsUpdate - Acción: ${action} | Grupo: ${id}`), err);
+        logError(chalk.red(`❌ Error en participantsUpdate - Acción: ${action} | Grupo: ${id}`), err);
     }
 }
 
@@ -361,6 +424,7 @@ export async function groupsUpdate(conn: EventConn, {id, subject, desc, picture}
         const modo = botConfig.mode || "public";
         const botJid = conn.user?.id?.replace(/:\d+@/, "@");
         const isCreator = global.owner.map(([v]) => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(botJid || '');
+        const previousMetadata = groupMetaCache.get(id) || conn.groupCache?.get?.(id);
 
         const settings = await getGroupSettings(id) || {
             welcome: true,
@@ -372,13 +436,14 @@ export async function groupsUpdate(conn: EventConn, {id, subject, desc, picture}
         const metadata = await conn.groupMetadata(id);
         groupMetaCache.set(id, metadata);
         conn?.groupCache?.set?.(id, metadata);
-        const groupName = subject || metadata.subject || "Grupo";
-        const isBotAdmin = metadata.participants.some((p) => p.id.includes(botJid || '') && p.admin);
+        const groupName = metadata.subject || subject || previousMetadata?.subject || "Grupo";
+
+        if (!previousMetadata) return;
 
         let message = "";
-        if (subject) {
+        if (subject && previousMetadata.subject && subject !== previousMetadata.subject) {
             message = `El nombre del grupo ha cambiado a *${groupName}*.`;
-        } else if (desc) {
+        } else if (desc && desc !== previousMetadata.desc) {
             message = `La descripción del grupo *${groupName}* ha sido actualizada, nueva descripción:\n\n${metadata.desc || "Sin descripción"}`;
         } else if (picture) {
             message = `La foto del grupo *${groupName}* ha sido actualizada.`;
@@ -388,7 +453,7 @@ export async function groupsUpdate(conn: EventConn, {id, subject, desc, picture}
             await conn.sendMessage(id, {text: message});
         }
     } catch (err: unknown) {
-        console.error(chalk.red("❌ Error en groupsUpdate:"), err);
+        logError(chalk.red("❌ Error en groupsUpdate:"), err);
     }
 }
 
@@ -402,7 +467,7 @@ export async function callUpdate(conn: WASocket, call: CallUpdate) {
         });
         await conn.updateBlockStatus(callerId, "block");
     } catch (err: unknown) {
-        console.error(chalk.red("❌ Error en callUpdate:"), err);
+        logError(chalk.red("❌ Error en callUpdate:"), err);
     }
 }
 
@@ -460,7 +525,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
             const result = await plugin.before!(m, {conn, isOwner: ctx.isOwner});
             if (result === false) return;
         } catch (e: unknown) {
-            console.error(chalk.red(e));
+            logError(chalk.red(e));
         }
     }
     markPerf(marks, 'before', perfStart);
@@ -518,7 +583,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
             await m.reply(e);
             return;
         }
-        console.error(chalk.red(`❌ Error al ejecutar ${parsed.command}: ${e}`));
+        logError(chalk.red(`❌ Error al ejecutar ${parsed.command}: ${e}`));
         m.reply("❌ Error ejecutando el comando, reporte este error a mi creador con el comando: /report\n\n" + e);
     }
 }
@@ -533,7 +598,7 @@ function logPerfIfSlow(marks: Record<string, number>, start: number, command: st
     const total = Math.round(performance.now() - start);
     if (total < ENV.PERF_LOG_THRESHOLD_MS) return;
     const chunks = Object.entries(marks).map(([key, value]) => `${key}=${value}ms`).join(' ');
-    console.log(chalk.yellow(`[PERF] total=${total}ms cmd=${command || '-'} chat=${chatId} ${chunks}`));
+    logDebug(chalk.yellow(`[PERF] total=${total}ms cmd=${command || '-'} chat=${chatId} ${chunks}`));
 }
 
 function isDuplicate(m: BotMessage): boolean {
@@ -590,7 +655,7 @@ async function antifakeCheck(conn: ExtendedConn, m: BotMessage, ctx: Pick<Handle
         await conn.groupParticipantsUpdate(ctx.chatId, [m.sender], "remove");
         return true;
     } catch (err: unknown) {
-        console.error(err);
+        logError(err);
     }
     return false;
 }
@@ -609,7 +674,7 @@ async function upsertUser(m: BotMessage): Promise<void> {
 
         await upsertUserService({id: m.sender, nombre: userName, num, lid: m.lid});
     } catch (err: unknown) {
-        console.error(err);
+        logError(err);
     }
 }
 

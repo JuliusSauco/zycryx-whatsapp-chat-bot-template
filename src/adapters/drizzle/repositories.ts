@@ -1,4 +1,5 @@
 import type {AppRepositories} from '../../ports/repositories.js';
+import {audioResponseRepository} from './audio-response.repository.js';
 import {apiTokenRepository} from './api-token.repository.js';
 import {charactersRepository} from './character.repository.js';
 import {chatMemoryRepository} from './chat-memory.repository.js';
@@ -20,6 +21,7 @@ export function createDrizzleRepositories(): AppRepositories {
         subbots: subbotsRepository,
         characters: charactersRepository,
         apiTokens: apiTokenRepository,
+        audioResponses: audioResponseRepository,
         groupSettings: groupSettingsRepository,
         reports: reportsRepository,
         chatMemory: chatMemoryRepository,

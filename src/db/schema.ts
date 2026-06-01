@@ -44,17 +44,26 @@ export const usuarios = pgTable('usuarios', {
 
 export const groupSettings = pgTable('group_settings', {
     groupId: text('group_id').primaryKey(),
+    welcomeConfigId: serial('welcome_config_id'),
     welcome: boolean('welcome').default(true),
     detect: boolean('detect').default(true),
     antifake: boolean('antifake').default(false),
     antilink: boolean('antilink').default(false),
     antilink2: boolean('antilink2').default(false),
+    virusTotal: boolean('virustotal').default(false),
     modohorny: boolean('modohorny').default(false),
     audios: boolean('audios').default(false),
     antiStatus: boolean('antistatus').default(false),
     modoadmin: boolean('modoadmin').default(false),
-    photowelcome: boolean('photowelcome').default(false),
-    photobye: boolean('photobye').default(false),
+    photowelcome: boolean('photowelcome').default(true),
+    welcomeRegisteredBy: text('welcome_registered_by'),
+    welcomeHidetag: boolean('welcome_hidetag').default(false),
+    welcomeGroupPhoto: boolean('welcome_group_photo').default(false),
+    byeConfigId: integer('bye_config_id'),
+    byeRegisteredBy: text('bye_registered_by'),
+    byeHidetag: boolean('bye_hidetag').default(false),
+    byeGroupPhoto: boolean('bye_group_photo').default(false),
+    photobye: boolean('photobye').default(true),
     autolevelup: boolean('autolevelup').default(true),
     antiporn: boolean('antiporn').default(false),
     nsfwHorario: text('nsfw_horario'),
@@ -141,3 +150,15 @@ export const apiTokens = pgTable('api_tokens', {
     name: text('name').primaryKey(),
     tokenB64: text('token_b64').notNull(),
 });
+
+export const audioResponses = pgTable('audio_responses', {
+    scope: text('scope').notNull(),
+    phrase: text('phrase').notNull(),
+    regex: text('regex').notNull(),
+    audioUrls: text('audio_urls').array().notNull().default(sql`ARRAY[]::text[]`),
+    deleted: boolean('deleted').default(false),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+}, table => ({
+    pk: primaryKey({columns: [table.scope, table.phrase]}),
+}));

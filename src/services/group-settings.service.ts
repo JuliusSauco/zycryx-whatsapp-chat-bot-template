@@ -63,8 +63,9 @@ export async function setGroupTextMessage(
     type: 'welcome' | 'bye' | 'promote' | 'demote',
     text: string,
     photoMode?: boolean,
+    options?: { registeredBy?: string; hidetag?: boolean; groupPhoto?: boolean },
 ): Promise<void> {
-    await repositories.groupSettings.setTextMessage({groupId: chatId, type, text, photoMode});
+    await repositories.groupSettings.setTextMessage({groupId: chatId, type, text, photoMode, ...options});
     invalidateGroupSettings(chatId);
 }
 

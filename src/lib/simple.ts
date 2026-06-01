@@ -170,15 +170,7 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
             const contextInfoDefault = {
                 mentionedJid: await conn.parseMention(String(messageContent.text || messageContent.caption || '')),
                 isForwarded: true,
-                forwardingScore: 1,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: (() => {
-                        const loli = "120363321650707484@newsletter";
-                        const otros = ["120363368880733138@newsletter", "120363301598733462@newsletter"];
-                        return Math.random() < 0.75 ? loli : otros[Math.floor(Math.random() * otros.length)]
-                    })(),
-                    newsletterName: info.wm
-                }
+                forwardingScore: 1
             };
 
             if (!messageContent.contextInfo) {
@@ -205,15 +197,7 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
         const contextInfo = {
             mentionedJid: await conn.parseMention(text),
             isForwarded: true,
-            forwardingScore: 1,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: (() => {
-                    const loli = "120363321650707484@newsletter";
-                    const otros = ["120363368880733138@newsletter", "120363301598733462@newsletter"];
-                    return Math.random() < 0.75 ? loli : otros[Math.floor(Math.random() * otros.length)]
-                })(),
-                newsletterName: info.wm
-            }
+            forwardingScore: 1
         };
         return await conn.sendMessage(chatId, {text, contextInfo}, {quoted, ...options});
     };
@@ -228,15 +212,7 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
     const defaultContextInfo = async (caption: string, conn: ExtendedConn): Promise<ContextInfoLike> => ({
         mentionedJid: await conn.parseMention(caption),
         isForwarded: true,
-        forwardingScore: 1,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid: (() => {
-                const loli = "120363321650707484@newsletter";
-                const otros = ["120363368880733138@newsletter", "120363301598733462@newsletter"];
-                return Math.random() < 0.75 ? loli : otros[Math.floor(Math.random() * otros.length)]
-            })(),
-            newsletterName: info.wm
-        }
+        forwardingScore: 1
     });
 
     function formatExternalAdReply(obj: ExternalAdReplyLike = {}): ExternalAdReplyLike {

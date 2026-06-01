@@ -11,6 +11,7 @@
  */
 import fetch from 'node-fetch';
 import {getDecodedApiToken, invalidateApiTokenCache} from '../services/api-token.service.js';
+import {logDebug, logWarn} from './logger.js';
 
 interface AIProvider {
     /** Nombre de la fila en api_tokens (columna `name`). */
@@ -65,7 +66,7 @@ export async function chatCompletion(messages: ChatMessage[], opts: ChatOptions 
     for (const provider of PROVIDERS) {
         const key = await getDecodedApiToken(provider.token);
         if (!key) {
-            console.error(`[AI] sin token para '${provider.token}', se omite`);
+            logDebug(`[AI] sin token para '${provider.token}', se omite`);
             continue;
         }
         try {
@@ -84,17 +85,17 @@ export async function chatCompletion(messages: ChatMessage[], opts: ChatOptions 
             });
             const data = await res.json() as ChatCompletionResponse;
             if (data?.error) {
-                console.error(`[AI] '${provider.token}' devolvió error:`, JSON.stringify(data.error));
+                logWarn(`[AI] '${provider.token}' devolvió error:`, JSON.stringify(data.error));
                 continue;
             }
             const content = data?.choices?.[0]?.message?.content?.trim();
             if (content) {
-                console.log(`[AI] respuesta generada por '${provider.token}' (${provider.model})`);
+                logDebug(`[AI] respuesta generada por '${provider.token}' (${provider.model})`);
                 return content;
             }
-            console.error(`[AI] '${provider.token}' devolvió una respuesta vacía`);
+            logWarn(`[AI] '${provider.token}' devolvió una respuesta vacía`);
         } catch (e: unknown) {
-            console.error(`[AI] '${provider.token}' falló:`, e instanceof Error ? e.message : e);
+            logWarn(`[AI] '${provider.token}' falló:`, e instanceof Error ? e.message : e);
         }
     }
     return null;

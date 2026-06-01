@@ -1,15 +1,17 @@
-import {dirname, join} from 'path'
+import {dirname, join, relative, sep} from 'path'
 import {fileURLToPath, pathToFileURL} from 'url'
-import {existsSync, readdirSync, readFileSync, watch} from 'fs'
+import {existsSync, readdirSync, readFileSync, statSync, watch} from 'fs'
 import chalk from "chalk"
 import syntaxerror from 'syntax-error'
 import {format} from 'util'
 import {router} from '../core/router.js'
+import {logDebug, logError, logInfo, logWarn} from './logger.js'
 import type {Plugin} from '../types/plugin.js'
 
 const __libDir = dirname(fileURLToPath(import.meta.url))
 const pluginFolder = join(__libDir, '..', 'plugins')
 const pluginFilter = (filename: string): boolean => /\.(js|ts)$/.test(filename) && !filename.endsWith('.d.ts')
+const watchedDirs = new Set<string>()
 globalThis.plugins = {}
 
 type PluginModule = {
@@ -26,10 +28,35 @@ function normalizePlugin(module: PluginModule): Plugin {
     return Object.assign(base, module);
 }
 
+function normalizePluginPath(fullPath: string): string {
+    return relative(pluginFolder, fullPath).split(sep).join('/');
+}
+
+function getPluginFullPath(pluginPath: string): string {
+    return join(pluginFolder, ...pluginPath.split('/'));
+}
+
+function listPluginFiles(dir = pluginFolder): string[] {
+    const files: string[] = [];
+
+    for (const entry of readdirSync(dir, {withFileTypes: true})) {
+        const fullPath = join(dir, entry.name);
+        if (entry.isDirectory()) {
+            files.push(...listPluginFiles(fullPath));
+            continue;
+        }
+
+        const pluginPath = normalizePluginPath(fullPath);
+        if (pluginFilter(pluginPath)) files.push(pluginPath);
+    }
+
+    return files.sort();
+}
+
 export async function loadPlugins(): Promise<void> {
-    for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
+    for (const filename of listPluginFiles()) {
         try {
-            const pathFile = pathToFileURL(join(pluginFolder, filename)).href
+            const pathFile = pathToFileURL(getPluginFullPath(filename)).href
             const module = asPluginModule(await import(`${pathFile}?update=${Date.now()}`))
             const plugin = normalizePlugin(module)
 
@@ -39,18 +66,17 @@ export async function loadPlugins(): Promise<void> {
                 plugin.__hasBefore = true
             }
         } catch (e) {
-            console.error(chalk.red(`${filename}:\n${format(e)}`))
+            logError(chalk.red(`${filename}:\n${format(e)}`))
             delete globalThis.plugins[filename]
         }
     }
     router.registerAll(globalThis.plugins)
 }
 
-const reload = async (_eventType: string, filename: string | Buffer | null): Promise<void> => {
-    if (typeof filename !== 'string') return
+const reload = async (filename: string): Promise<void> => {
     if (!pluginFilter(filename)) return
 
-    const fullPath = join(pluginFolder, filename)
+    const fullPath = getPluginFullPath(filename)
     if (existsSync(fullPath)) {
         const err = syntaxerror(readFileSync(fullPath, 'utf8'), filename, {
             sourceType: 'module',
@@ -58,7 +84,7 @@ const reload = async (_eventType: string, filename: string | Buffer | null): Pro
         })
 
         if (err) {
-            console.error(chalk.red(`ERROR DE SINTAXIS EN ${filename}:\n${format(err)}`))
+            logError(chalk.red(`ERROR DE SINTAXIS EN ${filename}:\n${format(err)}`))
             return
         }
 
@@ -69,15 +95,40 @@ const reload = async (_eventType: string, filename: string | Buffer | null): Pro
 
             globalThis.plugins[filename] = plugin
             router.registerAll(globalThis.plugins)
-            console.log(chalk.green(`UPDATE : ${filename}`))
+            logInfo(chalk.green(`UPDATE : ${filename}`))
         } catch (e) {
-            console.error(chalk.red(`❌ ERROR RECARGANDO ${filename}:\n${format(e)}`))
+            logError(chalk.red(`❌ ERROR RECARGANDO ${filename}:\n${format(e)}`))
         }
     } else {
-        console.log(chalk.yellow(`PLUGIN ELIMINADO: ${filename}`))
+        logWarn(chalk.yellow(`PLUGIN ELIMINADO: ${filename}`))
         delete globalThis.plugins[filename]
         router.registerAll(globalThis.plugins)
     }
 }
 
-watch(pluginFolder, reload)
+function watchPluginDirectory(dir: string): void {
+    if (watchedDirs.has(dir)) return;
+    watchedDirs.add(dir);
+
+    watch(dir, async (_eventType, filename) => {
+        if (typeof filename !== 'string') return;
+
+        const fullPath = join(dir, filename);
+        if (existsSync(fullPath)) {
+            const stat = statSync(fullPath);
+            if (stat.isDirectory()) {
+                logDebug(chalk.gray(`WATCH PLUGIN DIR: ${normalizePluginPath(fullPath)}`));
+                watchPluginDirectory(fullPath);
+                return;
+            }
+        }
+
+        await reload(normalizePluginPath(fullPath));
+    });
+
+    for (const entry of readdirSync(dir, {withFileTypes: true})) {
+        if (entry.isDirectory()) watchPluginDirectory(join(dir, entry.name));
+    }
+}
+
+watchPluginDirectory(pluginFolder)

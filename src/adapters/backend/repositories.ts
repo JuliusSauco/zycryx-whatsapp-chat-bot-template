@@ -41,6 +41,7 @@ export function createBackendRepositories(options: BackendRepositoryOptions): Ap
         subbots: createPendingRepository('subbots', client),
         characters: createPendingRepository('characters', client),
         apiTokens: createPendingRepository('apiTokens', client),
+        audioResponses: createPendingRepository('audioResponses', client),
         groupSettings: createPendingRepository('groupSettings', client),
         reports: createPendingRepository('reports', client),
         chatMemory: createPendingRepository('chatMemory', client),

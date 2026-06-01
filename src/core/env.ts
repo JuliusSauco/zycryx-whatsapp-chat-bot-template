@@ -57,6 +57,11 @@ export const ENV = {
     PERPLEXITY_API_KEYS: process.env.PERPLEXITY_API_KEYS || '',
     SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID || '',
     SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET || '',
+    VIRUSTOTAL_API_KEY: process.env.VIRUSTOTAL_API_KEY || '',
+    VIRUSTOTAL_ENABLED: (process.env.VIRUSTOTAL_ENABLED || 'true').toLowerCase() !== 'false',
+    VIRUSTOTAL_MAX_FILE_MB: parseInt(process.env.VIRUSTOTAL_MAX_FILE_MB || '32', 10),
+    VIRUSTOTAL_POLL_ATTEMPTS: parseInt(process.env.VIRUSTOTAL_POLL_ATTEMPTS || '6', 10),
+    VIRUSTOTAL_POLL_INTERVAL_MS: parseInt(process.env.VIRUSTOTAL_POLL_INTERVAL_MS || '10000', 10),
     DEFAULT_MENU_IMAGE: process.env.DEFAULT_MENU_IMAGE || './media/Menu2.jpg',
     DB_HOST: process.env.DB_HOST || 'localhost',
     DB_PORT: parseInt(process.env.DB_PORT || '5432', 10),
@@ -65,5 +70,6 @@ export const ENV = {
     DB_PASSWORD: process.env.DB_PASSWORD || '',
     DB_SCHEMA: process.env.DB_SCHEMA || 'public',
     DATABASE_URL: process.env.DATABASE_URL || '',
+    LOG_LEVEL: process.env.LOG_LEVEL || 'command',
     PERF_LOG_THRESHOLD_MS: parseInt(process.env.PERF_LOG_THRESHOLD_MS || '750', 10),
 } as const;

@@ -7,13 +7,34 @@ interface LoggerConnection {
     };
 }
 
+const LOG_LEVELS = ['error', 'warn', 'info', 'command', 'debug', 'trace'] as const;
+export type LogLevelName = typeof LOG_LEVELS[number];
+
 const LogLevel = {
     ERROR: 0,
-    COMMAND: 1,
-    MESSAGE: 2
+    WARN: 1,
+    INFO: 2,
+    COMMAND: 3,
+    DEBUG: 4,
+    TRACE: 5,
+    MESSAGE: 5,
 } as const;
 
-const CURRENT_LOG_LEVEL: number = LogLevel.COMMAND;
+const LOG_LEVEL_VALUES: Record<LogLevelName, number> = {
+    error: LogLevel.ERROR,
+    warn: LogLevel.WARN,
+    info: LogLevel.INFO,
+    command: LogLevel.COMMAND,
+    debug: LogLevel.DEBUG,
+    trace: LogLevel.TRACE,
+};
+
+function getConfiguredLogLevel(): LogLevelName {
+    const value = (process.env.LOG_LEVEL || 'command').toLowerCase();
+    return LOG_LEVELS.includes(value as LogLevelName) ? value as LogLevelName : 'command';
+}
+
+const CURRENT_LOG_LEVEL: number = LOG_LEVEL_VALUES[getConfiguredLogLevel()];
 
 interface LogCommandParams {
     conn: LoggerConnection;
@@ -66,8 +87,37 @@ function logMessage({conn, sender, isGroup, text}: LogMessageParams): void {
     );
 }
 
-function logError(error: unknown): void {
-    console.error(chalk.bgRed.white.bold(" ERROR ") + " " + chalk.red(new Date().toISOString()), "\n", chalk.redBright(String(error)));
+function shouldLog(level: keyof typeof LogLevel): boolean {
+    return CURRENT_LOG_LEVEL >= LogLevel[level];
+}
+
+function formatDetails(details: unknown[]): unknown[] {
+    return details.length ? details : [];
+}
+
+function logError(message: unknown, ...details: unknown[]): void {
+    if (!shouldLog('ERROR')) return;
+    console.error(chalk.bgRed.white.bold(" ERROR ") + " " + chalk.red(new Date().toISOString()), "\n", chalk.redBright(String(message)), ...formatDetails(details));
+}
+
+function logWarn(message: unknown, ...details: unknown[]): void {
+    if (!shouldLog('WARN')) return;
+    console.warn(chalk.yellow(String(message)), ...formatDetails(details));
+}
+
+function logInfo(message: unknown, ...details: unknown[]): void {
+    if (!shouldLog('INFO')) return;
+    console.log(String(message), ...formatDetails(details));
+}
+
+function logDebug(message: unknown, ...details: unknown[]): void {
+    if (!shouldLog('DEBUG')) return;
+    console.log(chalk.gray(String(message)), ...formatDetails(details));
+}
+
+function logTrace(message: unknown, ...details: unknown[]): void {
+    if (!shouldLog('TRACE')) return;
+    console.log(chalk.gray(String(message)), ...formatDetails(details));
 }
 
 export {
@@ -75,5 +125,10 @@ export {
     CURRENT_LOG_LEVEL,
     logCommand,
     logMessage,
-    logError
+    logError,
+    logWarn,
+    logInfo,
+    logDebug,
+    logTrace,
+    shouldLog,
 };

@@ -230,6 +230,9 @@ export interface GroupSettingsRepository {
         type: 'welcome' | 'bye' | 'promote' | 'demote';
         text: string;
         photoMode?: boolean;
+        registeredBy?: string;
+        hidetag?: boolean;
+        groupPhoto?: boolean;
     }): Promise<void>;
     setNsfwSchedule(groupId: string, schedule: string): Promise<void>;
     setBanned(groupId: string, banned: boolean): Promise<void>;
@@ -288,6 +291,26 @@ export interface CharacterRepository {
 
 export interface ApiTokenRepository {
     findTokenB64(name: string): Promise<string | null>;
+}
+
+export interface AudioResponseRecord {
+    scope: string;
+    phrase: string;
+    regex: string;
+    audioUrls: string[];
+    deleted: boolean | null;
+}
+
+export interface AudioResponseRepository {
+    listByScopes(scopes: string[]): Promise<AudioResponseRecord[]>;
+    listAll(): Promise<AudioResponseRecord[]>;
+    upsert(input: {
+        scope: string;
+        phrase: string;
+        regex: string;
+        audioUrls: string[];
+    }): Promise<void>;
+    markDeleted(scope: string, phrase: string, regex?: string): Promise<void>;
 }
 
 export interface PendingReport {
@@ -357,6 +380,7 @@ export interface AppRepositories {
     subbots: SubbotRepository;
     characters: CharacterRepository;
     apiTokens: ApiTokenRepository;
+    audioResponses: AudioResponseRepository;
     groupSettings: GroupSettingsRepository;
     reports: ReportRepository;
     chatMemory: ChatMemoryRepository;

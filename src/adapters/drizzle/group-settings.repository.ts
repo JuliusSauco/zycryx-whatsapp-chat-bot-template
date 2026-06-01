@@ -10,17 +10,26 @@ export const groupSettingsRepository: GroupSettingsRepository = {
 
         return {
             group_id: row.groupId,
+            welcomeConfigId: row.welcomeConfigId,
             welcome: row.welcome ?? true,
             detect: row.detect ?? true,
             antifake: row.antifake ?? false,
             antilink: row.antilink ?? false,
             antilink2: row.antilink2 ?? false,
+            virusTotal: row.virusTotal ?? false,
             modohorny: row.modohorny ?? false,
             audios: row.audios ?? false,
             antiStatus: row.antiStatus ?? false,
             modoadmin: row.modoadmin ?? false,
-            photowelcome: row.photowelcome ?? false,
-            photobye: row.photobye ?? false,
+            photowelcome: row.photowelcome ?? true,
+            welcomeRegisteredBy: row.welcomeRegisteredBy,
+            welcomeHidetag: row.welcomeHidetag ?? false,
+            welcomeGroupPhoto: row.welcomeGroupPhoto ?? false,
+            byeConfigId: row.byeConfigId,
+            byeRegisteredBy: row.byeRegisteredBy,
+            byeHidetag: row.byeHidetag ?? false,
+            byeGroupPhoto: row.byeGroupPhoto ?? false,
+            photobye: row.photobye ?? true,
             autolevelup: row.autolevelup ?? true,
             nsfw_horario: row.nsfwHorario,
             sWelcome: row.sWelcome,
@@ -81,11 +90,14 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             detect: groupSettings.detect,
             antilink: groupSettings.antilink,
             antilink2: groupSettings.antilink2,
+            virusTotal: groupSettings.virusTotal,
             antiporn: groupSettings.antiporn,
             audios: groupSettings.audios,
             antifake: groupSettings.antifake,
             modohorny: groupSettings.modohorny,
             modoadmin: groupSettings.modoadmin,
+            welcomeHidetag: groupSettings.welcomeHidetag,
+            byeHidetag: groupSettings.byeHidetag,
         } as const;
         const column = columns[flag as keyof typeof columns];
         if (!column) throw new Error(`Flag de group_settings no soportado: ${flag}`);
@@ -98,7 +110,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             });
     },
 
-    async setTextMessage({groupId, type, text, photoMode}) {
+    async setTextMessage({groupId, type, text, photoMode, registeredBy, hidetag, groupPhoto}) {
         const textPropertyByType = {
             welcome: 'sWelcome',
             bye: 'sBye',
@@ -118,6 +130,34 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             const photoProperty = photoPropertyByType[type];
             values[photoProperty] = photoMode;
             updates[photoProperty] = photoMode;
+        }
+        if (type === 'welcome') {
+            if (registeredBy) {
+                values.welcomeRegisteredBy = registeredBy;
+                updates.welcomeRegisteredBy = registeredBy;
+            }
+            if (typeof hidetag === 'boolean') {
+                values.welcomeHidetag = hidetag;
+                updates.welcomeHidetag = hidetag;
+            }
+            if (typeof groupPhoto === 'boolean') {
+                values.welcomeGroupPhoto = groupPhoto;
+                updates.welcomeGroupPhoto = groupPhoto;
+            }
+        }
+        if (type === 'bye') {
+            if (registeredBy) {
+                values.byeRegisteredBy = registeredBy;
+                updates.byeRegisteredBy = registeredBy;
+            }
+            if (typeof hidetag === 'boolean') {
+                values.byeHidetag = hidetag;
+                updates.byeHidetag = hidetag;
+            }
+            if (typeof groupPhoto === 'boolean') {
+                values.byeGroupPhoto = groupPhoto;
+                updates.byeGroupPhoto = groupPhoto;
+            }
         }
 
         await orm.insert(groupSettings)

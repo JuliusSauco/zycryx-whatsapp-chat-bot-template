@@ -34,6 +34,7 @@ DO $$
 BEGIN
     IF to_regclass('group_settings') IS NOT NULL THEN
         ALTER TABLE group_settings ADD COLUMN IF NOT EXISTS antistatus BOOLEAN DEFAULT false;
+        ALTER TABLE group_settings ADD COLUMN IF NOT EXISTS virustotal BOOLEAN DEFAULT false;
         ALTER TABLE group_settings ADD COLUMN IF NOT EXISTS modoadmin BOOLEAN DEFAULT false;
         ALTER TABLE group_settings ADD COLUMN IF NOT EXISTS photowelcome BOOLEAN DEFAULT false;
         ALTER TABLE group_settings ADD COLUMN IF NOT EXISTS photobye BOOLEAN DEFAULT false;

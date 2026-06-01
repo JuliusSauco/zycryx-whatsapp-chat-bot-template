@@ -40,17 +40,26 @@ export interface SubbotConfig {
 
 export interface GroupSettings {
     group_id?: string;
+    welcomeConfigId?: number | null;
     welcome: boolean;
     detect: boolean;
     antifake: boolean;
     antilink: boolean;
     antilink2: boolean;
+    virusTotal: boolean;
     modohorny: boolean;
     audios: boolean;
     nsfw_horario?: string | null;
     antiStatus: boolean;
     modoadmin: boolean;
     photowelcome: boolean;
+    welcomeRegisteredBy?: string | null;
+    welcomeHidetag: boolean;
+    welcomeGroupPhoto: boolean;
+    byeConfigId?: number | null;
+    byeRegisteredBy?: string | null;
+    byeHidetag: boolean;
+    byeGroupPhoto: boolean;
     photobye: boolean;
     autolevelup: boolean;
     sWelcome?: string | null;
