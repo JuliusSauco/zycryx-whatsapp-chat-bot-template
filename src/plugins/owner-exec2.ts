@@ -4,6 +4,11 @@ import {definePlugin} from '../core/define-plugin.js';
 
 let exec = promisify(_exec).bind(cp);
 
+type ExecResult = {
+    stdout?: string;
+    stderr?: string;
+};
+
 export default definePlugin({
     help: ['$'],
     tags: ['owner'],
@@ -11,17 +16,15 @@ export default definePlugin({
     rowner: true,
     async execute(m, {conn, isROwner}) {
         if (!isROwner) return;
-        const legacyConn = conn as any;
-        if (legacyConn.user?.jid !== legacyConn.user?.jid) return;
 
         m.react("💻");
 
         let commandInput = m.originalText?.replace(/^\$+\s?/, '').trim();
-        let o;
+        let o: ExecResult = {};
         try {
             o = await exec(commandInput);
-        } catch (e: any) {
-            o = e;
+        } catch (e: unknown) {
+            o = e as ExecResult;
         } finally {
             let {stdout, stderr} = o;
             if (stdout?.trim()) m.reply(stdout);

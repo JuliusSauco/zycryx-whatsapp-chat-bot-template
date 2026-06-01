@@ -1,18 +1,31 @@
 import {definePlugin} from '../core/define-plugin.js';
 import {addWalletResource} from '../services/wallet.service.js';
+import type {ExtendedConn} from '../types/context.js';
 
-const salasTTT = new Map();
-const symbols = ['❌', '⭕'];
+type TttSymbol = '❌' | '⭕';
+type BoardCell = TttSymbol | string;
+type TttResult = TttSymbol | 'empate' | null;
+
+interface SalaTTT {
+    nombre: string;
+    chat: string;
+    jugadores: string[];
+    tablero: BoardCell[];
+    turno: string;
+}
+
+const salasTTT = new Map<string, SalaTTT>();
+const symbols: [TttSymbol, TttSymbol] = ['❌', '⭕'];
 const numerosEmoji = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'];
 
-function renderTablero(tablero: any) {
+function renderTablero(tablero: BoardCell[]) {
     return `
      ${tablero.slice(0, 3).join('')}
      ${tablero.slice(3, 6).join('')}
      ${tablero.slice(6).join('')}`;
 }
 
-function verificarGanador(tablero: any) {
+function verificarGanador(tablero: BoardCell[]): TttResult {
     const combinaciones = [
         [0, 1, 2], [3, 4, 5], [6, 7, 8],
         [0, 3, 6], [1, 4, 7], [2, 5, 8],
@@ -20,13 +33,17 @@ function verificarGanador(tablero: any) {
     ];
     for (const [a, b, c] of combinaciones) {
         if (tablero[a] === tablero[b] && tablero[b] === tablero[c]) {
-            return tablero[a];
+            return isTttSymbol(tablero[a]) ? tablero[a] : null;
         }
     }
-    return tablero.every((x: any) => x === '❌' || x === '⭕') ? 'empate' : null;
+    return tablero.every((x) => x === '❌' || x === '⭕') ? 'empate' : null;
 }
 
-async function enviarEstado(conn: any, sala: any, textoExtra = '') {
+function isTttSymbol(value: BoardCell): value is TttSymbol {
+    return value === '❌' || value === '⭕';
+}
+
+async function enviarEstado(conn: ExtendedConn, sala: SalaTTT, textoExtra = '') {
     const [j1, j2] = sala.jugadores;
     const simboloJ1 = symbols[0];
     const simboloJ2 = symbols[1];
@@ -111,7 +128,7 @@ Usa: /ttt para unirte.`);
     return await enviarEstado(conn, salaLibre);
     },
 
-    async before(m: any, {conn}: any) {
+    async before(m, {conn}) {
     const numero = parseInt(m.originalText.trim());
     if (!numero || numero < 1 || numero > 9) return;
 
@@ -130,7 +147,8 @@ Usa: /ttt para unirte.`);
                 } else {
                     const xp = Math.floor(Math.random() * 3000) + 1000;
                     const ganadorId = sala.jugadores[sala.tablero[idx] === symbols[0] ? 0 : 1];
-                    const perdedorId = sala.jugadores.find((j: any) => j !== ganadorId);
+                    const perdedorId = sala.jugadores.find((j) => j !== ganadorId);
+                    if (!ganadorId || !perdedorId) return;
                     await addWalletResource(ganadorId, 'exp', xp);
                     await addWalletResource(perdedorId, 'exp', -xp);
                     texto = `🎉 @${ganadorId.split('@')[0]} *ganarte* y recibe *${xp} XP*!`;
@@ -140,7 +158,9 @@ Usa: /ttt para unirte.`);
                 return;
             }
 
-            sala.turno = sala.jugadores.find((j: any) => j !== m.sender);
+            const nextTurn = sala.jugadores.find((j) => j !== m.sender);
+            if (!nextTurn) return;
+            sala.turno = nextTurn;
             await enviarEstado(conn, sala);
         } else {
             m.reply('❌ Esa casilla ya está ocupada.');

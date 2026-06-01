@@ -45,7 +45,7 @@ export default definePlugin({
             await addWalletResource(cleanJid, 'exp', -cantidad);
             return m.reply(`*≡ ✨ EXP QUITADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* ${cantidad}\n┗━━━━━━━━━━━━`);
         }
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error(e);
         return m.reply("❌ Error al modificar datos.");
     }

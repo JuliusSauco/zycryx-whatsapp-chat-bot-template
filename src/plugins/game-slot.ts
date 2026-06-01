@@ -1,6 +1,10 @@
 import {definePlugin} from '../core/define-plugin.js';
 import {addWalletResourceAndSetWait, getWallet, isWalletResource} from '../services/wallet.service.js';
 
+type SlotSymbol = string;
+type SlotRow = [SlotSymbol, SlotSymbol, SlotSymbol];
+type SlotMatrix = [SlotRow, SlotRow, SlotRow];
+
 export default definePlugin({
     command: ['slot'],
     help: ['slot <xp|money|limite> <cantidad>'],
@@ -27,15 +31,15 @@ export default definePlugin({
     const saldo = user[tipo];
     if (saldo < cantidad) return m.reply(`❌ No tienes suficiente ${tipo.toUpperCase()} para apostar. Tienes *${formatNumber(saldo)}*`);
 
-    const emojis = ['💎', '⚡', '🪙', '🧿', '💣', '🔮'];
-    let final;
-    const msg = await conn.sendMessage(m.chat, {text: renderRandom(emojis)}, {quoted: m});
+    const emojis: SlotSymbol[] = ['💎', '⚡', '🪙', '🧿', '💣', '🔮'];
+    let final: SlotMatrix | null = null;
+    const msg = await conn.sendMessage(m.chat, {text: render(renderRandom(emojis))}, {quoted: m});
     if (!msg) return;
 
     for (let i = 0; i < 6; i++) {
         await delay(300);
         if (i < 5) {
-            await conn.sendMessage(m.chat, {text: renderRandom(emojis), edit: msg.key});
+            await conn.sendMessage(m.chat, {text: render(renderRandom(emojis)), edit: msg.key});
         } else {
             final = [
                 [rand(emojis), rand(emojis), rand(emojis)],
@@ -45,7 +49,7 @@ export default definePlugin({
             await conn.sendMessage(m.chat, {text: render(final), edit: msg.key});
         }
     }
-    // @ts-ignore
+    if (!final) return;
     const resultado = evaluarLinea(final[1]);
     let ganancia = 0;
     let textoFinal = '';
@@ -67,46 +71,45 @@ export default definePlugin({
     }
 });
 
-function rand(arr: any) {
+function rand<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function render(matriz: any) {
-    // @ts-ignore
+function render(matriz: SlotMatrix) {
     return `🎰 | *SLOTS* | 🎰\n────────────\n${matriz.map(row => row.join(' | ')).join('\n')}\n────────────`;
 }
 
-function renderRandom(emojis: any) {
+function renderRandom(emojis: SlotSymbol[]): SlotMatrix {
     const temp = [
         [rand(emojis), rand(emojis), rand(emojis)],
         [rand(emojis), rand(emojis), rand(emojis)],
         [rand(emojis), rand(emojis), rand(emojis)],
-    ];
-    return render(temp);
+    ] as SlotMatrix;
+    return temp;
 }
 
-function evaluarLinea(arr: any) {
+function evaluarLinea(arr: SlotRow) {
     const [a, b, c] = arr;
     if (a === b && b === c) return 'triple';
     if (a === b || b === c || a === c) return 'doble';
     return 'nada';
 }
 
-function delay(ms: any) {
+function delay(ms: number) {
     return new Promise(res => setTimeout(res, ms));
 }
 
-function formatNumber(num: any) {
+function formatNumber(num: number) {
     return num.toLocaleString('en').replace(/,/g, '.');
 }
 
-function msToTime(duration: any) {
+function msToTime(duration: number) {
     const s = Math.floor(duration / 1000) % 60;
     const m = Math.floor(duration / (1000 * 60)) % 60;
     return `${m ? `${m}m ` : ''}${s}s`;
 }
 
-function tipoBonito(tipo: any) {
+function tipoBonito(tipo: string) {
     if (tipo === 'money') return 'LoliCoins';
     if (tipo === 'limite') return 'Diamantes';
     return 'XP';

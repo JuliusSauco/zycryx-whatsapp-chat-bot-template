@@ -9,6 +9,7 @@ declare global {
     var owner: string[][];
     var info: BotInfo;
     var multiplier: number;
+    var videoList: Array<{from: string; urls: string[]}>;
 
     interface Array<T> {
         getRandom(): T;

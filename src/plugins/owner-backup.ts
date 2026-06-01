@@ -27,7 +27,7 @@ export default definePlugin({
                 mimetype: 'application/json',
                 fileName: `creds.json`
             }, {quoted: m})
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e)
             await m.react('❌')
             await m.reply('❌ Error al generar el respaldo de la sesión.')

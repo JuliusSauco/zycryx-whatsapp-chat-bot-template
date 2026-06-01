@@ -12,8 +12,8 @@ export default definePlugin({
     try {
         const base64 = Buffer.from(text, 'utf-8').toString('base64');
         return m.reply(`${base64}`);
-    } catch (e: any) {
-        return m.reply(`❌ Error al convertir: ${e.message}`);
+    } catch (e: unknown) {
+        return m.reply(`❌ Error al convertir: ${e instanceof Error ? e.message : String(e)}`);
     }
     }
 })

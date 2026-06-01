@@ -50,6 +50,7 @@ export const ENV = {
     LOLHUMAN_API_KEY: process.env.LOLHUMAN_API_KEY || '',
     TENOR_API_KEY: process.env.TENOR_API_KEY || '',
     TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
+    SKYULTRA_API_KEY: process.env.SKYULTRA_API_KEY || '',
     UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY || '',
     ZENKEY_API_KEY: process.env.ZENKEY_API_KEY || '',
     TRANSLATE_API_KEY: process.env.TRANSLATE_API_KEY || '',

@@ -1,7 +1,17 @@
 import {definePlugin} from '../core/define-plugin.js'
 import {listWallets} from '../services/wallet.service.js'
+import type {UserWallet} from '../ports/repositories.js'
+import type {proto} from '@whiskeysockets/baileys'
 
-const cooldowns = new Map()
+type RankedWallet = UserWallet & {jid: string}
+type RankingProp = 'exp' | 'limite' | 'money' | 'banco'
+
+interface CooldownEntry {
+    lastUsed: number;
+    rankingMessage: proto.WebMessageInfo | null;
+}
+
+const cooldowns = new Map<string, CooldownEntry>()
 const COOLDOWN_DURATION = 180000 // 3 min
 
 export default definePlugin({
@@ -25,7 +35,7 @@ export default definePlugin({
         return
     }
 
-    const users = (await listWallets()).map((u: any) => ({...u, jid: u.id}))
+    const users: RankedWallet[] = (await listWallets()).map(u => ({...u, jid: u.id}))
     const sortedExp = [...users].sort((a, b) => b.exp - a.exp)
     const sortedLim = [...users].sort((a, b) => b.limite - a.limite)
     const sortedMoney = [...users].sort((a, b) => b.money - a.money)
@@ -33,8 +43,8 @@ export default definePlugin({
 
     const len = args[0] ? Math.min(100, Math.max(parseInt(args[0]), 10)) : Math.min(10, sortedExp.length)
 
-    const format = (list: any, prop: any, icon: any) =>
-        list.slice(0, len).map(({jid, [prop]: value, nombre}: any, i: any) =>
+    const format = (list: RankedWallet[], prop: RankingProp, icon: string) =>
+        list.slice(0, len).map(({jid, [prop]: value}, i) =>
             `${i + 1}. @${jid.split('@')[0]} *${formatNumber(value)}* (${value}) ${icon}`).join('\n')
 
     const text = `\`🏆 𝚃𝙰𝙱𝙻𝙰 𝙳𝙴 𝙲𝙻𝙰𝚂𝙸𝙲𝙰𝙲𝙸𝙾𝙽\`
@@ -67,7 +77,7 @@ ${format(sortedBanc, 'banco', '💵')}
     }
 })
 
-function formatNumber(num: any) {
+function formatNumber(num: number) {
     return num >= 1e6 ? (num / 1e6).toFixed(1) + 'M'
         : num >= 1e3 ? (num / 1e3).toFixed(1) + 'k'
             : num.toString()

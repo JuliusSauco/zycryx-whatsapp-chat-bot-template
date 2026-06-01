@@ -39,11 +39,11 @@ export default definePlugin({
             await delay(3000);
             await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
         }
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(err);
     }
     }
 });
 
 ;
-const delay = (ms: any) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

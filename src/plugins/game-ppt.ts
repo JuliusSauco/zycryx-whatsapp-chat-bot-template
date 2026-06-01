@@ -1,11 +1,26 @@
 import {definePlugin} from '../core/define-plugin.js';
-import {addWalletResource, getWallet} from '../services/wallet.service.js';
+import {addWalletResource} from '../services/wallet.service.js';
 
 const cooldown = 30_000;
-const retos = new Map();
-const jugadas = new Map();
-const cooldowns = new Map();
-const jugadasValidas = ['piedra', 'papel', 'tijera'];
+type Jugada = 'piedra' | 'papel' | 'tijera';
+type Resultado = 'gana' | 'pierde' | 'empate';
+
+interface RetoPpt {
+    retador: string;
+    chat: string;
+    timeout: ReturnType<typeof setTimeout>;
+}
+
+interface PartidaPpt {
+    jugadores: [string, string];
+    eleccion: Partial<Record<string, Jugada>>;
+    timeout: ReturnType<typeof setTimeout>;
+}
+
+const retos = new Map<string, RetoPpt>();
+const jugadas = new Map<string, PartidaPpt>();
+const cooldowns = new Map<string, number>();
+const jugadasValidas: Jugada[] = ['piedra', 'papel', 'tijera'];
 
 export default definePlugin({
     help: ['ppt piedra|papel|tijera', 'ppt @usuario'],
@@ -18,12 +33,10 @@ export default definePlugin({
     const cooldownRestante = (cooldowns.get(userId) || 0) + cooldown - now;
     if (cooldownRestante > 0) return conn.fakeReply(m.chat, `*🕓 𝙃𝙚𝙮, 𝙀𝙨𝙥𝙚𝙧𝙖 ${msToTime(cooldownRestante)} 𝙖𝙣𝙩𝙚𝙨 𝙙𝙚 𝙪𝙨𝙖𝙧 𝙤𝙩𝙧𝙤𝙨 𝙘𝙤𝙢𝙖𝙣𝙙𝙤*`, m.sender, `ᴺᵒ ʰᵃᵍᵃⁿ ˢᵖᵃᵐ`, 'status@broadcast');
 
-    const user = await getWallet(userId);
-    ;
     const opponent = m.mentionedJid?.[0];
     const input = args[0]?.toLowerCase();
 
-    if (!opponent && jugadasValidas.includes(input)) {
+    if (!opponent && isJugada(input)) {
         cooldowns.set(userId, now);
         const botJugada = jugadasValidas[Math.floor(Math.random() * 3)];
         const resultado = evaluar(input, botJugada);
@@ -64,11 +77,13 @@ export default definePlugin({
     m.reply(`𝐏𝐢𝐞𝐝𝐫𝐚 🗿, 𝐏𝐚𝐩𝐞𝐥 📄 𝐨 𝐓𝐢𝐣𝐞𝐫𝐚 ✂️\n\n👾 𝙅𝙪𝙜𝙖𝙧 𝙘𝙤𝙣 𝙚𝙡 𝙗𝙤𝙩:\n• ${usedPrefix + command} piedra\n• ${usedPrefix + command} papel\n• ${usedPrefix + command} tijera\n\n🕹 𝙅𝙪𝙜𝙖𝙧 𝙘𝙤𝙣 𝙪𝙣 𝙪𝙨𝙪𝙖𝙧𝙞𝙤:\n${usedPrefix + command} @0`);
     },
 
-    async before(m: any, {conn}: any) {
+    async before(m, {conn}) {
     const text = m.originalText?.toLowerCase();
     const userId = m.sender;
-    if (['aceptar', 'rechazar'].includes(text) && retos.has(userId)) {
-        const {retador, chat, timeout} = retos.get(userId);
+    if (isRetoResponse(text) && retos.has(userId)) {
+        const reto = retos.get(userId);
+        if (!reto) return;
+        const {retador, chat, timeout} = reto;
         clearTimeout(timeout);
         retos.delete(userId);
 
@@ -77,7 +92,7 @@ export default definePlugin({
         }
 
         jugadas.set(chat, {
-            jugadores: [retador, userId],
+            jugadores: [retador, userId] as [string, string],
             eleccion: {},
             timeout: setTimeout(() => {
                 jugadas.delete(chat);
@@ -92,7 +107,7 @@ export default definePlugin({
         return;
     }
 
-    if (jugadasValidas.includes(text)) {
+    if (isJugada(text)) {
         for (const [chat, partida] of jugadas) {
             const {jugadores, eleccion, timeout} = partida;
             if (!jugadores.includes(userId)) continue;
@@ -107,6 +122,7 @@ export default definePlugin({
             const [j1, j2] = jugadores;
             const jugada1 = eleccion[j1];
             const jugada2 = eleccion[j2];
+            if (!jugada1 || !jugada2) return;
             const resultado = evaluar(jugada1, jugada2);
             const xp = Math.floor(Math.random() * 2000) + 500;
             let mensaje = `✊🖐✌️ *Piedra, Papel o Tijera*\n\n@${j1.split('@')[0]} eligió: *${jugada1}*\n@${j2.split('@')[0]} eligió: *${jugada2}*\n\n`;
@@ -127,17 +143,25 @@ export default definePlugin({
     }
 });
 
-function evaluar(a: any, b: any) {
+function isJugada(value: string | undefined): value is Jugada {
+    return value === 'piedra' || value === 'papel' || value === 'tijera';
+}
+
+function isRetoResponse(value: string | undefined): value is 'aceptar' | 'rechazar' {
+    return value === 'aceptar' || value === 'rechazar';
+}
+
+function evaluar(a: Jugada, b: Jugada): Resultado {
     if (a === b) return 'empate';
     if ((a === 'piedra' && b === 'tijera') || (a === 'tijera' && b === 'papel') || (a === 'papel' && b === 'piedra')) return 'gana';
     return 'pierde';
 }
 
-function formatNumber(n: any) {
+function formatNumber(n: number) {
     return n.toLocaleString('en').replace(/,/g, '.');
 }
 
-function msToTime(ms: any) {
+function msToTime(ms: number) {
     const s = Math.floor(ms / 1000) % 60;
     const m = Math.floor(ms / 60000) % 60;
     return `${m ? `${m}m ` : ''}${s}s`;

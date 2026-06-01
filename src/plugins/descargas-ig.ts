@@ -1,11 +1,27 @@
 import {definePlugin} from '../core/define-plugin.js'
 import fetch from 'node-fetch';
-import axios from 'axios';
 import {instagramdl} from '@bochilteam/scraper';
-import {fileTypeFromBuffer} from 'file-type';
 
-const userMessages = new Map();
-const userRequests: Record<string, any> = {};
+interface InstagramMediaData {
+    url: string
+    type: string
+    caption: string
+}
+
+interface InstagramArrayResponse {
+    data?: Array<{
+        url?: string
+        type?: string
+    }>
+}
+
+interface FgmodsInstagramResponse {
+    result?: Array<{
+        url?: string
+    }>
+}
+
+const userRequests: Record<string, boolean> = {};
 
 export default definePlugin({
     help: ['instagram *<link ig>*'],
@@ -14,27 +30,29 @@ export default definePlugin({
     register: true,
     limit: 1,
     async execute(m, {conn, args, command, usedPrefix}) {
-    const datas = global;
     if (!args[0]) return m.reply(`⚠️ Ingresa el enlace del vídeo de Instagram junto al comando.\n\nEjemplo: *${usedPrefix + command}* https://www.instagram.com/p/C60xXk3J-sb/?igsh=YzljYTk1ODg3Zg==`)
     if (userRequests[m.sender]) return await conn.reply(m.chat, `Oye @${m.sender.split('@')[0]}, calma, ya estás descargando algo 😒\nEspera a que termine tu solicitud actual antes de hacer otra...`, m)
     userRequests[m.sender] = true;
     await m.react('⌛');
     try {
-        const downloadAttempts = [
+        const downloadAttempts: Array<() => Promise<InstagramMediaData>> = [
             async () => {
                 const res = await fetch(`https://api.siputzx.my.id/api/d/igdl?url=${args[0]}`);
-                const data = await res.json() as any;
-                const fileType = data.data[0].url.includes('.webp') ? 'image' : 'video';
+                const data = await res.json() as InstagramArrayResponse;
+                const media = data.data?.[0];
+                if (!media?.url) throw new Error('Respuesta inválida de Siputz');
+                const fileType = media.url.includes('.webp') ? 'image' : 'video';
                 return {
-                    url: data.data[0].url,
+                    url: media.url,
                     type: fileType,
                     caption: fileType === 'image' ? '_*Aqui tiene tu imagen de Instagram*_' : '*Aqui esta el video de Instagram*',
                 }
             },
             async () => {
                 const res = await fetch(`${info.fgmods.url}/downloader/igdl?url=${args[0]}&apikey=${info.fgmods.key}`);
-                const data = await res.json() as any;
-                const result = data.result[0];
+                const data = await res.json() as FgmodsInstagramResponse;
+                const result = data.result?.[0];
+                if (!result?.url) throw new Error('Respuesta inválida de Fgmods');
                 const fileType = result.url.endsWith('.jpg') || result.url.endsWith('.png') ? 'image' : 'video';
                 return {
                     url: result.url,
@@ -45,11 +63,13 @@ export default definePlugin({
             async () => {
                 const apiUrl = `${info.apis}/download/instagram?url=${encodeURIComponent(args[0])}`;
                 const apiResponse = await fetch(apiUrl);
-                const delius = await apiResponse.json() as any;
+                const delius = await apiResponse.json() as InstagramArrayResponse;
+                const media = delius.data?.[0];
+                if (!media?.url || !media.type) throw new Error('Respuesta inválida de API principal');
                 return {
-                    url: delius.data[0].url,
-                    type: delius.data[0].type,
-                    caption: delius.data[0].type === 'image' ? '_*Aqui tiene tu imagen de Instagram*_' : '*Aqui esta el video de Instagram*',
+                    url: media.url,
+                    type: media.type,
+                    caption: media.type === 'image' ? '_*Aqui tiene tu imagen de Instagram*_' : '*Aqui esta el video de Instagram*',
                 }
             },
             async () => {
@@ -69,8 +89,8 @@ export default definePlugin({
             try {
                 fileData = await attempt();
                 if (fileData) break;
-            } catch (err: any) {
-                console.error(`Error in attempt: ${err.message}`);
+            } catch (err: unknown) {
+                console.error(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
                 continue;
             }
         }
@@ -79,7 +99,7 @@ export default definePlugin({
         const fileName = fileData.type === 'image' ? 'ig.jpg' : 'ig.mp4';
         await conn.sendFile(m.chat, fileData.url, fileName, fileData.caption, m);
         await m.react('✅');
-    } catch (e: any) {
+    } catch (e: unknown) {
         await m.react('❌');
         console.log(e);
     } finally {
@@ -90,18 +110,3 @@ export default definePlugin({
 
 ;
 
-const getBuffer = async (url: any, options: any) => {
-    options = options || {};
-    const res = await axios({
-        method: 'get',
-        url,
-        headers: {'DNT': 1, 'Upgrade-Insecure-Request': 1}, ...options,
-        responseType: 'arraybuffer'
-    });
-    const buffer = Buffer.from(res.data, 'binary');
-    const detectedType = await fileTypeFromBuffer(buffer);
-    if (!detectedType || (detectedType.mime !== 'image/jpeg' && detectedType.mime !== 'image/png' && detectedType.mime !== 'video/mp4')) {
-        return null;
-    }
-    return {buffer, detectedType};
-};

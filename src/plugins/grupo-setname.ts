@@ -9,7 +9,7 @@ export default definePlugin({
     botAdmin: true,
     group: true,
     async execute(m, {conn, args, text}) {
-    const pp = await conn.profilePictureUrl(m.chat, 'image').catch((_: any) => null) || './media/Menu1.jpg'
+    const pp = await conn.profilePictureUrl(m.chat, 'image').catch(() => null) || './media/Menu1.jpg'
     if (!text) throw "⚠️ Ingresar el texto para el grupo"
     try {
         let text = args.join(' ')
@@ -18,7 +18,7 @@ export default definePlugin({
             conn.groupUpdateSubject(m.chat, text)
         }
         m.react("✅️")
-    } catch (e: any) {
+    } catch (e: unknown) {
         throw "error"
     }
     }

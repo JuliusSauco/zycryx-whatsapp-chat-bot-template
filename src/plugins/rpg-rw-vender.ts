@@ -3,11 +3,20 @@ import {definePlugin} from '../core/define-plugin.js'
 
 import {completeCharacterSale, listCharactersByOwner, putCharacterForSale} from '../services/character.service.js';
 import {addWalletResource, getWallet} from '../services/wallet.service.js';
+import type {CharacterRecord} from '../ports/repositories.js';
 
-const pendingSales = new Map();
+interface PendingSale {
+    seller: string;
+    buyer: string;
+    character: CharacterRecord;
+    price: number;
+    timer: ReturnType<typeof setTimeout>;
+}
+
+const pendingSales = new Map<string, PendingSale>();
 const cooldownTime = 3600000; // 1 hora
 
-function calculateMaxPrice(basePrice: any, votes: any) {
+function calculateMaxPrice(basePrice: number, votes: number) {
     if (votes === 0) {
         return Math.round(basePrice * 1.05);
     }
@@ -16,7 +25,7 @@ function calculateMaxPrice(basePrice: any, votes: any) {
     return Math.round(maxPrice);
 }
 
-function calculateMinPrice(basePrice: any) {
+function calculateMinPrice(basePrice: number) {
     return Math.round(basePrice * 0.95);
 }
 
@@ -25,7 +34,7 @@ export default definePlugin({
     tags: ['gacha'],
     command: ['rw-vender', 'vender'],
     register: true,
-    async before(m, {conn}: any) {
+    async before(m, {conn}) {
     const buyerId = m.sender;
     const sale = pendingSales.get(buyerId);
     if (!sale) return;
@@ -49,7 +58,7 @@ export default definePlugin({
             pendingSales.delete(buyerId);
 
             return conn.reply(m.chat, `✅ @${buyer.split('@')[0]} ha comprado *${character.name}* de @${seller.split('@')[0]} por ${price} exp.`, m, {mentions: [buyer, seller]});
-        } catch (e: any) {
+        } catch (e: unknown) {
             clearTimeout(sale.timer);
             pendingSales.delete(buyerId);
             return conn.reply(m.chat, '⚠️ Error al procesar la compra. Intenta de nuevo.', m);
@@ -67,14 +76,14 @@ export default definePlugin({
         if (args.length < 2) {
             if (userCharacters.length === 0) return conn.reply(m.chat, '⚠️ No tienes personajes registrados. Reclama uno primero.', m);
             let characterList = 'Lista de tus personajes:\n';
-            userCharacters.forEach((character: any, index: any) => {
+            userCharacters.forEach((character, index) => {
                 characterList += `${index + 1}. ${character.name} - ${character.price} exp\n`;
             });
             return conn.reply(m.chat, `*⚠️ Pendejo no sabes como usar estos? Usa de la siguiente manera:*\n\n• Puedes vender un personaje a un usuario con:\n${usedPrefix + command} <nombre del personaje> <precio> @tag\n\n• O puedes poner tu personaje en el mercado:\nEj: ${usedPrefix + command} goku 9500\n\n` + characterList, m);
         }
 
         const mentioned = m.mentionedJid[0] || null;
-        const mentionIndex = args.findIndex((arg: any) => arg.startsWith('@'));
+        const mentionIndex = args.findIndex(arg => arg.startsWith('@'));
         let priceText = args[args.length - 1];
         if (mentioned && mentionIndex !== -1) {
             priceText = args[args.length - 2];
@@ -88,7 +97,7 @@ export default definePlugin({
         if (!characterName) return conn.reply(m.chat, '⚠️ No se encontró el nombre del personaje. Verifica e intenta nuevamente.', m);
 
         const characterToSell = userCharacters.find(
-            (c: any) => c.name.toLowerCase() === characterName.toLowerCase()
+            c => c.name.toLowerCase() === characterName.toLowerCase()
         );
 
         if (!characterToSell) return conn.reply(m.chat, '⚠️ No se encontró el personaje que intentas vender.', m);
@@ -127,7 +136,7 @@ export default definePlugin({
             await putCharacterForSale(characterToSell.id, price, m.sender, previousPrice);
             return conn.reply(m.chat, `✅ Has puesto a la venta *${characterToSell.name}* en el mercado por ${price} exp.`, m);
         }
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error(e);
         return conn.reply(m.chat, '⚠️ Error al procesar la venta. Intenta de nuevo.', m);
     }

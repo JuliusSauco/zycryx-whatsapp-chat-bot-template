@@ -21,11 +21,11 @@ export default definePlugin({
                         `> 💬 Chats totales: *${info.chats}*`,
                         `> 💾 Tamaño total DB: *${info.totalSize ?? '0 bytes'}*`,
                         `\n📁 *\`TAMAÑO POR TABLA:\`*`,
-                        ...info.tablas.map((r: any) => `• *${r.tabla}*: ${r.filas} filas — ${r.tamano}`)
+                        ...info.tablas.map(r => `• *${r.tabla}*: ${r.filas} filas — ${r.tamano}`)
                     ].join('\n');
 
                     await m.reply(text);
-                } catch (e: any) {
+                } catch (e: unknown) {
                     console.error('[❌] /db info error:', e);
                     await m.reply('❌ Error al consultar la base de datos.');
                 }
@@ -38,7 +38,7 @@ export default definePlugin({
                     await vacuumDatabase();
                     const tiempo = ((Date.now() - inicio) / 1000).toFixed(2);
                     await m.reply(`✅ *Optimización completada.*\n📉 Se ejecutó *VACUUM FULL*\n⏱️ Duración: *${tiempo} segundos*`);
-                } catch (e: any) {
+                } catch (e: unknown) {
                     console.error('[❌] Error en optimizar:', e);
                     await m.reply('❌ No se pudo optimizar.');
                 }

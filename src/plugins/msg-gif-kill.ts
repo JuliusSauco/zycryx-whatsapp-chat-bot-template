@@ -3,22 +3,6 @@ import fs from 'fs'
 import path from 'path'
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../utils/mention.js'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface MessageContext {
-    conn: any
-    participants?: any[]
-}
-
-interface Message {
-    chat: string
-    sender: string
-    mentionedJid: string[]
-    quoted?: { sender?: string }
-    reply: (text: string) => Promise<void>
-    react: (emoji: string) => Promise<void>
-}
-
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const GIF_FOLDER = path.join(process.cwd(), 'media', 'gifs', 'kl')

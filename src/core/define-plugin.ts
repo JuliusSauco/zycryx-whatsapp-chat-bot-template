@@ -47,6 +47,8 @@ export interface PluginDefinition {
     money?: number;
     /** Nivel mínimo requerido. */
     level?: number;
+    /** Permite que `before` corra también cuando el mensaje es un comando con prefijo. */
+    runBeforeOnCommand?: boolean;
     /** Hook que se ejecuta ANTES de cualquier comando (para middlewares como antilink). */
     before?: (m: BotMessage, ctx: Pick<PluginContext, 'conn' | 'isOwner'>) => Promise<boolean | void | unknown>;
     /** Lógica principal del plugin. */
@@ -77,6 +79,7 @@ export function definePlugin(def: PluginDefinition): Plugin {
     if (def.limit !== undefined) fn.limit = def.limit;
     if (def.money !== undefined) fn.money = def.money;
     if (def.level !== undefined) fn.level = def.level;
+    if (def.runBeforeOnCommand !== undefined) fn.runBeforeOnCommand = def.runBeforeOnCommand;
     if (def.before) fn.before = def.before;
 
     return fn;

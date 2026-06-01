@@ -2,18 +2,21 @@ import {sticker} from '../lib/sticker.js'
 import fetch from 'node-fetch'
 import {definePlugin} from '../core/define-plugin.js'
 
+interface NekosKissResponse {
+    url?: string;
+}
+
 export default definePlugin({
     help: ['kiss'],
     tags: ['sticker'],
     command: /^(msggifkiss|msggif-kiss|gifkiss|kissgif)$/i,
     register: true,
     async execute(m, {conn}) {
-    const legacyConn = conn as any
     try {
         if (m.quoted?.sender) m.mentionedJid.push(m.quoted.sender)
         if (!m.mentionedJid.length) m.mentionedJid.push(m.sender)
 
-        let getName = async (jid: any) => {
+        let getName = async (jid: string) => {
             let name = await conn.getName(jid).catch(() => null)
             return name || `+${jid.split('@')[0]}`
         }
@@ -21,13 +24,13 @@ export default definePlugin({
         let senderName = await getName(m.sender)
         let mentionedNames = await Promise.all(m.mentionedJid.map(getName))
         let res = await fetch('https://nekos.life/api/kiss')
-        let json = await res.json() as any
+        let json = await res.json() as NekosKissResponse
         let {url} = json
+        if (!url) return m.reply('❌ La API no devolvió sticker.')
         let texto = `💋 ${senderName} está besando a ${mentionedNames.join(', ')}`
         try {
-            // @ts-ignore
-            let stickerMessage = await sticker(null, url, texto)
-            await legacyConn.sendFile(m.chat, stickerMessage, 'sticker.webp', '', m, true, {
+            let stickerMessage = await sticker(null, url, texto, info.author)
+            await conn.sendFile(m.chat, stickerMessage, 'sticker.webp', '', m, true, {
                 contextInfo: {
                     forwardingScore: 200,
                     isForwarded: false,
@@ -40,8 +43,8 @@ export default definePlugin({
                         thumbnail: m.pp
                     }
                 }
-            }, {quoted: m})
-        } catch (err: any) {
+            })
+        } catch (err: unknown) {
             await conn.sendMessage(m.chat, {
                 video: {url: url},
                 gifPlayback: true,
@@ -49,7 +52,7 @@ export default definePlugin({
                 mentions: m.mentionedJid
             }, {quoted: m})
         }
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error(e)
     }
     }

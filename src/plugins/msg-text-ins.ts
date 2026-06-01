@@ -13,7 +13,7 @@ function getFrases(): string[] {
             .split('|')
             .map(s => s.trim())
             .filter(Boolean)
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('No se pudo leer media/text/msg-text-ins.txt:', e)
         return []
     }
@@ -51,7 +51,7 @@ export default definePlugin({
             // contextInfo propio para evitar que simple.ts inyecte el banner "Ver canal".
             contextInfo: {mentionedJid: mentions},
         }, {quoted: m})
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error(e)
         m.react('❌️')
     }

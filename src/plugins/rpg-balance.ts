@@ -7,7 +7,7 @@ export default definePlugin({
     command: ['bal', 'diamantes', 'diamond', 'balance'],
     register: true,
     async execute(m, {conn, usedPrefix}) {
-    const who = m.quoted?.sender || m.mentionedJid?.[0] || (m.fromMe ? (conn as any).user?.jid || m.sender : m.sender);
+    const who = m.quoted?.sender || m.mentionedJid?.[0] || (m.fromMe ? conn.user?.id || m.sender : m.sender);
     const user = await getWallet(who);
     if (!user) throw '✳️ El usuario no se encuentra en la base de datos.';
 

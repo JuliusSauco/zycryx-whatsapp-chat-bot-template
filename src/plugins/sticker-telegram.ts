@@ -4,6 +4,25 @@ import {getStickerExif} from '../services/sticker-settings.service.js';
 import {definePlugin} from '../core/define-plugin.js';
 import {ENV} from '../core/env.js';
 
+interface TelegramSticker {
+    thumb?: {file_id?: string};
+    thumbnail?: {file_id?: string};
+}
+
+interface TelegramStickerSetResponse {
+    ok?: boolean;
+    result?: {
+        stickers?: TelegramSticker[];
+    };
+}
+
+interface TelegramFileResponse {
+    ok?: boolean;
+    result?: {
+        file_path?: string;
+    };
+}
+
 export default definePlugin({
     help: ['stikertele *<url>*'],
     tags: ['sticker', 'downloader'],
@@ -12,7 +31,6 @@ export default definePlugin({
     register: true,
     async execute(m, {conn, args, usedPrefix, command}) {
     if (!ENV.TELEGRAM_BOT_TOKEN) return m.reply('❌ TELEGRAM_BOT_TOKEN no está configurado.');
-    const legacyConn = conn as any
     const {packname: f, author: g} = await getStickerExif(m.sender);
     if (!args[0]) throw `⚠️ 𝙉𝙂𝙍𝙀𝙎𝙀 𝙀𝙇 𝙀𝙉𝙇𝘼𝘾𝙀 𝘿𝙀 𝙎𝙏𝙄𝘾𝙆𝙀𝙍 𝙏𝙀𝙇𝙀𝙂𝙍𝘼𝙈\n𝙀𝙅𝙀𝙈𝙋𝙇𝙊:\n${usedPrefix + command} https://t.me/addstickers/Porcientoreal`
     if (!args[0].match(/(https:\/\/t.me\/addstickers\/)/gi)) throw `⚠️ 𝙇𝘼 𝙐𝙍𝙇 𝙀𝙎 𝙄𝙉𝘾𝙊𝙍𝙍𝙀𝘾𝙏𝘼\n𝙏𝙃𝙀 𝙐𝙍𝙇 𝙄𝙎 𝙄𝙉𝘾𝙊𝙍𝙍𝙀𝘾𝙏`
@@ -23,20 +41,19 @@ export default definePlugin({
         method: "GET",
         headers: {"User-Agent": "GoogleBot"}
     })
-    // @ts-ignore
-    if (!gas.ok) throw eror
-    let json = await gas.json()
-    // @ts-ignore
-    m.reply(`✔️ *𝙎𝙏𝙄𝘾𝙆𝙀𝙍 𝙏𝙊𝙏𝘼𝙇𝙀𝙎:* ${json.result.stickers.length}\n*𝙀𝙉𝙑𝙄𝘼𝘿𝙊 𝙀𝙇:* ${json.result.stickers.length * 1.5} Segundos`.trim())
-    // @ts-ignore
-    for (let i = 0; i < json.result.stickers.length; i++) {
-        // @ts-ignore
-        let fileId = json.result.stickers[i].thumb.file_id
+    if (!gas.ok) throw new Error(`Telegram API error ${gas.status}`)
+    let json = await gas.json() as TelegramStickerSetResponse
+    const stickers = json.result?.stickers || [];
+    if (!stickers.length) return m.reply('❌ No se encontraron stickers en ese pack.');
+    m.reply(`✔️ *𝙎𝙏𝙄𝘾𝙆𝙀𝙍 𝙏𝙊𝙏𝘼𝙇𝙀𝙎:* ${stickers.length}\n*𝙀𝙉𝙑𝙄𝘼𝘿𝙊 𝙀𝙇:* ${stickers.length * 1.5} Segundos`.trim())
+    for (let i = 0; i < stickers.length; i++) {
+        let fileId = stickers[i].thumb?.file_id || stickers[i].thumbnail?.file_id;
+        if (!fileId) continue;
         let gasIn = await fetch(`${telegramApi}/getFile?file_id=${fileId}`)
-        let jisin = await gasIn.json()
-        // @ts-ignore
+        let jisin = await gasIn.json() as TelegramFileResponse
+        if (!jisin.result?.file_path) continue;
         let stiker = await sticker(false, `${telegramFileApi}/${jisin.result.file_path}`, f, g)
-        await legacyConn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, {
+        await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, {
             contextInfo: {
                 'forwardingScore': 200,
                 'isForwarded': false,
@@ -49,11 +66,11 @@ export default definePlugin({
                     thumbnail: m.pp
                 }
             }
-        }, {quoted: m})
+        })
         await delay(3000)
     }
     throw `⚠️ ERROR QUE PASO? NOSE TU SABES? INFORMARLE A MI CREATOR PARA QUE LOS ARREGLE EN VAGO ESE JJJJ`
     }
 })
 
-const delay = (time: any) => new Promise(res => setTimeout(res, time))
+const delay = (time: number) => new Promise(res => setTimeout(res, time))

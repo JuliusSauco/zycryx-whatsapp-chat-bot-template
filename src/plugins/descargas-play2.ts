@@ -1,7 +1,5 @@
 import {definePlugin} from '../core/define-plugin.js'
-//import { youtubedl, youtubedlv2 } from '@bochilteam/scraper'
 import fetch from 'node-fetch'
-// @ts-ignore
 import yts from 'yt-search'
 import ytdl from 'ytdl-core'
 import axios from 'axios'
@@ -10,13 +8,12 @@ import {ogmp3} from '../lib/youtubedl.js';
 import {amdl, ytdown} from '../lib/scraper.js';
 import {ENV} from '../core/env.js';
 
-const userRequests: Record<string, any> = {};
+const userRequests: Record<string, boolean> = {};
 export default definePlugin({
     help: ['ytmp4', 'ytmp3'],
     tags: ['downloader'],
     command: /^(ytmp3|ytmp4|fgmp4|fgmp3|dlmp3|ytmp4doc|ytmp3doc)$/i,
     async execute(m, {conn, text, args, usedPrefix, command}) {
-    const legacyConn = conn as any;
     if (!args[0]) return m.reply('*𝙌𝙪𝙚 𝙚𝙨𝙩𝙖 𝙗𝙪𝙨𝙘𝙖𝙙𝙤🤔 𝙄𝙣𝙜𝙧𝙚𝙨𝙚 𝙚𝙡 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚 𝙔𝙤𝙪𝙏𝙪𝙗𝙚 𝙥𝙖𝙧𝙖 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙧 𝙚𝙡 𝙖𝙪𝙙𝙞𝙤*')
     const sendType = command.includes('doc') ? 'document' : command.includes('mp3') ? 'audio' : 'video';
     const yt_play = await search(args.join(' '));
@@ -26,10 +23,8 @@ export default definePlugin({
     } else {
         const index = parseInt(args[0]) - 1;
         if (index >= 0) {
-            // @ts-ignore
             if (Array.isArray(global.videoList) && global.videoList.length > 0) {
-                // @ts-ignore
-                const matchingItem = global.videoList.find((item: any) => item.from === m.sender);
+                const matchingItem = global.videoList.find(item => item.from === m.sender);
                 if (matchingItem) {
                     if (index < matchingItem.urls.length) {
                         youtubeLink = matchingItem.urls[index];
@@ -55,110 +50,96 @@ export default definePlugin({
                 const format = isAudio ? 'mp3' : '720'
                 const result = await savetube.download(args[0], format)
                 const data = result.result
-                await legacyConn.sendMessage(m.chat, {
-                    // @ts-ignore
+                if (!data?.download) throw new Error('Respuesta inválida de SaveTube')
+                await conn.sendMessage(m.chat, {
                     [sendType]: {url: data.download},
                     mimetype: 'audio/mpeg',
                     fileName: `audio.mp3`,
                     contextInfo: {}
                 }, {quoted: m});
-            } catch (e: any) {
+            } catch (e: unknown) {
                 try {
                     const format = args[1] || '720p';
                     const response = await amdl.download(args[0], format);
                     const {title, type, download, thumbnail} = response.result;
                     if (type === 'audio') {
-                        await legacyConn.sendMessage(m.chat, {
+                        await conn.sendMessage(m.chat, {
                             [sendType]: {url: download},
                             mimetype: 'audio/mpeg',
                             fileName: `${title}.mp3`,
                             contextInfo: {}
                         }, {quoted: m});
                     }
-                } catch (e: any) {
+                } catch (e: unknown) {
                     try {
                         const format = args[1] || 'mp3';
                         const response = await ytdown.download(args[0], format);
                         const {title, type, download, thumbnail} = response;
                         if (type === 'audio') {
-                            await legacyConn.sendMessage(m.chat, {
+                            await conn.sendMessage(m.chat, {
                                 [sendType]: {url: download},
                                 mimetype: 'audio/mpeg',
                                 fileName: `${title}.mp3`,
                                 contextInfo: {}
                             }, {quoted: m})
                         }
-                    } catch (e: any) {
+                    } catch (e: unknown) {
                         try {
                             const res = await fetch(`https://api.siputzx.my.id/api/d/ytmp3?url=${args}`);
-                            let {data} = await res.json() as any;
-                            await legacyConn.sendMessage(m.chat, {
-                                [sendType]: {url: data.dl},
+                            let {data} = await res.json() as {data?: {dl?: string}};
+                            await conn.sendMessage(m.chat, {
+                                [sendType]: {url: data?.dl},
                                 mimetype: 'audio/mpeg',
                                 contextInfo: {}
                             }, {quoted: m});
-                        } catch (e: any) {
+                        } catch (e: unknown) {
                             try {
                                 const res = await fetch(`https://api.agatz.xyz/api/ytmp3?url=${args}`)
-                                let data = await res.json() as any;
-                                await legacyConn.sendMessage(m.chat, {
-                                    [sendType]: {url: data.data.downloadUrl},
+                                let data = await res.json() as {data?: {downloadUrl?: string}};
+                                await conn.sendMessage(m.chat, {
+                                    [sendType]: {url: data.data?.downloadUrl},
                                     mimetype: 'audio/mpeg',
                                     contextInfo: {}
                                 }, {quoted: m});
-                            } catch (e: any) {
+                            } catch (e: unknown) {
                                 try {
                                     const res = await fetch(`https://api.zenkey.my.id/api/download/ytmp3?apikey=${ENV.ZENKEY_API_KEY}&url=${args}`)
-                                    let {result} = await res.json() as any
-                                    await legacyConn.sendMessage(m.chat, {
-                                        [sendType]: {url: await result.download.url},
+                                    let {result} = await res.json() as {result?: {download?: {url?: string}}}
+                                    await conn.sendMessage(m.chat, {
+                                        [sendType]: {url: result?.download?.url},
                                         mimetype: 'audio/mpeg',
                                         contextInfo: {}
                                     }, {quoted: m})
-                                } catch (e: any) {
+                                } catch (e: unknown) {
                                     try {
                                         const apiUrl = `${info.apis}/download/ytmp3?url=${args}`;
                                         const apiResponse = await fetch(apiUrl);
-                                        const delius = await apiResponse.json() as any;
+                                        const delius = await apiResponse.json() as {status?: boolean; data?: {download?: {url?: string}}};
 
                                         if (!delius.status) {
                                             return m.react("❌")
                                         }
-                                        const downloadUrl = delius.data.download.url;
-                                        await legacyConn.sendMessage(m.chat, {
+                                        const downloadUrl = delius.data?.download?.url;
+                                        await conn.sendMessage(m.chat, {
                                             [sendType]: {url: downloadUrl},
                                             mimetype: 'audio/mpeg',
                                             contextInfo: {}
                                         }, {quoted: m});
-                                    } catch (e: any) {
+                                    } catch (e: unknown) {
                                         try {
-                                            let q = '128kbps'
-                                            let v = youtubeLink
-                                            // @ts-ignore
-                                            const yt = await youtubedl(v).catch(async (_: any) => await youtubedlv2(v))
-                                            const dl_url = await yt.audio[q].download()
-                                            const ttl = await yt.title
-                                            const size = await yt.audio[q].fileSizeH
-                                            await legacyConn.sendMessage(m.chat, {
-                                                [sendType]: {url: dl_url},
-                                                mimetype: 'audio/mpeg',
+                                            let searchh = await yts(youtubeLink)
+                                            let __res = searchh.all.map(v => v).filter(v => v.type == "video")
+                                            const fallbackVideo = __res[0]
+                                            if (!fallbackVideo?.videoId) throw new Error('No se encontró video para fallback')
+                                            let infoo = await ytdl.getInfo('https://youtu.be/' + fallbackVideo.videoId)
+                                            let ress = await ytdl.chooseFormat(infoo.formats, {filter: 'audioonly'})
+                                            await conn.sendMessage(m.chat, {
+                                                [sendType]: {url: ress.url},
+                                                fileName: fallbackVideo.title + '.mp3',
+                                                mimetype: 'audio/mp4',
                                                 contextInfo: {}
-                                            }, {quoted: m});
-//conn.sendFile(m.chat, dl_url, ttl + '.mp3', null, m, false, { mimetype: 'audio/mp4' })
-                                        } catch (e: any) {
-                                            try {
-                                                let searchh = await yts(youtubeLink)
-                                                let __res = searchh.all.map((v: any) => v).filter((v: any) => v.type == "video")
-                                                let infoo = await ytdl.getInfo('https://youtu.be/' + __res[0].videoId)
-                                                let ress = await ytdl.chooseFormat(infoo.formats, {filter: 'audioonly'})
-                                                legacyConn.sendMessage(m.chat, {
-                                                    [sendType]: {url: ress.url},
-                                                    fileName: __res[0].title + '.mp3',
-                                                    mimetype: 'audio/mp4',
-                                                    contextInfo: {}
-                                                }, {quoted: m})
-                                            } catch (e: any) {
-                                            }
+                                            }, {quoted: m})
+                                        } catch (e: unknown) {
                                         }
                                     }
                                 }
@@ -174,127 +155,102 @@ export default definePlugin({
             try {
                 const result = await savetube.download(args[0], "720")
                 const data = result.result
-                await legacyConn.sendMessage(m.chat, {
-                    // @ts-ignore
+                if (!data?.download) throw new Error('Respuesta inválida de SaveTube')
+                await conn.sendMessage(m.chat, {
                     [sendType]: {url: data.download},
                     mimetype: 'video/mp4',
-                    // @ts-ignore
                     fileName: `${data.title}.mp4`,
-                    // @ts-ignore
                     caption: `🔰 Aquí está tu video\n🔥 Título: ${data.title}`
                 }, {quoted: m})
-            } catch (e: any) {
+            } catch (e: unknown) {
                 try {
                     const [input, quality = '720'] = text.split(' ');
                     const validQualities = ['240', '360', '480', '720', '1080'];
                     const selectedQuality = validQualities.includes(quality) ? quality : '720';
                     const res = await ogmp3.download(yt_play[0].url, selectedQuality, 'video');
-                    await legacyConn.sendMessage(m.chat, {
-                        // @ts-ignore
+                    if (!res.result?.download) throw new Error('Respuesta inválida de ogmp3')
+                    await conn.sendMessage(m.chat, {
                         [sendType]: {url: res.result.download},
                         mimetype: 'video/mp4',
                         caption: `🔰 Aquí está tu video \n🔥 Título: ${yt_play[0].title} (${selectedQuality}p)`
                     }, {quoted: m});
-                } catch (e: any) {
+                } catch (e: unknown) {
                     try {
                         const format = args[1] || '720p';
                         const response = await amdl.download(args[0], format);
                         const {title, type, download, thumbnail} = response.result;
                         if (type === 'video') {
-                            await legacyConn.sendMessage(m.chat, {
+                            await conn.sendMessage(m.chat, {
                                 [sendType]: {url: download},
                                 caption: `🔰 Aquí está tu video \n🔥 Título: ${yt_play[0].title}`,
                                 thumbnail: thumbnail
                             }, {quoted: m});
                         }
-                    } catch (e: any) {
+                    } catch (e: unknown) {
                         try {
                             const format = args[1] || 'mp4';
                             const response = await ytdown.download(args[0], format);
                             const {title, type, download, thumbnail} = response;
                             if (type === 'video') {
-                                await legacyConn.sendMessage(m.chat, {
+                                await conn.sendMessage(m.chat, {
                                     [sendType]: {url: download},
                                     caption: `🔰 Aquí está tu video \n🔥 Título: ${yt_play[0].title}`,
                                     thumbnail: thumbnail
                                 }, {quoted: m})
                             }
-                        } catch (e: any) {
+                        } catch (e: unknown) {
                             try {
                                 const res = await fetch(`https://api.siputzx.my.id/api/d/ytmp4?url=${args}`);
-                                let {data} = await res.json() as any;
-                                await legacyConn.sendMessage(m.chat, {
-                                    [sendType]: {url: data.dl},
+                                let {data} = await res.json() as {data?: {dl?: string}};
+                                await conn.sendMessage(m.chat, {
+                                    [sendType]: {url: data?.dl},
                                     fileName: `video.mp4`,
                                     mimetype: 'video/mp4',
                                     caption: `🔰 Aquí está tu video \n🔥 Título: ${yt_play[0].title}`
                                 }, {quoted: m})
-                            } catch (e: any) {
+                            } catch (e: unknown) {
                                 try {
                                     const res = await fetch(`https://api.agatz.xyz/api/ytmp4?url=${args}`)
-                                    let data = await res.json() as any;
-                                    await legacyConn.sendMessage(m.chat, {
-                                        [sendType]: {url: data.data.downloadUrl},
+                                    let data = await res.json() as {data?: {downloadUrl?: string}};
+                                    await conn.sendMessage(m.chat, {
+                                        [sendType]: {url: data.data?.downloadUrl},
                                         fileName: `video.mp4`,
                                         caption: `🔰 Aquí está tu video \n🔥 Título: ${yt_play[0].title}`
                                     }, {quoted: m})
-                                } catch (e: any) {
+                                } catch (e: unknown) {
                                     try {
                                         const res = await fetch(`https://api.zenkey.my.id/api/download/ytmp4?apikey=${ENV.ZENKEY_API_KEY}&url=${args}`)
-                                        let {result} = await res.json() as any
-                                        await legacyConn.sendMessage(m.chat, {
-                                            [sendType]: {url: result.download.url},
+                                        let {result} = await res.json() as {result?: {download?: {url?: string}}}
+                                        await conn.sendMessage(m.chat, {
+                                            [sendType]: {url: result?.download?.url},
                                             fileName: `video.mp4`,
                                             caption: `🔰 Aquí está tu video \n🔥 Título: ${yt_play[0].title}`
                                         }, {quoted: m})
-                                    } catch (e: any) {
+                                    } catch (e: unknown) {
                                         try {
                                             const axeelApi = `https://axeel.my.id/api/download/video?url=${args}`;
                                             const axeelRes = await fetch(axeelApi);
-                                            const axeelJson = await axeelRes.json();
-                                            // @ts-ignore
-                                            if (axeelJson && axeelJson.downloads?.url) {
-                                                // @ts-ignore
+                                            const axeelJson = await axeelRes.json() as {downloads?: {url?: string}};
+                                            if (axeelJson.downloads?.url) {
                                                 const videoUrl = axeelJson.downloads.url;
-                                                await legacyConn.sendMessage(m.chat, {
+                                                await conn.sendMessage(m.chat, {
                                                     [sendType]: {url: videoUrl},
                                                     fileName: `${yt_play[0].title}.mp4`,
                                                     caption: `🔰 Aquí está tu video \n🔥 Título: ${yt_play[0].title}`
                                                 }, {quoted: m})
                                             }
-                                        } catch (e: any) {
+                                        } catch (e: unknown) {
                                             try {
-                                                let qu = args[1] || '360'
-                                                let q = qu + 'p'
-                                                let v = youtubeLink
-                                                // @ts-ignore
-                                                const yt = await youtubedl(v).catch(async (_: any) => await youtubedlv2(v))
-                                                const dl_url = await yt.video[q].download()
-                                                const ttl = await yt.title
-                                                const size = await yt.video[q].fileSizeH
-                                                await await legacyConn.sendMessage(m.chat, {
-                                                    [sendType]: {url: dl_url},
-                                                    fileName: `${ttl}.mp4`,
-                                                    mimetype: 'video/mp4',
-                                                    caption: `🔰 𝘼𝙦𝙪𝙞 𝙚𝙨𝙩𝙖 𝙩𝙪 𝙫𝙞𝙙𝙚𝙤 \n🔥 𝙏𝙞𝙩𝙪𝙡𝙤: ${ttl}`,
-                                                    thumbnail: await fetch(yt.thumbnail)
+                                                let mediaa = await ytMp4(youtubeLink)
+                                                await conn.sendMessage(m.chat, {
+                                                    [sendType]: {url: mediaa.result},
+                                                    fileName: `error.mp4`,
+                                                    caption: `_${info.wm}_`,
+                                                    thumbnail: mediaa.thumb,
+                                                    mimetype: 'video/mp4'
                                                 }, {quoted: m})
-                                            } catch (e: any) {
-                                                try {
-                                                    let mediaa = await ytMp4(youtubeLink)
-                                                    await legacyConn.sendMessage(m.chat, {
-                                                        // @ts-ignore
-                                                        [sendType]: {url: mediaa.result},
-                                                        fileName: `error.mp4`,
-                                                        // @ts-ignore
-                                                        caption: `_${wm}_`,
-                                                        // @ts-ignore
-                                                        thumbnail: mediaa.thumb,
-                                                        mimetype: 'video/mp4'
-                                                    }, {quoted: m})
-                                                } catch (e: any) {
-                                                    console.log(e)
-                                                }
+                                            } catch (e: unknown) {
+                                                console.log(e)
                                             }
                                         }
                                     }
@@ -306,7 +262,7 @@ export default definePlugin({
             }
         }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error);
         m.react("❌️")
     } finally {
@@ -314,23 +270,23 @@ export default definePlugin({
     }
     }
 })
-async function search(query: any, options = {}) {
+async function search(query: string, options: Record<string, unknown> = {}) {
     const search = await yts.search({query, hl: 'es', gl: 'ES', ...options});
     return search.videos;
 }
 
-function bytesToSize(bytes: any) {
+function bytesToSize(bytes: string | number | undefined) {
     return new Promise((resolve, reject) => {
         const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
         if (bytes === 0) return 'n/a';
-        // @ts-ignore
-        const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
+        const numericBytes = Number(bytes || 0);
+        const i = Math.floor(Math.log(numericBytes) / Math.log(1024));
         if (i === 0) resolve(`${bytes} ${sizes[i]}`);
-        resolve(`${(bytes / (1024 ** i)).toFixed(1)} ${sizes[i]}`)
+        resolve(`${(numericBytes / (1024 ** i)).toFixed(1)} ${sizes[i]}`)
     })
 };
 
-async function ytMp3(url: any) {
+async function ytMp3(url: string) {
     return new Promise((resolve, reject) => {
         ytdl.getInfo(url).then(async (getUrl) => {
             let result = [];
@@ -353,7 +309,7 @@ async function ytMp3(url: any) {
     })
 }
 
-async function ytMp4(url: any) {
+async function ytMp4(url: string): Promise<{title: string; result: string; rersult2: string; thumb: string}> {
     return new Promise(async (resolve, reject) => {
         ytdl.getInfo(url).then(async (getUrl) => {
             let result = [];
@@ -376,9 +332,9 @@ async function ytMp4(url: any) {
     })
 };
 
-async function ytPlay(query: any) {
+async function ytPlay(query: string) {
     return new Promise((resolve, reject) => {
-        yts(query).then(async (getData: any) => {
+        yts(query).then(async (getData) => {
             let result = getData.videos.slice(0, 5);
             let url = [];
             for (let i = 0; i < result.length; i++) {
@@ -391,9 +347,9 @@ async function ytPlay(query: any) {
     })
 };
 
-async function ytPlayVid(query: any) {
+async function ytPlayVid(query: string) {
     return new Promise((resolve, reject) => {
-        yts(query).then(async (getData: any) => {
+        yts(query).then(async (getData) => {
             let result = getData.videos.slice(0, 5);
             let url = [];
             for (let i = 0; i < result.length; i++) {

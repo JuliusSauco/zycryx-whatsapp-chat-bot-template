@@ -1,5 +1,6 @@
 import {definePlugin} from '../core/define-plugin.js'
 import {listWallets} from '../services/wallet.service.js';
+import type {UserWallet} from '../ports/repositories.js';
 
 export default definePlugin({
     help: ['topstreak [página]'],
@@ -13,9 +14,9 @@ export default definePlugin({
     const now = Date.now();
     const twoDaysMs = 172800000; // 2 días
 
-    const users = (await listWallets())
-        .filter((u: any) => u.dailystreak > 0 && now - Number(u.lastclaim) <= twoDaysMs)
-        .sort((a: any, b: any) => b.dailystreak - a.dailystreak);
+    const users: UserWallet[] = (await listWallets())
+        .filter(u => u.dailystreak > 0 && now - Number(u.lastclaim) <= twoDaysMs)
+        .sort((a, b) => b.dailystreak - a.dailystreak);
     const totalActivos = users.length;
 
     if (!users.length) return m.reply(`⚠️ No hay usuarios activos en racha.\n\n¡Recuerda reclamar tu recompensa diaria usando /claim para aparecer aquí!`);

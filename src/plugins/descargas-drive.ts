@@ -1,11 +1,29 @@
 import {definePlugin} from '../core/define-plugin.js'
 import fetch from 'node-fetch';
+import type {QuotedMessage} from '../types/context.js';
 
-const userCaptions = new Map();
-const userRequests: Record<string, any> = {};
+interface DriveFileData {
+    url: string
+    filename: string
+}
+
+interface SiputzDriveResponse {
+    data?: {
+        download?: string
+        name?: string
+    }
+}
+
+interface DavidDriveResponse {
+    download_link?: string
+    name?: string
+}
+
+const userCaptions = new Map<string, QuotedMessage>();
+const userRequests: Record<string, boolean> = {};
 
 export default definePlugin({
-    help: ['drive'].map((v: any) => v + ' <url>'),
+    help: ['drive'].map(v => v + ' <url>'),
     tags: ['downloader'],
     command: /^(drive|drivedl|dldrive|gdrive)$/i,
     register: true,
@@ -20,26 +38,24 @@ export default definePlugin({
     userRequests[m.sender] = true;
     m.react("📥");
     try {
-        const waitMessageSent = conn.reply(m.chat, `*⌛ 𝐂𝐚𝐥𝐦𝐚 ✋ 𝐂𝐥𝐚𝐜𝐤, 𝐘𝐚 𝐞𝐬𝐭𝐨𝐲 𝐄𝐧𝐯𝐢𝐚𝐝𝐨 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 🚀*\n*𝐒𝐢 𝐧𝐨 𝐥𝐞 𝐥𝐥𝐞𝐠𝐚 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 𝐞𝐬 𝐝𝐞𝐛𝐢𝐝𝐨 𝐚 𝐪𝐮𝐞 𝐞𝐬 𝐦𝐮𝐲 𝐩𝐞𝐬𝐚𝐝𝐨*`, m)
+        const waitMessageSent = await conn.reply(m.chat, `*⌛ 𝐂𝐚𝐥𝐦𝐚 ✋ 𝐂𝐥𝐚𝐜𝐤, 𝐘𝐚 𝐞𝐬𝐭𝐨𝐲 𝐄𝐧𝐯𝐢𝐚𝐝𝐨 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 🚀*\n*𝐒𝐢 𝐧𝐨 𝐥𝐞 𝐥𝐥𝐞𝐠𝐚 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 𝐞𝐬 𝐝𝐞𝐛𝐢𝐝𝐨 𝐚 𝐪𝐮𝐞 𝐞𝐬 𝐦𝐮𝐲 𝐩𝐞𝐬𝐚𝐝𝐨*`, m)
         userCaptions.set(m.sender, waitMessageSent);
-        const downloadAttempts = [
+        const downloadAttempts: Array<() => Promise<DriveFileData>> = [
             async () => {
                 const api = await fetch(`https://api.siputzx.my.id/api/d/gdrive?url=${args[0]}`);
-                const data = await api.json();
+                const data = await api.json() as SiputzDriveResponse;
+                if (!data.data?.download || !data.data?.name) throw new Error('Respuesta inválida de Siputz');
                 return {
-                    // @ts-ignore
                     url: data.data.download,
-                    // @ts-ignore
                     filename: data.data.name,
                 };
             },
             async () => {
                 const api = await fetch(`https://apis.davidcyriltech.my.id/gdrive?url=${args[0]}`);
-                const data = await api.json();
+                const data = await api.json() as DavidDriveResponse;
+                if (!data.download_link || !data.name) throw new Error('Respuesta inválida de David Cyril');
                 return {
-                    // @ts-ignore
                     url: data.download_link,
-                    // @ts-ignore
                     filename: data.name,
                 }
             },
@@ -51,8 +67,8 @@ export default definePlugin({
             try {
                 fileData = await attempt();
                 if (fileData) break; // Si se obtiene un resultado, salir del bucle
-            } catch (err: any) {
-                console.error(`Error in attempt: ${err.message}`);
+            } catch (err: unknown) {
+                console.error(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
                 continue; // Si falla, intentar con la siguiente API
             }
         }
@@ -70,7 +86,7 @@ export default definePlugin({
             caption: undefined
         }, {quoted: m});
         await m.react("✅");
-    } catch (e: any) {
+    } catch (e: unknown) {
         m.react(`❌`);
         m.reply(`\`\`\`⚠️ OCURRIO UN ERROR ⚠️\`\`\`\n\n> *Reporta el siguiente error a mi creador con el comando:* #report\n\n>>> ${e} <<<<`);
         console.log(e);
@@ -82,9 +98,9 @@ export default definePlugin({
 
 ;
 
-const getMimetype = (fileName: any) => {
-    const extension = fileName.split('.').pop().toLowerCase();
-    const mimeTypes = {
+const getMimetype = (fileName: string) => {
+    const extension = fileName.split('.').pop()?.toLowerCase() || '';
+    const mimeTypes: Record<string, string> = {
         'pdf': 'application/pdf',
         'mp4': 'video/mp4',
         'jpg': 'image/jpeg',
@@ -112,6 +128,5 @@ const getMimetype = (fileName: any) => {
         'ogg': 'audio/ogg',
         'wav': 'audio/wav',
     };
-    // @ts-ignore
     return mimeTypes[extension] || 'application/octet-stream'; // Tipo por defecto
 };

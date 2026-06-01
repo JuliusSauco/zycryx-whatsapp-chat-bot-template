@@ -42,12 +42,12 @@ function getRandomColor() {
     return 'green';
 }
 
-function formatExp(amount: any) {
+function formatExp(amount: number) {
     if (amount >= 1000) return `${(amount / 1000).toFixed(1)}k (${amount.toLocaleString()})`;
     return amount.toLocaleString();
 }
 
-function msToTime(duration: any) {
+function msToTime(duration: number) {
     if (isNaN(duration) || duration <= 0) return '0s';
     const totalSeconds = Math.floor(duration / 1000);
     const minutes = Math.floor(totalSeconds / 60);

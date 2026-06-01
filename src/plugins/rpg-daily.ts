@@ -48,17 +48,17 @@ export default definePlugin({
     }
 });
 
-function msToTime(duration: any) {
+function msToTime(duration: number) {
     const totalSeconds = Math.floor(Math.max(0, duration) / 1000);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     return `${hours}h ${minutes}min`;
 }
 
-function formatNumber(num: any) {
+function formatNumber(num: number) {
     return num.toLocaleString('en').replace(/,/g, '.');
 }
 
-function formatK(num: any) {
+function formatK(num: number) {
     return (num / 1000).toFixed(1) + 'k';
 }

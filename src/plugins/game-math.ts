@@ -1,7 +1,16 @@
 import {definePlugin} from '../core/define-plugin.js';
 import {addWalletResource} from '../services/wallet.service.js';
 
-const mathGames = new Map();
+type MathOperator = '+' | '-' | '*' | '/';
+type DifficultyKey = keyof typeof dificultades;
+
+interface MathGame {
+    result: number;
+    exp: number;
+    intentos: number;
+}
+
+const mathGames = new Map<string, MathGame>();
 
 const dificultades = {
     noob: {ops: ['+', '-'], min: 1, max: 10, tiempo: 15000, exp: [300, 600]},
@@ -10,7 +19,7 @@ const dificultades = {
     hard: {ops: ['+', '-', '*'], min: 70, max: 120, tiempo: 30000, exp: [1500, 2000]},
     extreme: {ops: ['+', '-', '*', '/'], min: 100, max: 250, tiempo: 35000, exp: [2000, 3000]},
     impossible: {ops: ['+', '-', '*', '/'], min: 200, max: 999, tiempo: 40000, exp: [3000, 5000]}
-};
+} satisfies Record<string, {ops: MathOperator[]; min: number; max: number; tiempo: number; exp: [number, number]}>;
 
 export default definePlugin({
     help: ['math [dificultad]'],
@@ -19,8 +28,7 @@ export default definePlugin({
     register: true,
     async execute(m, {conn, args, command}) {
     const dificultad = (args[0] || '').toLowerCase();
-    // @ts-ignore
-    if (!dificultad || !dificultades[dificultad]) {
+    if (!isDifficultyKey(dificultad)) {
         return m.reply(`⚠️ Debes elegir una dificultad válida.
 
 Ejemplos:
@@ -32,12 +40,11 @@ Dificultades disponibles:
 ${Object.keys(dificultades).map(k => `- ${k}`).join('\n')}`);
     }
 
-    // @ts-ignore
     const nivel = dificultades[dificultad];
     const a = Math.floor(Math.random() * (nivel.max - nivel.min + 1)) + nivel.min;
     const b = Math.floor(Math.random() * (nivel.max - nivel.min + 1)) + nivel.min;
     const op = nivel.ops[Math.floor(Math.random() * nivel.ops.length)];
-    const result = op === '/' ? parseFloat((a / b).toFixed(2)) : eval(`${a}${op}${b}`);
+    const result = calculate(a, b, op);
     const recompensa = Math.floor(Math.random() * (nivel.exp[1] - nivel.exp[0] + 1)) + nivel.exp[0];
     mathGames.set(m.sender, {result, exp: recompensa, intentos: 3});
 
@@ -57,9 +64,10 @@ ${Object.keys(dificultades).map(k => `- ${k}`).join('\n')}`);
 ╰━━━⊰ 𓃠 ${info.vs} ⊱━━━━დ`);
     },
 
-    async before(m: any, {conn}: any) {
+    async before(m, {conn}) {
     if (!mathGames.has(m.sender)) return;
     const data = mathGames.get(m.sender);
+    if (!data) return;
     const {result, exp, intentos} = data;
     const entrada = m.originalText.trim();
     let correcta = false;
@@ -85,3 +93,14 @@ ${Object.keys(dificultades).map(k => `- ${k}`).join('\n')}`);
     }
     }
 });
+
+function isDifficultyKey(value: string): value is DifficultyKey {
+    return value in dificultades;
+}
+
+function calculate(a: number, b: number, op: MathOperator): number {
+    if (op === '+') return a + b;
+    if (op === '-') return a - b;
+    if (op === '*') return a * b;
+    return parseFloat((a / b).toFixed(2));
+}

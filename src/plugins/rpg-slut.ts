@@ -74,11 +74,11 @@ const slut = [
     "Le bailaste a un bot de economía y te soltó todo su saldo"
 ];
 
-function formatNumber(num: any) {
+function formatNumber(num: number) {
     return num.toLocaleString("en").replace(/,/g, ".");
 }
 
-function msToTime(duration: any) {
+function msToTime(duration: number) {
     const totalSeconds = Math.floor(duration / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;

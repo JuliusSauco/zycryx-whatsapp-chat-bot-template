@@ -9,8 +9,26 @@ import {
     findCharacterByUrl,
 } from '../services/character.service.js'
 import {addWalletResource, addWalletResourcesAndSetFields, getWallet} from '../services/wallet.service.js'
+import type {CharacterRecord} from '../ports/repositories.js'
 
-const tempCharacterStore = new Map()
+interface AniListCharacterResponse {
+    data?: {
+        Character?: {
+            name?: {full?: string}
+            image?: {large?: string}
+            gender?: string | null
+            favourites?: number | null
+            media?: {nodes?: Array<{title?: {romaji?: string | null}}>}
+        }
+    }
+}
+
+type TemporaryCharacter = CharacterRecord & {
+    esGratis?: boolean
+    messageId?: string
+}
+
+const tempCharacterStore = new Map<string, TemporaryCharacter>()
 
 async function getAniListCharacter() {
     const id = Math.floor(Math.random() * 200000)
@@ -34,7 +52,7 @@ async function getAniListCharacter() {
         body: JSON.stringify({query}),
     })
 
-    const json = await res.json() as any
+    const json = await res.json() as AniListCharacterResponse
     const c = json.data?.Character
     if (!c || !c.image?.large || !c.name?.full) return await getAniListCharacter()
 
@@ -48,7 +66,7 @@ async function getAniListCharacter() {
         name: c.name.full,
         url: c.image.large,
         tipo: c.gender || 'no comun',
-        anime: c.media?.nodes[0]?.title?.romaji || 'Anime',
+        anime: c.media?.nodes?.[0]?.title?.romaji || 'Anime',
         rareza,
         price,
         previous_price: null,
@@ -64,9 +82,10 @@ export default definePlugin({
     tags: ['gacha'],
     command: ['rf', 'rw'],
     register: true,
-    async before(m, {conn}: any) {
-    const character = m.quoted ? tempCharacterStore.get(m.quoted.key?.id || m.quoted.id) : null
-    if (m.quoted && /^[\/]?c$/i.test(m.originalText) && character && character.messageId === (m.quoted.key?.id || m.quoted.id)) {
+    async before(m, {conn}) {
+    const quotedId = m.quoted?.key?.id || m.quoted?.id
+    const character = quotedId ? tempCharacterStore.get(quotedId) : null
+    if (m.quoted && quotedId && /^[\/]?c$/i.test(m.originalText) && character && character.messageId === quotedId) {
         try {
             const user = await getWallet(m.sender)
             const claimedCharacter = await findCharacterByUrl(character.url)
@@ -112,8 +131,8 @@ export default definePlugin({
                 const msg = esGratis ? `🎁 ¡Reclamaste a ${character.name} totalmente GRATIS!` : `🎉 ¡Has comprado a ${character.name} por ${character.price} exp!`
                 await conn.sendMessage(m.chat, {text: msg, image: {url: character.url}}, {quoted: m})
             }
-            tempCharacterStore.delete(m.quoted?.key?.id || m.quoted?.id)
-        } catch (e: any) {
+            tempCharacterStore.delete(quotedId)
+        } catch (e: unknown) {
             console.error(e)
             return conn.sendMessage(m.chat, {text: '⚠️ Error al procesar la compra. Intenta de nuevo.'}, {quoted: m})
         }
@@ -161,18 +180,16 @@ export default definePlugin({
         });
 
         const messageId = sentMessage.key?.id
-        tempCharacterStore.set(messageId, {...claimedCharacter, esGratis, messageId})
+        if (messageId) tempCharacterStore.set(messageId, {...claimedCharacter, esGratis, messageId})
 
-        setTimeout(() => tempCharacterStore.delete(m.sender), 5 * 60 * 1000)
+        if (messageId) setTimeout(() => tempCharacterStore.delete(messageId), 5 * 60 * 1000)
         await addWalletResourcesAndSetFields({userId: m.sender, resources: {}, fields: {ryTime: now}})
-    } catch (e: any) {
+    } catch (e: unknown) {
     }
     },
-})
+})
 
-function msToTime(duration: any) {
-    // @ts-ignore
-    const milliseconds = parseInt((duration % 1000) / 100)
+function msToTime(duration: number) {
     const seconds = Math.floor((duration / 1000) % 60)
     const minutes = Math.floor((duration / (1000 * 60)) % 60)
     const minutesStr = minutes < 10 ? `0${minutes}` : minutes

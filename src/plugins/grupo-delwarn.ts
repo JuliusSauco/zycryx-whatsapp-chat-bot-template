@@ -30,7 +30,7 @@ export default definePlugin({
         } else {
             await conn.reply(m.chat, `*⚠️ El usuario @${who.split('@')[0]} no tiene ninguna advertencia.*`, m)
         }
-    } catch (err: any) {
+    } catch (err: unknown) {
     }
     }
 });

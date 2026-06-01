@@ -11,8 +11,7 @@ export default definePlugin({
     command: ['s', 'sticker'],
     register: true,
     async execute(m, {conn, args, usedPrefix, command}) {
-    const legacyConn = conn as any
-    let stiker = false;
+    let stiker: Buffer | string | false = false;
     const {packname: f, author: g} = await getStickerExif(m.sender);
     try {
         let q = m.quoted ? m.quoted : m
@@ -21,11 +20,10 @@ export default definePlugin({
             if (/video/g.test(mime)) if ((q.msg?.seconds || q.seconds || 0) > 18) return m.reply('⚠️ ¿Dónde has visto un sticker de 15 segundos, pendejo? Haz el video más corto, con un máximo de 12 segundos.')
             let img = await q.download?.()
             if (!img) return m.reply(`*Y la imagen? 🤔 Responde a una imagen para hacer el sticker. Usa:* ${usedPrefix + command}`)
-            let out
+            let out: string | string[] | undefined
             try {
-                // @ts-ignore
                 stiker = await sticker(img, false, f, g)
-            } catch (e: any) {
+            } catch (e: unknown) {
                 console.error(e)
             } finally {
 //conn.reply(m.chat, `Calma crack estoy haciendo tu sticker 👏\n\n> *Recuerda los video son de 7 segundos*`, m)
@@ -33,21 +31,19 @@ export default definePlugin({
                     if (/webp/g.test(mime)) out = await webp2png(img)
                     else if (/image/g.test(mime)) out = await uploadImage(img)
                     else if (/video/g.test(mime)) out = await uploadFile(img)
+                    if (Array.isArray(out)) out = out[0]
                     if (typeof out !== 'string') out = await uploadImage(img)
-                    // @ts-ignore
                     stiker = await sticker(false, out, f, g)
                 }
             }
         } else if (args[0]) {
-            // @ts-ignore
             if (isUrl(args[0])) stiker = await sticker(false, args[0], f, g)
             else return m.reply('URL invalido')
         }
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error(e)
-        if (!stiker) stiker = e
     } finally {
-        if (stiker) legacyConn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, {
+        if (stiker) await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, {
             contextInfo: {
                 'forwardingScore': 200,
                 'isForwarded': false,
@@ -60,12 +56,12 @@ export default definePlugin({
                     thumbnail: m.pp
                 }
             }
-        }, {quoted: m})
+        })
         else return m.reply(`*Y la imagen? 🤔 Responde a una imagen para hacer el sticker. Usa:* ${usedPrefix + command}`)
     }
     }
 })
 
-const isUrl = (text: any) => {
+const isUrl = (text: string) => {
     return text.match(new RegExp(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)(jpe?g|gif|png)/, 'gi'))
 }

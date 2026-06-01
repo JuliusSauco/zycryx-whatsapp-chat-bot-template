@@ -13,16 +13,16 @@ export default definePlugin({
     try {
         const characters = await listCharacterClaimOwners();
         const totalCharacters = characters.length;
-        const claimedCharacters = characters.filter((c: any) => c.claimed_by);
-        const freeCharacters = characters.filter((c: any) => !c.claimed_by);
+        const claimedCharacters = characters.filter(c => c.claimed_by);
+        const freeCharacters = characters.filter(c => !c.claimed_by);
 
-        const userClaims = claimedCharacters.reduce((acc: any, character: any) => {
+        const userClaims = claimedCharacters.reduce<Record<string, number>>((acc, character) => {
+            if (!character.claimed_by) return acc;
             acc[character.claimed_by] = (acc[character.claimed_by] || 0) + 1;
             return acc;
         }, {});
 
         const topUsers = Object.entries(userClaims)
-            // @ts-ignore
             .sort(([, countA], [, countB]) => countB - countA)
             .slice(0, 10);
 
@@ -36,7 +36,7 @@ export default definePlugin({
             text: textt + `\n\n> _*¡Sigue usando el bot para reclamar más personajes!*_`,
             contextInfo: {mentionedJid: topUsers.map(([user]) => user)}
         }, {quoted: m});
-    } catch (e: any) {
+    } catch (e: unknown) {
     }
     }
 })

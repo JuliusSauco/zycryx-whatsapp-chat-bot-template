@@ -38,12 +38,12 @@ export default definePlugin({
         message += `*• Usuario:* @${targetUser.split('@')[0]}\n`;
         message += `*• Personajes comprados:* ${userCharacters.length}\n\n`;
         message += `*\`○ Lista de Personajes:\`*\n`;
-        currentPageCharacters.forEach((character: any, index: any) => {
+        currentPageCharacters.forEach((character, index) => {
             message += `${index + 1}. *${character.name}* (${character.price.toLocaleString()})\n`;
         });
         message += `\n> *• Página:* ${page} de ${totalPages}`;
         return conn.reply(m.chat, message, m, {mentions: [targetUser]});
-    } catch (e: any) {
+    } catch (e: unknown) {
         return conn.reply(m.chat, '⚠️ Error al mostrar el inventario. Intenta de nuevo.', m);
     }
     }

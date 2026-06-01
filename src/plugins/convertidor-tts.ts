@@ -10,6 +10,9 @@ const __dirname = path.dirname(__filename)
 const TMP_DIR = path.join(__dirname, "../tmp")
 if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, {recursive: true})
 
+type VoiceEffect = "anonymous" | "robot" | "grave" | "aguda" | "niño" | "demonio";
+const voces: VoiceEffect[] = ["anonymous", "robot", "grave", "aguda", "niño", "demonio"]
+
 export default definePlugin({
     help: ["tts <voz|idioma> <texto>"],
     tags: ["convertidor"],
@@ -20,10 +23,9 @@ export default definePlugin({
     m.react("🎙️")
     conn.sendPresenceUpdate('recording', m.chat)
     const first = args[0].toLowerCase()
-    const voces = ["anonymous", "robot", "grave", "aguda", "niño", "demonio"]
-    let effect = null, lang = "es", text = ""
+    let effect: VoiceEffect | null = null, lang = "es", text = ""
 
-    if (voces.includes(first)) {
+    if (isVoiceEffect(first)) {
         effect = first
         text = args.slice(1).join(" ")
     } else if (/^[a-z]{2}$/.test(first)) {
@@ -41,14 +43,14 @@ export default definePlugin({
         await conn.sendMessage(m.chat, {audio: buffer, mimetype: "audio/ogg; codecs=opus", ptt: true}, {quoted: m})
         fs.unlinkSync(wav);
         fs.unlinkSync(ogg)
-    } catch (e: any) {
-        m.reply("❌ Error: " + e.message)
+    } catch (e: unknown) {
+        m.reply("❌ Error: " + (e instanceof Error ? e.message : String(e)))
     }
     }
 })
 
-function runFFmpeg(args: any) {
-    return new Promise((resolve, reject) => {
+function runFFmpeg(args: string[]) {
+    return new Promise<boolean>((resolve, reject) => {
         const ff = spawn("ffmpeg", args)
         let stderr = ""
         ff.stderr.on("data", (d) => (stderr += d.toString()))
@@ -59,17 +61,16 @@ function runFFmpeg(args: any) {
     })
 }
 
-async function synthTTS(text: any, lang = "es") {
+async function synthTTS(text: string, lang = "es") {
     const outPath = path.join(TMP_DIR, `${Date.now()}-raw.wav`)
     const tts = gTTS(lang)
-    await new Promise((res, rej) => {
-        // @ts-ignore
-        tts.save(outPath, text, (err: any) => (err ? rej(err) : res()))
+    await new Promise<void>((res, rej) => {
+        tts.save(outPath, text, (err) => (err ? rej(err) : res()))
     })
     return outPath
 }
 
-async function applyEffect(inputWav: any, style: any = null) {
+async function applyEffect(inputWav: string, style: VoiceEffect | null = null) {
     const outPath = path.join(TMP_DIR, `${Date.now()}-out.ogg`)
     const styleFilters: Record<string, string> = {
         anonymous: "asetrate=44100*0.75,lowpass=f=1400,highpass=f=180",
@@ -92,4 +93,8 @@ async function applyEffect(inputWav: any, style: any = null) {
     ]
     await runFFmpeg(args)
     return outPath
+}
+
+function isVoiceEffect(value: string): value is VoiceEffect {
+    return voces.includes(value as VoiceEffect);
 }

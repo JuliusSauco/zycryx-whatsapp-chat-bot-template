@@ -1,7 +1,15 @@
 import {definePlugin} from '../core/define-plugin.js'
 import axios from 'axios';
 
-const userRequests: Record<string, any> = {};
+interface TikTokSearchItem {
+    hd?: string
+}
+
+interface TikTokSearchResponse {
+    meta?: TikTokSearchItem[]
+}
+
+const userRequests: Record<string, boolean> = {};
 
 export default definePlugin({
     help: ['tiktoksearch <texto>'],
@@ -15,15 +23,15 @@ export default definePlugin({
     userRequests[m.sender] = true;
     m.react("⏳")
     try {
-        let {data: response} = await axios.get(`${info.apis}/search/tiktoksearch?query=${text}`);
+        let {data: response} = await axios.get<TikTokSearchResponse>(`${info.apis}/search/tiktoksearch?query=${text}`);
         if (!response || !response.meta || !Array.isArray(response.meta) || response.meta.length === 0) return m.reply(`❌ No se encontraron resultados para "${text}".`);
         let searchResults = response.meta;
         shuffleArray(searchResults);
         let selectedResults = searchResults.slice(0, 5);
-        const medias = selectedResults.map((result: any) => ({type: "video", data: {url: result.hd}}));
+        const medias = selectedResults.map(result => ({type: "video", data: {url: result.hd}}));
         await conn.sendAlbumMessage(m.chat, medias, `✅ Resultados para: ${text}`, m);
         m.react("✅️");
-    } catch (error: any) {
+    } catch (error: unknown) {
         m.react("❌️")
         console.error(error);
     } finally {
@@ -34,7 +42,7 @@ export default definePlugin({
 
 ;
 
-function shuffleArray(array: any) {
+function shuffleArray<T>(array: T[]) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];

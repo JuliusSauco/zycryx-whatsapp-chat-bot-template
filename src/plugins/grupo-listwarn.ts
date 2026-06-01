@@ -10,7 +10,7 @@ export default definePlugin({
     async execute(m, {conn, participants, metadata}) {
     try {
         const users = await listWarnedUsers();
-        const warnedUsers = users.filter(user => participants.some((p: any) => p.id === user.id)).map(user => ({
+        const warnedUsers = users.filter(user => participants.some(p => p.id === user.id)).map(user => ({
             id: user.id,
             warn: user.warn
         }));
@@ -28,7 +28,7 @@ export default definePlugin({
             }
         }
         await conn.reply(m.chat, teks, m)
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(err);
     }
     }

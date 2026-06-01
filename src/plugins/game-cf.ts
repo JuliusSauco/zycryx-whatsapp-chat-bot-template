@@ -25,21 +25,12 @@ export default definePlugin({
     }
 });
 
-function msToTime(duration: any) {
-    // @ts-ignore
-    const milliseconds = parseInt((duration % 1000) / 100);
+function msToTime(duration: number) {
     let seconds = Math.floor((duration / 1000) % 60);
-    let minutes = Math.floor((duration / (1000 * 60)) % 60);
-    let hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
-    // @ts-ignore
-    hours = (hours < 10) ? '0' + hours : hours;
-    // @ts-ignore
-    minutes = (minutes < 10) ? '0' + minutes : minutes;
-    // @ts-ignore
-    seconds = (seconds < 10) ? '0' + seconds : seconds;
-    return seconds + ' segundos ';
+    const formattedSeconds = seconds < 10 ? '0' + seconds : String(seconds);
+    return `${formattedSeconds} segundos `;
 }
 
-function formatNumber(num: any) {
+function formatNumber(num: number) {
     return num.toLocaleString('en').replace(/,/g, '.');
 }

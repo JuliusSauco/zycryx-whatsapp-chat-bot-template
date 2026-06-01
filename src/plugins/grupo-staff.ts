@@ -9,10 +9,10 @@ export default definePlugin({
     try {
         if (!text || !text.trim()) return m.reply(`😾 Y el texto?`)
         const metadata = await conn.groupMetadata(m.chat)
-        const admins = metadata.participants.filter((p: any) => p.admin)
+        const admins = metadata.participants.filter(p => p.admin)
         if (!admins.length) return m.reply("⚠️ No hay administradores en este grupo.")
 
-        const users = admins.map((p: any) => p.phoneNumber || p.id)
+        const users = admins.map(p => p.phoneNumber || p.id)
         const total = users.length
         await m.react("📣")
 
@@ -22,13 +22,13 @@ export default definePlugin({
 
 *• Mensaje:* ${text.trim()}
 
-👑 *Administradores (${total}):*\n` + users.map((u: any) => `➥ @${u.replace(/@s\.whatsapp\.net|@lid/g, "").replace(/[^0-9]/g, "")}`).join(" \n ")
+👑 *Administradores (${total}):*\n` + users.map(u => `➥ @${u.replace(/@s\.whatsapp\.net|@lid/g, "").replace(/[^0-9]/g, "")}`).join(" \n ")
 
         await conn.sendMessage(m.chat, {
             text: mensaje + `\n\n> [ ⚠️ ️] *ᵁˢᵃʳ ᵉˢᵗᵉ ᶜᵒᵐᵃⁿᵈᵒ ˢᵒˡᵒ ᶜᵘᵃⁿᵈᵒ ˢᵉ ᵗʳᵃᵗᵉ ᵈᵉ ᵘⁿᵃ ᵉᵐᵉʳᵍᵉⁿᶜᶦᵃ*`,
             mentions: users
         }, {quoted: m})
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error("❌ Error en /admins:", e)
     }
     }

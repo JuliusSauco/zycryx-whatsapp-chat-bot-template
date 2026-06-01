@@ -26,7 +26,7 @@ export default definePlugin({
         let mp4s: string[] = []
         try {
             mp4s = fs.readdirSync(GIF_FOLDER).filter(f => f.toLowerCase().endsWith('.mp4'))
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error('No se pudo leer la carpeta de medios para dogst:', e)
         }
 
@@ -49,7 +49,7 @@ export default definePlugin({
             // contextInfo propio para evitar que simple.ts inyecte el banner "Ver canal".
             contextInfo: {mentionedJid: mentions},
         }, {quoted: m})
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error(e)
         m.react('❌️')
     }

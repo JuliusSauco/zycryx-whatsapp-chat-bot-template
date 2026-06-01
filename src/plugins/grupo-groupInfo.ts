@@ -9,18 +9,18 @@ export default definePlugin({
     group: true,
     register: true,
     async execute(m, {conn}) {
-    const pp = await conn.profilePictureUrl(m.chat, 'image').catch((_: any) => "https://telegra.ph/file/39fb047cdf23c790e0146.jpg")
+    const pp = await conn.profilePictureUrl(m.chat, 'image').catch(() => "https://telegra.ph/file/39fb047cdf23c790e0146.jpg")
 
     let groupMetadata
     try {
         groupMetadata = await conn.groupMetadata(m.chat)
-    } catch (e: any) {
+    } catch (e: unknown) {
         return m.reply('*⚠️ Error al obtener información del grupo. Intenta nuevamente más tarde.*')
     }
     const participants = groupMetadata.participants || []
-    const groupAdmins = participants.filter((p: any) => p.admin)
-    const usarLid = participants.some((p: any) => p.id?.endsWith?.('@lid'))
-    const listAdmin = await Promise.all(groupAdmins.map(async (v: any, i: any) => {
+    const groupAdmins = participants.filter(p => p.admin)
+    const usarLid = participants.some(p => p.id?.endsWith?.('@lid'))
+    const listAdmin = await Promise.all(groupAdmins.map(async v => {
         let numero = null
         if (usarLid && v.id.endsWith('@lid')) {
             numero = await getNumberByLid(v.id)
@@ -33,13 +33,10 @@ export default definePlugin({
     const data = await getGroupSettings(m.chat) || {}
     const {welcome, detect, antifake, antilink, modoadmin, primary_bot, modohorny, nsfw_horario, banned} = data
     const fallbackOwner = m.chat.includes('-') ? m.chat.split('-')[0] + '@s.whatsapp.net' : null
-    const owner = groupMetadata.owner || groupAdmins.find((p: any) => p.admin === 'superadmin')?.id || fallbackOwner || "Desconocido"
+    const owner = groupMetadata.owner || groupAdmins.find(p => p.admin === 'superadmin')?.id || fallbackOwner || "Desconocido"
 
     let primaryBotMention = ''
     if (primary_bot) {
-        // @ts-ignore
-        const allBots = [conn, ...global.conns.filter(bot => bot.user && bot.ws?.socket?.readyState !== 3)]
-        const selectedBot = allBots.find((bot: any) => bot.user?.jid === primary_bot)
         primaryBotMention = `@${primary_bot.split('@')[0]}`
     }
 

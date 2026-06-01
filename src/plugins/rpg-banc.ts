@@ -21,8 +21,8 @@ export default definePlugin({
             return m.reply(`*[ 🏦 ] Has agregado ${limite} diamantes al Banco.*`)
         }
 
-        if (isNaN(args[0] as any)) return m.reply(`[ ⚠️ ] *Falta un número válido de diamantes 💎*`)
-        const amount = parseInt(args[0])
+        const amount = Number(args[0])
+        if (isNaN(amount)) return m.reply(`[ ⚠️ ] *Falta un número válido de diamantes 💎*`)
         if (amount < 1) return m.reply(`❌ El mínimo es 1 diamante.`)
         if (limite < amount) return m.reply(`*Che, no sabes cuánto tienes en tu cartera? Usa el comando:* #bal`)
 
@@ -39,8 +39,8 @@ export default definePlugin({
             return m.reply(`*[ 🏦 ] Retiraste ${banco} diamantes 💎 del Banco.*`)
         }
 
-        if (isNaN(args[0] as any)) return m.reply(`La cantidad debe ser un número válido.`)
-        const amount = parseInt(args[0])
+        const amount = Number(args[0])
+        if (isNaN(amount)) return m.reply(`La cantidad debe ser un número válido.`)
         if (amount < 1) return m.reply(`❌ El mínimo es 1 diamante.`)
         if (banco < amount) return m.reply(`*Che, no sabes cuánto tienes en tu cuenta? Usa el comando:* #bal`)
 

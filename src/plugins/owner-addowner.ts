@@ -37,7 +37,7 @@ export default definePlugin({
                 console.log(`✅ Owner removido: ${jidToSave} para ID ${botId}`);
                 return m.reply(`✅ Removido como owner: @${display}`, {mentions: [jidToSave]});
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
         }
     }

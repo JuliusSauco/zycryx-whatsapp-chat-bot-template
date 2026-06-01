@@ -1,5 +1,4 @@
 import {definePlugin} from '../core/define-plugin.js'
-// @ts-ignore
 import yts from 'yt-search';
 
 export default definePlugin({
@@ -7,7 +6,7 @@ export default definePlugin({
     tags: ['downloader'],
     command: ['playvid2', 'playlist', 'playlista', 'yts', 'ytsearch'],
     register: true,
-    async execute(m, {conn, usedPrefix, text, args, command}) {
+    async execute(m, {conn, usedPrefix, text, command}) {
     if (!text) return m.reply(`*¿Qué está buscando?* Ingrese el nombre del tema\n*• Ejemplo*\n*${usedPrefix + command}* bad bunny`);
     m.react('📀');
     let result = await yts(text);
@@ -20,30 +19,4 @@ export default definePlugin({
     }
     await conn.sendFile(m.chat, ytres[0].image, 'thumbnail.jpg', textoo, m);
     }
-});
-;
-
-/*Codigo con la listas obsoleto
-import yts from 'yt-search';
-let handler: any = async (m: any, { conn, usedPrefix, text, args, command }: any) => {
-if (!text) return m.reply(`*Que esta buscado?* ingrese el nombre del tema\n*• Ejemplo*\n*${usedPrefix + command}* bad bunny `) 
-m.react('📀');
-    
-let result = await yts(text);
-let ytres = result.videos;
-let listSections = [];
-for (let index in ytres) {
-let v = ytres[index];
-listSections.push({title: `${index} | ${v.title}`,
-rows: [{header: '• • •「 🅐🅤🅓🅘🅞 」• • •', title: "", description: `▢ ⌚ Duración:* ${v.timestamp}\n▢ 👀 *Vistas:* ${v.views}\n▢ 📌 *Publicado* : ${v.title}\n▢ 📆 *Subidos:* ${v.ago}\n`, id: `${usedPrefix}fgmp3 ${v.url}`
-}, {
-header: "• • •「 🅥🅘🅓🅔🅞 」• • •", title: "" , description: `▢ ⌚ Duración:* ${v.timestamp}\n▢ 👀 *Vistas:* ${v.views}\n▢ 📌 *Publicado* : ${v.title}\n▢ 📆 *Subidos:* ${v.ago}\n`, id: `${usedPrefix}fgmp4 ${v.url}`
-}, {
-header: "• • •「 🅓🅞🅒🅤🅜🅔🅝🅣🅞🅢 🅜🅟❸ 」• • •", title: "" , description: `▢ ⌚ Duración:* ${v.timestamp}\n▢ 👀 *Vistas:* ${v.views}\n▢ 📌 *Publicado* : ${v.title}\n▢ 📆 *Subidos:* ${v.ago}\n`, id: `${usedPrefix}ytmp3doc ${v.url}` }, {
-header: "'• • •「 🅓🅞🅒🅤🅜🅔🅝🅣🅞🅢 🅜🅟❹ 」• • •", title: "" , description: `▢ ⌚ Duración:* ${v.timestamp}\n▢ 👀 *Vistas:* ${v.views}\n▢ 📌 *Publicado* : ${v.title}\n▢ 📆 *Subidos:* ${v.ago}\n`, id: `${usedPrefix}ytmp4doc ${v.url}`
-}]});}
-    
-await conn.sendList(m.chat, `*• Resultados:* ${text}*\n\n> *ᴇʟɪᴊᴀ ᴀ ᴜɴᴀ ᴏᴘᴄɪᴏɴ ʏ ᴘʀᴇsɪᴏɴᴇ ᴇɴᴠɪᴀʀ*`, wm, `🚀 𝙍𝙀𝙎𝙐𝙇𝙏𝘼𝘿𝙊𝙎 🚀`, ytres[0].image, listSections, m);
-};
-
-*/
+});

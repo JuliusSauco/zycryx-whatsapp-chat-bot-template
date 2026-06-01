@@ -181,12 +181,12 @@ async function addExif(webpSticker: Buffer, packname: string, author: string, ca
     return await img.save(null);
 }
 
-async function sticker(img: Buffer, url: string, packname: string, author: string): Promise<Buffer> {
+async function sticker(img: Buffer | false | null, url: string | false | null, packname: string, author: string): Promise<Buffer> {
     let lastError: any, stiker: any;
     for (const fn of [sticker6, sticker7, sticker5, sticker4, sticker2, sticker3]) {
 
         try {
-            stiker = await fn(img, url, packname, author);
+            stiker = await fn(img || Buffer.alloc(0), url || undefined, packname, author);
 
             if (Buffer.isBuffer(stiker)) {
 

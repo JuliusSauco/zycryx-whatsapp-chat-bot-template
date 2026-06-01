@@ -2,6 +2,22 @@ import axios from 'axios'
 import fetch from 'node-fetch'
 import {definePlugin} from '../core/define-plugin.js'
 
+interface NsfwContentItem {
+    label: string;
+    type: 'json' | 'api' | 'waifu' | 'array';
+    aliases: string[];
+    url?: string;
+    api?: string;
+    field?: string;
+    array?: string[];
+}
+
+interface UrlResponse {
+    url?: string;
+    message?: string;
+    [key: string]: unknown;
+}
+
 const contenidoNSFW = {
     pack: {
         label: '_🥵 aqui tiene mi Pack 😏_',
@@ -67,14 +83,12 @@ const contenidoNSFW = {
         aliases: ["porno"]
     },
     trapito: {label: '🚺 Trapito', type: 'waifu', api: 'trap', aliases: ['trap']},
-}
+} satisfies Record<string, NsfwContentItem>
 
-const aliasMap = {}
+const aliasMap: Record<string, NsfwContentItem> = {}
 for (const [key, item] of Object.entries(contenidoNSFW)) {
-    // @ts-ignore
     aliasMap[key.toLowerCase()] = item
     for (const alias of (item.aliases || [])) {
-        // @ts-ignore
         aliasMap[alias.toLowerCase()] = item
     }
 }
@@ -87,31 +101,35 @@ export default definePlugin({
     register: true,
     async execute(m, {conn, command}) {
     try {
-        // @ts-ignore
         const item = aliasMap[command.toLowerCase()]
         if (!item) return m.reply('❌ Comando NSFW no reconocido.')
 
         if (item.type === 'array') {
+            if (!item.array?.length) return m.reply('❌ Fuente NSFW vacía.')
             const url = item.array[Math.floor(Math.random() * item.array.length)]
             await conn.sendFile(m.chat, url, 'nsfw.jpg', item.label, m)
             return
         }
 
         if (item.type === 'json') {
-            const {data} = await axios.get(item.url)
+            if (!item.url) return m.reply('❌ Fuente JSON no configurada.')
+            const {data} = await axios.get<string[]>(item.url)
             const img = data[Math.floor(Math.random() * data.length)]
             await conn.sendFile(m.chat, img, 'nsfw.jpg', item.label, m)
             return
         }
 
         if (item.type === 'waifu') {
+            if (!item.api) return m.reply('❌ API no configurada.')
             const res = await fetch(`https://api.waifu.pics/nsfw/${item.api}`)
-            const {url} = await res.json() as any
+            const {url} = await res.json() as UrlResponse
+            if (!url) return m.reply('❌ La API no devolvió imagen.')
             await conn.sendFile(m.chat, url, 'waifu.jpg', item.label, m)
             return
         }
 
         if (item.type === 'api') {
+            if (!item.api) return m.reply('❌ API no configurada.')
             const res = await fetch(item.api)
             const contentType = res.headers.get('content-type') || ''
             if (contentType.startsWith('image/')) {
@@ -119,8 +137,10 @@ export default definePlugin({
                 await conn.sendFile(m.chat, buffer, 'img.jpg', item.label, m)
                 return
             }
-            const json = await res.json() as any
-            const url = item.field ? json[item.field] : json.url || json.message
+            const json = await res.json() as UrlResponse
+            const value = item.field ? json[item.field] : json.url || json.message
+            const url = typeof value === 'string' ? value : null
+            if (!url) return m.reply('❌ La API no devolvió una URL válida.')
             await conn.sendFile(m.chat, url, 'nsfw.jpg', item.label, m)
             return
         }

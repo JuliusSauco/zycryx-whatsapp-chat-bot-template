@@ -8,12 +8,18 @@
  */
 import {cleanJid} from './jid.js';
 import {groupMetaCache} from '../core/context-builder.js';
+import type {ExtendedConn} from '../types/context.js';
+import type {GroupParticipant} from '@whiskeysockets/baileys';
 
 export type ResolvedMention = {tag: string; mentionJid: string};
+export type ParticipantLike = GroupParticipant & {
+    participantAlt?: string;
+    phoneNumber?: string | number;
+};
 
 const JID_PHONE_REGEX = /^\d+@s\.whatsapp\.net$/;
 
-export function resolveMention(rawJid: string, participants: any[] = []): ResolvedMention {
+export function resolveMention(rawJid: string, participants: ParticipantLike[] = []): ResolvedMention {
     const jid = cleanJid(rawJid || '');
 
     if (JID_PHONE_REGEX.test(jid)) {
@@ -21,7 +27,7 @@ export function resolveMention(rawJid: string, participants: any[] = []): Resolv
     }
 
     if (jid.endsWith('@lid')) {
-        const participant = participants.find((p: any) => cleanJid(p.id || '') === jid);
+        const participant = participants.find(p => cleanJid(p.id || '') === jid);
         if (participant) {
             const participantAlt = cleanJid(participant.participantAlt || '');
             const participantPhone = (participant.phoneNumber || '').toString().replace(/[^\d]/g, '');
@@ -46,15 +52,15 @@ export function resolveMention(rawJid: string, participants: any[] = []): Resolv
  *   3. cache de Baileys (sock.groupCache, TTL 1 h).
  * Si nada está disponible retorna [].
  */
-export function getParticipantsFast(conn: any, chatId: string, fromHandler?: any[]): any[] {
+export function getParticipantsFast(conn: Pick<ExtendedConn, 'groupCache'>, chatId: string, fromHandler?: ParticipantLike[]): ParticipantLike[] {
     if (fromHandler && fromHandler.length) return fromHandler;
     if (!chatId || !chatId.endsWith('@g.us')) return [];
 
     const local = groupMetaCache.get(chatId);
-    if (local?.participants?.length) return local.participants;
+    if (local?.participants?.length) return local.participants as ParticipantLike[];
 
     const baileys = conn?.groupCache?.get?.(chatId);
-    if (baileys?.participants?.length) return baileys.participants;
+    if (baileys?.participants?.length) return baileys.participants as ParticipantLike[];
 
     return [];
 }

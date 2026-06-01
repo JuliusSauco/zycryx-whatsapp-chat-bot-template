@@ -13,18 +13,16 @@ export default definePlugin({
     tags: ['econ'],
     command: ['marry', 'pareja'],
     register: true,
-    async before(m) {
+    async before(m, {conn}) {
     const req = await getMarriageRequest(m.sender)
     if (!req) return
 
     const response = m.originalText.toLowerCase()
     if (response === 'aceptar') {
         await marryUsers(m.sender, req)
-        // @ts-ignore
         await conn.reply(m.chat, `✅ ¡Felicidades! 🥳\n@${req.split('@')[0]} y @${m.sender.split('@')[0]} ahora están casados`, m, {mentions: [req, m.sender]})
     } else if (response === 'rechazar') {
         await setMarriageRequest(m.sender, null)
-        // @ts-ignore
         await conn.reply(m.chat, `⚠️ Has rechazado la solicitud de matrimonio de @${req.split('@')[0]}`, m, {mentions: [req]})
     }
 

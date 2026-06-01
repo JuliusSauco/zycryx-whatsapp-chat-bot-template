@@ -22,7 +22,7 @@ export default definePlugin({
                 txt += "┃✅ No hay usuarios bloqueados actualmente.\n";
             }
             txt += `╰━━━━━━━⬣\n\n*Por favor no llame para evitar ser Bloqueado, Gracias.*`
-        } catch (e: any) {
+        } catch (e: unknown) {
             txt += "❌ Error al obtener la lista de bloqueados.\n";
         }
         return conn.reply(m.chat, txt, m, {mentions: await conn.parseMention(txt)});
@@ -41,7 +41,7 @@ export default definePlugin({
                 txt += "│✅ No hay chats baneados actualmente.\n";
             }
             txt += "╰•·–––––––––––––––––––·•\n";
-        } catch (e: any) {
+        } catch (e: unknown) {
             txt += "❌ Error al obtener la lista de chats baneados.\n";
         }
         return conn.reply(m.chat, txt, m);
@@ -54,14 +54,13 @@ export default definePlugin({
             if (users.length) {
                 for (const user of users) {
                     let razon = user.razon_ban ? `\n│📌 *Razón:* ${user.razon_ban}` : "";
-                    let adv = user.avisos_ban ? ` | *Avisos:* ${user.avisos_ban}/3` : "";
                     txt += `├🚫 @${user.id.split("@")[0]}${razon}\n`;
                 }
             } else {
                 txt += "│✅ No hay usuarios baneados actualmente.\n";
             }
             txt += "╰•·–––––––––––––––––––·•\n";
-        } catch (e: any) {
+        } catch (e: unknown) {
             txt += "❌ Error al obtener la lista de baneados.\n";
         }
         return conn.reply(m.chat, txt, m, {mentions: await conn.parseMention(txt)});
@@ -82,7 +81,7 @@ export default definePlugin({
                 txt += "│✅ No hay parejas registradas actualmente.\n";
             }
             txt += "╰•·–––––––––––––––––––·•\n";
-        } catch (e: any) {
+        } catch (e: unknown) {
             txt += "❌ Error al obtener la lista de parejas.\n";
         }
         return conn.reply(m.chat, txt, m, {mentions: await conn.parseMention(txt)});
@@ -102,7 +101,7 @@ export default definePlugin({
                 txt += "│✅ No hay usuarios advertidos actualmente.\n";
             }
             txt += "╰•·–––––––––––––––––––·•\n";
-        } catch (e: any) {
+        } catch (e: unknown) {
             txt += "❌ Error al obtener la lista de advertidos.\n";
         }
         return conn.reply(m.chat, txt, m, {mentions: await conn.parseMention(txt)});

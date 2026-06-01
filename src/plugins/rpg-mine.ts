@@ -29,17 +29,17 @@ export default definePlugin({
 
 ;
 
-function pickRandom(list: any) {
+function pickRandom<T>(list: T[]): T {
     return list[Math.floor(Math.random() * list.length)];
 }
 
-function msToTime(duration: any) {
+function msToTime(duration: number) {
     const totalSeconds = Math.floor(Math.max(0, duration) / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     return `${minutes} minuto(s) ${seconds} segundo(s)`;
 }
 
-function formatNumber(num: any) {
+function formatNumber(num: number) {
     return num.toLocaleString('en').replace(/,/g, '.');
 }

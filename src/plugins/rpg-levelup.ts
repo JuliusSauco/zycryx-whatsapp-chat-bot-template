@@ -51,7 +51,7 @@ Tus estadisticas en tiempo real 🕐
         const result = await axios.get(apiURL, {responseType: 'arraybuffer'})
         const buffer = Buffer.from(result.data)
         await conn.sendFile(m.chat, buffer, 'levelup.jpg', str, m)
-    } catch (e: any) {
+    } catch (e: unknown) {
         await conn.fakeReply(m.chat, str, '13135550002@s.whatsapp.net', `*TUS ESTADISTICAS 🆙*`, 'status@broadcast')
     }
     }

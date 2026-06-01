@@ -30,7 +30,7 @@ export default definePlugin({
             try {
                 const inviteInfo = await conn.groupGetInviteInfo(inviteCode);
                 groupId = inviteInfo.id;
-            } catch (e: any) {
+            } catch (e: unknown) {
                 return m.reply('⚠️ No se pudo obtener información del grupo. Verifica el enlace o que el bot tenga acceso.')
             }
         } else if (args[0] === 'enlace') {
@@ -50,7 +50,7 @@ export default definePlugin({
             try {
                 const inviteInfo = await conn.groupGetInviteInfo(inviteCode);
                 groupId = inviteInfo.id;
-            } catch (e: any) {
+            } catch (e: unknown) {
                 return m.reply('⚠️ No se pudo obtener información del grupo. Verifica el enlace o que el bot tenga acceso.')
             }
         } else {

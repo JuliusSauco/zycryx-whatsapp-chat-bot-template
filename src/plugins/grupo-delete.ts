@@ -1,4 +1,10 @@
 import {definePlugin} from '../core/define-plugin.js'
+import type {proto} from '@whiskeysockets/baileys'
+
+type CachedMessage = {
+    key?: proto.IMessageKey
+}
+
 export default definePlugin({
     help: ['delete *@user*'],
     tags: ['group'],
@@ -27,9 +33,10 @@ export default definePlugin({
         }
 
         let chats = conn.chats?.[m.chat]?.messages || {};
-        let messagesToDelete = Object.values(chats).filter(
-            // @ts-ignore
-            msg => (msg.key.participant === target || msg.key.remoteJid === target));
+        let messagesToDelete = Object.values(chats).filter((msg): msg is CachedMessage => {
+            const key = (msg as CachedMessage).key;
+            return key?.participant === target || key?.remoteJid === target;
+        });
 
         if (!messagesToDelete.length) return
         let totalToDelete = Math.min(messagesToDelete.length, 200); // Máximo 200 mensajes
@@ -38,16 +45,15 @@ export default definePlugin({
         for (let i = 0; i < totalToDelete; i++) {
             let message = messagesToDelete[i];
             try {
-                // @ts-ignore
                 await conn.sendMessage(m.chat, {delete: message.key});
                 deletedCount++;
                 await delay(100);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.log(err);
             }
         }
         m.reply(`✅ Se eliminaron ${deletedCount} mensajes de ${target.includes('@s.whatsapp.net')}.`);
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error(err);
     }
     }
@@ -55,4 +61,4 @@ export default definePlugin({
 
 ;
 
-const delay = (ms: any) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

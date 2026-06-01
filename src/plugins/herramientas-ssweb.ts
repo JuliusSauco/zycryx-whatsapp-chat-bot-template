@@ -2,7 +2,7 @@ import fetch from 'node-fetch'
 import {definePlugin} from '../core/define-plugin.js'
 
 export default definePlugin({
-    help: ['ss', 'ssweb'].map((v: any) => v + ' *<url>*'),
+    help: ['ss', 'ssweb'].map((v) => v + ' *<url>*'),
     tags: ['tools'],
     command: /^ss(web)?f?$/i,
     register: true,
@@ -14,7 +14,7 @@ export default definePlugin({
         let ss = await (await fetch(`https://api.dorratz.com/ssweb?url=${args[0]}`)).buffer()
         conn.sendFile(m.chat, ss, 'error.png', '✅', m)
         await m.react('✅')
-    } catch (e: any) {
+    } catch (e: unknown) {
         await m.react('❌')
     }
     }

@@ -1,12 +1,40 @@
 import {definePlugin} from '../core/define-plugin.js'
 import fetch from 'node-fetch';
+import type {QuotedMessage} from '../types/context.js';
 //import cheerio from 'cheerio';
 //import { mediafiredl } from '@bochilteam/scraper';
 
 let free = 150;
 let prem = 500;
-const userCaptions = new Map();
-const userRequests: Record<string, any> = {};
+interface MediafireFileData {
+    url: string
+    filename: string
+    filesize?: string
+    mimetype?: string
+}
+
+interface MediafireArrayResponse {
+    data?: Array<{
+        link?: string
+        filename?: string
+        nama?: string
+        size?: string
+        mime?: string
+    }>
+}
+
+interface NeoxrMediafireResponse {
+    status?: boolean
+    data?: {
+        url?: string
+        title?: string
+        size?: string
+        mime?: string
+    }
+}
+
+const userCaptions = new Map<string, QuotedMessage>();
+const userRequests: Record<string, boolean> = {};
 
 export default definePlugin({
     help: ['mediafire', 'mediafiredl'],
@@ -22,21 +50,24 @@ export default definePlugin({
     userRequests[m.sender] = true;
     m.react(`🚀`);
     try {
-        const downloadAttempts = [
+        const downloadAttempts: Array<() => Promise<MediafireFileData>> = [
             async () => {
                 const res = await fetch(`https://api.delirius.store/download/mediafire?url=${args[0]}`);
-                const data = await res.json() as any;
+                const data = await res.json() as MediafireArrayResponse;
+                const file = data.data?.[0];
+                if (!file?.link || !file.filename) throw new Error('Respuesta inválida de Delirius');
                 return {
-                    url: data.data[0].link,
-                    filename: data.data[0].filename,
-                    filesize: data.data[0].size,
-                    mimetype: data.data[0].mime
+                    url: file.link,
+                    filename: file.filename,
+                    filesize: file.size,
+                    mimetype: file.mime
                 }
             },
             async () => {
                 const res = await fetch(`${info.neoxr.url}/mediafire?url=${args[0]}&apikey=${info.neoxr.key}`);
-                const data = await res.json() as any;
+                const data = await res.json() as NeoxrMediafireResponse;
                 if (!data.status || !data.data) throw new Error('Error en Neoxr');
+                if (!data.data.url || !data.data.title) throw new Error('Respuesta inválida de Neoxr');
                 return {
                     url: data.data.url,
                     filename: data.data.title,
@@ -46,23 +77,27 @@ export default definePlugin({
             },
             async () => {
                 const res = await fetch(`https://api.agatz.xyz/api/mediafire?url=${args[0]}`);
-                const data = await res.json() as any;
+                const data = await res.json() as MediafireArrayResponse;
+                const file = data.data?.[0];
+                if (!file?.link || !file.nama) throw new Error('Respuesta inválida de Agatz');
                 return {
-                    url: data.data[0].link,
-                    filename: data.data[0].nama,
-                    filesize: data.data[0].size,
-                    mimetype: data.data[0].mime
+                    url: file.link,
+                    filename: file.nama,
+                    filesize: file.size,
+                    mimetype: file.mime
                 }
             },
             async () => {
                 const res = await fetch(`https://api.siputzx.my.id/api/d/mediafire?url=${args[0]}`);
-                const data = await res.json() as any;
-                return data.data.map((file: any) => ({
+                const data = await res.json() as MediafireArrayResponse;
+                const file = data.data?.[0];
+                if (!file?.link || !file.filename) throw new Error('Respuesta inválida de Siputz');
+                return {
                     url: file.link,
                     filename: file.filename,
                     filesize: file.size,
                     mimetype: file.mime
-                }))[0];
+                };
             }
         ];
 
@@ -72,8 +107,8 @@ export default definePlugin({
             try {
                 fileData = await attempt();
                 if (fileData) break;
-            } catch (err: any) {
-                console.error(`Error in attempt: ${err.message}`);
+            } catch (err: unknown) {
+                console.error(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
                 continue; // Si falla, intentar con la siguiente API
             }
         }
@@ -90,7 +125,7 @@ export default definePlugin({
         userCaptions.set(m.sender, captionMessage);
         await conn.sendFile(m.chat, file.url, file.filename, '', m, undefined, {mimetype: file.mimetype, asDocument: true});
         m.react('✅');
-    } catch (e: any) {
+    } catch (e: unknown) {
         await conn.sendFile(m.chat, sticker, 'error.webp', '', m);
         m.react('❌');
         console.error(e);

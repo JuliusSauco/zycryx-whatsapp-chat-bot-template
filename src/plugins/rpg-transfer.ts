@@ -1,10 +1,21 @@
 import {definePlugin} from '../core/define-plugin.js'
 import {getWallet, isWalletResource, transferWalletResource} from '../services/wallet.service.js'
+import type {BotMessage} from '../types/message.js'
+import type {WalletResource} from '../ports/repositories.js'
 
-let confirmation: Record<string, any> = {}
+interface TransferConfirmation {
+    sender: string;
+    to: string;
+    message: BotMessage;
+    type: WalletResource;
+    count: number;
+    timeout: ReturnType<typeof setTimeout>;
+}
+
+let confirmation: Record<string, TransferConfirmation> = {}
 
 export default definePlugin({
-    help: ['transfer'].map((v: any) => v + ' [tipo] [cantidad] [@tag]'),
+    help: ['transfer'].map(v => v + ' [tipo] [cantidad] [@tag]'),
     tags: ['econ'],
     command: ['payxp', 'transfer', 'darxp', 'dar', 'enviar', 'transferir'],
     register: true,
@@ -55,7 +66,7 @@ export default definePlugin({
 ┗•`.trim()
 
     const type = (args[0] || '').toLowerCase()
-    if (!isWalletResource(type)) return m.reply(lol, m.chat, {mentions: conn.parseMention(lol)})
+    if (!isWalletResource(type)) return m.reply(lol, m.chat, {mentions: await conn.parseMention(lol)})
     const count = Math.min(Number.MAX_SAFE_INTEGER, Math.max(1, (isNumber(args[1]) ? parseInt(args[1]) : 1))) * 1
     let who = m.mentionedJid?.[0] || (args[2] ? (args[2].replace(/[@ .+-]/g, '') + '@s.whatsapp.net') : '')
     if (!who) return m.reply('⚠️ *𝙀𝙏𝙄𝙌𝙐𝙀𝙏𝙀 𝘼𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊*')
@@ -90,12 +101,12 @@ export default definePlugin({
 })
 
 
-function special(type: any) {
+function special(type: string) {
     let b = type.toLowerCase()
     let special = (['common', 'uncoommon', 'mythic', 'legendary', 'pet'].includes(b) ? ' Crate' : '')
     return special
 }
 
-function isNumber(x: any) {
-    return !isNaN(x)
+function isNumber(x: string | undefined) {
+    return x !== undefined && !isNaN(Number(x))
 }

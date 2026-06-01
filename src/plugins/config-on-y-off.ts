@@ -1,6 +1,7 @@
 import {getGroupSettings, setGroupBooleanFlag} from '../services/group-settings.service.js'
 import {getSubbotConfig, setSubbotBooleanFlag} from '../services/subbot.service.js'
 import {definePlugin} from '../core/define-plugin.js'
+import type {GroupSettings} from '../types/config.js'
 
 export default definePlugin({
     help: ['enable <opción>', 'disable <opción>'],
@@ -16,8 +17,8 @@ export default definePlugin({
     const cleanId = botId.replace(/:\d+/, '');
     const isSubbot = botId !== 'main'
     let isAll = false, isUser = false
-    let chat: Record<string, any> = await getGroupSettings(chatId) || {};
-    const getStatus = (flag: string) => m.isGroup ? (chat[flag] ? '✅' : '❌') : '⚠️';
+    let chat: Partial<GroupSettings> = await getGroupSettings(chatId) || {};
+    const getStatus = (flag: keyof GroupSettings) => m.isGroup ? (chat[flag] ? '✅' : '❌') : '⚠️';
 
     let menu = `*『 ⧼⧼⧼ ＣＯＮＦＩＧＵＲＡＣＩＯ́Ｎ ⧽⧽⧽ 』*\n\n`;
     menu += `> *Seleccione una opción de la lista*\n> *Para empezar a Configurar*\n\n`;
@@ -35,12 +36,10 @@ export default definePlugin({
     menu += `🔒 MODO SOLO ADMIN ${getStatus('modoadmin')}\n• Solo admins pueden usar comandos\n• ${usedPrefix + command} modoadmin\n\n`;
 
     menu += `\n*『 FUNCIONES PARA OWNER 』*\n\n`;
-    // @ts-ignore
     const botConfig = isSubbot ? await getSubbotConfig(botId) : null;
     menu += `🚫 ANTIPRIVADO ${isSubbot ? (botConfig?.anti_private ? '✅' : '❌') : '⚠️'}
 • Bloquear uso en privado
 • ${usedPrefix + command} antiprivate\n\n`;
-    // @ts-ignore
     menu += `📵 ANTILLAMADAS ${isSubbot ? (botConfig?.anti_call ? '✅' : '❌') : '⚠️'}
 • Bloquear llamadas
 • ${usedPrefix + command} anticall`;

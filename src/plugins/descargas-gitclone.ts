@@ -1,9 +1,10 @@
 import {definePlugin} from '../core/define-plugin.js'
 import fetch from 'node-fetch';
+import type {QuotedMessage} from '../types/context.js';
 
 const regex = /(?:https|git)(?::\/\/|@)github\.com[\/:]([^\/:]+)\/(.+)/i;
-const userCaptions = new Map();
-const userRequests: Record<string, any> = {};
+const userCaptions = new Map<string, QuotedMessage>();
+const userRequests: Record<string, boolean> = {};
 
 export default definePlugin({
     help: ['gitclone <url>'],
@@ -39,10 +40,10 @@ export default definePlugin({
         let [_, user, repo] = args[0].match(regex) || [];
         repo = repo.replace(/.git$/, '');
         let url = `https://api.github.com/repos/${user}/${repo}/zipball`;
-        // @ts-ignore
-        let filename = (await fetch(url, {method: 'HEAD'})).headers.get('content-disposition').match(/attachment; filename=(.*)/)[1];
+        const disposition = (await fetch(url, {method: 'HEAD'})).headers.get('content-disposition') || '';
+        let filename = disposition.match(/attachment; filename=(.*)/)?.[1] || `${repo}.zip`;
         await conn.sendFile(m.chat, url, filename, undefined, m);
-    } catch (e: any) {
+    } catch (e: unknown) {
         m.reply(`\`\`\`⚠️ OCURRIO UN ERROR ⚠️\`\`\`\n\n> *Reporta el siguiente error a mi creador con el comando:* #report\n\n>>> ${e} <<<< `);
         console.log(e);
     } finally {

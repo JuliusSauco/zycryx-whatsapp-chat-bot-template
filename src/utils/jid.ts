@@ -67,8 +67,16 @@ export interface SenderInfo {
  * Si el sender resuelto termina en `@lid`, también se devuelve como `lid`.
  * `senderLid` del key se considera para enriquecer `lid` si todavía no lo tenemos.
  */
-export function resolveSenderInfo(m: any): SenderInfo {
-    const k = m?.key || {};
+type MessageKeyLike = {
+    participantAlt?: string | null;
+    remoteJidAlt?: string | null;
+    participant?: string | null;
+    remoteJid?: string | null;
+    senderLid?: string | null;
+};
+
+export function resolveSenderInfo(m: {key?: MessageKeyLike}): SenderInfo {
+    const k = m.key || {};
     let sender = '';
     let lid: string | undefined;
 

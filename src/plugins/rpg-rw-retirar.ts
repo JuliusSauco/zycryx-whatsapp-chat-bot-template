@@ -20,7 +20,7 @@ export default definePlugin({
 
         await withdrawCharacterFromSale(characterToRemove.id);
         return conn.reply(m.chat, `✅ Has retirado el personaje *${characterToRemove.name}* del mercado.`, m);
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error(e);
         return conn.reply(m.chat, '⚠️ Error al retirar el personaje. Intenta de nuevo.', m);
     }

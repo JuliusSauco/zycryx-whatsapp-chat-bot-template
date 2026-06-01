@@ -53,7 +53,7 @@ export default definePlugin({
 
 // Helpers
 
-function msToTime(duration: any) {
+function msToTime(duration: number) {
     const totalMinutes = Math.floor(duration / 60000);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;

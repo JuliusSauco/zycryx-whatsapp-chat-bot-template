@@ -7,13 +7,13 @@ export default definePlugin({
     botAdmin: true,
     group: true,
     async execute(m, { conn, args, participants, usedPrefix, command, isBotAdmin }) {
-    const legacyConn = conn as any
     if (!args[0]) return m.reply(`*⚠️ Ingresa el prefijo del país, Ejemplo:* ${usedPrefix + command} +52`);
-    if (isNaN(args[0] as any)) return m.reply(`*⚠️ El prefijo debe ser un número válido, Ejemplo:* ${usedPrefix + command} +52`);
+    if (isNaN(Number(args[0]))) return m.reply(`*⚠️ El prefijo debe ser un número válido, Ejemplo:* ${usedPrefix + command} +52`);
 
     const prefijo = args[0].replace(/[+]/g, '');
-    const encontrados = participants.map((u: any) => u.id).filter((v: any) => v !== legacyConn.user.jid && v.startsWith(prefijo));
-    const numeros = encontrados.map((v: any) => '⭔ @' + v.replace(/@.+/, ''));
+    const botJid = conn.user?.id || '';
+    const encontrados = participants.map(u => u.id).filter(v => v !== botJid && v.startsWith(prefijo));
+    const numeros = encontrados.map(v => '⭔ @' + v.replace(/@.+/, ''));
     if (!encontrados.length) return m.reply(`*📵 No hay ningún número con prefijo +${prefijo} en este grupo.*`);
 
     switch (command) {
@@ -27,13 +27,13 @@ export default definePlugin({
             const ownerGroup = m.chat.split('-')[0] + '@s.whatsapp.net';
             for (const user of encontrados) {
                 const error = `@${user.split('@')[0]} ya fue eliminado o abandonó el grupo.`;
-                const protegido = [ownerGroup, legacyConn.user.jid, global.owner + '@s.whatsapp.net'];
+                const protegido = [ownerGroup, botJid, global.owner + '@s.whatsapp.net'];
 
                 if (!protegido.includes(user)) {
                     try {
                         const r = await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
                         if (r[0]?.status === '404') await m.reply(error, m.chat, {mentions: [user]});
-                    } catch (e: any) {
+                    } catch (e: unknown) {
                         await m.reply(`⚠️ No se pudo eliminar a @${user.split('@')[0]}`, m.chat, {mentions: [user]});
                     }
                     await delay(10000);
@@ -45,4 +45,4 @@ export default definePlugin({
 });
 ;
 
-const delay = (ms: any) => new Promise(res => setTimeout(res, ms));
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));

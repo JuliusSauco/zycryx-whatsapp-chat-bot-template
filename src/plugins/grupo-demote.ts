@@ -9,28 +9,28 @@ export default definePlugin({
     register: true,
     async execute(m, {conn, usedPrefix, text}) {
     let number = '';
-    if (isNaN(text as any) && !text.match(/@/g)) {
-    } else if (isNaN(text as any)) {
+    if (isNaN(Number(text)) && !text.match(/@/g)) {
+    } else if (isNaN(Number(text))) {
         number = text.split('@')[1];
-    } else if (!isNaN(text as any)) {
+    } else if (!isNaN(Number(text))) {
         number = text;
     }
 
     if (!text && !m.quoted) return conn.reply(m.chat, `*⚠️ ¿A quien le quitó admins?* etiquetas a una persona no soy adivinó :)`, m);
     if (number.length > 13 || (number.length < 11 && number.length > 0)) return conn.reply(m.chat, `*Esta drogado o que ese número ingresado es incorrecto 🤓*, ingresa el número correctamente o mejor etiquetas al usuario.`, m);
+    let user = '';
     try {
         if (text) {
-            var user = number + '@s.whatsapp.net';
+            user = number + '@s.whatsapp.net';
         } else if (m.quoted?.sender) {
-            // @ts-ignore
-            var user = m.quoted.sender;
+            user = m.quoted.sender;
         } else if (m.mentionedJid) {
-            var user = number + '@s.whatsapp.net';
+            user = number + '@s.whatsapp.net';
         }
-    } catch (e: any) {
+    } catch (e: unknown) {
     } finally {
-        // @ts-ignore
-        conn.groupParticipantsUpdate(m.chat, [user], 'demote');
+        if (!user) return m.reply('⚠️ No se pudo resolver el usuario.');
+        await conn.groupParticipantsUpdate(m.chat, [user], 'demote');
         conn.reply(m.chat, `*[ ✅ ] ÓRDENES RECIBIDAS*`, m);
     }
     }

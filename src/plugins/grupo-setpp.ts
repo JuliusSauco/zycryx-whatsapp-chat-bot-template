@@ -1,5 +1,5 @@
 import {definePlugin} from '../core/define-plugin.js'
-import * as Jimp from "jimp";
+import {Jimp, JimpMime} from "jimp";
 import {S_WHATSAPP_NET} from "@whiskeysockets/baileys";
 
 export default definePlugin({
@@ -16,17 +16,13 @@ export default definePlugin({
         if (!m.quoted) return m.reply(`*⚠️ Responde a una Imagen.*`);
         let media = await quotedMsg.download();
 
-        async function processImage(media: any) {
-            // @ts-ignore
+        async function processImage(media: Buffer) {
             const image = await Jimp.read(media);
-            const resizedImage = image.getWidth() > image.getHeight()
-                // @ts-ignore
-                ? image.resize(720, Jimp.AUTO)
-                // @ts-ignore
-                : image.resize(Jimp.AUTO, 720);
+            const resizedImage = image.width > image.height
+                ? image.resize({w: 720})
+                : image.resize({h: 720});
             return {
-                // @ts-ignore
-                img: await resizedImage.getBufferAsync(Jimp.MIME_JPEG),
+                img: await resizedImage.getBuffer(JimpMime.jpeg),
             };
         }
 
@@ -39,7 +35,7 @@ export default definePlugin({
         });
 
         m.react("✅️");
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.log(error);
         return m.react("❌");
     }

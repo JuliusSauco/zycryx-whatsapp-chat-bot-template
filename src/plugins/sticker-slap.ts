@@ -17,12 +17,11 @@ export default definePlugin({
     command: /^(slap|bofetada|manotada|abofetear|golpear)$/i,
     register: true,
     async execute(m, {conn}) {
-    const legacyConn = conn as any
     try {
         if (m.quoted?.sender) m.mentionedJid.push(m.quoted.sender)
         if (!m.mentionedJid.length) m.mentionedJid.push(m.sender)
 
-        const getName = async (jid: any) => (await conn.getName(jid).catch(() => null)) || `+${jid.split('@')[0]}`
+        const getName = async (jid: string) => (await conn.getName(jid).catch(() => null)) || `+${jid.split('@')[0]}`
         const senderName = await getName(m.sender)
         const mentionedNames = await Promise.all(m.mentionedJid.map(getName))
         const texto = `🖐 ${senderName} le dio una bofetada a ${mentionedNames.join(', ')}`
@@ -30,14 +29,13 @@ export default definePlugin({
 
         let stiker
         try {
-            // @ts-ignore
-            stiker = await sticker(null, url, texto)
-        } catch (e: any) {
+            stiker = await sticker(null, url, texto, info.author)
+        } catch (e: unknown) {
             console.error('⚠️ Error generando sticker:', e)
         }
 
         if (stiker) {
-            await legacyConn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, {
+            await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, {
                 contextInfo: {
                     forwardingScore: 200,
                     isForwarded: false,
@@ -50,7 +48,7 @@ export default definePlugin({
                         thumbnail: m.pp
                     }
                 }
-            }, {quoted: m})
+            })
             return
         }
 
@@ -61,7 +59,7 @@ export default definePlugin({
             caption: texto,
             mentions: m.mentionedJid
         }, {quoted: m})
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error(e)
         m.react("❌️")
     }

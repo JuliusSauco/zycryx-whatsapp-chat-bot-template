@@ -13,6 +13,20 @@ import uploadImage from '../lib/uploadImage.js';
 import fetch from "node-fetch";
 import FormData from "form-data";
 import {definePlugin} from '../core/define-plugin.js';
+import {ENV} from '../core/env.js';
+
+type UploadService = (media: Buffer) => Promise<string | string[]>;
+
+interface SkyUploadResponse {
+    ok?: boolean;
+    file?: {
+        url?: string;
+    };
+    url?: string;
+}
+
+const isUploadServiceKey = (option: string, services: Record<string, UploadService>): option is keyof typeof services => option in services;
+const normalizeLink = (link: string | string[]) => Array.isArray(link) ? link.join('\n') : link;
 
 export default definePlugin({
     help: ['tourl <opcional servicio>'],
@@ -50,9 +64,10 @@ Subirá automáticamente el archivo a servidores como *qu.ax*, *catbox*, *cdn-sk
     const media = await q.download();
     if (!media) throw "❌ No se pudo descargar el archivo.";
     const option = (args[0] || "").toLowerCase();
-    const services = {quax, restfulapi: RESTfulAPI, catbox, uguu, filechan, pixeldrain, gofile, krakenfiles, telegraph};
+    const services: Record<string, UploadService> = {quax, restfulapi: RESTfulAPI, catbox, uguu, filechan, pixeldrain, gofile, krakenfiles, telegraph};
     try {
         if (option === "sky") {
+            if (!ENV.SKYULTRA_API_KEY) throw new Error('SKYULTRA_API_KEY no configurado')
             let ext = mime.split("/")[1] || "jpg";
             if (ext === "jpeg") ext = "jpg";
             const form = new FormData();
@@ -66,29 +81,28 @@ Subirá automáticamente el archivo a servidores como *qu.ax*, *catbox*, *cdn-sk
                 method: "POST",
                 headers: {
                     ...form.getHeaders(),
-                    "X-API-KEY": "4aef4a55e558",
+                    "X-API-KEY": ENV.SKYULTRA_API_KEY,
                 },
                 body: form,
             });
-            const json = await (res.json() as Promise<any>).catch(() => ({}));
+            const json: SkyUploadResponse = await (res.json() as Promise<SkyUploadResponse>).catch(() => ({}));
             if (!json.ok) throw `Status: ${res.status}\nerror: ${JSON.stringify(json)}`;
             const link = json.file?.url || json.url;
+            if (!link) throw new Error('SkyUltra no devolvió URL')
             return m.reply(link);
         }
 
-        // @ts-ignore
-        if (option && services[option]) {
-            // @ts-ignore
+        if (option && isUploadServiceKey(option, services)) {
             const link = await services[option](media);
-            return m.reply(link);
+            return m.reply(normalizeLink(link));
         }
 
         const isTele = /image\/(png|jpe?g|gif)|video\/mp4/.test(mime);
         const link = await (isTele ? uploadImage : uploadFile)(media);
         return m.reply(link);
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error(e);
-        throw '❌ Error al subir el archivo. Intenta con otra opción:\n' + Object.keys(services).concat(["skyultra"]).map((v: any) => `➔ ${usedPrefix}${command} ${v}`).join('\n');
+        throw '❌ Error al subir el archivo. Intenta con otra opción:\n' + Object.keys(services).concat(["skyultra"]).map((v) => `➔ ${usedPrefix}${command} ${v}`).join('\n');
     }
     }
 });

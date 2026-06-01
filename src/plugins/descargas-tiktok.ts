@@ -3,7 +3,19 @@ import fg from 'api-dylux';
 import axios from 'axios';
 import cheerio from 'cheerio';
 
-const userRequests: Record<string, any> = {};
+interface TikTokMedia {
+    type?: string
+    org?: string
+    hd?: string
+    wm?: string
+}
+
+interface TikDownResponse {
+    status?: boolean
+    html?: string
+}
+
+const userRequests: Record<string, boolean> = {};
 
 export default definePlugin({
     help: ['tiktok'],
@@ -15,7 +27,7 @@ export default definePlugin({
     if (!/(?:https:?\/{2})?(?:w{3}|vm|vt|t)?\.?tiktok.com\/([^\s&]+)/gi.test(text)) return m.reply(`❌ Error`)
     if (userRequests[m.sender]) return await conn.reply(m.chat, `Oye @${m.sender.split('@')[0]}, calma bro, ya estás descargando algo 😒\n> Espera a que termine tu solicitud actual antes de hacer otra...`, m)
     userRequests[m.sender] = true;
-    const {key} = await conn.sendMessage(m.chat, {text: `⌛ 𝙀𝙨𝙥𝙚𝙧𝙚 ✋\n▰▰▰▱▱▱▱▱▱\n𝙔𝙖 𝙚𝙨𝙩𝙤𝙮 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙙𝙤... 𝙨𝙪𝙨 𝙫𝙞𝙙𝙚𝙤 𝙙𝙚𝙡 𝙏𝙞𝙠𝙏𝙤𝙠 🔰`}, {quoted: m}) as any;
+    const {key} = await conn.sendMessage(m.chat, {text: `⌛ 𝙀𝙨𝙥𝙚𝙧𝙚 ✋\n▰▰▰▱▱▱▱▱▱\n𝙔𝙖 𝙚𝙨𝙩𝙤𝙮 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙙𝙤... 𝙨𝙪𝙨 𝙫𝙞𝙙𝙚𝙤 𝙙𝙚𝙡 𝙏𝙞𝙠𝙏𝙤𝙠 🔰`}, {quoted: m});
     await delay(1000);
     await conn.sendMessage(m.chat, {
         text: `⌛ 𝙀𝙨𝙥𝙚𝙧𝙚 ✋ \n▰▰▰▰▰▱▱▱▱\n𝙔𝙖 𝙚𝙨𝙩𝙤𝙮 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙙𝙤... 𝙨𝙪𝙨 𝙫𝙞𝙙𝙚𝙤 𝙙𝙚𝙡 𝙏𝙞𝙠𝙏𝙤𝙠 🔰`,
@@ -30,7 +42,7 @@ export default definePlugin({
         },
             async () => {
                 const {data} = await axios.get(`https://api.delirius.store/download/tiktok?url=${args[0]}`);
-                const video = data?.data?.meta?.media?.find((m: any) => m.type === 'video');
+                const video = (data?.data?.meta?.media as TikTokMedia[] | undefined)?.find(media => media.type === 'video');
                 return video?.org || video?.hd || video?.wm;
             },
             async () => {
@@ -47,8 +59,8 @@ export default definePlugin({
             try {
                 videoUrl = await attempt();
                 if (videoUrl) break;
-            } catch (err: any) {
-                console.error(`Error in attempt: ${err.message}`);
+            } catch (err: unknown) {
+                console.error(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
                 continue; // Si falla, intentar con la siguiente API
             }
         }
@@ -57,7 +69,7 @@ export default definePlugin({
         await conn.sendFile(m.chat, videoUrl, 'tt.mp4', '*🔰 Aqui esta tu video de tiktok*', m);
 //conn.sendMessage(m.chat, {video: { url: videoUrl }, caption: `*🔰 Aqui esta tu video de tiktok*` }, { quoted: m });
         await conn.sendMessage(m.chat, {text: `✅ 𝘾𝙤𝙢𝙥𝙡𝙚𝙩𝙖𝙙𝙤\n▰▰▰▰▰▰▰▰▰`, edit: key});
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.log(e);
         m.react(`❌`);
     } finally {
@@ -68,25 +80,21 @@ export default definePlugin({
 
 ;
 
-const delay = (time: any) => new Promise(res => setTimeout(res, time));
+const delay = (time: number) => new Promise(res => setTimeout(res, time));
 
-async function tiktokdlF(url: any) {
-    // @ts-ignore
-    if (!/tiktok/.test(url)) throw new Error(`*• Ejemplo:* _${usedPrefix + command} https://vm.tiktok.com/ZM686Q4ER/_`);
+async function tiktokdlF(url: string) {
+    if (!/tiktok/.test(url)) throw new Error(`URL de TikTok inválida`);
     const gettoken = await axios.get('https://tikdown.org/id');
     const $ = cheerio.load(gettoken.data);
     const token = $('#download-form > input[type=hidden]:nth-child(2)').attr('value');
-    const param = {url: url, _token: token};
-    // @ts-ignore
-    const {data} = await axios.request('https://tikdown.org/getAjax?', {
-        method: 'post',
-        data: new URLSearchParams(Object.entries(param)),
+    const param = {url, _token: token || ''};
+    const {data} = await axios.post<TikDownResponse>('https://tikdown.org/getAjax?', new URLSearchParams(Object.entries(param)), {
         headers: {
             'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'user-agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Safari/537.36'
         }
     });
-    const getdata = cheerio.load(data.html);
+    const getdata = cheerio.load(data.html || '');
     if (data.status) {
         return {
             status: true,

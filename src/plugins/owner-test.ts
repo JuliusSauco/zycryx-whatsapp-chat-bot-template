@@ -50,7 +50,7 @@ export default definePlugin({
 
             m.reply(mensaje.trim());
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("❌ Error al consultar subbots:", err);
             m.reply("❌ Error al leer la tabla subbots, reporta esta mierda.");
         }

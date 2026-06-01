@@ -1,5 +1,6 @@
 import {definePlugin} from '../core/define-plugin.js';
 import {getUserById, setUserBanStatus} from '../services/user.service.js';
+import type {MessageContent} from '../types/context.js';
 
 export default definePlugin({
     help: ['banuser @tag|número', 'unbanuser @tag|número'],
@@ -29,24 +30,26 @@ export default definePlugin({
                 let razon = text?.replace(/^(@\d{5,}|[+]?[\d\s\-()]+)\s*/g, "").trim() || null;
                 await setUserBanStatus(cleanJid, true, razon);
                 try {
-                    await conn.sendMessage(m.chat, {
+                    const content: MessageContent = {
                         audio: {url: ban},
                         contextInfo: {
                             externalAdReply: {
                                 title: `⚠️ ᴱˡ ᵘˢᵘᵃʳᶦᵒ(ᵃ) ᶠᵘᵉ ᵇᵃⁿᵉᵃᵈᵒ(ᵃ) 🙀 ⁿᵒ ᵖᵒᵈʳᵃ ᵘˢᵃʳ ᵃ`,
                                 body: info.wm,
                                 previewType: "PHOTO",
-                                thumbnailUrl: null,
                                 thumbnail: m.pp,
                                 sourceUrl: info.md,
                                 showAdAttribution: true
-                            } as any
+                            }
                         },
                         ptt: true,
                         mimetype: 'audio/mpeg',
                         fileName: `error.mp3`
+                    };
+                    await conn.sendMessage(m.chat, {
+                        ...content
                     }, {quoted: m})
-                } catch (e: any) {
+                } catch (e: unknown) {
                     m.reply(`🚫 El usuario @${cleanJid.split("@")[0]} ha sido *baneado* y no podrá usar el bot.${razon ? `\n\n📌 *Razón:* ${razon}` : ""}`, {mentions: [cleanJid]});
                 }
             }
@@ -55,7 +58,7 @@ export default definePlugin({
                 await setUserBanStatus(cleanJid, false, null);
                 return m.reply(`✅ El usuario @${cleanJid.split("@")[0]} ha sido *desbaneado* y puede volver a usar el bot.`, {mentions: [cleanJid]});
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
             return m.reply("❌ Ocurrió un error al ejecutar el comando.");
         }

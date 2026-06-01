@@ -5,7 +5,18 @@ import moment from 'moment-timezone'
 import {xpRange} from '../lib/levelling.js'
 import {getUserById, getUserName} from '../services/user.service.js'
 
-const formatPhoneNumber = (jid: any) => {
+interface StatusResponse {
+    status?: string
+}
+
+interface CountryResponse {
+    result?: {
+        name?: string
+        emoji?: string
+    }
+}
+
+const formatPhoneNumber = (jid: string) => {
     if (!jid) return 'Desconocido';
     const number = jid.replace('@s.whatsapp.net', '');
     if (!/^\d{8,15}$/.test(number)) return 'Desconocido';
@@ -18,13 +29,13 @@ export default definePlugin({
     command: /^(perfil|profile)$/i,
     register: true,
     async execute(m, {conn}) {
-    let who = m.mentionedJid?.[0] || (m.fromMe ? (conn as any).user?.jid || m.sender : m.sender)
+    let who = m.mentionedJid?.[0] || (m.fromMe ? conn.user?.id || m.sender : m.sender)
 
     const user = await getUserById(who)
     if (!user) return m.reply('✳️ El usuario no se encuentra en la base de datos.')
-    const bio = await conn.fetchStatus(who).catch(() => ({})) as any
+    const bio = await conn.fetchStatus(who).catch(() => ({} as StatusResponse)) as StatusResponse
     const biot = bio.status || 'Sin Info'
-    const profilePic = await conn.profilePictureUrl(who, 'image').catch((_: any) => 'https://telegra.ph/file/9d38415096b6c46bf03f8.jpg') as string
+    const profilePic = await conn.profilePictureUrl(who, 'image').catch(() => 'https://telegra.ph/file/9d38415096b6c46bf03f8.jpg') as string
     const buffer = await (await fetch(profilePic)).buffer()
     const {exp, limite, nombre, registered, edad, level, marry, gender, birthday} = user
     const {min, xp, max} = xpRange(level, global.multiplier || 1)
@@ -34,7 +45,7 @@ export default definePlugin({
     let nacionalidad = 'Desconocida'
     try {
         const response = await fetch(`${info.apis}/tools/country?text=${phone}`)
-        const data = await response.json() as any
+        const data = await response.json() as CountryResponse
         if (data?.result?.name) nacionalidad = `${data.result.name} ${data.result.emoji}`
     } catch (_) {
     }

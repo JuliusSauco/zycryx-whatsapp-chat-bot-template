@@ -1,6 +1,25 @@
 import {definePlugin} from '../core/define-plugin.js'
 import fg from 'api-dylux'
 
+interface TikTokStalkResponse {
+    result?: {
+        users?: {
+            username?: string
+            nickname?: string
+            verified?: boolean
+            signature?: string
+            url?: string
+            avatarLarger?: string
+        }
+        stats?: {
+            followerCount?: number
+            followingCount?: number
+            heartCount?: number
+            videoCount?: number
+        }
+    }
+}
+
 export default definePlugin({
     help: ['tiktokstalk'],
     tags: ['downloader'],
@@ -13,18 +32,18 @@ export default definePlugin({
     try {
         const apiUrl = `${info.apis}/tools/tiktokstalk?q=${encodeURIComponent(args[0])}`;
         const apiResponse = await fetch(apiUrl);
-        const delius = await apiResponse.json() as any;
+        const delius = await apiResponse.json() as TikTokStalkResponse;
         if (!delius || !delius.result || !delius.result.users) return m.react("❌");
         const profile = delius.result.users;
-        const stats = delius.result.stats;
+        const stats = delius.result.stats || {};
         const txt = `👤 *Perfil de TikTok*:
 *• Nombre de usuario*: ${profile.username}
 *• Nickname*: ${profile.nickname}
 *• Verificado*: ${profile.verified ? 'Sí' : 'No'}
-*• Seguidores*: ${stats.followerCount.toLocaleString()}
-*• Seguidos*: ${stats.followingCount.toLocaleString()}
-*• Likes Totales*: ${stats.heartCount.toLocaleString()}
-*• Videos*: ${stats.videoCount.toLocaleString()}
+*• Seguidores*: ${(stats.followerCount || 0).toLocaleString()}
+*• Seguidos*: ${(stats.followingCount || 0).toLocaleString()}
+*• Likes Totales*: ${(stats.heartCount || 0).toLocaleString()}
+*• Videos*: ${(stats.videoCount || 0).toLocaleString()}
 *• Firma*: ${profile.signature}
 *• URL*: 
 ${profile.url}`;
@@ -43,7 +62,7 @@ ${profile.url}`;
 *• Link* : https://tiktok.com/${res.username}`
             await conn.sendFile(m.chat, res.profile, 'tt.png', txt, m)
             m.react("✅");
-        } catch (e: any) {
+        } catch (e: unknown) {
             await m.react(`❌`)
             m.reply(`\`\`\`⚠️ OCURRIO UN ERROR ⚠️\`\`\`\n\n> *Reporta el siguiente error a mi creador con el comando:*#report\n\n>>> ${e} <<<< `)
             console.log(e)

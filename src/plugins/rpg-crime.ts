@@ -16,7 +16,7 @@ export default definePlugin({
 
     const timePassed = now - (user.crime || 0);
     if (timePassed < cooldown) return m.reply(`『🚓︎』𝙇𝘼 𝙋𝙊𝙇𝙄𝘾𝙄𝘼 𝙀𝙎𝙏𝘼 𝙑𝙄𝙂𝙄𝙇𝘼𝙉𝘿𝙊, 𝙑𝙐𝙀𝙇𝙑𝙀 𝙀𝙉 : ${msToTime(cooldown - timePassed)}`);
-    const participants = metadata.participants.map((v: any) => v.id);
+    const participants = metadata.participants.map(v => v.id).filter(Boolean);
     const randomTarget = participants[Math.floor(Math.random() * participants.length)];
     const exp = Math.floor(Math.random() * 7000);
     const diamond = Math.floor(Math.random() * 30);
@@ -54,13 +54,13 @@ export default definePlugin({
 
 ;
 
-function msToTime(duration: any) {
+function msToTime(duration: number) {
     const minutes = Math.floor((duration / 1000 / 60) % 60);
     const hours = Math.floor((duration / 1000 / 60 / 60) % 24);
     return `${hours.toString().padStart(2, '0')} Hora(s) ${minutes.toString().padStart(2, '0')} Minuto(s)`;
 }
 
-function pickRandom(list: any) {
+function pickRandom<T>(list: T[]): T {
     return list[Math.floor(Math.random() * list.length)];
 }
 

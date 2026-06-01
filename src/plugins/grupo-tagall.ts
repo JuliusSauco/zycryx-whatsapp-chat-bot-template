@@ -2,6 +2,18 @@ import {definePlugin} from '../core/define-plugin.js'
 import {listGroupMessageCounts} from '../services/chat.service.js';
 import {getNumberByLid} from '../services/user.service.js';
 
+type ParticipantWithAlt = {
+    id: string
+    phoneNumber?: string
+    participantAlt?: string
+}
+
+type MemberActivity = {
+    id: string
+    alt?: string
+    messages: number
+}
+
 export default definePlugin({
     help: ['tagall <mensaje>', 'invocar <mensaje>', 'contador'],
     tags: ['group'],
@@ -16,7 +28,7 @@ export default definePlugin({
             const metadata = await conn.groupMetadata(m.chat)
             const participants = metadata.participants || []
             if (!participants.length) return
-            const users = participants.map((p: any) => p.phoneNumber || p.id)
+            const users = participants.map(p => p.phoneNumber || p.id)
             const total = users.length
 
             await m.react("📣")
@@ -27,10 +39,10 @@ export default definePlugin({
             }
             mensaje += `*👥 Miembros del grupo:* ${total}\n`
             mensaje += `❏ *Etiquetas:*\n`
-            mensaje += users.map((u: any) => `➥ @${u.replace(/@s\.whatsapp\.net|@lid/g, "").replace(/[^0-9]/g, "")}`).join(" \n ")
+            mensaje += users.map(u => `➥ @${u.replace(/@s\.whatsapp\.net|@lid/g, "").replace(/[^0-9]/g, "")}`).join(" \n ")
 
             await conn.sendMessage(m.chat, {text: mensaje, mentions: users}, {quoted: m})
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("❌ Error en /tagall:", e)
         }
     }
@@ -38,16 +50,15 @@ export default definePlugin({
     if (command == 'contador') {
         const counts = await listGroupMessageCounts(m.chat)
 
-        let memberData = participants.map((mem: any) => {
+        let memberData: MemberActivity[] = (participants as ParticipantWithAlt[]).map(mem => {
             const userId = mem.id
             const userData = counts.find(row => row.user_id === userId) || {message_count: 0}
-            // @ts-ignore
             return {id: userId, alt: mem.participantAlt, messages: userData.message_count}
         })
 
-        memberData.sort((a: any, b: any) => b.messages - a.messages)
-        let activeCount = memberData.filter((mem: any) => mem.messages > 0).length
-        let inactiveCount = memberData.filter((mem: any) => mem.messages === 0).length
+        memberData.sort((a, b) => b.messages - a.messages)
+        let activeCount = memberData.filter(mem => mem.messages > 0).length
+        let inactiveCount = memberData.filter(mem => mem.messages === 0).length
         let teks = `*📊 Actividad del grupo 📊*\n\n`
         teks += `□ Grupo: ${metadata.subject || 'Sin nombre'}\n`
         teks += `□ Total de miembros: ${participants.length}\n`
@@ -73,7 +84,7 @@ export default definePlugin({
 
         await conn.sendMessage(m.chat, {
             text: teks,
-            mentions: memberData.map((mem: any) => mem.alt?.endsWith('@s.whatsapp.net') ? mem.alt : mem.id).filter((jid: any) => jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'))
+            mentions: memberData.map(mem => mem.alt?.endsWith('@s.whatsapp.net') ? mem.alt : mem.id).filter(jid => jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'))
         }, {quoted: m})
     }
     }

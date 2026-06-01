@@ -16,7 +16,7 @@ export default definePlugin({
         const image = await res.getRandom();
         const link = image;
         conn.sendFile(m.chat, link, 'error.jpg', `_🔎 𝙍𝙚𝙨𝙪𝙡𝙩𝙖𝙙𝙤𝙨 𝙙𝙚: ${text}_`, m);
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.log(e);
     }
     }

@@ -33,7 +33,7 @@ export default definePlugin({
 
         const formattedPrice = newPrice.toLocaleString();
         return conn.reply(m.chat, `✨️ Votaste por el personaje *${character.name}*, su nuevo precio es *${formattedPrice}* (+${increment})`, m);
-    } catch (e: any) {
+    } catch (e: unknown) {
     }
     }
 })
@@ -41,9 +41,7 @@ export default definePlugin({
 
 ;
 
-function msToTime(duration: any) {
-    // @ts-ignore
-    const milliseconds = parseInt((duration % 1000) / 100);
+function msToTime(duration: number) {
     const seconds = Math.floor((duration / 1000) % 60);
     const minutes = Math.floor((duration / (1000 * 60)) % 60);
 

@@ -1,6 +1,21 @@
 import {definePlugin} from '../core/define-plugin.js'
 import fg from 'api-dylux'
 
+interface InstagramStalkResponse {
+    data?: {
+        username?: string
+        full_name?: string
+        biography?: string
+        verified?: boolean
+        private?: boolean
+        followers?: number
+        following?: number
+        posts?: number
+        url?: string
+        profile_picture?: string
+    }
+}
+
 export default definePlugin({
     help: ['igstalk'],
     tags: ['downloader'],
@@ -13,7 +28,7 @@ export default definePlugin({
     try {
         const apiUrl = `${info.apis}/tools/igstalk?username=${encodeURIComponent(args[0])}`;
         const apiResponse = await fetch(apiUrl);
-        const delius = await apiResponse.json() as any;
+        const delius = await apiResponse.json() as InstagramStalkResponse;
         if (!delius || !delius.data) return m.react("❌");
         const profile = delius.data;
         const txt = `👤 *Perfil de Instagram*:
@@ -42,7 +57,7 @@ export default definePlugin({
 *• Link* : https://instagram.com/${res.username.replace(/^@/, '')}`
             await conn.sendFile(m.chat, res.profilePic, 'igstalk.png', te, m)
             m.react("⌛");
-        } catch (e: any) {
+        } catch (e: unknown) {
             await m.react(`❌`)
             m.reply(`\`\`\`⚠️ OCURRIO UN ERROR ⚠️\`\`\`\n\n> *Reporta el siguiente error a mi creador con el comando:*#report\n\n>>> ${e} <<<< `)
             console.log(e)

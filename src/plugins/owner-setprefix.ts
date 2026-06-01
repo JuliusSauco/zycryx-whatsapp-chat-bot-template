@@ -14,7 +14,7 @@ export default definePlugin({
         const actuales = Array.isArray(config.prefix) ? config.prefix : [config.prefix];
 
         if (args.length === 0) {
-            const lista = actuales.length > 0 ? actuales.map((p: any) => `\`${p || '(sin prefijo)'}\``).join(", ") : "Sin prefijo";
+            const lista = actuales.length > 0 ? actuales.map(p => `\`${p || '(sin prefijo)'}\``).join(", ") : "Sin prefijo";
             return m.reply(`📌 *Prefijos actuales:* ${lista}
 
 ✏️ *Ejemplos de uso:*
@@ -28,20 +28,20 @@ export default definePlugin({
             try {
                 await setSubbotPrefix(cleanId, [""]);
                 return m.reply(`✅ Ahora el bot funciona *sin prefijo*. Puedes escribir comandos directamente como:\n• \`menu\``);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error(err);
                 return m.reply("❌ Error al guardar prefijos, revisa la base de datos.");
             }
         }
 
-        const lista = entrada.split(",").map((p: any) => p.trim()).map((p: any) => (p === "0" ? "" : p)).filter((p: any, i: any, self: any) => self.indexOf(p) === i); // evitar duplicados
+        const lista = entrada.split(",").map(p => p.trim()).map(p => (p === "0" ? "" : p)).filter((p, i, self) => self.indexOf(p) === i); // evitar duplicados
         if (lista.length === 0) return m.reply("❌ No se detectaron prefijos válidos.");
         if (lista.length > 9) return m.reply("⚠️ Máximo 9 prefijos permitidos.");
         try {
             await setSubbotPrefix(cleanId, lista);
-            const nuevoTexto = lista.map((p: any) => `\`${p || '(sin prefijo)'}\``).join(", ");
+            const nuevoTexto = lista.map(p => `\`${p || '(sin prefijo)'}\``).join(", ");
             m.reply(`✅ Prefijos actualizados a: ${nuevoTexto}`);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
             return m.reply("❌ Error al guardar prefijos, revisa la base de datos, reportarlo a mi creator con el comando: /report");
         }

@@ -26,7 +26,7 @@ export default definePlugin({
 
         await claimCharacter(character.id, recipient);
         return conn.reply(m.chat, `🎉 ¡Has regalado a *${character.name}* a @${recipient.split('@')[0]}!`, m, {mentions: [recipient]});
-    } catch (e: any) {
+    } catch (e: unknown) {
     }
     }
 })

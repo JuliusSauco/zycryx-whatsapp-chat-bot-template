@@ -8,7 +8,6 @@ export default definePlugin({
     group: true,
     register: true,
     async execute(m, {conn, command}) {
-    const legacyConn = conn as any
     if (!m.quoted) return m.reply(`⚠️ Responde a un mensaje para ${command === 'pin' ? 'fijarlo' : 'desfijarlo'}.`);
     try {
         let messageKey = {
@@ -31,15 +30,15 @@ export default definePlugin({
         }
 
         if (command === 'destacar') {
-            legacyConn.sendMessage(m.chat, {keep: messageKey, type: 1, time: 15552000})
+            await conn.sendMessage(m.chat, {keep: messageKey, type: 1, time: 15552000})
             m.react("✅️")
         }
 
         if (command === 'desmarcar') {
-            legacyConn.sendMessage(m.chat, {keep: messageKey, type: 2, time: 86400})
+            await conn.sendMessage(m.chat, {keep: messageKey, type: 2, time: 86400})
             m.react("✅️")
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error);
     }
     }

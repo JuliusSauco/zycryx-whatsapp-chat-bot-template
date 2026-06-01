@@ -10,11 +10,11 @@ export default definePlugin({
     register: true,
     async execute(m, {conn, text}) {
         let number = '';
-        if (isNaN(text as any) && !text.match(/@/g)) {
+        if (isNaN(Number(text)) && !text.match(/@/g)) {
             // no-op
-        } else if (isNaN(text as any)) {
+        } else if (isNaN(Number(text))) {
             number = text.split('@')[1];
-        } else if (!isNaN(text as any)) {
+        } else if (!isNaN(Number(text))) {
             number = text;
         }
 

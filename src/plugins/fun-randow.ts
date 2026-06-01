@@ -1,6 +1,18 @@
 import axios from 'axios'
 import {definePlugin} from '../core/define-plugin.js'
 
+interface LuminaiResponse {
+    result?: string;
+}
+
+interface AsmaulHusnaItem {
+    index: number | string;
+    latin: string;
+    arabic: string;
+    translation_id: string;
+    translation_en: string;
+}
+
 export default definePlugin({
     help: ['piropo', 'chiste', 'reto', 'verdad', 'frases'],
     command: ['piropo', 'chiste', 'reto', 'verdad', 'frases'],
@@ -16,7 +28,7 @@ export default definePlugin({
         try {
             result = await luminsesi(query, username, logic);
             if (!result || result.trim() === "") throw new Error("Respuesta vacía");
-        } catch (error: any) {
+        } catch (error: unknown) {
             result = pickRandom(piropo);
         }
         await conn.reply(m.chat, `*╭╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼*\n➢ ${result}\n*╰╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼*`, m, {
@@ -43,7 +55,7 @@ export default definePlugin({
         try {
             result = await luminsesi(query, username, logic);
             if (!result || result.trim() === "") throw new Error("Respuesta vacía");
-        } catch (error: any) {
+        } catch (error: unknown) {
             result = pickRandom(chiste);
         }
         await conn.reply(m.chat, `*┏━━━━━━━━━━━━┓*\n😹 ${result} 😹\n*┗━━━━━━━━━━━━┛*`, m, {
@@ -70,7 +82,7 @@ export default definePlugin({
         try {
             result = await luminsesi(query, username, logic);
             if (!result || result.trim() === "") throw new Error("Respuesta vacía");
-        } catch (error: any) {
+        } catch (error: unknown) {
             result = pickRandom(bucin);
         }
         await conn.reply(m.chat, `[ 𝙍𝙀𝙏𝙊 😏 ]\n\n"${result}"`, m, {
@@ -97,7 +109,7 @@ export default definePlugin({
         try {
             result = await luminsesi(query, username, logic);
             if (!result || result.trim() === "") throw new Error("Respuesta vacía");
-        } catch (error: any) {
+        } catch (error: unknown) {
             result = pickRandom(bucin);
         }
         await conn.reply(m.chat, `[ 𝙑𝙀𝙍𝘿𝘼𝘿 🤔 ]\n\n“${result}”`, m, {
@@ -120,8 +132,8 @@ export default definePlugin({
         const ejemplo = `*Asmaul Husna*`
         const organizar = `Desde Abu Hurairah radhiallahu anhu, Rasulullah SAW dijo: "Tengo noventa y nueve nombres, cien menos 1. Quien los memorice entrará en el Paraíso, y él es un acorde que ama el acorde."
 Significado: "De hecho, yo tengo noventa y nueve nombres, también conocido como cien menos uno. Quien los cuente, entrará en el cielo; Él es Witr y ama a Witr".`
-        let json = JSON.parse(JSON.stringify(asmaulhusna))
-        let data = json.map((v: any, i: any) => `${i + 1}. ${v.latin}\n${v.arabic}\n${v.translation_id}`).join('\n\n')
+        let json: AsmaulHusnaItem[] = asmaulhusna
+        let data = json.map((v, i) => `${i + 1}. ${v.latin}\n${v.arabic}\n${v.translation_id}`).join('\n\n')
         const selectedIndex = Number(args[0])
         if (isNaN(selectedIndex)) throw `Ejemplo:\n${usedPrefix + command} 1`
         if (args[0]) {
@@ -132,7 +144,7 @@ Significado: "De hecho, yo tengo noventa y nueve nombres, también conocido como
                 arabic,
                 translation_id,
                 translation_en
-            } = json.find((v: any) => v.index == String(args[0]).replace(/[^0-9]/g, ''))
+            } = json.find((v) => v.index == String(args[0]).replace(/[^0-9]/g, ''))!
             return m.reply(`🔢 *Número:* ${index}
 ${arabic}
  
@@ -148,21 +160,21 @@ ${translation_en}
     }
 })
 
-async function luminsesi(q: any, username: any, logic: any) {
+async function luminsesi(q: string, username: string, logic: string): Promise<string | undefined> {
     try {
-        const response = await axios.post("https://luminai.my.id", {
+        const response = await axios.post<LuminaiResponse>("https://luminai.my.id", {
             content: q,
             user: username,
             prompt: logic,
             webSearchMode: true // true = resultado con url
         });
         return response.data.result;
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error);
     }
 }
 
-function pickRandom(list: any) {
+function pickRandom<T>(list: T[]): T {
     return list[Math.floor(list.length * Math.random())]
 }
 

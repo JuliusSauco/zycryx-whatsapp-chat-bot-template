@@ -4,6 +4,22 @@ import hispamemes from 'hispamemes'
 import {getNsfwSettings} from '../services/group-settings.service.js'
 import {definePlugin} from '../core/define-plugin.js'
 
+interface RandomContentItem {
+    label: string;
+    type?: 'api' | 'json' | 'video' | 'static';
+    api?: string;
+    nsfwApi?: string;
+    url?: string;
+    vids?: string[];
+    imgs?: string[];
+    isMeme?: boolean;
+    aliases: string[];
+}
+
+interface WaifuPicsResponse {
+    url?: string;
+}
+
 const contenido = {
     waifu: {label: '*💖 Nyaww 💖*', api: 'waifu', nsfwApi: 'waifu', type: 'api', aliases: []},
     neko: {label: '🐱 Neko', api: 'neko', nsfwApi: 'neko', type: 'api', aliases: ['gatito', 'nyan']},
@@ -45,14 +61,12 @@ const contenido = {
         url: 'https://raw.githubusercontent.com/elrebelde21/The-LoliBot-MD2/main/src/randow/CristianoRonaldo.json',
         aliases: []
     }
-}
+} satisfies Record<string, RandomContentItem>
 
-const aliasMap = {}
+const aliasMap: Record<string, RandomContentItem> = {}
 for (const [key, item] of Object.entries(contenido)) {
-    // @ts-ignore
     aliasMap[key.toLowerCase()] = item
     for (const alias of (item.aliases || [])) {
-        // @ts-ignore
         aliasMap[alias.toLowerCase()] = item
     }
 }
@@ -64,7 +78,6 @@ export default definePlugin({
     register: true,
     async execute(m, {conn, command}) {
     try {
-        // @ts-ignore
         const item = aliasMap[command.toLowerCase()]
         if (!item) return m.reply('❌ Comando no reconocido.')
 
@@ -75,7 +88,8 @@ export default definePlugin({
         }
 
         if (item.type === 'json') {
-            const res = await axios.get(item.url)
+            if (!item.url) return m.reply('❌ Fuente JSON no configurada.')
+            const res = await axios.get<string[]>(item.url)
             const imgs = res.data
             const img = imgs[Math.floor(Math.random() * imgs.length)]
             await conn.sendMessage(m.chat, {image: {url: img}, caption: item.label}, {quoted: m})
@@ -83,6 +97,7 @@ export default definePlugin({
         }
 
         if (item.type === 'api') {
+            if (!item.api) return m.reply('❌ API no configurada.')
             let apiPath = `https://api.waifu.pics/sfw/${item.api}`
             try {
                 const {modohorny} = await getNsfwSettings(m.chat)
@@ -94,18 +109,21 @@ export default definePlugin({
                 console.error('❌ Error al verificar NSFW:', err)
             }
             const res = await fetch(apiPath)
-            const {url} = await res.json() as any
+            const {url} = await res.json() as WaifuPicsResponse
+            if (!url) return m.reply('❌ La API no devolvió imagen.')
             await conn.sendFile(m.chat, url, 'error.jpg', item.label, m);
             return
         }
 
         if (item.type === 'video') {
+            if (!item.vids?.length) return m.reply('❌ No hay videos configurados.')
             const vid = item.vids[Math.floor(Math.random() * item.vids.length)]
             await conn.sendFile(m.chat, vid, 'error.mp4', item.label, m);
             return
         }
 
         if (item.type === 'static') {
+            if (!item.imgs?.length) return m.reply('❌ No hay imágenes configuradas.')
             const img = item.imgs[Math.floor(Math.random() * item.imgs.length)]
             await conn.sendMessage(m.chat, {
                 image: {url: img},

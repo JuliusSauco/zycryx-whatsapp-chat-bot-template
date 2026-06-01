@@ -3,20 +3,34 @@ import {sticker} from '../lib/sticker.js'
 import {getStickerExif} from '../services/sticker-settings.service.js'
 import {definePlugin} from '../core/define-plugin.js'
 
+interface StickerlyPack {
+    name: string;
+    author: string;
+    stickerCount: number;
+    viewCount: number;
+    exportCount: number;
+    url: string;
+    thumbnailUrl: string;
+}
+
+interface StickerlyResponse {
+    success?: boolean;
+    data?: StickerlyPack[];
+}
+
 export default definePlugin({
     command: ['stickerly'],
     help: ['stickerly <texto>'],
     tags: ['sticker'],
     register: true,
     async execute(m, {text, conn, usedPrefix, command}) {
-    const legacyConn = conn as any
     if (!text) return m.reply(`⚠️ Escribe algo para buscar sticker packs.\nEjemplo: *${usedPrefix + command} gatos*`)
 
     try {
         const res = await fetch(`https://api.dorratz.com/v3/stickerly?query=${encodeURIComponent(text)}`)
-        const json = await res.json() as any
+        const json = await res.json() as StickerlyResponse
 
-        if (!json.success || !json.data || json.data.length === 0) return m.reply(`❌ No se encontró ningún pack para: *${text}*`)
+        if (!json.success || !json.data?.length) return m.reply(`❌ No se encontró ningún pack para: *${text}*`)
 
         const packs = json.data.slice(0, 30)
 
@@ -30,10 +44,9 @@ export default definePlugin({
         for (const pack of packs) {
             const infoText = `📦 *${pack.name}*\n👤 ${pack.author}\n🧷 ${pack.stickerCount} stickers\n👁 ${pack.viewCount.toLocaleString()} vistas\n📤 ${pack.exportCount.toLocaleString()} exportados\n🔗 ${pack.url}`
             try {
-                // @ts-ignore
                 const stkr = await sticker(false, pack.thumbnailUrl, packname, author)
                 if (stkr) {
-                    await legacyConn.sendFile(m.chat, stkr, 'sticker.webp', '', m, true, {
+                    await conn.sendFile(m.chat, stkr, 'sticker.webp', '', m, true, {
                         contextInfo: {
                             'forwardingScore': 200,
                             'isForwarded': false,
@@ -46,12 +59,12 @@ export default definePlugin({
                                 thumbnail: m.pp
                             }
                         }
-                    }, {quoted: m})
+                    })
                     //conn.sendFile(m.chat, stkr, 'sticker.webp', infoText, m, true)
                     enviados++
                     await new Promise(r => setTimeout(r, 700))
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.log('❌ Error en sticker:', err)
             }
         }
@@ -60,7 +73,7 @@ export default definePlugin({
         else return m.react("✅")
         // m.reply(`✅ *${enviados} stickers enviados.*`)
 
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error(e)
         m.reply('❌ Error buscando stickers.')
     }

@@ -17,7 +17,7 @@ export default definePlugin({
             await setSubbotMode(id, nuevoModo);
             const estado = nuevoModo === "private" ? "🔒 *Privado*" : "🌐 *Público*";
             m.reply(`✅ Modo cambiado a: ${estado}`);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
         }
     },
