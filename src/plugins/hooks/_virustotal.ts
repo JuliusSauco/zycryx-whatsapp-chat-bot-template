@@ -25,6 +25,7 @@ type MediaPayload = {
 };
 type BaileysMediaKind = 'image' | 'video' | 'audio' | 'document';
 type AsyncIterableStream = AsyncIterable<Buffer | Uint8Array>;
+type ThreatKind = 'archivo' | 'enlace';
 
 const MEDIA_MESSAGE_TYPES = new Set([
     'documentMessage',
@@ -142,20 +143,62 @@ async function reactToScanResult(conn: ExtendedConn, m: BotMessage, stats: Virus
     await conn.sendMessage(m.chat, {react: {text: isRisky ? '❌' : '✅', key: m.key}});
 }
 
-async function deleteMaliciousFileMessage(conn: ExtendedConn, m: BotMessage, stats: VirusTotalStats, filename: string): Promise<void> {
+function getDeleteParticipant(m: BotMessage): string {
+    return m.key.participant || m.sender;
+}
+
+async function handleMaliciousContent(conn: ExtendedConn, m: BotMessage, stats: VirusTotalStats, kind: ThreatKind, label: string): Promise<void> {
     if ((stats.malicious || 0) <= 0) return;
 
-    try {
-        await conn.sendMessage(m.chat, {delete: m.key});
+    const target = getDeleteParticipant(m);
+    const targetMention = m.sender ? `@${m.sender.split('@')[0]}` : 'el usuario';
+    const threatLabel = kind === 'archivo' ? `el archivo *${label}*` : `el enlace *${label}*`;
+
+    if (!m.isBotAdmin) {
         await conn.sendMessage(m.chat, {
-            text: `⚠️ Archivo eliminado por seguridad.\n\n*${filename}* fue marcado como malicioso por VirusTotal y se eliminó del grupo para proteger a los integrantes.`,
-        });
-    } catch (error) {
-        logError('[VirusTotal] No se pudo eliminar el archivo malicioso:', error);
-        await conn.sendMessage(m.chat, {
-            text: `⚠️ VirusTotal marcó *${filename}* como malicioso, pero no pude eliminar el mensaje. Revisa que el bot sea administrador del grupo.`,
+            text: [
+                '🚨 *Contenido malicioso detectado*',
+                '',
+                `VirusTotal marcó ${threatLabel} como malicioso.`,
+                '',
+                '⚠️ No puedo eliminar el mensaje ni expulsar a su autor porque no soy administrador del grupo.',
+                '🛡️ Dame admin para poder proteger el grupo automáticamente.',
+            ].join('\n'),
+            mentions: m.sender ? [m.sender] : [],
         }, {quoted: m});
+        return;
     }
+
+    let deleted = false;
+    let removed = false;
+
+    try {
+        await conn.sendMessage(m.chat, {delete: {...m.key, participant: target}});
+        deleted = true;
+    } catch (error) {
+        logError('[VirusTotal] No se pudo eliminar el mensaje malicioso:', error);
+    }
+
+    try {
+        if (m.sender) {
+            await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove');
+            removed = true;
+        }
+    } catch (error) {
+        logError('[VirusTotal] No se pudo expulsar al autor del contenido malicioso:', error);
+    }
+
+    await conn.sendMessage(m.chat, {
+        text: [
+            '🚨 *Contenido malicioso detectado*',
+            '',
+            `VirusTotal marcó ${threatLabel} como malicioso.`,
+            '',
+            deleted ? '🗑️ Mensaje eliminado del grupo.' : '⚠️ No se pudo eliminar el mensaje.',
+            removed ? `🚪 Autor expulsado: ${targetMention}` : `⚠️ No se pudo expulsar al autor: ${targetMention}`,
+        ].join('\n'),
+        mentions: m.sender ? [m.sender] : [],
+    });
 }
 
 function shouldSkipUrl(chatId: string, url: string): boolean {
@@ -179,6 +222,7 @@ async function scanUrlsInText(conn: ExtendedConn, m: BotMessage, text: string): 
             const message = formatVirusTotalUrlSummary(summary);
             await conn.sendMessage(m.chat, {text: message}, {quoted: m});
             await reactToScanResult(conn, m, summary.stats);
+            await handleMaliciousContent(conn, m, summary.stats, 'enlace', summary.url);
         } catch (error: unknown) {
             const detail = error instanceof Error ? error.message : String(error);
             logError('[VirusTotal URL]', detail);
@@ -233,7 +277,7 @@ export async function before(m: BotMessage, {conn}: {conn: ExtendedConn}) {
 
         await conn.sendMessage(m.chat, {text: message}, {quoted: m});
         await reactToScanResult(conn, m, summary.stats);
-        await deleteMaliciousFileMessage(conn, m, summary.stats, filename);
+        await handleMaliciousContent(conn, m, summary.stats, 'archivo', filename);
         await scanUrlsInText(conn, m, media.payload.caption || m.originalText || m.text || '');
     } catch (error: unknown) {
         const detail = error instanceof Error ? error.message : String(error);

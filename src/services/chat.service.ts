@@ -44,3 +44,25 @@ export async function listGroupMessageCounts(groupId: string): Promise<Array<{
 }>> {
     return repositories.messages.listGroupCounts(groupId);
 }
+
+export async function logGroupMessage(input: {
+    groupId: string;
+    userId: string;
+    messageId: string;
+    messageText: string;
+    messageType: 'text' | 'multimedia';
+    isReply: boolean;
+    replyToMessageId: string | null;
+}): Promise<void> {
+    await repositories.messageLogs.create(input);
+}
+
+export async function markGroupMessageDeleted(input: {
+    groupId: string;
+    messageId: string;
+    deletedBy: string | null;
+    deletedByLid: string | null;
+    deletedAt: Date;
+}): Promise<void> {
+    await repositories.messageLogs.markDeleted(input);
+}

@@ -71,6 +71,7 @@ export default definePlugin({
     menu += `🔞 NSFW ${getStatus('modohorny')}\n• Contenido +18 en stickers/gifs\n• ${usedPrefix + command} modohorny\n\n`
     menu += `🔒 MODO SOLO ADMIN ${getStatus('modoadmin')}\n• Solo admins pueden usar comandos\n• ${usedPrefix + command} modoadmin\n\n`;
     menu += `🛂 AUTOACEPTAR ${m.isGroup ? getAutoAcceptModeLabel(chat.autoAcceptMode) : '⚠️'}\n• Gestionar solicitudes de ingreso al grupo\n• ${usedPrefix}enable autoaceptar\n• ${usedPrefix}enable autoaceptar --hidetagadmin\n• ${usedPrefix}enable autoaceptar --hidetag\n• ${usedPrefix}disable autoaceptar\n• ${usedPrefix}disable autoaceptar --hidetagadmin\n• ${usedPrefix}disable autoaceptar --hidetag\n\n`;
+    menu += `📝 REGISTRO MENSAJES ${getStatus('messageLogging')}\n• Guardar mensajes de texto del grupo\n• ${usedPrefix + command} registromsg\n\n`;
 
     menu += `\n*『 FUNCIONES PARA OWNER 』*\n\n`;
     const botConfig = isSubbot ? await getSubbotConfig(botId) : null;
@@ -180,6 +181,15 @@ export default definePlugin({
             if (!isAdmin) throw "⚠️ Solo los admins puede usar este comando.";
             selectedAutoAcceptMode = resolveAutoAcceptMode(isEnable, args)
             await setGroupAutoAcceptMode(chatId, selectedAutoAcceptMode)
+            break
+
+        case 'msglog':
+        case 'messagelog':
+        case 'registromsg':
+        case 'registrarmensajes':
+            if (!m.isGroup) throw '⚠️ Este comando solo se puede usar dentro de un grupo.'
+            if (!isAdmin) throw "⚠️ Solo los admins puede usar este comando.";
+            await setGroupBooleanFlag(chatId, 'messageLogging', isEnable)
             break
 
         case 'antiprivate':

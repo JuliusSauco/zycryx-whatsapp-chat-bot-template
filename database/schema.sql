@@ -113,7 +113,10 @@ CREATE TABLE IF NOT EXISTS group_settings (
     primary_bot   TEXT,
 
     -- Solicitudes de ingreso al grupo
-    autoaccept_mode TEXT DEFAULT 'off'
+    autoaccept_mode TEXT DEFAULT 'off',
+
+    -- Registro de mensajes del grupo
+    message_logging BOOLEAN DEFAULT false
 );
 
 -- -----------------------------------------------------------
@@ -141,6 +144,36 @@ CREATE TABLE IF NOT EXISTS messages (
     message_count INTEGER DEFAULT 0,
     PRIMARY KEY (user_id, group_id)
 );
+
+-- -----------------------------------------------------------
+-- 4.1 MESSAGE_LOGS
+-- Registro opcional de mensajes por grupo.
+-- Sólo conserva texto; multimedia se guarda como "Multimedia omitido."
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS message_logs (
+    id           SERIAL PRIMARY KEY,
+    group_id     TEXT      NOT NULL,
+    user_id      TEXT      NOT NULL,
+    message_id   TEXT      NOT NULL,
+    message_text TEXT      NOT NULL,
+    message_type TEXT      NOT NULL,
+    is_reply     BOOLEAN   DEFAULT false,
+    reply_to_message_id TEXT,
+    is_deleted   BOOLEAN   DEFAULT false,
+    deleted_at   TIMESTAMP,
+    deleted_by   TEXT,
+    deleted_by_lid TEXT,
+    created_at   TIMESTAMP DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS message_logs_group_created_at_idx
+    ON message_logs (group_id, created_at);
+
+CREATE INDEX IF NOT EXISTS message_logs_group_message_id_idx
+    ON message_logs (group_id, message_id);
+
+CREATE INDEX IF NOT EXISTS message_logs_user_idx
+    ON message_logs (user_id);
 
 -- -----------------------------------------------------------
 -- 5. SUBBOTS

@@ -6,6 +6,7 @@ import {chatMemoryRepository} from './chat-memory.repository.js';
 import {chatsRepository} from './chat.repository.js';
 import {databaseRepository} from './database.repository.js';
 import {groupSettingsRepository} from './group-settings.repository.js';
+import {messageLogRepository} from './message-log.repository.js';
 import {messagesRepository} from './message.repository.js';
 import {reportsRepository} from './report.repository.js';
 import {statsRepository} from './stats.repository.js';
@@ -17,6 +18,7 @@ export function createDrizzleRepositories(): AppRepositories {
         users: userRepository,
         chats: chatsRepository,
         messages: messagesRepository,
+        messageLogs: messageLogRepository,
         stats: statsRepository,
         subbots: subbotsRepository,
         characters: charactersRepository,

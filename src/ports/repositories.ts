@@ -202,6 +202,27 @@ export interface MessageRepository {
     listGroupCounts(groupId: string): Promise<Array<{user_id: string; message_count: number}>>;
 }
 
+export type MessageLogType = 'text' | 'multimedia';
+
+export interface MessageLogRepository {
+    create(input: {
+        groupId: string;
+        userId: string;
+        messageId: string;
+        messageText: string;
+        messageType: MessageLogType;
+        isReply: boolean;
+        replyToMessageId: string | null;
+    }): Promise<void>;
+    markDeleted(input: {
+        groupId: string;
+        messageId: string;
+        deletedBy: string | null;
+        deletedByLid: string | null;
+        deletedAt: Date;
+    }): Promise<void>;
+}
+
 export interface StatsRepository {
     incrementCommand(command: string): Promise<void>;
     sumCommands(): Promise<number>;
@@ -219,6 +240,7 @@ export interface GroupSettingsRepository {
         primary_bot: string | null;
         modoadmin: boolean;
         antifake: boolean;
+        message_logging: boolean;
     } | null>;
     findNsfwSettings(groupId: string): Promise<{
         modohorny: boolean;
@@ -377,6 +399,7 @@ export interface AppRepositories {
     users: UserRepository;
     chats: ChatRepository;
     messages: MessageRepository;
+    messageLogs: MessageLogRepository;
     stats: StatsRepository;
     subbots: SubbotRepository;
     characters: CharacterRepository;

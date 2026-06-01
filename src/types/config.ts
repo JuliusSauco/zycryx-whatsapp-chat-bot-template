@@ -72,6 +72,7 @@ export interface GroupSettings {
     memory_ttl: number;
     primary_bot?: string | null;
     autoAcceptMode?: AutoAcceptMode | null;
+    messageLogging: boolean;
     // allow custom welcome/bye texts
     swelcome?: string | null;
     sbye?: string | null;

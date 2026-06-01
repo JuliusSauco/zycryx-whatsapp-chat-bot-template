@@ -57,6 +57,41 @@
       "when": 1780280000000,
       "tag": "0008_autoaccept_group_join_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1780322400000,
+      "tag": "0009_message_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1780323000000,
+      "tag": "0010_message_logs_reply_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780323600000,
+      "tag": "0011_message_delete_edit_tracking",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1780324200000,
+      "tag": "0012_message_update_actor_lids",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1780324800000,
+      "tag": "0013_remove_message_edit_tracking",
+      "breakpoints": true
     }
   ]
 }

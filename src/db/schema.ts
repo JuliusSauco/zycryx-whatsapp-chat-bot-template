@@ -1,5 +1,5 @@
 import {sql} from 'drizzle-orm';
-import {bigint, boolean, date, integer, jsonb, pgTable, primaryKey, serial, text, timestamp} from 'drizzle-orm/pg-core';
+import {bigint, boolean, date, index, integer, jsonb, pgTable, primaryKey, serial, text, timestamp} from 'drizzle-orm/pg-core';
 
 export const usuarios = pgTable('usuarios', {
     id: text('id').primaryKey(),
@@ -77,6 +77,7 @@ export const groupSettings = pgTable('group_settings', {
     memoryTtl: integer('memory_ttl').default(86400),
     primaryBot: text('primary_bot'),
     autoAcceptMode: text('autoaccept_mode').default('off'),
+    messageLogging: boolean('message_logging').default(false),
 });
 
 export const chats = pgTable('chats', {
@@ -94,6 +95,26 @@ export const messages = pgTable('messages', {
     messageCount: integer('message_count').default(0),
 }, table => ({
     pk: primaryKey({columns: [table.userId, table.groupId]}),
+}));
+
+export const messageLogs = pgTable('message_logs', {
+    id: serial('id').primaryKey(),
+    groupId: text('group_id').notNull(),
+    userId: text('user_id').notNull(),
+    messageId: text('message_id').notNull(),
+    messageText: text('message_text').notNull(),
+    messageType: text('message_type').notNull(),
+    isReply: boolean('is_reply').default(false),
+    replyToMessageId: text('reply_to_message_id'),
+    isDeleted: boolean('is_deleted').default(false),
+    deletedAt: timestamp('deleted_at'),
+    deletedBy: text('deleted_by'),
+    deletedByLid: text('deleted_by_lid'),
+    createdAt: timestamp('created_at').defaultNow(),
+}, table => ({
+    groupCreatedAtIdx: index('message_logs_group_created_at_idx').on(table.groupId, table.createdAt),
+    groupMessageIdIdx: index('message_logs_group_message_id_idx').on(table.groupId, table.messageId),
+    userIdx: index('message_logs_user_idx').on(table.userId),
 }));
 
 export const subbots = pgTable('subbots', {

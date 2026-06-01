@@ -28,6 +28,7 @@ export interface GroupSettings {
     primary_bot: string | null;
     modoadmin: boolean;
     antifake: boolean;
+    message_logging: boolean;
 }
 
 export interface HandlerContext {
@@ -58,6 +59,7 @@ const EMPTY_GROUP_SETTINGS: GroupSettings = {
     primary_bot: null,
     modoadmin: false,
     antifake: false,
+    message_logging: false,
 };
 
 /**

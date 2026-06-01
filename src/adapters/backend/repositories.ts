@@ -37,6 +37,7 @@ export function createBackendRepositories(options: BackendRepositoryOptions): Ap
         users: createPendingRepository('users', client),
         chats: createPendingRepository('chats', client),
         messages: createPendingRepository('messages', client),
+        messageLogs: createPendingRepository('messageLogs', client),
         stats: createPendingRepository('stats', client),
         subbots: createPendingRepository('subbots', client),
         characters: createPendingRepository('characters', client),

@@ -8,7 +8,7 @@ import type {Logger} from "pino";
 import NodeCache from 'node-cache';
 import {startSubBot} from "../lib/subbot.js";
 import "./config.js";
-import {callUpdate, groupJoinRequest, groupsUpdate, handler, participantsUpdate} from "./handler.js";
+import {callUpdate, groupJoinRequest, groupsUpdate, handler, messageUpdate, participantsUpdate} from "./handler.js";
 import {loadPlugins} from '../lib/plugins.js';
 import {isOtherBotKey} from '../utils/message-filter.js';
 import {startScheduledTasks} from './scheduled-tasks.js';
@@ -227,6 +227,12 @@ async function startBot() {
             if (msg.messageTimestamp && (Date.now() / 1000 - Number(msg.messageTimestamp) > 120)) continue;
             if (isOtherBotKey(msg.key.id)) continue;
             enqueueMessage(sock, msg);
+        }
+    });
+
+    sock.ev.on("messages.update", async (updates) => {
+        for (const update of updates) {
+            messageUpdate(update).catch(console.error);
         }
     });
 

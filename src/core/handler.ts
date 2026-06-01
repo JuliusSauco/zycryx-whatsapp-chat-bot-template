@@ -4,6 +4,7 @@ import path from 'path';
 import chalk from "chalk";
 import crypto from "crypto";
 import fetch from 'node-fetch';
+import {WAMessageStubType} from '@whiskeysockets/baileys';
 import {logCommand, logDebug, logError, logInfo, logWarn} from "../lib/logger.js";
 import {smsg} from "../lib/simple.js";
 import {parseMessage} from './message-parser.js';
@@ -13,15 +14,22 @@ import {runGuards} from '../guards/index.js';
 import {cleanJid, isUserJid, jidToPhone, resolveSenderInfo} from '../utils/jid.js';
 import {resolveMention} from '../utils/mention.js';
 import {isBlockedPhoneNumber, MESSAGE_DEDUP_TTL} from '../utils/constants.js';
-import {deleteMessageCount, incrementMessageCount, markBotLeftGroup, upsertActiveChat} from '../services/chat.service.js';
-import {upsertUser as upsertUserService} from '../services/user.service.js';
+import {
+    deleteMessageCount,
+    incrementMessageCount,
+    logGroupMessage,
+    markBotLeftGroup,
+    markGroupMessageDeleted,
+    upsertActiveChat,
+} from '../services/chat.service.js';
+import {getNumberByLid, upsertUser as upsertUserService} from '../services/user.service.js';
 import {incrementCommandUsage} from '../services/stats.service.js';
 import {getSubbotConfig} from '../services/subbot.service.js';
 import {getGroupSettings} from '../services/group-settings.service.js';
 import {ENV} from './env.js';
 import type {ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
-import type {GroupMetadata, GroupParticipant, WASocket} from '@whiskeysockets/baileys';
+import type {GroupMetadata, GroupParticipant, WAMessageUpdate, WASocket} from '@whiskeysockets/baileys';
 import type {HandlerContext} from './context-builder.js';
 import type {AutoAcceptMode} from '../types/config.js';
 
@@ -581,6 +589,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
 
     // 5. Message counter (throttled)
     trackMessageCount(m, ctx);
+    trackGroupMessageLog(m, ctx);
 
     // 6. Antifake check
     if (await antifakeCheck(conn, m, ctx)) return;
@@ -666,6 +675,22 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     }
 }
 
+export async function messageUpdate(update: WAMessageUpdate): Promise<void> {
+    const groupId = update.key.remoteJid || '';
+    const messageId = update.key.id || '';
+    if (!groupId.endsWith('@g.us') || !messageId) return;
+    if (update.update.messageStubType !== WAMessageStubType.REVOKE) return;
+
+    const actor = await getMessageUpdateActor(update);
+    await markGroupMessageDeleted({
+        groupId,
+        messageId,
+        deletedBy: actor.jid,
+        deletedByLid: actor.lid,
+        deletedAt: new Date(),
+    });
+}
+
 // ---- Helpers privados del handler ----
 
 function markPerf(marks: Record<string, number>, label: string, start: number): void {
@@ -711,6 +736,159 @@ function trackMessageCount(m: BotMessage, ctx: {
 
     // Sin throttle: cada mensaje suma (conteo exacto). El INSERT es fire-and-forget.
     incrementMessageCount(ctx.sender, ctx.chatId).catch(console.error);
+}
+
+function trackGroupMessageLog(m: BotMessage, ctx: Pick<HandlerContext, 'chatId' | 'sender' | 'botJid' | 'isGroup' | 'groupSettings'>): void {
+    if (!ctx.isGroup) return;
+    if (!ctx.groupSettings?.message_logging) return;
+    if (ctx.sender === ctx.botJid) return;
+
+    const entry = buildMessageLogEntry(m);
+    if (!entry) return;
+
+    logGroupMessage({
+        groupId: ctx.chatId,
+        userId: ctx.sender,
+        messageId: m.key?.id || m.id || `${Date.now()}-${ctx.sender}`,
+        messageText: entry.text,
+        messageType: entry.type,
+        isReply: entry.isReply,
+        replyToMessageId: entry.replyToMessageId,
+    }).catch(console.error);
+}
+
+function buildMessageLogEntry(m: BotMessage): {
+    text: string;
+    type: 'text' | 'multimedia';
+    isReply: boolean;
+    replyToMessageId: string | null;
+} | null {
+    const content = unwrapMessageContent(m.message);
+    if (!content) return null;
+    return buildMessageLogEntryFromContent(content);
+}
+
+function buildMessageLogEntryFromContent(content: Record<string, unknown>): {
+    text: string;
+    type: 'text' | 'multimedia';
+    isReply: boolean;
+    replyToMessageId: string | null;
+} | null {
+    const replyToMessageId = getReplyToMessageId(content);
+    const replyInfo = {
+        isReply: !!replyToMessageId,
+        replyToMessageId,
+    };
+
+    const mediaTypes = [
+        'imageMessage',
+        'videoMessage',
+        'audioMessage',
+        'documentMessage',
+        'documentWithCaptionMessage',
+        'stickerMessage',
+        'ptvMessage',
+    ];
+    if (mediaTypes.some(type => Object.prototype.hasOwnProperty.call(content, type))) {
+        return {text: 'Multimedia omitido.', type: 'multimedia', ...replyInfo};
+    }
+
+    const text =
+        getNestedText(content, 'conversation') ||
+        getNestedText(content, 'extendedTextMessage', 'text');
+    const trimmed = text.trim();
+    if (!trimmed) return null;
+
+    return {text: trimmed, type: 'text', ...replyInfo};
+}
+
+type UpdateKeyLike = {
+    participant?: string | null;
+    participantAlt?: string | null;
+    remoteJid?: string | null;
+    remoteJidAlt?: string | null;
+    senderLid?: string | null;
+};
+
+async function getMessageUpdateActor(update: WAMessageUpdate): Promise<{jid: string | null; lid: string | null}> {
+    const updateWithKey = update.update as {key?: UpdateKeyLike};
+    const keys = [updateWithKey.key, update.key as UpdateKeyLike].filter(Boolean) as UpdateKeyLike[];
+
+    for (const key of keys) {
+        const alt = cleanJid(key.participantAlt || key.remoteJidAlt || '');
+        if (isUserJid(alt)) {
+            return {
+                jid: alt,
+                lid: getCleanLid(key),
+            };
+        }
+    }
+
+    const lid = keys.map(getCleanLid).find(Boolean) || null;
+    if (lid) {
+        const number = await getNumberByLid(lid).catch(() => null);
+        if (number) {
+            return {
+                jid: number.includes('@') ? cleanJid(number) : `${number}@s.whatsapp.net`,
+                lid,
+            };
+        }
+    }
+
+    const raw = keys
+        .map(key => cleanJid(key.participant || key.remoteJid || ''))
+        .find(jid => isUserJid(jid)) || null;
+
+    return {
+        jid: raw || lid,
+        lid,
+    };
+}
+
+function getCleanLid(key: UpdateKeyLike): string | null {
+    for (const candidate of [key.participant, key.remoteJid, key.senderLid]) {
+        const lid = cleanJid(candidate || '');
+        if (lid.endsWith('@lid')) return lid;
+    }
+
+    return null;
+}
+
+function unwrapMessageContent(message: BotMessage['message']): Record<string, unknown> | null {
+    const content = message as Record<string, unknown> | null | undefined;
+    if (!content) return null;
+
+    const wrapperKeys = ['ephemeralMessage', 'viewOnceMessage', 'viewOnceMessageV2'];
+    for (const key of wrapperKeys) {
+        const wrapper = content[key] as {message?: unknown} | undefined;
+        if (wrapper?.message && typeof wrapper.message === 'object') {
+            return unwrapMessageContent(wrapper.message as BotMessage['message']);
+        }
+    }
+
+    return content;
+}
+
+function getNestedText(content: Record<string, unknown>, ...path: string[]): string {
+    let current: unknown = content;
+    for (const key of path) {
+        if (!current || typeof current !== 'object') return '';
+        current = (current as Record<string, unknown>)[key];
+    }
+
+    return typeof current === 'string' ? current : '';
+}
+
+function getReplyToMessageId(content: Record<string, unknown>): string | null {
+    for (const value of Object.values(content)) {
+        if (!value || typeof value !== 'object') continue;
+        const contextInfo = (value as {contextInfo?: {stanzaId?: unknown}}).contextInfo;
+        if (typeof contextInfo?.stanzaId === 'string' && contextInfo.stanzaId.trim()) {
+            return contextInfo.stanzaId.trim();
+        }
+    }
+
+    return null;
 }
 
 async function antifakeCheck(conn: ExtendedConn, m: BotMessage, ctx: Pick<HandlerContext, 'chatId' | 'isGroup' | 'isAdmin' | 'isBotAdmin' | 'botJid' | 'groupSettings'>): Promise<boolean> {

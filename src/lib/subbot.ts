@@ -12,7 +12,7 @@ import fs from 'fs';
 import qrcode from 'qrcode';
 import chalk from "chalk";
 import NodeCache from 'node-cache';
-import {callUpdate, groupsUpdate, handler, participantsUpdate} from '../core/handler.js';
+import {callUpdate, groupsUpdate, handler, messageUpdate, participantsUpdate} from '../core/handler.js';
 import {logError, logInfo, logWarn} from './logger.js';
 import type {BotMessage} from '../types/message.js';
 import type {ExtendedConn} from '../types/context.js';
@@ -203,6 +203,12 @@ export async function startSubBot(
             } catch (err) {
                 logError(err);
             }
+        }
+    });
+
+    sock.ev.on("messages.update", async (updates) => {
+        for (const update of updates) {
+            messageUpdate(update).catch(console.error);
         }
     });
 

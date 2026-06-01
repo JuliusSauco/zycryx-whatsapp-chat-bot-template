@@ -31,7 +31,7 @@ export default definePlugin({
     }))
 
     const data = await getGroupSettings(m.chat) || {}
-    const {welcome, detect, antifake, antilink, virusTotal, modoadmin, primary_bot, modohorny, nsfw_horario, banned} = data
+    const {welcome, detect, antifake, antilink, virusTotal, modoadmin, primary_bot, modohorny, nsfw_horario, banned, messageLogging} = data
     const fallbackOwner = m.chat.includes('-') ? m.chat.split('-')[0] + '@s.whatsapp.net' : null
     const owner = groupMetadata.owner || groupAdmins.find(p => p.admin === 'superadmin')?.id || fallbackOwner || "Desconocido"
 
@@ -66,6 +66,7 @@ ${listAdmin.join('\n')}
 • Detect: ${detect ? '✅' : '❌'}
 • Modo horny: ${modohorny ? '✅' : '❌'}
 • NSFW horario permitido: ${nsfw_horario ? `🕒 (${nsfw_horario})` : '❌'}
+• Registro mensajes: ${messageLogging ? '✅' : '❌'}
 • Grupo baneado: ${banned ? '🚫 Sí' : '✅ No'}
 `.trim()
     await conn.sendFile(m.chat, pp, 'pp.jpg', text, m)

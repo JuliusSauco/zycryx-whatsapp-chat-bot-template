@@ -43,6 +43,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             memory_ttl: row.memoryTtl ?? 86400,
             primary_bot: row.primaryBot,
             autoAcceptMode: (row.autoAcceptMode || 'off') as AutoAcceptMode,
+            messageLogging: row.messageLogging ?? false,
         };
     },
 
@@ -53,6 +54,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
                 primary_bot: groupSettings.primaryBot,
                 modoadmin: groupSettings.modoadmin,
                 antifake: groupSettings.antifake,
+                message_logging: groupSettings.messageLogging,
             })
             .from(groupSettings)
             .where(eq(groupSettings.groupId, groupId))
@@ -64,6 +66,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
                 primary_bot: row.primary_bot ?? null,
                 modoadmin: !!row.modoadmin,
                 antifake: !!row.antifake,
+                message_logging: !!row.message_logging,
             }
             : null;
     },
@@ -98,6 +101,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             antifake: groupSettings.antifake,
             modohorny: groupSettings.modohorny,
             modoadmin: groupSettings.modoadmin,
+            messageLogging: groupSettings.messageLogging,
             welcomeHidetag: groupSettings.welcomeHidetag,
             byeHidetag: groupSettings.byeHidetag,
         } as const;

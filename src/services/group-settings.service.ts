@@ -13,6 +13,7 @@ export interface ContextGroupSettings {
     primary_bot: string | null;
     modoadmin: boolean;
     antifake: boolean;
+    message_logging: boolean;
 }
 
 const EMPTY_CONTEXT_SETTINGS: ContextGroupSettings = {
@@ -20,6 +21,7 @@ const EMPTY_CONTEXT_SETTINGS: ContextGroupSettings = {
     primary_bot: null,
     modoadmin: false,
     antifake: false,
+    message_logging: false,
 };
 
 export async function getContextGroupSettings(chatId: string): Promise<ContextGroupSettings> {
