@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {getUserById, setUserBanStatus} from '../../services/user.service.js';
 import type {MessageContent} from '../../types/context.js';
@@ -59,7 +60,7 @@ export default definePlugin({
                 return m.reply(`✅ El usuario @${cleanJid.split("@")[0]} ha sido *desbaneado* y puede volver a usar el bot.`, {mentions: [cleanJid]});
             }
         } catch (err: unknown) {
-            console.error(err);
+            logError(err);
             return m.reply("❌ Ocurrió un error al ejecutar el comando.");
         }
     }

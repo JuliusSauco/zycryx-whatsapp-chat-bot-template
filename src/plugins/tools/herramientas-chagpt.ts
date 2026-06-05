@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import fetch from 'node-fetch';
 import {blackboxAi} from '../../lib/scraper.js';
 import {chatCompletion} from '../../lib/ai.js';
@@ -51,7 +52,7 @@ export default definePlugin({
         try {
             await saveAiMemory(chatId, memory);
         } catch (e: unknown) {
-            console.error("❌ No se pudo guardar memoria:", e instanceof Error ? e.message : e);
+            logError("❌ No se pudo guardar memoria:", e instanceof Error ? e.message : e);
         }
         return await m.reply(result);
     }
@@ -93,7 +94,7 @@ export default definePlugin({
             const decoded = decodeApiText(res.result);
             await m.reply(decoded);
         } catch (e: unknown) {
-            console.error('Error DeepSeek:', e);
+            logError('Error DeepSeek:', e);
             await m.reply('❌ Error al consultar DeepSeek API.');
         }
     }

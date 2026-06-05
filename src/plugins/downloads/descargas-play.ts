@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 //import { youtubedl, youtubedlv2 } from '@bochilteam/scraper'
 import fetch from 'node-fetch';
@@ -187,7 +188,7 @@ export default definePlugin({
                         }
                     }
                 } catch (e: unknown) {
-                    console.log(`Error con API: ${e}`);
+                    logInfo(`Error con API: ${e}`);
                     continue;
                 }
             }
@@ -268,7 +269,7 @@ export default definePlugin({
             }
         }
     } catch (error: unknown) {
-        console.error(error);
+        logError(error);
         m.react("❌️")
     } finally {
         delete userRequests[m.sender];

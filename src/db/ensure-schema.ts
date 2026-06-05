@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../lib/logger.js';
 import pg from 'pg';
 import '../core/env.js';
 
@@ -25,7 +26,7 @@ try {
     await client.connect();
     await client.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
     await client.query(`ALTER TABLE IF EXISTS ${schema}.group_settings ADD COLUMN IF NOT EXISTS virustotal BOOLEAN DEFAULT false`);
-    console.log(`[DB] Schema listo: ${schema}`);
+    logInfo(`[DB] Schema listo: ${schema}`);
 } finally {
     await client.end();
 }

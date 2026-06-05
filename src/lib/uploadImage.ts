@@ -1,8 +1,8 @@
-import fetch from 'node-fetch'
 import {Blob, FormData} from 'formdata-node'
 import {fileTypeFromBuffer} from 'file-type'
+import {httpJson, type HttpRequestOptions} from './http-client.js'
 
-type FetchBody = NonNullable<Parameters<typeof fetch>[1]>['body'];
+type FetchBody = HttpRequestOptions['body'];
 
 interface QuaxUploadResponse {
     success?: boolean;
@@ -15,8 +15,7 @@ export default async (buffer: Buffer): Promise<string> => {
     const form = new FormData()
     const blob = new Blob([buffer], {type: mime})
     form.append('files[]', blob, 'tmp.' + ext)
-    const res = await fetch('https://qu.ax/upload.php', {method: 'POST', body: form as unknown as FetchBody})
-    const json = await res.json() as QuaxUploadResponse
+    const json = await httpJson<QuaxUploadResponse>('https://qu.ax/upload.php', {method: 'POST', body: form as unknown as FetchBody})
     const url = json.files?.[0]?.url
     if (json.success && url) {
         return url

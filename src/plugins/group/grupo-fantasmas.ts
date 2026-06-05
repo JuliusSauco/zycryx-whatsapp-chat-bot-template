@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {listGroupMessageCounts} from '../../services/chat.service.js';
 import {getGroupSettings, setGroupBooleanFlag} from '../../services/group-settings.service.js';
@@ -131,7 +132,7 @@ export default definePlugin({
                     for (const user of sider) {
                         if (user.isBot) continue;
                         await conn.groupParticipantsUpdate(m.chat, [user.id], 'remove')
-                            .catch((e: unknown) => console.error('❌ Error expulsando fantasma:', e));
+                            .catch((e: unknown) => logError('❌ Error expulsando fantasma:', e));
                         await delay(10000);
                     }
                 } finally {
@@ -142,7 +143,7 @@ export default definePlugin({
             }
         }
     } catch (err: unknown) {
-        console.error(err);
+        logError(err);
         m.reply("❌ Error ejecutando el comando. Por favor, intenta de nuevo.");
     }
     }

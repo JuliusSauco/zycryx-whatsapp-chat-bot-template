@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from './logger.js';
 import pg from 'pg';
 import {ENV} from '../core/env.js';
 
@@ -26,5 +27,5 @@ const poolConfig = ENV.DATABASE_URL
 export const db = new Pool({...poolConfig, max: 20});
 
 db.on('error', err => {
-    console.error('[DB] Error inesperado en el pool de PostgreSQL:', err);
+    logError('[DB] Error inesperado en el pool de PostgreSQL:', err);
 });

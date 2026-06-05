@@ -1,6 +1,7 @@
+import {logError, logInfo, logWarn} from './logger.js';
 import * as baileys from "@whiskeysockets/baileys";
 import {fileTypeFromBuffer} from 'file-type'
-import fetch from 'node-fetch';
+import {httpBuffer} from './http-client.js';
 import type {BotMessage} from '../types/message.js';
 import type {ExtendedConn, MediaInput, MessageContent, QuotedMessage, SendMessageOptions} from '../types/context.js';
 import {getUserName} from '../services/user.service.js';
@@ -152,7 +153,7 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
                 return jid.split('@')[0];
             }
         } catch (err) {
-            console.error(err);
+            logError(err);
             return jid.split('@')[0];
         }
     };
@@ -188,7 +189,7 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
             const matches = [...text.matchAll(/@([0-9]{5,15})/g)];
             return matches.map(match => `${match[1]}@s.whatsapp.net`).filter((jid: string) => jid.includes('@s.whatsapp.net'));
         } catch (e) {
-            console.error(e);
+            logError(e);
             return [];
         }
     };
@@ -261,9 +262,7 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
 
         } else if (typeof path === 'string' && /https?:\/\//.test(path)) {
             try {
-                const res = await fetch(path);
-                if (!res.ok) throw new Error(`Error HTTP ${res.status}: ${res.statusText}`);
-                const buffer = Buffer.from(await res.arrayBuffer());
+                const buffer = await httpBuffer(path);
 
                 const fileInfo = await fileTypeFromBuffer(buffer) || {} as FileTypeResult;
                 const mime = fileInfo.mime || 'application/octet-stream';
@@ -287,7 +286,7 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
                     ...options,
                 }, {quoted});
             } catch (e: unknown) {
-                console.error(e instanceof Error ? e.message : e);
+                logError(e instanceof Error ? e.message : e);
                 return this.sendMessage(jid, {text: caption || filename || 'No se pudo enviar el archivo'}, {quoted});
             }
         }

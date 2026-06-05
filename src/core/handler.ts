@@ -3,9 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import chalk from "chalk";
 import crypto from "crypto";
-import fetch from 'node-fetch';
 import {WAMessageStubType} from '@whiskeysockets/baileys';
 import {logCommand, logDebug, logError, logInfo, logWarn} from "../lib/logger.js";
+import {httpBuffer} from '../lib/http-client.js';
 import {smsg} from "../lib/simple.js";
 import {parseMessage} from './message-parser.js';
 import {buildContext, groupMetaCache} from './context-builder.js';
@@ -136,9 +136,7 @@ function getGroupAdminMentionJids(participants: GroupParticipant[]): string[] {
 async function downloadImageBuffer(url: string | null): Promise<Buffer | null> {
     if (!url) return null;
     try {
-        const response = await fetch(url);
-        if (!response.ok) return null;
-        return Buffer.from(await response.arrayBuffer());
+        return httpBuffer(url);
     } catch {
         return null;
     }
@@ -595,7 +593,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     if (await antifakeCheck(conn, m, ctx)) return;
 
     // 7. Upsert user data (fire-and-forget — m.sender/m.lid ya resueltos en buildContext)
-    upsertUser(m).catch(console.error);
+    upsertUser(m).catch(logError);
 
     // 8. Parse message (antes de before hooks para que m.originalText y m.text estén disponibles)
     const prefixes = Array.isArray(ctx.botConfig.prefix) ? ctx.botConfig.prefix : [ctx.botConfig.prefix];
@@ -718,7 +716,7 @@ function upsertChat(chatId: string, conn: ExtendedConn): void {
         isGroup: chatId.endsWith('@g.us'),
         timestamp: Date.now(),
         botId: jidToPhone(cleanJid(conn.user?.id || '')),
-    }).catch(console.error);
+    }).catch(logError);
 }
 
 function trackMessageCount(m: BotMessage, ctx: {
@@ -735,7 +733,7 @@ function trackMessageCount(m: BotMessage, ctx: {
     if (ctx.isAdmin) return;
 
     // Sin throttle: cada mensaje suma (conteo exacto). El INSERT es fire-and-forget.
-    incrementMessageCount(ctx.sender, ctx.chatId).catch(console.error);
+    incrementMessageCount(ctx.sender, ctx.chatId).catch(logError);
 }
 
 function trackGroupMessageLog(m: BotMessage, ctx: Pick<HandlerContext, 'chatId' | 'sender' | 'botJid' | 'isGroup' | 'groupSettings'>): void {
@@ -754,7 +752,7 @@ function trackGroupMessageLog(m: BotMessage, ctx: Pick<HandlerContext, 'chatId' 
         messageType: entry.type,
         isReply: entry.isReply,
         replyToMessageId: entry.replyToMessageId,
-    }).catch(console.error);
+    }).catch(logError);
 }
 
 function buildMessageLogEntry(m: BotMessage): {

@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {getDatabaseInfo, vacuumDatabase} from '../../services/database.service.js';
 
@@ -26,7 +27,7 @@ export default definePlugin({
 
                     await m.reply(text);
                 } catch (e: unknown) {
-                    console.error('[❌] /db info error:', e);
+                    logError('[❌] /db info error:', e);
                     await m.reply('❌ Error al consultar la base de datos.');
                 }
                 break;
@@ -39,7 +40,7 @@ export default definePlugin({
                     const tiempo = ((Date.now() - inicio) / 1000).toFixed(2);
                     await m.reply(`✅ *Optimización completada.*\n📉 Se ejecutó *VACUUM FULL*\n⏱️ Duración: *${tiempo} segundos*`);
                 } catch (e: unknown) {
-                    console.error('[❌] Error en optimizar:', e);
+                    logError('[❌] Error en optimizar:', e);
                     await m.reply('❌ No se pudo optimizar.');
                 }
                 break;

@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import fs from 'fs'
 import {definePlugin} from '../../core/define-plugin.js'
 
@@ -28,7 +29,7 @@ export default definePlugin({
                 fileName: `creds.json`
             }, {quoted: m})
         } catch (e: unknown) {
-            console.error(e)
+            logError(e)
             await m.react('❌')
             await m.reply('❌ Error al generar el respaldo de la sesión.')
         }

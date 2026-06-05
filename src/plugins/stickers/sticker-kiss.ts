@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import fetch from 'node-fetch'
 import {definePlugin} from '../../core/define-plugin.js'
@@ -53,7 +54,7 @@ export default definePlugin({
             }, {quoted: m})
         }
     } catch (e: unknown) {
-        console.error(e)
+        logError(e)
     }
     }
 })

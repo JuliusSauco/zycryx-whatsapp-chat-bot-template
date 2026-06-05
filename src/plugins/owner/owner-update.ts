@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {execSync} from 'child_process';
 import {definePlugin} from '../../core/define-plugin.js';
 
@@ -34,7 +35,7 @@ export default definePlugin({
                     }
                 }
             } catch (error: unknown) {
-                console.error(error);
+                logError(error);
                 if (error instanceof Error) {
                     const errorMessage2 = `\n⚠️ ` + error.message;
                 }

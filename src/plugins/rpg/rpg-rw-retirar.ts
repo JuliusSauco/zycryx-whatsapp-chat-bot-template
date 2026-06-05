@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {findCharacterByName, withdrawCharacterFromSale} from '../../services/character.service.js'
 
@@ -21,7 +22,7 @@ export default definePlugin({
         await withdrawCharacterFromSale(characterToRemove.id);
         return conn.reply(m.chat, `✅ Has retirado el personaje *${characterToRemove.name}* del mercado.`, m);
     } catch (e: unknown) {
-        console.error(e);
+        logError(e);
         return conn.reply(m.chat, '⚠️ Error al retirar el personaje. Intenta de nuevo.', m);
     }
     }

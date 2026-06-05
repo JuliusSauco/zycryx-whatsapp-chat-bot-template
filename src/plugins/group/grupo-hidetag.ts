@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {MessageContent} from '../../types/context.js'
 
@@ -63,7 +64,7 @@ export default definePlugin({
     try {
         await conn.sendMessage(m.chat, {text: texto, contextInfo: {mentionedJid: users}}, {quoted: undefined})
     } catch (e: unknown) {
-        console.error(e)
+        logError(e)
     }
     }
 })

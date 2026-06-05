@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import syntaxerror from 'syntax-error'
 import {format} from 'util'
 import {fileURLToPath} from 'url'
@@ -44,7 +45,7 @@ const plugin = definePlugin({
             _return = await exec.call(conn,
                 (...args: unknown[]) => {
                     if (--i < 1) return
-                    console.log(...args)
+                    logInfo(format(...args))
                     return conn.reply(m.chat, format(...args), m)
                 },
                 m, plugin, require, conn, CustomArray, process, args, metadata, f, f.exports, [conn, _2]

@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {getSubbotConfig, setSubbotPrefix} from '../../services/subbot.service.js';
 
@@ -29,7 +30,7 @@ export default definePlugin({
                 await setSubbotPrefix(cleanId, [""]);
                 return m.reply(`✅ Ahora el bot funciona *sin prefijo*. Puedes escribir comandos directamente como:\n• \`menu\``);
             } catch (err: unknown) {
-                console.error(err);
+                logError(err);
                 return m.reply("❌ Error al guardar prefijos, revisa la base de datos.");
             }
         }
@@ -42,7 +43,7 @@ export default definePlugin({
             const nuevoTexto = lista.map(p => `\`${p || '(sin prefijo)'}\``).join(", ");
             m.reply(`✅ Prefijos actualizados a: ${nuevoTexto}`);
         } catch (err: unknown) {
-            console.error(err);
+            logError(err);
             return m.reply("❌ Error al guardar prefijos, revisa la base de datos, reportarlo a mi creator con el comando: /report");
         }
     },

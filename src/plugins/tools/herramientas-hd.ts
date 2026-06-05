@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import fetch from 'node-fetch'
 import uploadImage from '../../lib/uploadImage.js'
 import {definePlugin} from '../../core/define-plugin.js'
@@ -32,7 +33,7 @@ export default definePlugin({
         await conn.sendFile(m.chat, json.data.url, 'hd.jpg', `✅ *Aquí está tu imagen en HD*`, m)
         await m.react('✅')
     } catch (e: unknown) {
-        console.error(e)
+        logError(e)
         await m.react('❌')
         m.reply(`❌ Error: ${e instanceof Error ? e.message : String(e)}`)
     }

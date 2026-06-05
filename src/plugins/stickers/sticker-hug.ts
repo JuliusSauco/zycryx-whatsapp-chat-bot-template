@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import fetch from 'node-fetch'
 import {definePlugin} from '../../core/define-plugin.js'
@@ -27,7 +28,7 @@ export default definePlugin({
         try {
             stiker = await sticker(null, gifUrl, texto, info.author)
         } catch (e: unknown) {
-            console.error('❌ Error generando sticker:', e)
+            logError('❌ Error generando sticker:', e)
         }
 
         if (stiker) {
@@ -56,7 +57,7 @@ export default definePlugin({
             mentions: m.mentionedJid
         }, {quoted: m})
     } catch (e: unknown) {
-        console.error(e)
+        logError(e)
         m.react("❌️")
     }
     }

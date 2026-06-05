@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {googleImage} from '@bochilteam/scraper';
 
@@ -17,7 +18,7 @@ export default definePlugin({
         const link = image;
         conn.sendFile(m.chat, link, 'error.jpg', `_🔎 𝙍𝙚𝙨𝙪𝙡𝙩𝙖𝙙𝙤𝙨 𝙙𝙚: ${text}_`, m);
     } catch (e: unknown) {
-        console.log(e);
+        logInfo(e);
     }
     }
 })

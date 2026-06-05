@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 //Código elaborado por: https://github.com/elrebelde21
 
@@ -137,7 +138,7 @@ export default definePlugin({
             return conn.reply(m.chat, `✅ Has puesto a la venta *${characterToSell.name}* en el mercado por ${price} exp.`, m);
         }
     } catch (e: unknown) {
-        console.error(e);
+        logError(e);
         return conn.reply(m.chat, '⚠️ Error al procesar la venta. Intenta de nuevo.', m);
     }
     }

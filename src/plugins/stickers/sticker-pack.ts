@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import fetch from 'node-fetch'
 import {sticker} from '../../lib/sticker.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js'
@@ -65,7 +66,7 @@ export default definePlugin({
                     await new Promise(r => setTimeout(r, 700))
                 }
             } catch (err: unknown) {
-                console.log('❌ Error en sticker:', err)
+                logInfo('❌ Error en sticker:', err)
             }
         }
 
@@ -74,7 +75,7 @@ export default definePlugin({
         // m.reply(`✅ *${enviados} stickers enviados.*`)
 
     } catch (e: unknown) {
-        console.error(e)
+        logError(e)
         m.reply('❌ Error buscando stickers.')
     }
     }

@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {setSubbotBooleanFlag} from '../../services/subbot.service.js'
 import {definePlugin} from '../../core/define-plugin.js'
 
@@ -27,7 +28,7 @@ export default definePlugin({
             return m.reply(prestarVal ? '✅ *Prestar bot activado.*\n> Los usuarios pueden usar el bot para unirlo a grupos.' : '✅ *Prestar bot desactivado.*\n> Los usuarios no podrán unir el bot a grupos.');
         }
     } catch (err: unknown) {
-        console.error(err);
+        logError(err);
     }
     }
 })

@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fg from 'api-dylux';
 import axios from 'axios';
@@ -60,7 +61,7 @@ export default definePlugin({
                 videoUrl = await attempt();
                 if (videoUrl) break;
             } catch (err: unknown) {
-                console.error(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
+                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
                 continue; // Si falla, intentar con la siguiente API
             }
         }
@@ -70,7 +71,7 @@ export default definePlugin({
 //conn.sendMessage(m.chat, {video: { url: videoUrl }, caption: `*🔰 Aqui esta tu video de tiktok*` }, { quoted: m });
         await conn.sendMessage(m.chat, {text: `✅ 𝘾𝙤𝙢𝙥𝙡𝙚𝙩𝙖𝙙𝙤\n▰▰▰▰▰▰▰▰▰`, edit: key});
     } catch (e: unknown) {
-        console.log(e);
+        logInfo(e);
         m.react(`❌`);
     } finally {
         delete userRequests[m.sender];

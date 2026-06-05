@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from './logger.js';
 import * as path from 'path';
 import {dirname} from 'path';
 import {fileURLToPath} from 'url';
@@ -9,7 +10,7 @@ import {spawn} from 'child_process';
 import uploadFile from './uploadFile.js';
 import {fileTypeFromBuffer} from 'file-type';
 import webp from 'node-webpmux';
-import fetch from 'node-fetch';
+import {httpBuffer} from './http-client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const tmp = path.join(__dirname, '../tmp');
@@ -18,9 +19,7 @@ function sticker2(img: Buffer, url?: string, _packname?: string, _author?: strin
     return new Promise(async (resolve, reject) => {
         try {
             if (url) {
-                const res = await fetch(url);
-                if (res.status !== 200) throw await res.text();
-                img = await res.buffer();
+                img = await httpBuffer(url);
             }
             const inp = path.join(tmp, +new Date + '.jpeg');
             await fs.promises.writeFile(inp, img);
@@ -47,19 +46,16 @@ function sticker2(img: Buffer, url?: string, _packname?: string, _author?: strin
 
 async function sticker3(img: Buffer, url?: string, packname?: string, author?: string): Promise<Buffer> {
     url = url ? url : await uploadFile(img) as string;
-    const res = await fetch('https://api.xteam.xyz/sticker/wm?' + new URLSearchParams({
+    return await httpBuffer('https://api.xteam.xyz/sticker/wm?' + new URLSearchParams({
         url: url!,
         packname: packname || '',
         author: author || ''
     }));
-    return await res.buffer() as unknown as Buffer;
 }
 
 async function sticker4(img: Buffer, url?: string): Promise<Buffer> {
     if (url) {
-        const res = await fetch(url);
-        if (res.status !== 200) throw await res.text();
-        img = await res.buffer() as unknown as Buffer;
+        img = await httpBuffer(url);
     }
     const result = await ffmpeg(img, [
         '-vf', 'scale=512:512:flags=lanczos:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000,setsar=1'
@@ -77,9 +73,7 @@ async function sticker6(img: Buffer, url?: string): Promise<Buffer> {
     return new Promise(async (resolve, reject) => {
         try {
             if (url) {
-                const res = await fetch(url);
-                if (res.status !== 200) throw await res.text();
-                img = await res.buffer() as unknown as Buffer;
+                img = await httpBuffer(url);
             }
 
             const {ext = 'mp4'} = await fileTypeFromBuffer(img) || {};
@@ -106,7 +100,7 @@ async function sticker6(img: Buffer, url?: string): Promise<Buffer> {
                     resolve(buffer);
                 })
                 .on('error', async (err: unknown) => {
-                    console.error('❌ ffmpeg video error:', err);
+                    logError('❌ ffmpeg video error:', err);
                     await fs.promises.unlink(inputPath).catch(() => {
                     });
                     reject(err);
@@ -122,9 +116,7 @@ async function sticker7(img: Buffer, url?: string): Promise<Buffer> {
     return new Promise(async (resolve, reject) => {
         try {
             if (url) {
-                const res = await fetch(url);
-                if (res.status !== 200) throw await res.text();
-                img = await res.buffer() as unknown as Buffer;
+                img = await httpBuffer(url);
             }
 
             const {ext = 'mp4'} = await fileTypeFromBuffer(img) || {};
@@ -151,7 +143,7 @@ async function sticker7(img: Buffer, url?: string): Promise<Buffer> {
                     resolve(buffer);
                 })
                 .on('error', async (err: unknown) => {
-                    console.error('❌ ffmpeg video error (sticker7):', err);
+                    logError('❌ ffmpeg video error (sticker7):', err);
                     await fs.promises.unlink(inputPath).catch(() => {
                     });
                     reject(err);
@@ -196,7 +188,7 @@ async function sticker(img: Buffer | false | null, url: string | false | null, p
                         const conExif = await addExif(stiker, packname, author);
                         if (Buffer.isBuffer(conExif) && conExif.length > 100) return conExif;
                     } catch (e) {
-                        console.error(e);
+                        logError(e);
                         return stiker;
                     }
                 }
@@ -204,12 +196,12 @@ async function sticker(img: Buffer | false | null, url: string | false | null, p
             }
 
         } catch (err) {
-            console.error(`❌ Error en ${fn.name}:`, err);
+            logError(`❌ Error en ${fn.name}:`, err);
             lastError = err;
         }
     }
 
-    console.error(lastError);
+    logError(lastError);
     throw lastError || new Error('No se pudo generar el sticker');
 }
 

@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {getUserWarnInfo, incrementUserWarn, resetUserWarn} from '../../services/user.service.js';
 
@@ -40,7 +41,7 @@ export default definePlugin({
             await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
         }
     } catch (err: unknown) {
-        console.error(err);
+        logError(err);
     }
     }
 });

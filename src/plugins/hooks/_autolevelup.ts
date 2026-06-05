@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {canLevelUp} from '../../lib/levelling.js'
 import {getGroupSettings} from '../../services/group-settings.service.js'
 import {getWallet, setUserLevelRole} from '../../services/wallet.service.js'
@@ -60,7 +61,7 @@ export async function before(m: BotMessage, {conn}: {conn: ExtendedConn}) {
         mediaType: 1,
         showAdAttribution: false,
         renderLargerThumbnail: false
-        }}}, { quoted: null }).catch(err => console.error(err))*/
+        }}}, { quoted: null }).catch(err => logError(err))*/
     }
 }
 

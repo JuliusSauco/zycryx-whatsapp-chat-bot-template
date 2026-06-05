@@ -1,7 +1,7 @@
 import crypto from 'crypto';
-import fetch from 'node-fetch';
 import FormData from 'form-data';
 import {ENV} from '../core/env.js';
+import {httpJson} from './http-client.js';
 
 const VIRUSTOTAL_API_BASE = 'https://www.virustotal.com/api/v3';
 const DIRECT_UPLOAD_LIMIT_BYTES = 32 * 1024 * 1024;
@@ -63,21 +63,11 @@ function getVirusTotalHeaders(): Record<string, string> {
     return {'x-apikey': ENV.VIRUSTOTAL_API_KEY};
 }
 
-async function parseVirusTotalResponse<T>(response: Awaited<ReturnType<typeof fetch>>): Promise<VirusTotalResponse<T>> {
-    const json = await response.json().catch(() => ({})) as VirusTotalResponse<T>;
-    if (!response.ok) {
-        const detail = json.error?.message || json.error?.code || response.statusText;
-        throw new Error(`VirusTotal HTTP ${response.status}: ${detail}`);
-    }
-    return json;
-}
-
 async function getLargeFileUploadUrl(): Promise<string> {
-    const response = await fetch(`${VIRUSTOTAL_API_BASE}/files/upload_url`, {
+    const json = await httpJson<VirusTotalResponse<UploadUrlResponseData>>(`${VIRUSTOTAL_API_BASE}/files/upload_url`, {
         method: 'GET',
         headers: getVirusTotalHeaders(),
     });
-    const json = await parseVirusTotalResponse<UploadUrlResponseData>(response);
     const uploadUrl = typeof json.data === 'string' ? json.data : json.data?.link;
     if (!uploadUrl) throw new Error('VirusTotal no devolvio URL para archivos grandes');
     return uploadUrl;
@@ -95,7 +85,7 @@ async function uploadFile(buffer: Buffer, filename: string, mimetype: string): P
         knownLength: buffer.length,
     });
 
-    const response = await fetch(uploadUrl, {
+    const json = await httpJson<VirusTotalResponse<UploadResponseData>>(uploadUrl, {
         method: 'POST',
         headers: {
             ...form.getHeaders(),
@@ -103,7 +93,6 @@ async function uploadFile(buffer: Buffer, filename: string, mimetype: string): P
         },
         body: form as never,
     });
-    const json = await parseVirusTotalResponse<UploadResponseData>(response);
     const analysisId = json.data?.id;
     if (!analysisId) throw new Error('VirusTotal no devolvio analysis_id');
     return analysisId;
@@ -111,7 +100,7 @@ async function uploadFile(buffer: Buffer, filename: string, mimetype: string): P
 
 async function submitUrl(url: string): Promise<string> {
     const body = new URLSearchParams({url});
-    const response = await fetch(`${VIRUSTOTAL_API_BASE}/urls`, {
+    const json = await httpJson<VirusTotalResponse<UploadResponseData>>(`${VIRUSTOTAL_API_BASE}/urls`, {
         method: 'POST',
         headers: {
             ...getVirusTotalHeaders(),
@@ -119,18 +108,16 @@ async function submitUrl(url: string): Promise<string> {
         },
         body,
     });
-    const json = await parseVirusTotalResponse<UploadResponseData>(response);
     const analysisId = json.data?.id;
     if (!analysisId) throw new Error('VirusTotal no devolvio analysis_id para la URL');
     return analysisId;
 }
 
 async function getAnalysis(analysisId: string): Promise<AnalysisResponseData> {
-    const response = await fetch(`${VIRUSTOTAL_API_BASE}/analyses/${encodeURIComponent(analysisId)}`, {
+    const json = await httpJson<VirusTotalResponse<AnalysisResponseData>>(`${VIRUSTOTAL_API_BASE}/analyses/${encodeURIComponent(analysisId)}`, {
         method: 'GET',
         headers: getVirusTotalHeaders(),
     });
-    const json = await parseVirusTotalResponse<AnalysisResponseData>(response);
     if (!json.data) throw new Error('VirusTotal no devolvio datos del analisis');
     return json.data;
 }

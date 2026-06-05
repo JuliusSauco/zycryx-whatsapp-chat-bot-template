@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../lib/logger.js';
 import fs from 'fs';
 import path from 'path';
 import {repositories} from './data-source.js';
@@ -28,7 +29,7 @@ function readSeedAudios(): AudioConfig {
     try {
         seedCache = JSON.parse(fs.readFileSync(seedAudiosPath, 'utf-8')) as AudioConfig;
     } catch (e: unknown) {
-        console.error('[❌] Error cargando src/data/audios.json:', e);
+        logError('[❌] Error cargando src/data/audios.json:', e);
         seedCache = {};
     }
 

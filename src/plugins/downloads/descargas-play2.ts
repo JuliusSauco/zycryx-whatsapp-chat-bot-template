@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fetch from 'node-fetch'
 import yts from 'yt-search'
@@ -250,7 +251,7 @@ export default definePlugin({
                                                     mimetype: 'video/mp4'
                                                 }, {quoted: m})
                                             } catch (e: unknown) {
-                                                console.log(e)
+                                                logInfo(e)
                                             }
                                         }
                                     }
@@ -263,7 +264,7 @@ export default definePlugin({
         }
 
     } catch (error: unknown) {
-        console.error(error);
+        logError(error);
         m.react("❌️")
     } finally {
         delete userRequests[m.sender];

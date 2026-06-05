@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import axios from 'axios'
 import fetch from 'node-fetch'
 import {definePlugin} from '../../core/define-plugin.js'
@@ -146,7 +147,7 @@ export default definePlugin({
         }
         m.reply('❌ Fuente NSFW no soportada.')
     } catch (e: unknown) {
-        console.error('[NSFW ERROR]', e)
+        logError('[NSFW ERROR]', e)
         m.reply('❌ Error al enviar imagen/video +18.')
     }
     }

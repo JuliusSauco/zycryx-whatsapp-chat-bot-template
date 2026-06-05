@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {QuotedMessage} from '../../types/context.js';
 
@@ -81,7 +82,7 @@ export default definePlugin({
                 apkData = await attempt();
                 if (apkData) break;
             } catch (err: unknown) {
-                console.error(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
+                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
                 continue;
             }
         }
@@ -115,7 +116,7 @@ ${apkData.developer ? `┃👤 𝘿𝙀𝙎𝘼𝙍𝙍𝙊𝙇𝙇𝙊: ${apkDa
         m.react("✅");
     } catch (e: unknown) {
         m.react('❌');
-        console.log(e);
+        logInfo(e);
     } finally {
         delete userRequests[m.sender];
     }

@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {listWarnedUsers} from '../../services/user.service.js';
 
@@ -29,7 +30,7 @@ export default definePlugin({
         }
         await conn.reply(m.chat, teks, m)
     } catch (err: unknown) {
-        console.error(err);
+        logError(err);
     }
     }
 });

@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {setSubbotMode} from '../../services/subbot.service.js';
 
@@ -18,7 +19,7 @@ export default definePlugin({
             const estado = nuevoModo === "private" ? "🔒 *Privado*" : "🌐 *Público*";
             m.reply(`✅ Modo cambiado a: ${estado}`);
         } catch (err: unknown) {
-            console.error(err);
+            logError(err);
         }
     },
 });

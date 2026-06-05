@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import fetch from 'node-fetch';
 import {definePlugin} from '../../core/define-plugin.js';
 import {ENV} from '../../core/env.js';
@@ -56,7 +57,7 @@ export default definePlugin({
 
         await m.reply(`*Traducción:*\n${json.translatedText}`);
     } catch (e: unknown) {
-        console.error(e);
+        logError(e);
         await m.reply('*[❗𝐈𝐍𝐅𝐎❗] ERROR, VUELVA A INTENTARLO*');
     }
     }

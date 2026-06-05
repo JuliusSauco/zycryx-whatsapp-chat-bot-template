@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {listGroupMessageCounts} from '../../services/chat.service.js';
 import {getNumberByLid} from '../../services/user.service.js';
@@ -43,7 +44,7 @@ export default definePlugin({
 
             await conn.sendMessage(m.chat, {text: mensaje, mentions: users}, {quoted: m})
         } catch (e: unknown) {
-            console.error("❌ Error en /tagall:", e)
+            logError("❌ Error en /tagall:", e)
         }
     }
 

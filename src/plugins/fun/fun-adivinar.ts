@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import fs from 'fs';
 import fetch from 'node-fetch';
 import similarity from 'similarity';
@@ -64,7 +65,7 @@ async function obtenerPregunta(tipo: GameType): Promise<GuessQuestion | null> {
                 }
             }
         } catch (e: unknown) {
-            console.error('[IA backup]', e instanceof Error ? e.message : e);
+            logError('[IA backup]', e instanceof Error ? e.message : e);
         }
     }
 
@@ -76,7 +77,7 @@ async function obtenerPregunta(tipo: GameType): Promise<GuessQuestion | null> {
         preguntasUsadas.add(pregunta.question);
         return pregunta;
     } catch (e: unknown) {
-        console.error('Respaldo fallido', e);
+        logError('Respaldo fallido', e);
         return null;
     }
 }

@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 export default definePlugin({
     help: ['staff'],
@@ -29,7 +30,7 @@ export default definePlugin({
             mentions: users
         }, {quoted: m})
     } catch (e: unknown) {
-        console.error("❌ Error en /admins:", e)
+        logError("❌ Error en /admins:", e)
     }
     }
 })

@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from './logger.js';
 import {convert} from "./ezgif-convert.js"
 import {Blob} from 'formdata-node'
 import {fileTypeFromBuffer} from "file-type"
@@ -20,7 +21,7 @@ async function webp2mp4(source: Buffer | string): Promise<string | string[]> {
             })
         });
     } catch (error) {
-        console.error("Error converting to webp-mp4. Trying fallback types.");
+        logError("Error converting to webp-mp4. Trying fallback types.");
 
         try {
             return await convert({
@@ -33,7 +34,7 @@ async function webp2mp4(source: Buffer | string): Promise<string | string[]> {
                 })
             });
         } catch (avifError) {
-            console.error("Error converting to webp-avif. Trying webp-gif.");
+            logError("Error converting to webp-avif. Trying webp-gif.");
 
             try {
                 return await convert({
@@ -46,7 +47,7 @@ async function webp2mp4(source: Buffer | string): Promise<string | string[]> {
                     })
                 });
             } catch (gifError) {
-                console.error("Error converting to webp-gif. All fallback types failed.");
+                logError("Error converting to webp-gif. All fallback types failed.");
                 throw gifError;
             }
         }
@@ -67,7 +68,7 @@ async function webp2png(source: Buffer | string): Promise<string | string[]> {
             })
         });
     } catch (pngError) {
-        console.error("Error converting to webp-png. Trying webp-jpg.");
+        logError("Error converting to webp-png. Trying webp-jpg.");
 
         try {
             return await convert({
@@ -80,7 +81,7 @@ async function webp2png(source: Buffer | string): Promise<string | string[]> {
                 })
             });
         } catch (jpgError) {
-            console.error("Error converting to webp-jpg. All fallback types failed.");
+            logError("Error converting to webp-jpg. All fallback types failed.");
             throw jpgError;
         }
     }

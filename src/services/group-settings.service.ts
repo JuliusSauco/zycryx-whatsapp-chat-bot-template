@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../lib/logger.js';
 import {
     getCachedGroupSettings,
     getCachedFullGroupSettings,
@@ -34,7 +35,7 @@ export async function getContextGroupSettings(chatId: string): Promise<ContextGr
         setCachedGroupSettings(chatId, settings);
         return settings;
     } catch (err) {
-        console.error('Error leyendo group_settings:', err);
+        logError('Error leyendo group_settings:', err);
         return EMPTY_CONTEXT_SETTINGS;
     }
 }
@@ -114,5 +115,5 @@ export async function listBannedGroups(): Promise<string[]> {
 export function clearPrimaryBot(chatId: string): void {
     repositories.groupSettings.clearPrimaryBot(chatId)
         .then(() => invalidateGroupSettings(chatId))
-        .catch(console.error);
+        .catch(logError);
 }

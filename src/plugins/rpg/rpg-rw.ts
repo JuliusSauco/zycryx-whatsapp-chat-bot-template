@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 //Código elaborado por: https://github.com/elrebelde21
 
@@ -133,7 +134,7 @@ export default definePlugin({
             }
             tempCharacterStore.delete(quotedId)
         } catch (e: unknown) {
-            console.error(e)
+            logError(e)
             return conn.sendMessage(m.chat, {text: '⚠️ Error al procesar la compra. Intenta de nuevo.'}, {quoted: m})
         }
     }

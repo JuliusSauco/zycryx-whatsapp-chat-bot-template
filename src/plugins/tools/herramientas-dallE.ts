@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import fetch from 'node-fetch';
 import axios from 'axios';
 import * as cheerio from "cheerio"
@@ -83,7 +84,7 @@ export default definePlugin({
                             await conn.sendFile(m.chat, tiores4.data, 'error.jpg', `_*Resultado de:* ${text}_`, m);
                             m.react('✅')
                         } catch (error: unknown) {
-                            console.log('[❗] Error, ninguna api funcional.\n' + error);
+                            logInfo('[❗] Error, ninguna api funcional.\n' + error);
                             m.reply(`error ${error}`)
                             m.react('❌')
                         }

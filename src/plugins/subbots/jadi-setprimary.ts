@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {setPrimaryBot} from '../../services/group-settings.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
 
@@ -15,7 +16,7 @@ export default definePlugin({
             await setPrimaryBot(m.chat, null);
             await m.reply("✅ El bot primario ha sido eliminado de este grupo. Ahora cualquier subbot puede responder.");
         } catch (err: unknown) {
-            console.error(err);
+            logError(err);
         }
         return;
     }
@@ -31,7 +32,7 @@ export default definePlugin({
             }, {quoted: m});
             await setPrimaryBot(m.chat, mentioned);
         } catch (err: unknown) {
-            console.error(err);
+            logError(err);
         }
     } else {
         await setPrimaryBot(m.chat, botId + "@s.whatsapp.net");

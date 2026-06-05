@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../lib/logger.js';
 import type {SubbotConfig} from '../types/config.js';
 import {getCachedSubbotConfig, invalidateSubbotConfig, setCachedSubbotConfig} from '../lib/db-cache.js';
 import {repositories} from './data-source.js';
@@ -26,7 +27,7 @@ export async function getSubbotConfig(botId: string): Promise<SubbotConfig> {
         setCachedSubbotConfig(cleanId, resolved);
         return resolved;
     } catch (err) {
-        console.error('Error obteniendo configuracion del subbot:', err);
+        logError('Error obteniendo configuracion del subbot:', err);
         return {...defaultConfig};
     }
 }
@@ -43,7 +44,7 @@ export function updateSubbotTipo(botId: string, tipo: string): void {
     const cleanId = botId.replace(/:\d+/, '');
     repositories.subbots.updateTipo(cleanId, tipo)
         .then(() => invalidateSubbotConfig(cleanId))
-        .catch(console.error);
+        .catch(logError);
 }
 
 export async function setSubbotBooleanFlag(botId: string, flag: string, value: boolean): Promise<void> {

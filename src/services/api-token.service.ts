@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../lib/logger.js';
 import {repositories} from './data-source.js';
 
 const tokenCache = new Map<string, string | null>();
@@ -13,7 +14,7 @@ export async function getDecodedApiToken(name: string): Promise<string | null> {
         }
     } catch (e: unknown) {
         const message = e instanceof Error ? e.message : String(e);
-        console.error(`[API_TOKEN] error leyendo token '${name}':`, message);
+        logError(`[API_TOKEN] error leyendo token '${name}':`, message);
     }
 
     tokenCache.set(name, token);

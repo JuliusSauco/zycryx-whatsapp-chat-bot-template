@@ -113,7 +113,7 @@ async function cargarSubbots() {
     if (!fs.existsSync(folder)) return;
 
     const subbotIds = fs.readdirSync(folder);
-//console.log(chalk.bold.yellowBright(`📦 Subbots cargados: ${subbotIds.length}`));
+//logInfo(chalk.bold.yellowBright(`📦 Subbots cargados: ${subbotIds.length}`));
 
     for (const userId of subbotIds) {
         const sessionPath = path.join(folder, userId);
@@ -207,8 +207,8 @@ async function startBot() {
         }
     });
 
-    process.on('uncaughtException', console.error);
-    process.on('unhandledRejection', console.error);
+    process.on('uncaughtException', logError);
+    process.on('unhandledRejection', logError);
 
     if (usarCodigo && !state.creds.registered) {
         setTimeout(async () => {
@@ -232,7 +232,7 @@ async function startBot() {
 
     sock.ev.on("messages.update", async (updates) => {
         for (const update of updates) {
-            messageUpdate(update).catch(console.error);
+            messageUpdate(update).catch(logError);
         }
     });
 
@@ -264,7 +264,7 @@ async function startBot() {
                     fs.unlinkSync(filePath);
                 }
             })
-//console.log(chalk.gray(`┏━━━━━━⪻♻️ AUTO-CLEAR 🗑️⪼━━━━━━•\n┃→ ARCHIVOS DE LA CARPETA TMP ELIMINADOS\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━•`));
+//logInfo(chalk.gray(`┏━━━━━━⪻♻️ AUTO-CLEAR 🗑️⪼━━━━━━•\n┃→ ARCHIVOS DE LA CARPETA TMP ELIMINADOS\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━•`));
         } catch (err: unknown) {
             logError('Error cleaning temporary files:', err);
         }

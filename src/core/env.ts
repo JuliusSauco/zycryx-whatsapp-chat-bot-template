@@ -72,4 +72,5 @@ export const ENV = {
     DATABASE_URL: process.env.DATABASE_URL || '',
     LOG_LEVEL: process.env.LOG_LEVEL || 'command',
     PERF_LOG_THRESHOLD_MS: parseInt(process.env.PERF_LOG_THRESHOLD_MS || '750', 10),
+    HTTP_TIMEOUT_MS: parseInt(process.env.HTTP_TIMEOUT_MS || '15000', 10),
 } as const;

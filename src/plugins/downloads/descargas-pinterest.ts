@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import axios from 'axios';
 import {pinterest} from '../../lib/scraper.js';
@@ -86,7 +87,7 @@ export default definePlugin({
                 results = await attempt();
                 if (results && results.length > 0) break;
             } catch (err: unknown) {
-                console.error(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
+                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
                 continue;
             }
         }

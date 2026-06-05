@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fs from 'fs'
 import path from 'path'
@@ -14,7 +15,7 @@ function getFrases(): string[] {
             .map(s => s.trim())
             .filter(Boolean)
     } catch (e: unknown) {
-        console.error('No se pudo leer media/text/msg-text-ins.txt:', e)
+        logError('No se pudo leer media/text/msg-text-ins.txt:', e)
         return []
     }
 }
@@ -52,7 +53,7 @@ export default definePlugin({
             contextInfo: {mentionedJid: mentions},
         }, {quoted: m})
     } catch (e: unknown) {
-        console.error(e)
+        logError(e)
         m.react('❌️')
     }
     }

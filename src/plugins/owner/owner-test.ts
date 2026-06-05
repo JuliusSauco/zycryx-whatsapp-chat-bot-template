@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {countSubbotsByType, listSubbotConfigs} from '../../services/subbot.service.js';
 
@@ -51,7 +52,7 @@ export default definePlugin({
             m.reply(mensaje.trim());
 
         } catch (err: unknown) {
-            console.error("❌ Error al consultar subbots:", err);
+            logError("❌ Error al consultar subbots:", err);
             m.reply("❌ Error al leer la tabla subbots, reporta esta mierda.");
         }
     }

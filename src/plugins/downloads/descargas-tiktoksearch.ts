@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import axios from 'axios';
 
@@ -33,7 +34,7 @@ export default definePlugin({
         m.react("✅️");
     } catch (error: unknown) {
         m.react("❌️")
-        console.error(error);
+        logError(error);
     } finally {
         delete userRequests[m.sender];
     }

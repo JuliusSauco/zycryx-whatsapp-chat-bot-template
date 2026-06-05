@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from './logger.js';
 import WebSocket from "ws";
 import axios from 'axios';
 import {createHash} from 'crypto';
@@ -5,6 +6,7 @@ import {wrapper} from 'axios-cookiejar-support';
 import * as cheerio from 'cheerio';
 import {CookieJar} from 'tough-cookie';
 import {ENV} from '../core/env.js';
+import {httpText} from './http-client.js';
 
 type UnknownRecord = Record<string, unknown>;
 type ChatMessage = {role: string; content: string; id?: string};
@@ -181,7 +183,7 @@ async function blackboxAi(query: string): Promise<BlackboxResult> {
             throw new Error("Format response tidak dikenali.");
         }
     } catch (err: unknown) {
-        console.error("Terjadi kesalahan:", errorMessage(err));
+        logError("Terjadi kesalahan:", errorMessage(err));
         return {
             creator: "elrebelde21",
             status: false,
@@ -240,15 +242,11 @@ const exoml = {
             "content-type": "application/json",
         }
 
-        const response = await fetch("https://exomlapi.com/api/chat", {
+        const data = await httpText("https://exomlapi.com/api/chat", {
             headers,
             body,
             "method": "post"
         })
-
-        if (!response.ok) throw Error(`woops.. response is not ok! ${response.status} ${response.statusText}\n\n${await response.text()}`)
-
-        const data = await response.text()
 
         // aku buruk dalam memparsing ini
         const anu = [...data.matchAll(/^0:"(.*?)"$/gm)].map(v => v[1]).join("").replaceAll("\\n", "\n").replaceAll("\\\"", "\"")
@@ -437,8 +435,8 @@ const perplexity = {
                 throw error;
             }
 
-            console.log(`🔄 Ngetry attempt yang ke-${attempt}, nunggu ${perplexity.api.retry.delayMs}ms yak bree 😂...`);
-            console.error(errorMessage(error));
+            logInfo(`🔄 Ngetry attempt yang ke-${attempt}, nunggu ${perplexity.api.retry.delayMs}ms yak bree 😂...`);
+            logError(errorMessage(error));
 
             await perplexity.delay(perplexity.api.retry.delayMs * attempt);
             return await perplexity.retry(operation, attempt + 1);
@@ -536,7 +534,7 @@ const perplexity = {
                     details: [{
                         param: 'onChunk',
                         error: 'Kudu pake callback function buat streaminnya bree!',
-                        example: '(chunk) => console.log(chunk)'
+                        example: '(chunk) => logInfo(chunk)'
                     }]
                 }
             };
@@ -574,7 +572,7 @@ const perplexity = {
                                 }
                             } catch (e) {
                                 if (!line.includes('[DONE]')) {
-                                    console.warn('❌ Gagal parse chunknya bree: ', e);
+                                    logWarn('❌ Gagal parse chunknya bree: ', e);
                                 }
                             }
                         }
@@ -673,7 +671,7 @@ const pinterest = {
             }
             return null;
         } catch (error: unknown) {
-            console.error(error);
+            logError(error);
             return null;
         }
     },
@@ -1474,7 +1472,7 @@ const ytdown = {
             });
             return data;
         } catch (error: unknown) {
-            console.error(errorMessage(error), axiosData(error));
+            logError(errorMessage(error), axiosData(error));
             throw error;
         }
     },
@@ -1541,7 +1539,7 @@ const ytdown = {
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 attempts++;
             } catch (error: unknown) {
-                console.error("\n", error);
+                logError("\n", error);
                 attempts++;
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }

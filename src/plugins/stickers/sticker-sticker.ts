@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import uploadFile from '../../lib/uploadFile.js'
 import uploadImage from '../../lib/uploadImage.js'
@@ -24,7 +25,7 @@ export default definePlugin({
             try {
                 stiker = await sticker(img, false, f, g)
             } catch (e: unknown) {
-                console.error(e)
+                logError(e)
             } finally {
 //conn.reply(m.chat, `Calma crack estoy haciendo tu sticker 👏\n\n> *Recuerda los video son de 7 segundos*`, m)
                 if (!stiker) {
@@ -41,7 +42,7 @@ export default definePlugin({
             else return m.reply('URL invalido')
         }
     } catch (e: unknown) {
-        console.error(e)
+        logError(e)
     } finally {
         if (stiker) await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, {
             contextInfo: {

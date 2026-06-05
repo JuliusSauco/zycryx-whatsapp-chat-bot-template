@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../lib/logger.js';
 import fs, {unwatchFile, watchFile} from 'fs'
 import chalk from 'chalk'
 import {fileURLToPath} from 'url'
@@ -46,6 +47,6 @@ globalThis.info = {
 let file = fileURLToPath(import.meta.url)
 watchFile(file, () => {
     unwatchFile(file)
-    console.log(chalk.redBright("Update 'config.ts'"))
+    logInfo(chalk.redBright("Update 'config.ts'"))
     import(`${file}?update=${Date.now()}`)
 })

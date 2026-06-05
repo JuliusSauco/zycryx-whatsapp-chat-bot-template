@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fg from 'api-dylux';
 import fetch from 'node-fetch';
@@ -102,7 +103,7 @@ export default definePlugin({
                 mediaData = await attempt();
                 if (mediaData) break;
             } catch (err: unknown) {
-                console.error(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
+                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
                 continue;
             }
         }
@@ -113,7 +114,7 @@ export default definePlugin({
         m.react('✅');
     } catch (e: unknown) {
         m.react('❌');
-        console.log(e);
+        logInfo(e);
     } finally {
         delete userRequests[m.sender];
     }

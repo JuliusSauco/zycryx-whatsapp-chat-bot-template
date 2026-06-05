@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import axios from 'axios';
 import * as cheerio from 'cheerio';
@@ -151,7 +152,7 @@ export default definePlugin({
                 songData = await attempt();
                 if (songData) break;
             } catch (err: unknown) {
-                console.error(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
+                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
                 continue;
             }
         }
@@ -167,7 +168,7 @@ export default definePlugin({
         }, {quoted: m});
         m.react("✅");
     } catch (e: unknown) {
-        console.error("Error final:", e);
+        logError("Error final:", e);
         m.reply("Ocurrió un error al intentar obtener el enlace de descarga.");
         m.react("❌");
     } finally {

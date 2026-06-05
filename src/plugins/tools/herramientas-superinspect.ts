@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 // Código adaptado por https://github.com/GataNina-Li
 // Código compatible con canales y comunidades de WhatsApp
 
@@ -166,7 +167,7 @@ export default definePlugin({
             }, {quoted: m})
             if (newsletterInfo.id) await conn.sendMessage(m.chat, {text: newsletterInfo.id})
         } catch (e: unknown) {
-            console.log(e)
+            logInfo(e)
         }
     }
     }

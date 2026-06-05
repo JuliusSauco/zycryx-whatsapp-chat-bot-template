@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {Jimp, JimpMime} from "jimp";
 import {S_WHATSAPP_NET} from "@whiskeysockets/baileys";
@@ -36,7 +37,7 @@ export default definePlugin({
 
         m.react("✅️");
     } catch (error: unknown) {
-        console.log(error);
+        logInfo(error);
         return m.react("❌");
     }
     }

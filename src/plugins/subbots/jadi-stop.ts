@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import fs from "fs";
 import path from "path";
 import {definePlugin} from '../../core/define-plugin.js';
@@ -22,7 +23,7 @@ export default definePlugin({
         setTimeout(() => {
             if (fs.existsSync(sessionPath)) {
                 fs.rmSync(sessionPath, {recursive: true, force: true});
-                console.log(`[SubBot ${cleanId}] Sesión cerrada y eliminada.`);
+                logInfo(`[SubBot ${cleanId}] Sesión cerrada y eliminada.`);
             }
         }, 2000);
 
@@ -30,7 +31,7 @@ export default definePlugin({
             m.reply("✅ *Sesión del SubBot finalizada correctamente.*\nPuedes volver a conectarte usando `/jadibot` o `/serbot`.");
         }, 3000);
     } catch (err: unknown) {
-        console.error(`❌ Error al cerrar el subbot ${cleanId}:`, err);
+        logError(`❌ Error al cerrar el subbot ${cleanId}:`, err);
         await m.reply("❌ Ocurrió un error al cerrar la sesión del SubBot.");
     }
     }

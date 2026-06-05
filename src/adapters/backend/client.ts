@@ -1,4 +1,4 @@
-import fetch, {type RequestInit, type Response} from 'node-fetch';
+import {httpJson, httpRequest, type HttpRequestOptions} from '../../lib/http-client.js';
 
 export type BackendProtocol = 'rest' | 'graphql';
 
@@ -13,44 +13,37 @@ export class BackendClient {
     constructor(private readonly options: BackendClientOptions) {
     }
 
-    async rest<T>(path: string, init: RequestInit = {}): Promise<T> {
-        const response = await this.fetch(`${this.options.baseUrl}${path}`, init);
-        return response.json() as Promise<T>;
+    async rest<T>(path: string, init: HttpRequestOptions = {}): Promise<T> {
+        return httpJson<T>(`${this.options.baseUrl}${path}`, {
+            ...init,
+            timeoutMs: this.options.timeoutMs,
+            headers: this.headers(init.headers),
+        });
     }
 
     async graphql<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
-        const response = await this.fetch(this.options.baseUrl, {
+        const payload = await httpJson<{data?: T; errors?: unknown}>(this.options.baseUrl, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            timeoutMs: this.options.timeoutMs,
+            headers: this.headers({'Content-Type': 'application/json'}),
             body: JSON.stringify({query, variables}),
         });
-        const payload = await response.json() as {data?: T; errors?: unknown};
         if (payload.errors) throw new Error(`[BACKEND] GraphQL error: ${JSON.stringify(payload.errors)}`);
         return payload.data as T;
     }
 
-    private async fetch(url: string, init: RequestInit): Promise<Response> {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), this.options.timeoutMs);
+    async raw(path: string, init: HttpRequestOptions = {}) {
+        return httpRequest(`${this.options.baseUrl}${path}`, {
+            ...init,
+            timeoutMs: this.options.timeoutMs,
+            headers: this.headers(init.headers),
+        });
+    }
 
-        try {
-            const response = await fetch(url, {
-                ...init,
-                signal: controller.signal,
-                headers: {
-                    ...(this.options.token ? {Authorization: `Bearer ${this.options.token}`} : {}),
-                    ...init.headers,
-                },
-            });
-
-            if (!response.ok) {
-                const body = await response.text().catch(() => '');
-                throw new Error(`[BACKEND] ${response.status} ${response.statusText}${body ? `: ${body}` : ''}`);
-            }
-
-            return response as unknown as Response;
-        } finally {
-            clearTimeout(timeout);
-        }
+    private headers(headers?: HttpRequestOptions['headers']): HttpRequestOptions['headers'] {
+        return {
+            ...(this.options.token ? {Authorization: `Bearer ${this.options.token}`} : {}),
+            ...headers,
+        };
     }
 }

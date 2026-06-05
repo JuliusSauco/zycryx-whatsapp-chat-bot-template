@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {proto} from '@whiskeysockets/baileys'
 
@@ -49,12 +50,12 @@ export default definePlugin({
                 deletedCount++;
                 await delay(100);
             } catch (err: unknown) {
-                console.log(err);
+                logInfo(err);
             }
         }
         m.reply(`✅ Se eliminaron ${deletedCount} mensajes de ${target.includes('@s.whatsapp.net')}.`);
     } catch (err: unknown) {
-        console.error(err);
+        logError(err);
     }
     }
 });

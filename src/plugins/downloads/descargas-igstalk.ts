@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fg from 'api-dylux'
 
@@ -60,7 +61,7 @@ export default definePlugin({
         } catch (e: unknown) {
             await m.react(`❌`)
             m.reply(`\`\`\`⚠️ OCURRIO UN ERROR ⚠️\`\`\`\n\n> *Reporta el siguiente error a mi creador con el comando:*#report\n\n>>> ${e} <<<< `)
-            console.log(e)
+            logInfo(e)
         }
     }
     }

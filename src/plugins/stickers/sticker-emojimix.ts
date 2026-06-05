@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import fetch from 'node-fetch'
 import {getStickerExif} from '../../services/sticker-settings.service.js';
@@ -54,7 +55,7 @@ export default definePlugin({
             })
         }
     } catch (e: unknown) {
-        console.log(e)
+        logInfo(e)
     }
     }
 })

@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 export default definePlugin({
     help: ['pin'],
@@ -39,7 +40,7 @@ export default definePlugin({
             m.react("✅️")
         }
     } catch (error: unknown) {
-        console.error(error);
+        logError(error);
     }
     }
 });

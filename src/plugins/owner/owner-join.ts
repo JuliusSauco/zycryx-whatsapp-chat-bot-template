@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {getSubbotConfig} from '../../services/subbot.service.js'
 import {setGroupExpiration} from '../../services/group-settings.service.js'
 import {decrementUserLimit, getUserResources} from '../../services/user.service.js'
@@ -72,7 +73,7 @@ export default definePlugin({
         try {
             res = await conn.groupAcceptInvite(code)
         } catch (e: unknown) {
-            console.error("Error al unirse al grupo:", e)
+            logError("Error al unirse al grupo:", e)
             return m.reply("❌ No pude unirme al grupo. Verifica el enlace e inténtalo de nuevo.")
         }
         if (!res) return m.reply("❌ No pude unirme al grupo. Verifica el enlace e inténtalo de nuevo.")

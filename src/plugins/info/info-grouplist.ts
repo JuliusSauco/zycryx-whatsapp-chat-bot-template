@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {listJoinedGroupIdsByBot} from '../../services/chat.service.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
@@ -52,7 +53,7 @@ export default definePlugin({
 
         m.reply(`_*\`ESTÁ EN ESTOS GRUPOS:\`*_\n> *• Total grupo:* ${grupos.length}\n\n${txt}`.trim());
     } catch (err: unknown) {
-        console.error(err);
+        logError(err);
     }
     }
 });

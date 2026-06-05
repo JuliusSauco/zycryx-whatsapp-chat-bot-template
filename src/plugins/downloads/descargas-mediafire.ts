@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fetch from 'node-fetch';
 import type {QuotedMessage} from '../../types/context.js';
@@ -108,7 +109,7 @@ export default definePlugin({
                 fileData = await attempt();
                 if (fileData) break;
             } catch (err: unknown) {
-                console.error(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
+                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
                 continue; // Si falla, intentar con la siguiente API
             }
         }
@@ -128,7 +129,7 @@ export default definePlugin({
     } catch (e: unknown) {
         await conn.sendFile(m.chat, sticker, 'error.webp', '', m);
         m.react('❌');
-        console.error(e);
+        logError(e);
     } finally {
         delete userRequests[m.sender];
     }

@@ -1,6 +1,7 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import crypto from 'crypto';
-import fetch from 'node-fetch';
 import {downloadContentFromMessage} from '@whiskeysockets/baileys';
+import {httpJson} from '../../lib/http-client.js';
 import {deleteAudioEntry, findAudioEntryInScopes, getAudioConfig, upsertAudioEntry, type AudioEntry} from '../../services/audio-response.service.js';
 import {getDecodedApiToken} from '../../services/api-token.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
@@ -67,13 +68,18 @@ export default definePlugin({
             const githubApiUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${fileName}`;
 
             let sha: string | null = null;
-            const check = await fetch(githubApiUrl, {method: 'GET', headers: {Authorization: `token ${GITHUB_TOKEN}`}});
-            if (check.status === 200) {
-                const existing = await check.json() as GithubFileResponse;
+            try {
+                const existing = await httpJson<GithubFileResponse>(githubApiUrl, {
+                    method: 'GET',
+                    headers: {Authorization: `token ${GITHUB_TOKEN}`},
+                    expectedStatuses: [200],
+                });
                 sha = existing.sha || null;
+            } catch {
+                sha = null;
             }
 
-            const res = await fetch(githubApiUrl, {
+            const data = await httpJson<GithubUploadResponse>(githubApiUrl, {
                 method: 'PUT',
                 headers: {
                     Authorization: `token ${GITHUB_TOKEN}`,
@@ -86,16 +92,14 @@ export default definePlugin({
                     ...(sha && {sha})
                 })
             });
-
-            const data = await res.json() as GithubUploadResponse;
             if (!data.content?.download_url) {
-                console.error('[❌] Error al subir audio a GitHub:', data);
+                logError('[❌] Error al subir audio a GitHub:', data);
                 return m.reply('❌ Error al subir audio.');
             }
 
             githubRawUrl = data.content.download_url;
         } catch (e: unknown) {
-            console.error('[❌] Error al procesar audio citado:', e);
+            logError('[❌] Error al procesar audio citado:', e);
             return m.reply('❌ No se pudo procesar el audio, por favor respondar a un audios nota de voz.');
         }
     } else {

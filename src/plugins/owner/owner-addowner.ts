@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {getSubbotConfig, setSubbotOwners} from '../../services/subbot.service.js';
 
@@ -26,7 +27,7 @@ export default definePlugin({
                 if (config.owners.includes(jidToSave)) return m.reply(`⚠️ @${display} ya es owner.`, {mentions: [jidToSave]});
                 config.owners.push(jidToSave);
                 await setSubbotOwners(botId, config.owners);
-                console.log(`✅ Owner agregado: ${jidToSave} para ID ${botId}`);
+                logInfo(`✅ Owner agregado: ${jidToSave} para ID ${botId}`);
                 return m.reply(`✅ Agregado como owner: @${display}`, {mentions: [jidToSave]});
             }
 
@@ -34,11 +35,11 @@ export default definePlugin({
                 if (!config.owners.includes(jidToSave)) return m.reply(`⚠️ @${display} no es owner.`, {mentions: [jidToSave]});
                 config.owners = config.owners.filter(j => j !== jidToSave);
                 await setSubbotOwners(botId, config.owners);
-                console.log(`✅ Owner removido: ${jidToSave} para ID ${botId}`);
+                logInfo(`✅ Owner removido: ${jidToSave} para ID ${botId}`);
                 return m.reply(`✅ Removido como owner: @${display}`, {mentions: [jidToSave]});
             }
         } catch (err: unknown) {
-            console.error(err);
+            logError(err);
         }
     }
 });

@@ -9,8 +9,8 @@
  *
  * Para agregar / reordenar / cambiar modelos: edita el array PROVIDERS.
  */
-import fetch from 'node-fetch';
 import {getDecodedApiToken, invalidateApiTokenCache} from '../services/api-token.service.js';
+import {httpJson} from './http-client.js';
 import {logDebug, logWarn} from './logger.js';
 
 interface AIProvider {
@@ -70,7 +70,7 @@ export async function chatCompletion(messages: ChatMessage[], opts: ChatOptions 
             continue;
         }
         try {
-            const res = await fetch(provider.url, {
+            const data = await httpJson<ChatCompletionResponse>(provider.url, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${key}`,
@@ -83,7 +83,6 @@ export async function chatCompletion(messages: ChatMessage[], opts: ChatOptions 
                     max_tokens: opts.maxTokens ?? 600,
                 }),
             });
-            const data = await res.json() as ChatCompletionResponse;
             if (data?.error) {
                 logWarn(`[AI] '${provider.token}' devolvió error:`, JSON.stringify(data.error));
                 continue;

@@ -208,7 +208,7 @@ export async function startSubBot(
 
     sock.ev.on("messages.update", async (updates) => {
         for (const update of updates) {
-            messageUpdate(update).catch(console.error);
+            messageUpdate(update).catch(logError);
         }
     });
 

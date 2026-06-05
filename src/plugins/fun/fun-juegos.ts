@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import fetch from 'node-fetch';
 import {definePlugin} from '../../core/define-plugin.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
@@ -551,8 +552,8 @@ Genial! 💝, están de Luna de miel 🥵✨❤️‍🔥`
         }
     } catch (e: unknown) {
 //await conn.reply(m.chat, `${lenguajeGB['smsMalError3']()}#report ${lenguajeGB['smsMensError2']()} ${usedPrefix + command}\n\n${wm}`, fkontak, m)
-//console.log(`❗❗ ${lenguajeGB['smsMensError2']()} ${usedPrefix + command} ❗❗`)
-        console.log(e)
+//logInfo(`❗❗ ${lenguajeGB['smsMensError2']()} ${usedPrefix + command} ❗❗`)
+        logInfo(e)
     }
     }
 })

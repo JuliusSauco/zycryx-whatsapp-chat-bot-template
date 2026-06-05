@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fs from 'fs'
 import path from 'path'
@@ -71,7 +72,7 @@ export default definePlugin({
         try {
             mp4s = fs.readdirSync(GIF_FOLDER).filter(f => f.toLowerCase().endsWith('.mp4'))
         } catch (e: unknown) {
-            console.error('No se pudo leer la carpeta de medios para dp:', e)
+            logError('No se pudo leer la carpeta de medios para dp:', e)
         }
 
         if (!mp4s.length) {
@@ -99,7 +100,7 @@ export default definePlugin({
             contextInfo: {mentionedJid: mentions},
         }, {quoted: m})
     } catch (e: unknown) {
-        console.error(e)
+        logError(e)
         m.react('❌️')
     }
     }

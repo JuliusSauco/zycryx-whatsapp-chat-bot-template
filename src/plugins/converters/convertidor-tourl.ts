@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import uploadFile, {
     catbox,
     filechan,
@@ -101,7 +102,7 @@ Subirá automáticamente el archivo a servidores como *qu.ax*, *catbox*, *cdn-sk
         const link = await (isTele ? uploadImage : uploadFile)(media);
         return m.reply(link);
     } catch (e: unknown) {
-        console.error(e);
+        logError(e);
         throw '❌ Error al subir el archivo. Intenta con otra opción:\n' + Object.keys(services).concat(["skyultra"]).map((v) => `➔ ${usedPrefix}${command} ${v}`).join('\n');
     }
     }

@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fetch from 'node-fetch';
 import type {QuotedMessage} from '../../types/context.js';
@@ -45,7 +46,7 @@ export default definePlugin({
         await conn.sendFile(m.chat, url, filename, undefined, m);
     } catch (e: unknown) {
         m.reply(`\`\`\`⚠️ OCURRIO UN ERROR ⚠️\`\`\`\n\n> *Reporta el siguiente error a mi creador con el comando:* #report\n\n>>> ${e} <<<< `);
-        console.log(e);
+        logInfo(e);
     } finally {
         delete userRequests[m.sender];
     }

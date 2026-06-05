@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fetch from 'node-fetch';
 import type {QuotedMessage} from '../../types/context.js';
@@ -68,7 +69,7 @@ export default definePlugin({
                 fileData = await attempt();
                 if (fileData) break; // Si se obtiene un resultado, salir del bucle
             } catch (err: unknown) {
-                console.error(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
+                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
                 continue; // Si falla, intentar con la siguiente API
             }
         }
@@ -89,7 +90,7 @@ export default definePlugin({
     } catch (e: unknown) {
         m.react(`❌`);
         m.reply(`\`\`\`⚠️ OCURRIO UN ERROR ⚠️\`\`\`\n\n> *Reporta el siguiente error a mi creador con el comando:* #report\n\n>>> ${e} <<<<`);
-        console.log(e);
+        logInfo(e);
     } finally {
         delete userRequests[m.sender];
     }

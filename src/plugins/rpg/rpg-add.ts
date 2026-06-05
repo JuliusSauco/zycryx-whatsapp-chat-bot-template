@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {getNumberByLid, getUserById} from '../../services/user.service.js';
 import {addWalletResource} from '../../services/wallet.service.js';
@@ -46,7 +47,7 @@ export default definePlugin({
             return m.reply(`*≡ ✨ EXP QUITADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* ${cantidad}\n┗━━━━━━━━━━━━`);
         }
     } catch (e: unknown) {
-        console.error(e);
+        logError(e);
         return m.reply("❌ Error al modificar datos.");
     }
     }

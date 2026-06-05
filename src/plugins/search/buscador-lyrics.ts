@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 
 interface LyricsResult {
@@ -45,7 +46,7 @@ export default definePlugin({
 //conn.sendMessage(m.chat, { image: { url: img }, caption: textoLetra }, { quoted: m });
         } catch (e: unknown) {
             m.reply(`\`\`\`⚠️ OCURRIO UN ERROR ⚠️\`\`\`\n\n> *Reporta el siguiente error a mi creador con el comando:*#report\n\n>>> ${e} <<<< `)
-            console.log(e)
+            logInfo(e)
         }
     }
     }

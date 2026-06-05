@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import moment from 'moment-timezone'
 import {xpRange} from '../../lib/levelling.js'
 import {countUsers, getUserById} from '../../services/user.service.js';
@@ -186,7 +187,7 @@ export default definePlugin({
         m.react('🙌');
     } catch (err: unknown) {
         m.react('❌')
-        console.error(err);
+        logError(err);
     }
     }
 })

@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import axios from 'axios'
 import {definePlugin} from '../../core/define-plugin.js'
 
@@ -170,7 +171,7 @@ async function luminsesi(q: string, username: string, logic: string): Promise<st
         });
         return response.data.result;
     } catch (error: unknown) {
-        console.error(error);
+        logError(error);
     }
 }
 

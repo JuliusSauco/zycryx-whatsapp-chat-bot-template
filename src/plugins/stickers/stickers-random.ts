@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import fetch from 'node-fetch'
 import {definePlugin} from '../../core/define-plugin.js'
@@ -96,7 +97,7 @@ export default definePlugin({
             mentions: m.mentionedJid
         }, {quoted: m})
     } catch (e: unknown) {
-        console.error(`[❌ ERROR ${command}]`, e)
+        logError(`[❌ ERROR ${command}]`, e)
         await conn.reply(m.chat, `❌ Ocurrió un error con *${command}*.`, m)
     }
     }

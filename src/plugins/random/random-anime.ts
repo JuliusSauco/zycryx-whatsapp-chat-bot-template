@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import fetch from 'node-fetch'
 import axios from 'axios'
 import hispamemes from 'hispamemes'
@@ -106,7 +107,7 @@ export default definePlugin({
                     apiPath = `https://api.waifu.pics/nsfw/${item.nsfwApi}`
                 }
             } catch (err: unknown) {
-                console.error('❌ Error al verificar NSFW:', err)
+                logError('❌ Error al verificar NSFW:', err)
             }
             const res = await fetch(apiPath)
             const {url} = await res.json() as WaifuPicsResponse
@@ -133,7 +134,7 @@ export default definePlugin({
         }
 
     } catch (e: unknown) {
-        console.error('[❌ ERROR IMG]', e)
+        logError('[❌ ERROR IMG]', e)
         m.reply('❌ Error al enviar imagen.')
     }
     }

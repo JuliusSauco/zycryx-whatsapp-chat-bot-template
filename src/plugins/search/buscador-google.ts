@@ -1,3 +1,4 @@
+import {logError, logInfo, logWarn} from '../../lib/logger.js';
 //import {googleIt} from '@bochilteam/scraper';
 import fetch from 'node-fetch';
 import {definePlugin} from '../../core/define-plugin.js';
@@ -54,7 +55,7 @@ export default definePlugin({
                 conn.sendFile(m.chat, ss, 'result.png', teks, m);
             }
         } catch (e: unknown) {
-            console.log(e);
+            logInfo(e);
             m.react("❌")
         }
     }
