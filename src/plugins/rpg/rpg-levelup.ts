@@ -1,8 +1,8 @@
 import {definePlugin} from '../../core/define-plugin.js'
 import {canLevelUp, xpRange} from '../../lib/levelling.js'
 import {getRole} from '../hooks/_autolevelup.js'
-import axios from 'axios'
 import {getWallet, setUserLevelRole} from '../../services/wallet.service.js'
+import {httpBuffer} from '../../lib/http-client.js'
 
 const multiplier = 650
 
@@ -48,8 +48,7 @@ Tus estadisticas en tiempo real 🕐
 
     try {
         const apiURL = `${info.apis}/canvas/balcard?url=${encodeURIComponent(m.pp)}&background=https://telegra.ph/file/66c5ede2293ccf9e53efa.jpg&username=${encodeURIComponent(name)}&discriminator=${m.sender.replace(/[^0-9]/g, '')}&money=${money}&xp=${exp}&level=${newLevel}`
-        const result = await axios.get(apiURL, {responseType: 'arraybuffer'})
-        const buffer = Buffer.from(result.data)
+        const buffer = await httpBuffer(apiURL)
         await conn.sendFile(m.chat, buffer, 'levelup.jpg', str, m)
     } catch (e: unknown) {
         await conn.fakeReply(m.chat, str, '13135550002@s.whatsapp.net', `*TUS ESTADISTICAS 🆙*`, 'status@broadcast')

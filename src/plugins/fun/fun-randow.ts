@@ -1,6 +1,6 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
-import axios from 'axios'
 import {definePlugin} from '../../core/define-plugin.js'
+import {httpJson} from '../../lib/http-client.js'
 
 interface LuminaiResponse {
     result?: string;
@@ -163,13 +163,17 @@ ${translation_en}
 
 async function luminsesi(q: string, username: string, logic: string): Promise<string | undefined> {
     try {
-        const response = await axios.post<LuminaiResponse>("https://luminai.my.id", {
+        const response = await httpJson<LuminaiResponse>("https://luminai.my.id", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
             content: q,
             user: username,
             prompt: logic,
             webSearchMode: true // true = resultado con url
+            }),
         });
-        return response.data.result;
+        return response.result;
     } catch (error: unknown) {
         logError(error);
     }

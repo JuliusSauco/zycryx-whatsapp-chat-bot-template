@@ -1,7 +1,7 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
-import fetch from 'node-fetch'
 import {definePlugin} from '../../core/define-plugin.js'
+import {httpBuffer, httpJson} from '../../lib/http-client.js'
 
 interface WaifuPicsResponse {
     url?: string;
@@ -21,7 +21,7 @@ export default definePlugin({
         const senderName = await getName(m.sender)
         const mentionedNames = await Promise.all(m.mentionedJid.map(getName))
         const texto = `🤗 ${senderName} abrazó con cariño a ${mentionedNames.join(', ')}`
-        const {url: gifUrl} = await fetch('https://api.waifu.pics/sfw/hug').then(r => r.json() as Promise<WaifuPicsResponse>)
+        const {url: gifUrl} = await httpJson<WaifuPicsResponse>('https://api.waifu.pics/sfw/hug')
         if (!gifUrl) return m.reply('❌ La API no devolvió sticker.')
 
         let stiker
@@ -49,7 +49,7 @@ export default definePlugin({
             return
         }
 
-        const gifBuffer = await fetch(gifUrl).then(r => r.buffer())
+        const gifBuffer = await httpBuffer(gifUrl)
         await conn.sendMessage(m.chat, {
             video: gifBuffer,
             gifPlayback: true,

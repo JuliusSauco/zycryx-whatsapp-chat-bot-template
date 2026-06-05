@@ -1,15 +1,13 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {canLevelUp} from '../../lib/levelling.js'
-import {getGroupSettings} from '../../services/group-settings.service.js'
 import {getWallet, setUserLevelRole} from '../../services/wallet.service.js'
-import type {ExtendedConn} from '../../types/context.js'
+import type {BeforePluginContext} from '../../types/context.js'
 import type {BotMessage} from '../../types/message.js'
 
 const multiplier = 650
 
-export async function before(m: BotMessage, {conn}: {conn: ExtendedConn}) {
-    const chat = await getGroupSettings(m.chat)
-    if (!chat?.autolevelup) return
+export async function before(m: BotMessage, {conn, groupSettings, isGroup}: BeforePluginContext) {
+    if (!isGroup || !groupSettings?.autolevelup) return
     const user = await getWallet(m.sender)
     if (!user) return
 

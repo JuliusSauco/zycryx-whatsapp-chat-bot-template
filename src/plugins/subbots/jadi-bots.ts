@@ -6,7 +6,7 @@ export default definePlugin({
     help: ['bots'],
     tags: ['jadibot'],
     command: /^bots$/i,
-    async execute(m, {conn}) {
+    async execute(m, {conn, participants}) {
     const mainId = globalThis.conn?.user?.id?.split('@')[0].split(':')[0]
     const activos = (globalThis.conns || []).filter(sock => {
         const id = sock?.userId || sock?.user?.id?.split('@')[0];
@@ -16,7 +16,7 @@ export default definePlugin({
 
     if (!activos.length) return m.reply("❌ No hay subbots conectados en este momento.")
     let mensaje = `🤖 *SubBots activos: ${activos.length}*\n\n`
-    const participantes: GroupParticipant[] = m.isGroup ? (await conn.groupMetadata(m.chat).catch(() => ({participants: []}))).participants || [] : []
+    const participantes: GroupParticipant[] = m.isGroup ? participants : []
 
     for (const sock of activos) {
         const userId = sock.user?.id

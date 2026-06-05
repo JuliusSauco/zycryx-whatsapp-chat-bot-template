@@ -1,7 +1,6 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
-import axios from 'axios'
-import fetch from 'node-fetch'
 import {definePlugin} from '../../core/define-plugin.js'
+import {httpJson, httpRequest} from '../../lib/http-client.js'
 
 interface NsfwContentItem {
     label: string;
@@ -114,7 +113,7 @@ export default definePlugin({
 
         if (item.type === 'json') {
             if (!item.url) return m.reply('❌ Fuente JSON no configurada.')
-            const {data} = await axios.get<string[]>(item.url)
+            const data = await httpJson<string[]>(item.url)
             const img = data[Math.floor(Math.random() * data.length)]
             await conn.sendFile(m.chat, img, 'nsfw.jpg', item.label, m)
             return
@@ -122,8 +121,7 @@ export default definePlugin({
 
         if (item.type === 'waifu') {
             if (!item.api) return m.reply('❌ API no configurada.')
-            const res = await fetch(`https://api.waifu.pics/nsfw/${item.api}`)
-            const {url} = await res.json() as UrlResponse
+            const {url} = await httpJson<UrlResponse>(`https://api.waifu.pics/nsfw/${item.api}`)
             if (!url) return m.reply('❌ La API no devolvió imagen.')
             await conn.sendFile(m.chat, url, 'waifu.jpg', item.label, m)
             return
@@ -131,10 +129,10 @@ export default definePlugin({
 
         if (item.type === 'api') {
             if (!item.api) return m.reply('❌ API no configurada.')
-            const res = await fetch(item.api)
+            const res = await httpRequest(item.api)
             const contentType = res.headers.get('content-type') || ''
             if (contentType.startsWith('image/')) {
-                const buffer = await res.buffer()
+                const buffer = Buffer.from(await res.arrayBuffer())
                 await conn.sendFile(m.chat, buffer, 'img.jpg', item.label, m)
                 return
             }

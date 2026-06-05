@@ -1,7 +1,8 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
-import fetch from 'node-fetch';
 import type {QuotedMessage} from '../../types/context.js';
+import {httpRequest} from '../../lib/http-client.js';
+import {replyReportableError} from '../../lib/reply-helpers.js';
 
 const regex = /(?:https|git)(?::\/\/|@)github\.com[\/:]([^\/:]+)\/(.+)/i;
 const userCaptions = new Map<string, QuotedMessage>();
@@ -41,11 +42,11 @@ export default definePlugin({
         let [_, user, repo] = args[0].match(regex) || [];
         repo = repo.replace(/.git$/, '');
         let url = `https://api.github.com/repos/${user}/${repo}/zipball`;
-        const disposition = (await fetch(url, {method: 'HEAD'})).headers.get('content-disposition') || '';
+        const disposition = (await httpRequest(url, {method: 'HEAD'})).headers.get('content-disposition') || '';
         let filename = disposition.match(/attachment; filename=(.*)/)?.[1] || `${repo}.zip`;
         await conn.sendFile(m.chat, url, filename, undefined, m);
     } catch (e: unknown) {
-        m.reply(`\`\`\`⚠️ OCURRIO UN ERROR ⚠️\`\`\`\n\n> *Reporta el siguiente error a mi creador con el comando:* #report\n\n>>> ${e} <<<< `);
+        await replyReportableError(m, e);
         logInfo(e);
     } finally {
         delete userRequests[m.sender];

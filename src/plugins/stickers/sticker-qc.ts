@@ -1,7 +1,13 @@
 import {sticker} from '../../lib/sticker.js';
-import axios from 'axios';
 import {getStickerExif} from '../../services/sticker-settings.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
+import {httpJson} from '../../lib/http-client.js';
+
+interface QuoteGenerateResponse {
+    result?: {
+        image?: string;
+    };
+}
 
 export default definePlugin({
     help: ['qc'],
@@ -39,8 +45,13 @@ export default definePlugin({
             "replyMessage": {}
         }]
     };
-    const json = await axios.post('https://bot.lyo.su/quote/generate', obj, {headers: {'Content-Type': 'application/json'}});
-    const buffer = Buffer.from(json.data.result.image, 'base64');
+    const json = await httpJson<QuoteGenerateResponse>('https://bot.lyo.su/quote/generate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(obj),
+    });
+    if (!json.result?.image) throw new Error('Quote API no devolvió imagen');
+    const buffer = Buffer.from(json.result.image, 'base64');
     let stiker = await sticker(buffer, false, f, g)
 //sticker(buffer, false, global.packname, global.author);
     if (stiker) return conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, {

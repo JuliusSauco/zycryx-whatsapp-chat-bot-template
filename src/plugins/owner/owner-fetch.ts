@@ -1,6 +1,6 @@
-import fetch from 'node-fetch'
 import {format} from 'util'
 import {definePlugin} from '../../core/define-plugin.js'
+import {httpRequest} from '../../lib/http-client.js'
 
 export default definePlugin({
     help: ['fetch'].map(v => v + ' *<url>*'),
@@ -12,7 +12,7 @@ export default definePlugin({
         if (!/^https?:\/\//.test(text)) return m.reply(`Ejemplo:\n${usedPrefix + command} https://skyultraplus.com`)
         m.react("💻")
         let url = text
-        let res = await fetch(url)
+        let res = await httpRequest(url)
         const contentLength = Number(res.headers.get('content-length') || 0)
         if (contentLength > 100 * 1024 * 1024 * 1024) {
             throw `Content-Length: ${contentLength}`
@@ -20,7 +20,7 @@ export default definePlugin({
 
         const contentType = res.headers.get('content-type') || ''
         if (!/text|json/.test(contentType)) return conn.sendFile(m.chat, url, 'file', text, m)
-        const body = await res.buffer()
+        const body = Buffer.from(await res.arrayBuffer())
         let txt = ''
         try {
             txt = format(JSON.parse(body.toString()))

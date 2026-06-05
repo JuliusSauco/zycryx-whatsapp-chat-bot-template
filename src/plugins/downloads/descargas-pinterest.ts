@@ -1,7 +1,8 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
-import axios from 'axios';
 import {pinterest} from '../../lib/scraper.js';
+import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
+import {httpJson} from '../../lib/http-client.js';
 
 interface PinterestResult {
     title: string
@@ -44,55 +45,62 @@ export default definePlugin({
     if (!text) return m.reply(`*⚠️ Ingresa el término de búsqueda.*\nEj: ${usedPrefix + command} nayeon`)
     m.react("⌛");
     try {
-        const downloadAttempts: Array<() => Promise<PinterestResult[]>> = [async () => {
-            const response = await pinterest.search(text, 6);
-            const pins = (response.result.pins as ScraperPin[]).slice(0, 5);
-            return pins.map(pin => ({
-                title: pin.title || text,
-                description: `🔎 Por: ${pin.uploader?.username || 'Desconocido'}`,
-                image: pin.media?.images?.orig?.url || ''
-            })).filter(result => result.image);
-        },
-            async () => {
-                const res = await axios.get<{data?: SiputzPinterestItem[]}>(`https://api.siputzx.my.id/api/s/pinterest?query=${encodeURIComponent(text)}`);
-                const data = (res.data.data || []).slice(0, 5);
-                return data.map(result => ({
-                    title: result.grid_title || text,
-                    description: '',
-                    image: result.images_url || ''
-                })).filter(result => result.image);
+        const downloadProviders: Array<Provider<PinterestResult[]>> = [
+            {
+                name: 'scraper-pinterest',
+                run: async () => {
+                    const response = await pinterest.search(text, 6);
+                    const pins = (response.result.pins as ScraperPin[]).slice(0, 5);
+                    const results = pins.map(pin => ({
+                        title: pin.title || text,
+                        description: `🔎 Por: ${pin.uploader?.username || 'Desconocido'}`,
+                        image: pin.media?.images?.orig?.url || ''
+                    })).filter(result => result.image);
+                    return results.length ? results : null;
+                },
             },
-            async () => {
-                const res = await axios.get<DorratzPinterestItem[]>(`https://api.dorratz.com/v2/pinterest?q=${text}`);
-                const data = res.data.slice(0, 5);
-                return data.map(result => ({
-                    title: result.fullname || text,
-                    description: `*🔸️Autor:* ${result.upload_by || 'Desconocido'}\n*🔸️ Seguidores:* ${result.followers || 'N/A'}`,
-                    image: result.image || ''
-                })).filter(result => result.image);
+            {
+                name: 'siputz-pinterest',
+                run: async () => {
+                    const res = await httpJson<{data?: SiputzPinterestItem[]}>(`https://api.siputzx.my.id/api/s/pinterest?query=${encodeURIComponent(text)}`);
+                    const data = (res.data || []).slice(0, 5);
+                    const results = data.map(result => ({
+                        title: result.grid_title || text,
+                        description: '',
+                        image: result.images_url || ''
+                    })).filter(result => result.image);
+                    return results.length ? results : null;
+                },
             },
-            async () => {
-                const res = await axios.get<{data?: MainPinterestItem[]}>(`${info.apis}/search/pinterestv2?text=${encodeURIComponent(text)}`);
-                const data = (res.data.data || []).slice(0, 5);
-                return data.map(result => ({
-                    title: result.description || text,
-                    description: `🔎 Autor: ${result.name || 'Desconocido'} (@${result.username || 'N/A'})`,
-                    image: result.image || ''
-                })).filter(result => result.image);
-            }];
+            {
+                name: 'dorratz-pinterest',
+                run: async () => {
+                    const res = await httpJson<DorratzPinterestItem[]>(`https://api.dorratz.com/v2/pinterest?q=${text}`);
+                    const data = res.slice(0, 5);
+                    const results = data.map(result => ({
+                        title: result.fullname || text,
+                        description: `*🔸️Autor:* ${result.upload_by || 'Desconocido'}\n*🔸️ Seguidores:* ${result.followers || 'N/A'}`,
+                        image: result.image || ''
+                    })).filter(result => result.image);
+                    return results.length ? results : null;
+                },
+            },
+            {
+                name: 'main-pinterest',
+                run: async () => {
+                    const res = await httpJson<{data?: MainPinterestItem[]}>(`${info.apis}/search/pinterestv2?text=${encodeURIComponent(text)}`);
+                    const data = (res.data || []).slice(0, 5);
+                    const results = data.map(result => ({
+                        title: result.description || text,
+                        description: `🔎 Autor: ${result.name || 'Desconocido'} (@${result.username || 'N/A'})`,
+                        image: result.image || ''
+                    })).filter(result => result.image);
+                    return results.length ? results : null;
+                },
+            },
+        ];
 
-        let results: PinterestResult[] | null = null;
-        for (const attempt of downloadAttempts) {
-            try {
-                results = await attempt();
-                if (results && results.length > 0) break;
-            } catch (err: unknown) {
-                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
-                continue;
-            }
-        }
-
-        if (!results || results.length === 0) throw new Error(`❌ No se encontraron resultados para "${text}".`);
+        const results = await runFirstProvider(downloadProviders, `❌ No se encontraron resultados para "${text}".`);
         const medias = results.map(result => ({type: "image", data: {url: result.image}}));
         await conn.sendAlbumMessage(m.chat, medias, `✅ Resultados para: ${text}`, m);
         m.react("✅️");

@@ -1,567 +1,38 @@
 import "./config.js";
-import fs from 'fs';
-import path from 'path';
 import chalk from "chalk";
-import crypto from "crypto";
-import {WAMessageStubType} from '@whiskeysockets/baileys';
-import {logCommand, logDebug, logError, logInfo, logWarn} from "../lib/logger.js";
-import {httpBuffer} from '../lib/http-client.js';
+import {logCommand, logError} from "../lib/logger.js";
 import {smsg} from "../lib/simple.js";
 import {parseMessage} from './message-parser.js';
-import {buildContext, groupMetaCache} from './context-builder.js';
+import {buildContext} from './context-builder.js';
+import {getEventGroupSettings} from './group-event-settings.js';
+import {isDuplicateMessage} from './message-dedup.js';
+import {trackGroupMessageLog, trackMessageCount} from './message-log.js';
+import {logPerfIfSlow, markPerf, type PerfDetail, type PerfMarks} from './performance-logger.js';
 import {router} from './router.js';
 import {runGuards} from '../guards/index.js';
 import {cleanJid, isUserJid, jidToPhone, resolveSenderInfo} from '../utils/jid.js';
-import {resolveMention} from '../utils/mention.js';
 import {isBlockedPhoneNumber, MESSAGE_DEDUP_TTL} from '../utils/constants.js';
 import {
-    deleteMessageCount,
-    incrementMessageCount,
-    logGroupMessage,
-    markBotLeftGroup,
-    markGroupMessageDeleted,
     upsertActiveChat,
 } from '../services/chat.service.js';
-import {getNumberByLid, upsertUser as upsertUserService} from '../services/user.service.js';
+import {upsertUser as upsertUserService} from '../services/user.service.js';
 import {incrementCommandUsage} from '../services/stats.service.js';
-import {getSubbotConfig} from '../services/subbot.service.js';
-import {getGroupSettings} from '../services/group-settings.service.js';
-import {ENV} from './env.js';
 import type {ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
-import type {GroupMetadata, GroupParticipant, WAMessageUpdate, WASocket} from '@whiskeysockets/baileys';
 import type {HandlerContext} from './context-builder.js';
-import type {AutoAcceptMode} from '../types/config.js';
 
-type ParticipantUpdateItem = string | {
-    id?: string;
-    phoneNumber?: string;
-};
-
-interface GroupParticipantsUpdate {
-    id: string;
-    participants: ParticipantUpdateItem[];
-    action: string;
-    author?: string | {id?: string} | null;
-}
-
-interface GroupUpdate {
-    id: string;
-    subject?: string;
-    desc?: string;
-    picture?: string;
-}
-
-interface GroupJoinRequest {
-    id: string;
-    author?: string;
-    participant: string;
-    participantPn?: string;
-    action: string;
-    method?: string;
-}
-
-interface CallUpdate {
-    from: string;
-}
-
-type EventConn = WASocket & {
-    groupCache?: ExtendedConn['groupCache'];
-};
-
-const processedMessages = new Set<string>();
-
-/** Imagen por defecto para welcome/bye cuando el usuario no tiene foto de perfil.
- *  Path dinámico: se resuelve relativo al cwd, así funciona también en producción. */
-const DEFAULT_PP_PATH = path.join(process.cwd(), 'media', 'Menu1.jpg');
-
-/** Lee la imagen por defecto como Buffer. Retorna null si el archivo no existe. */
-function getDefaultPpBuffer(): Buffer | null {
-    try {
-        return fs.readFileSync(DEFAULT_PP_PATH);
-    } catch {
-        return null;
-    }
-}
-
-/** Carpeta con los textos de welcome/bye. Path dinámico relativo al cwd (sirve en producción). */
-const TEXT_DIR = path.join(process.cwd(), 'media', 'text');
-
-/** Lee un archivo de texto de media/text/; usa el fallback si no existe o está vacío. */
-function readTextFile(fileName: string, fallback: string): string {
-    try {
-        const txt = fs.readFileSync(path.join(TEXT_DIR, fileName), 'utf-8').trim();
-        if (txt) return txt;
-    } catch {
-        // archivo ausente o ilegible → se usa el fallback
-    }
-    return fallback;
-}
-
-/** Texto de bienvenida (media/text/welcome.txt). */
-function getWelcomeText(): string {
-    return readTextFile('welcome.txt', 'HOLAA!! @user, ¡Bienvenido a *@group*! 🎉');
-}
-
-/** Texto de despedida (media/text/bye.txt). */
-function getByeText(): string {
-    return readTextFile('bye.txt', 'Bueno, se fue @user 👋\n\nQue dios lo bendiga 😎');
-}
-
-/** Elige un elemento aleatorio de un array (sin depender de Array.prototype.getRandom). */
-function pickRandom<T>(arr: T[]): T {
-    return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function uniqueJids(jids: Array<string | null | undefined>): string[] {
-    return [...new Set(jids.filter((jid): jid is string => !!jid && jid.includes('@')))];
-}
-
-function getGroupMentionJids(participants: GroupParticipant[]): string[] {
-    return uniqueJids(participants.map((participant) => {
-        const withPhone = participant as GroupParticipant & {phoneNumber?: string};
-        return withPhone.phoneNumber || participant.id;
-    }));
-}
-
-function getGroupAdminMentionJids(participants: GroupParticipant[]): string[] {
-    return uniqueJids(participants
-        .filter(participant => participant.admin === 'admin' || participant.admin === 'superadmin' || participant.isAdmin || participant.isSuperAdmin)
-        .map((participant) => {
-            const withPhone = participant as GroupParticipant & {phoneNumber?: string};
-            return withPhone.phoneNumber || participant.id;
-        }));
-}
-
-async function downloadImageBuffer(url: string | null): Promise<Buffer | null> {
-    if (!url) return null;
-    try {
-        return httpBuffer(url);
-    } catch {
-        return null;
-    }
-}
-
-async function getProfilePictureUrl(conn: EventConn, jid: string): Promise<string | null> {
-    try {
-        return await conn.profilePictureUrl(jid, 'image') || null;
-    } catch {
-        return null;
-    }
-}
-
-async function getParticipantImageBuffer(conn: EventConn, participantJid: string, userJid: string): Promise<Buffer | null> {
-    const participantUrl = await getProfilePictureUrl(conn, participantJid)
-        || (participantJid !== userJid ? await getProfilePictureUrl(conn, userJid) : null);
-    return downloadImageBuffer(participantUrl);
-}
-
-async function getGroupImageBuffer(conn: EventConn, groupId: string): Promise<Buffer | null> {
-    return downloadImageBuffer(await getProfilePictureUrl(conn, groupId));
-}
-
-async function getGroupEventImageBuffer(conn: EventConn, groupId: string, participantJid: string, userJid: string, preferGroupPhoto = false): Promise<Buffer | null> {
-    const firstImage = preferGroupPhoto
-        ? await getGroupImageBuffer(conn, groupId)
-        : await getParticipantImageBuffer(conn, participantJid, userJid);
-    if (firstImage) return firstImage;
-
-    const secondImage = preferGroupPhoto
-        ? await getParticipantImageBuffer(conn, participantJid, userJid)
-        : await getGroupImageBuffer(conn, groupId);
-    if (secondImage) return secondImage;
-
-    return getDefaultPpBuffer();
-}
-
-export async function participantsUpdate(conn: EventConn, {id, participants, action, author}: GroupParticipantsUpdate) {
-    try {
-        if (!id || !Array.isArray(participants) || !action) {
-            logDebug(chalk.yellow(`[GRUPO-EVENTO] descartado: id=${id} action=${action} participants=${JSON.stringify(participants)}`));
-            return;
-        }
-        if (!conn?.user?.id) return;
-        logDebug(chalk.cyan(`[GRUPO-EVENTO] action=${action} grupo=${id} participantes=${participants.length}`));
-        // El welcome/bye/promote/demote depende sólo de los settings del grupo,
-        // no del modo (public/private) del bot: si el grupo tiene welcome activado,
-        // se da bienvenida sin importar cómo entró el participante.
-
-        // Fetch fresco para incluir al nuevo participante; si falla, caer al cache.
-        let metadata: GroupMetadata | null = await conn.groupMetadata(id).catch(() => null);
-        if (metadata) {
-            groupMetaCache.set(id, metadata);
-            conn?.groupCache?.set?.(id, metadata);
-        } else {
-            metadata = groupMetaCache.get(id) || null;
-        }
-        if (!metadata) {
-            logWarn(chalk.red(`❌ participantsUpdate: sin metadata para ${id}, se omite`));
-            return;
-        }
-        const groupName = metadata.subject || "Grupo"
-        const botJidClean = (conn.user?.id || "").replace(/:\d+/, "")
-        const botLidClean = (conn.user?.lid || "").replace(/:\d+/, "")
-
-        const isBotAdmin = metadata.participants.some((p) => {
-            const cleanId = p.id?.replace(/:\d+/, "");
-            return (
-                (cleanId === botJidClean || cleanId === botLidClean) &&
-                (p.admin === "admin" || p.admin === "superadmin")
-            );
-        });
-
-        const settings = await getGroupSettings(id) || {
-            welcome: true,
-            detect: true,
-            antifake: false
-        }
-        if (action === "add") {
-            logDebug(chalk.cyan(`[WELCOME] grupo=${id} settings.welcome=${settings.welcome} (isBotAdmin=${isBotAdmin})`));
-        }
-
-        const arabicCountryCodes = ['+91', '+92', '+222', '+93', '+265', '+213', '+225', '+240', '+241', '+61', '+249', '+62', '+966', '+229', '+244', '+40', '+49', '+20', '+963', '+967', '+234', '+256', '+243', '+210', '+249', , '+212', '+971', '+974', '+968', '+965', '+962', '+961', '+964', '+970'];
-        const metaParticipants = metadata.participants || [];
-
-        // El autor puede venir como string, objeto {id,...} o null.
-        const authorStr = typeof author === 'string'
-            ? author
-            : (author && typeof author === 'object' ? String(author.id || '') : '');
-
-        for (const rawParticipant of participants) {
-            // El evento puede traer strings (Baileys clásico) u objetos
-            // { id, phoneNumber, admin } (Baileys nuevo con addressingMode 'lid').
-            let participant = '';
-            let phoneJid: string | null = null;
-            if (typeof rawParticipant === 'string') {
-                participant = rawParticipant;
-            } else if (rawParticipant && typeof rawParticipant === 'object') {
-                participant = String(rawParticipant.id || '');
-                phoneJid = rawParticipant.phoneNumber ? String(rawParticipant.phoneNumber) : null;
-            }
-            if (!participant || !participant.includes('@')) continue;
-
-            // Resolver tag/JID reales: si el evento ya trae phoneNumber lo usamos directo,
-            // si no, lo buscamos en los participants del metadata.
-            let userTag: string;
-            let userJid: string;
-            if (phoneJid && /^\d+@s\.whatsapp\.net$/.test(phoneJid)) {
-                userJid = phoneJid;
-                userTag = `@${phoneJid.split('@')[0]}`;
-            } else {
-                const resolved = resolveMention(participant, metaParticipants);
-                userTag = resolved.tag;
-                userJid = resolved.mentionJid;
-            }
-
-            const authorResolved = authorStr ? resolveMention(authorStr, metaParticipants) : null;
-            const authorTag = authorResolved ? authorResolved.tag : "alguien";
-            const authorJid = authorResolved ? authorResolved.mentionJid : authorStr;
-
-            if (action === "add" && settings.antifake) {
-                const phoneNumber = userJid.split("@")[0]
-                const isFake = arabicCountryCodes.some(code => code && phoneNumber.startsWith(code.slice(1)))
-
-                if (isFake && isBotAdmin) {
-                    await conn.sendMessage(id, {
-                        text: `⚠️ ${userTag} fue eliminado automáticamente por *número no permitido*`,
-                        mentions: [userJid]
-                    })
-                    await conn.groupParticipantsUpdate(id, [participant], "remove")
-                    continue
-                } else if (isFake && !isBotAdmin) {
-//await conn.sendMessage(id, { text: `⚠️ ${userTag} tiene un número prohibido, pero no tengo admin para eliminarlo.`, mentions: [participant] })
-                    continue
-                }
-            }
-
-            // Foto de perfil: promote/demote usan thumbnail por URL; welcome resuelve buffer con fallback.
-            let ppUrl: string | null = null;
-            if (action !== "add" && action !== "remove") {
-                try {
-                    ppUrl = await conn.profilePictureUrl(participant, "image") || null;
-                } catch {
-                    ppUrl = null;
-                }
-            }
-
-            switch (action) {
-                case "add":
-                    if (settings.welcome) {
-                        const groupDesc = metadata.desc || "*ᴜɴ ɢʀᴜᴘᴏ ɢᴇɴɪᴀ😸*\n *sɪɴ ʀᴇɢʟᴀ 😉*"
-                        const raw = settings.sWelcome || getWelcomeText()
-                        const msg = raw
-                            .replace(/@user/gi, userTag)
-                            .replace(/@group|@subject/gi, groupName)
-                            .replace(/@desc/gi, groupDesc)
-                        const mentionedJid = settings.welcomeHidetag
-                            ? uniqueJids([...getGroupMentionJids(metaParticipants), userJid])
-                            : [userJid]
-
-                        const welcomeImage = settings.photowelcome
-                            ? await getGroupEventImageBuffer(conn, id, participant, userJid, settings.welcomeGroupPhoto)
-                            : null;
-                        try {
-                            if (welcomeImage) {
-                                await conn.sendMessage(id, {
-                                    image: welcomeImage,
-                                    caption: msg,
-                                    contextInfo: {mentionedJid}
-                                })
-                            } else {
-                                if (settings.photowelcome) {
-                                    logDebug(chalk.yellow(`[WELCOME] Sin foto de usuario, grupo ni archivo (${DEFAULT_PP_PATH}) — se envía solo texto`));
-                                }
-                                await conn.sendMessage(id, {
-                                    text: msg,
-                                    contextInfo: {mentionedJid}
-                                })
-                            }
-                            logInfo(chalk.green(`[WELCOME] ✅ bienvenida enviada a ${userTag} en "${groupName}"`));
-                        } catch (e: unknown) {
-                            logError(chalk.red(`[WELCOME] ❌ falló el envío a ${userTag} en ${id}:`), e);
-                        }
-                    } else {
-                        logDebug(chalk.yellow(`[WELCOME] omitido — welcome desactivado en "${groupName}"`));
-                    }
-                    break
-
-                case "remove":
-                    try {
-                        await deleteMessageCount(userJid, id);
-                        const botJid = (conn.user?.id || "").replace(/:\d+/, "");
-                        if (participant.replace(/:\d+/, "") === botJid) {
-                            await markBotLeftGroup(id, botJid);
-                            logDebug(`[DEBUG] El bot fue eliminado del grupo ${id}. Marcado como 'joined = false'.`);
-                        }
-                    } catch (err: unknown) {
-                        logError("❌ Error en 'remove':", err);
-                    }
-
-                    if (settings.welcome) {
-                        const groupDesc = metadata.desc || "Sin descripción"
-                        const raw = settings.sBye || getByeText()
-                        const msg = raw
-                            .replace(/@user/gi, userTag)
-                            .replace(/@group/gi, groupName)
-                            .replace(/@desc/gi, groupDesc)
-                        const mentionedJid = settings.byeHidetag
-                            ? uniqueJids([...getGroupMentionJids(metaParticipants), userJid])
-                            : [userJid]
-
-                        const byeImage = settings.photobye
-                            ? await getGroupEventImageBuffer(conn, id, participant, userJid, settings.byeGroupPhoto)
-                            : null;
-                        try {
-                            if (byeImage) {
-                                await conn.sendMessage(id, {
-                                    image: byeImage,
-                                    caption: msg,
-                                    contextInfo: {mentionedJid}
-                                })
-                            } else {
-                                if (settings.photobye) {
-                                    logDebug(chalk.yellow(`[BYE] Sin foto de usuario, grupo ni archivo (${DEFAULT_PP_PATH}) — se envía solo texto`));
-                                }
-                                await conn.sendMessage(id, {
-                                    text: msg,
-                                    contextInfo: {mentionedJid}
-                                })
-                            }
-                            logInfo(chalk.green(`[BYE] 👋 despedida enviada a ${userTag} en "${groupName}"`));
-                        } catch (e: unknown) {
-                            logError(chalk.red(`[BYE] ❌ falló el envío a ${userJid} en ${id}:`), e);
-                        }
-                    } else {
-                        logDebug(chalk.yellow(`[BYE] omitido — welcome desactivado en "${groupName}"`));
-                    }
-                    break
-
-                case "promote":
-                case "daradmin":
-                case "darpoder":
-                    if (settings.detect) {
-                        const raw = settings.sPromote || `@user 𝘼𝙃𝙊𝙍𝘼 𝙀𝙎 𝘼𝘿𝙈𝙄𝙉 𝙀𝙉 𝙀𝙎𝙏𝙀 𝙂𝙍𝙐𝙋𝙊\n\n😼🫵𝘼𝘾𝘾𝙄𝙊𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍: @author`
-                        const msg = raw
-                            .replace(/@user/gi, userTag)
-                            .replace(/@group/gi, groupName)
-                            .replace(/@desc/gi, metadata.desc || "")
-                            .replace(/@author/gi, authorTag)
-                        await conn.sendMessage(id, {
-                            text: msg,
-                            contextInfo: {
-                                mentionedJid: [userJid, authorJid].filter(Boolean),
-                                externalAdReply: {
-                                    mediaUrl: pickRandom([info.nna, info.nna2, info.md]),
-                                    mediaType: 2,
-                                    showAdAttribution: false,
-                                    renderLargerThumbnail: false,
-                                    title: "NUEVO ADMINS 🥳",
-                                    body: "Weon eres admin portante mal 😉",
-                                    containsAutoReply: true,
-                                    ...(ppUrl ? {thumbnailUrl: ppUrl} : {}),
-                                    sourceUrl: "skyultraplus.com"
-                                }
-                            }
-                        })
-                    }
-                    break
-
-                case "demote":
-                case "quitaradmin":
-                case "quitarpoder":
-                    if (settings.detect) {
-                        const raw = settings.sDemote || `@user 𝘿𝙀𝙅𝘼 𝘿𝙀 𝙎𝙀𝙍 𝘼𝘿𝙈𝙄𝙉 𝙀𝙉 𝙀𝙎𝙏𝙀 𝙂𝙍𝙐𝙋𝙊\n\n😼🫵𝘼𝘾𝘾𝙄𝙊𝙉 𝙍𝙀𝘼𝙇𝙄𝙕𝘼𝘿𝘼 𝙋𝙊𝙍: @author`
-                        const msg = raw
-                            .replace(/@user/gi, userTag)
-                            .replace(/@group/gi, groupName)
-                            .replace(/@desc/gi, metadata.desc || "")
-                            .replace(/@author/gi, authorTag)
-                        await conn.sendMessage(id, {
-                            text: msg,
-                            contextInfo: {
-                                mentionedJid: [userJid, authorJid].filter(Boolean),
-                                externalAdReply: {
-                                    mediaUrl: pickRandom([info.nna, info.nna2, info.md]),
-                                    mediaType: 2,
-                                    showAdAttribution: false,
-                                    renderLargerThumbnail: false,
-                                    title: "📛 UN ADMINS MENOS",
-                                    body: "Jjjj Ya no eres admin 😹",
-                                    containsAutoReply: true,
-                                    ...(ppUrl ? {thumbnailUrl: ppUrl} : {}),
-                                    sourceUrl: "skyultraplus.com"
-                                }
-                            }
-                        })
-                    }
-                    break
-            }
-        }
-    } catch (err: unknown) {
-        logError(chalk.red(`❌ Error en participantsUpdate - Acción: ${action} | Grupo: ${id}`), err);
-    }
-}
-
-export async function groupsUpdate(conn: EventConn, {id, subject, desc, picture}: GroupUpdate) {
-    try {
-        const botId = conn.user?.id;
-        const botConfig = await getSubbotConfig(botId || '')
-        const modo = botConfig.mode || "public";
-        const botJid = conn.user?.id?.replace(/:\d+@/, "@");
-        const isCreator = global.owner.map(([v]) => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(botJid || '');
-        const previousMetadata = groupMetaCache.get(id) || conn.groupCache?.get?.(id);
-
-        const settings = await getGroupSettings(id) || {
-            welcome: true,
-            detect: true,
-            antifake: false
-        };
-
-        if (modo === "private" && !isCreator) return;
-        const metadata = await conn.groupMetadata(id);
-        groupMetaCache.set(id, metadata);
-        conn?.groupCache?.set?.(id, metadata);
-        const groupName = metadata.subject || subject || previousMetadata?.subject || "Grupo";
-
-        if (!previousMetadata) return;
-
-        let message = "";
-        if (subject && previousMetadata.subject && subject !== previousMetadata.subject) {
-            message = `El nombre del grupo ha cambiado a *${groupName}*.`;
-        } else if (desc && desc !== previousMetadata.desc) {
-            message = `La descripción del grupo *${groupName}* ha sido actualizada, nueva descripción:\n\n${metadata.desc || "Sin descripción"}`;
-        } else if (picture) {
-            message = `La foto del grupo *${groupName}* ha sido actualizada.`;
-        }
-
-        if (message && settings.detect) {
-            await conn.sendMessage(id, {text: message});
-        }
-    } catch (err: unknown) {
-        logError(chalk.red("❌ Error en groupsUpdate:"), err);
-    }
-}
-
-export async function groupJoinRequest(conn: EventConn, request: GroupJoinRequest) {
-    const {id, participant, participantPn, action} = request;
-    try {
-        if (!id || !participant || action !== 'created') return;
-
-        const settings = await getGroupSettings(id);
-        const mode = (settings?.autoAcceptMode || 'off') as AutoAcceptMode;
-        if (mode === 'off') return;
-
-        let metadata: GroupMetadata | null = await conn.groupMetadata(id).catch(() => null);
-        if (metadata) {
-            groupMetaCache.set(id, metadata);
-            conn?.groupCache?.set?.(id, metadata);
-        } else {
-            metadata = groupMetaCache.get(id) || null;
-        }
-        if (!metadata) {
-            logWarn(chalk.yellow(`[AUTOACEPTAR] Sin metadata para ${id}, se omite solicitud de ${participant}`));
-            return;
-        }
-
-        const groupName = metadata.subject || 'Grupo';
-        const metaParticipants = metadata.participants || [];
-        const participantJid = participantPn || participant;
-        const resolved = resolveMention(participantJid, metaParticipants);
-        const userJid = resolved.mentionJid || participantJid;
-        const userTag = resolved.tag || `@${participantJid.split('@')[0]}`;
-        const admins = getGroupAdminMentionJids(metaParticipants);
-        const everyone = getGroupMentionJids(metaParticipants);
-
-        const shouldApprove = mode === 'on' || mode === 'on_hidetag_admin' || mode === 'on_hidetag_all';
-        const mentionTargets = mode.endsWith('_admin')
-            ? uniqueJids([userJid, ...admins])
-            : mode.endsWith('_all')
-                ? uniqueJids([userJid, ...everyone])
-                : [userJid];
-
-        if (shouldApprove) {
-            await conn.groupRequestParticipantsUpdate(id, [participantJid], 'approve');
-            if (mode !== 'on') {
-                await conn.sendMessage(id, {
-                    text: `🛂✅ ${userTag} fue *aceptado automaticamente* en *${groupName}*.\n\n✨ La solicitud de ingreso ya fue aprobada.`,
-                    contextInfo: {mentionedJid: mentionTargets}
-                });
-            }
-            logInfo(chalk.green(`[AUTOACEPTAR] Solicitud aprobada para ${userTag} en "${groupName}"`));
-            return;
-        }
-
-        await conn.sendMessage(id, {
-            text: `🛂⏳ ${userTag} quiere ingresar a *${groupName}*.\n\n👥 Un administrador necesita *aceptar participante* para completar la solicitud.`,
-            contextInfo: {mentionedJid: mentionTargets}
-        });
-        logInfo(chalk.cyan(`[AUTOACEPTAR] Solicitud notificada para ${userTag} en "${groupName}"`));
-    } catch (err: unknown) {
-        logError(chalk.red(`❌ Error en groupJoinRequest - Grupo: ${id} | Participante: ${participant}`), err);
-    }
-}
-
-export async function callUpdate(conn: WASocket, call: CallUpdate) {
-    try {
-        const callerId = call.from;
-        const botConfig = await getSubbotConfig(conn.user?.id || '');
-        if (!botConfig.anti_call) return;
-        await conn.sendMessage(callerId, {
-            text: `🚫 Está prohibido hacer llamadas, serás bloqueado...`
-        });
-        await conn.updateBlockStatus(callerId, "block");
-    } catch (err: unknown) {
-        logError(chalk.red("❌ Error en callUpdate:"), err);
-    }
-}
+export {groupJoinRequest, groupsUpdate, participantsUpdate} from './group-events.js';
+export {callUpdate} from './call-events.js';
+export {messageUpdate} from './message-update.js';
 
 export async function handler(conn: ExtendedConn, m: BotMessage) {
     const perfStart = performance.now();
-    const marks: Record<string, number> = {};
+    const marks: PerfMarks = {};
+    const perfDetails: PerfDetail[] = [];
     const chatId = m.key?.remoteJid || "";
 
     // 1. Dedup
-    if (isDuplicate(m)) return;
+    if (isDuplicateMessage(m, MESSAGE_DEDUP_TTL)) return;
     markPerf(marks, 'dedup', perfStart);
 
     // 2. Setup reply helper + smsg (enriquece m con .db, .quoted, .download, etc.)
@@ -586,7 +57,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     upsertChat(chatId, conn);
 
     // 5. Message counter (throttled)
-    trackMessageCount(m, ctx);
+    trackMessageCount(ctx);
     trackGroupMessageLog(m, ctx);
 
     // 6. Antifake check
@@ -604,13 +75,38 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
 
     // 9. Run before hooks
     const isPrefixedCommand = !!parsed.usedPrefix && !!parsed.command;
-    for (const plugin of router.getBeforePlugins()) {
+    const beforePlugins = router.getBeforePlugins();
+    const beforeGroupSettings = ctx.isGroup && beforePlugins.length
+        ? await getEventGroupSettings(ctx.chatId)
+        : {};
+    for (const plugin of beforePlugins) {
         if (isPrefixedCommand && !plugin.runBeforeOnCommand) continue;
+        const hookStart = performance.now();
+        let result: boolean | void | unknown;
         try {
-            const result = await plugin.before!(m, {conn, isOwner: ctx.isOwner});
-            if (result === false) return;
+            result = await plugin.before!(m, {
+                conn,
+                isOwner: ctx.isOwner,
+                isAdmin: ctx.isAdmin,
+                isBotAdmin: ctx.isBotAdmin,
+                isGroup: ctx.isGroup,
+                chatId: ctx.chatId,
+                sender: ctx.sender,
+                participants: ctx.participants,
+                metadata: ctx.metadata,
+                botConfig: ctx.botConfig,
+                groupSettings: beforeGroupSettings,
+            });
         } catch (e: unknown) {
             logError(chalk.red(e));
+        } finally {
+            addPerfDetail(perfDetails, `before:${getPluginLogName(plugin)}`, hookStart);
+        }
+
+        if (result === false) {
+            markPerf(marks, 'before', perfStart);
+            logPerfIfSlow(marks, perfStart, parsed.command || 'before-abort', chatId, perfDetails);
+            return;
         }
     }
     markPerf(marks, 'before', perfStart);
@@ -618,7 +114,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     // 10. Route command
     const plugin = router.resolve(parsed.command, parsed.originalText, !!parsed.usedPrefix);
     if (!plugin) {
-        logPerfIfSlow(marks, perfStart, parsed.command || 'no-command', chatId);
+        logPerfIfSlow(marks, perfStart, parsed.command || 'no-command', chatId, perfDetails);
         return;
     }
 
@@ -629,11 +125,12 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     if (guardResult.error) {
         await m.reply(guardResult.error);
         markPerf(marks, 'guardReply', perfStart);
-        logPerfIfSlow(marks, perfStart, parsed.command, chatId);
+        logPerfIfSlow(marks, perfStart, parsed.command, chatId, perfDetails);
         return;
     }
 
     // 12. Execute plugin
+    const pluginStart = performance.now();
     try {
         logCommand({
             conn,
@@ -656,14 +153,22 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
             isROwner: ctx.isROwner,
             isAdmin: ctx.isAdmin,
             isBotAdmin: ctx.isBotAdmin,
-            isGroup: ctx.isGroup
+            isGroup: ctx.isGroup,
+            botConfig: ctx.botConfig,
+            chatId: ctx.chatId,
+            sender: ctx.sender,
+            groupSettings: beforeGroupSettings,
         });
+        addPerfDetail(perfDetails, `plugin:${getPluginLogName(plugin)}`, pluginStart);
 
         incrementCommandUsage(parsed.command);
         markPerf(marks, 'plugin', perfStart);
-        logPerfIfSlow(marks, perfStart, parsed.command, chatId);
+        logPerfIfSlow(marks, perfStart, parsed.command, chatId, perfDetails);
 
     } catch (e: unknown) {
+        addPerfDetail(perfDetails, `plugin:${getPluginLogName(plugin)}`, pluginStart);
+        markPerf(marks, 'plugin', perfStart);
+        logPerfIfSlow(marks, perfStart, parsed.command, chatId, perfDetails);
         if (typeof e === 'string') {
             await m.reply(e);
             return;
@@ -673,42 +178,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     }
 }
 
-export async function messageUpdate(update: WAMessageUpdate): Promise<void> {
-    const groupId = update.key.remoteJid || '';
-    const messageId = update.key.id || '';
-    if (!groupId.endsWith('@g.us') || !messageId) return;
-    if (update.update.messageStubType !== WAMessageStubType.REVOKE) return;
-
-    const actor = await getMessageUpdateActor(update);
-    await markGroupMessageDeleted({
-        groupId,
-        messageId,
-        deletedBy: actor.jid,
-        deletedByLid: actor.lid,
-        deletedAt: new Date(),
-    });
-}
-
 // ---- Helpers privados del handler ----
-
-function markPerf(marks: Record<string, number>, label: string, start: number): void {
-    marks[label] = Math.round(performance.now() - start);
-}
-
-function logPerfIfSlow(marks: Record<string, number>, start: number, command: string, chatId: string): void {
-    const total = Math.round(performance.now() - start);
-    if (total < ENV.PERF_LOG_THRESHOLD_MS) return;
-    const chunks = Object.entries(marks).map(([key, value]) => `${key}=${value}ms`).join(' ');
-    logDebug(chalk.yellow(`[PERF] total=${total}ms cmd=${command || '-'} chat=${chatId} ${chunks}`));
-}
-
-function isDuplicate(m: BotMessage): boolean {
-    const hash = crypto.createHash("md5").update(m.key.id + (m.key.remoteJid || "")).digest("hex");
-    if (processedMessages.has(hash)) return true;
-    processedMessages.add(hash);
-    setTimeout(() => processedMessages.delete(hash), MESSAGE_DEDUP_TTL);
-    return false;
-}
 
 function upsertChat(chatId: string, conn: ExtendedConn): void {
     upsertActiveChat({
@@ -717,176 +187,6 @@ function upsertChat(chatId: string, conn: ExtendedConn): void {
         timestamp: Date.now(),
         botId: jidToPhone(cleanJid(conn.user?.id || '')),
     }).catch(logError);
-}
-
-function trackMessageCount(m: BotMessage, ctx: {
-    chatId: string;
-    sender: string;
-    botJid: string;
-    isGroup: boolean;
-    isAdmin: boolean
-}): void {
-    // Sólo se cuentan mensajes de integrantes normales:
-    // se ignoran los chats privados, el propio bot y los administradores del grupo.
-    if (!ctx.isGroup) return;
-    if (ctx.sender === ctx.botJid) return;
-    if (ctx.isAdmin) return;
-
-    // Sin throttle: cada mensaje suma (conteo exacto). El INSERT es fire-and-forget.
-    incrementMessageCount(ctx.sender, ctx.chatId).catch(logError);
-}
-
-function trackGroupMessageLog(m: BotMessage, ctx: Pick<HandlerContext, 'chatId' | 'sender' | 'botJid' | 'isGroup' | 'groupSettings'>): void {
-    if (!ctx.isGroup) return;
-    if (!ctx.groupSettings?.message_logging) return;
-    if (ctx.sender === ctx.botJid) return;
-
-    const entry = buildMessageLogEntry(m);
-    if (!entry) return;
-
-    logGroupMessage({
-        groupId: ctx.chatId,
-        userId: ctx.sender,
-        messageId: m.key?.id || m.id || `${Date.now()}-${ctx.sender}`,
-        messageText: entry.text,
-        messageType: entry.type,
-        isReply: entry.isReply,
-        replyToMessageId: entry.replyToMessageId,
-    }).catch(logError);
-}
-
-function buildMessageLogEntry(m: BotMessage): {
-    text: string;
-    type: 'text' | 'multimedia';
-    isReply: boolean;
-    replyToMessageId: string | null;
-} | null {
-    const content = unwrapMessageContent(m.message);
-    if (!content) return null;
-    return buildMessageLogEntryFromContent(content);
-}
-
-function buildMessageLogEntryFromContent(content: Record<string, unknown>): {
-    text: string;
-    type: 'text' | 'multimedia';
-    isReply: boolean;
-    replyToMessageId: string | null;
-} | null {
-    const replyToMessageId = getReplyToMessageId(content);
-    const replyInfo = {
-        isReply: !!replyToMessageId,
-        replyToMessageId,
-    };
-
-    const mediaTypes = [
-        'imageMessage',
-        'videoMessage',
-        'audioMessage',
-        'documentMessage',
-        'documentWithCaptionMessage',
-        'stickerMessage',
-        'ptvMessage',
-    ];
-    if (mediaTypes.some(type => Object.prototype.hasOwnProperty.call(content, type))) {
-        return {text: 'Multimedia omitido.', type: 'multimedia', ...replyInfo};
-    }
-
-    const text =
-        getNestedText(content, 'conversation') ||
-        getNestedText(content, 'extendedTextMessage', 'text');
-    const trimmed = text.trim();
-    if (!trimmed) return null;
-
-    return {text: trimmed, type: 'text', ...replyInfo};
-}
-
-type UpdateKeyLike = {
-    participant?: string | null;
-    participantAlt?: string | null;
-    remoteJid?: string | null;
-    remoteJidAlt?: string | null;
-    senderLid?: string | null;
-};
-
-async function getMessageUpdateActor(update: WAMessageUpdate): Promise<{jid: string | null; lid: string | null}> {
-    const updateWithKey = update.update as {key?: UpdateKeyLike};
-    const keys = [updateWithKey.key, update.key as UpdateKeyLike].filter(Boolean) as UpdateKeyLike[];
-
-    for (const key of keys) {
-        const alt = cleanJid(key.participantAlt || key.remoteJidAlt || '');
-        if (isUserJid(alt)) {
-            return {
-                jid: alt,
-                lid: getCleanLid(key),
-            };
-        }
-    }
-
-    const lid = keys.map(getCleanLid).find(Boolean) || null;
-    if (lid) {
-        const number = await getNumberByLid(lid).catch(() => null);
-        if (number) {
-            return {
-                jid: number.includes('@') ? cleanJid(number) : `${number}@s.whatsapp.net`,
-                lid,
-            };
-        }
-    }
-
-    const raw = keys
-        .map(key => cleanJid(key.participant || key.remoteJid || ''))
-        .find(jid => isUserJid(jid)) || null;
-
-    return {
-        jid: raw || lid,
-        lid,
-    };
-}
-
-function getCleanLid(key: UpdateKeyLike): string | null {
-    for (const candidate of [key.participant, key.remoteJid, key.senderLid]) {
-        const lid = cleanJid(candidate || '');
-        if (lid.endsWith('@lid')) return lid;
-    }
-
-    return null;
-}
-
-function unwrapMessageContent(message: BotMessage['message']): Record<string, unknown> | null {
-    const content = message as Record<string, unknown> | null | undefined;
-    if (!content) return null;
-
-    const wrapperKeys = ['ephemeralMessage', 'viewOnceMessage', 'viewOnceMessageV2'];
-    for (const key of wrapperKeys) {
-        const wrapper = content[key] as {message?: unknown} | undefined;
-        if (wrapper?.message && typeof wrapper.message === 'object') {
-            return unwrapMessageContent(wrapper.message as BotMessage['message']);
-        }
-    }
-
-    return content;
-}
-
-function getNestedText(content: Record<string, unknown>, ...path: string[]): string {
-    let current: unknown = content;
-    for (const key of path) {
-        if (!current || typeof current !== 'object') return '';
-        current = (current as Record<string, unknown>)[key];
-    }
-
-    return typeof current === 'string' ? current : '';
-}
-
-function getReplyToMessageId(content: Record<string, unknown>): string | null {
-    for (const value of Object.values(content)) {
-        if (!value || typeof value !== 'object') continue;
-        const contextInfo = (value as {contextInfo?: {stanzaId?: unknown}}).contextInfo;
-        if (typeof contextInfo?.stanzaId === 'string' && contextInfo.stanzaId.trim()) {
-            return contextInfo.stanzaId.trim();
-        }
-    }
-
-    return null;
 }
 
 async function antifakeCheck(conn: ExtendedConn, m: BotMessage, ctx: Pick<HandlerContext, 'chatId' | 'isGroup' | 'isAdmin' | 'isBotAdmin' | 'botJid' | 'groupSettings'>): Promise<boolean> {
@@ -930,5 +230,13 @@ async function upsertUser(m: BotMessage): Promise<void> {
     } catch (err: unknown) {
         logError(err);
     }
+}
+
+function addPerfDetail(details: PerfDetail[], label: string, start: number): void {
+    details.push({label, ms: Math.round(performance.now() - start)});
+}
+
+function getPluginLogName(plugin: {__name?: string}): string {
+    return plugin.__name?.replace(/\.(js|ts)$/i, '') || 'anonymous';
 }
 

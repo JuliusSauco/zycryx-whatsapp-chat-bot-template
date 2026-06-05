@@ -1,5 +1,5 @@
-import axios from 'axios';
 import crypto from 'crypto';
+import {HttpError, httpJson} from './http-client.js';
 
 interface OgmpResult {
     title: string;
@@ -35,7 +35,7 @@ interface OgmpInitData {
 
 const getErrorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
 const getStatusCode = (error: unknown): number => {
-    if (axios.isAxiosError(error)) return error.response?.status || 500;
+    if (error instanceof HttpError) return error.status;
     return 500;
 };
 
@@ -126,11 +126,10 @@ const ogmp3 = {
 
             const fe = endpoint.startsWith('http') ? endpoint : `${be}${endpoint}`;
 
-            const {data: response} = await axios({
-                method,
-                url: fe,
-                data: method === 'post' ? data : undefined,
-                headers: ogmp3.headers
+            const response = await httpJson<unknown>(fe, {
+                method: method.toUpperCase(),
+                headers: ogmp3.headers,
+                ...(method === 'post' ? {body: JSON.stringify(data)} : {}),
             });
             return {
                 status: true,

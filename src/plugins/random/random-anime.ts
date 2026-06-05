@@ -1,9 +1,8 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
-import fetch from 'node-fetch'
-import axios from 'axios'
 import hispamemes from 'hispamemes'
 import {getNsfwSettings} from '../../services/group-settings.service.js'
 import {definePlugin} from '../../core/define-plugin.js'
+import {httpJson} from '../../lib/http-client.js'
 
 interface RandomContentItem {
     label: string;
@@ -90,8 +89,7 @@ export default definePlugin({
 
         if (item.type === 'json') {
             if (!item.url) return m.reply('❌ Fuente JSON no configurada.')
-            const res = await axios.get<string[]>(item.url)
-            const imgs = res.data
+            const imgs = await httpJson<string[]>(item.url)
             const img = imgs[Math.floor(Math.random() * imgs.length)]
             await conn.sendMessage(m.chat, {image: {url: img}, caption: item.label}, {quoted: m})
             return
@@ -109,8 +107,7 @@ export default definePlugin({
             } catch (err: unknown) {
                 logError('❌ Error al verificar NSFW:', err)
             }
-            const res = await fetch(apiPath)
-            const {url} = await res.json() as WaifuPicsResponse
+            const {url} = await httpJson<WaifuPicsResponse>(apiPath)
             if (!url) return m.reply('❌ La API no devolvió imagen.')
             await conn.sendFile(m.chat, url, 'error.jpg', item.label, m);
             return

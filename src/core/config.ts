@@ -1,16 +1,17 @@
 import {logError, logInfo, logWarn} from '../lib/logger.js';
-import fs, {unwatchFile, watchFile} from 'fs'
+import {unwatchFile, watchFile} from 'fs'
 import chalk from 'chalk'
 import {fileURLToPath} from 'url'
 import type {BotInfo} from '../types/config.js'
 import {ENV} from './env.js'
+import {getCachedBuffer} from '../lib/static-resource-cache.js';
 
 const splitList = (value: string): string[] => value.split(',').map(v => v.trim()).filter(Boolean);
 const groupLinks = splitList(ENV.BOT_GROUP_LINKS);
 const channelLinks = splitList(ENV.BOT_CHANNEL_LINKS);
 const configuredOwners = splitList(ENV.BOT_OWNER_NUMBERS).map(v => [v.replace(/[^0-9]/g, '')]).filter(([v]) => v);
 const menuImagePath = ENV.DEFAULT_MENU_IMAGE || './media/Menu2.jpg';
-const menuImage = fs.existsSync(menuImagePath) ? fs.readFileSync(menuImagePath) : Buffer.alloc(0);
+const menuImage = getCachedBuffer(menuImagePath) || Buffer.alloc(0);
 
 //owner
 global.owner = configuredOwners;

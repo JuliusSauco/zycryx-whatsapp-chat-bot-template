@@ -1,8 +1,8 @@
-import fetch from "node-fetch"
 import {sticker} from '../../lib/sticker.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {ENV} from '../../core/env.js';
+import {httpJson} from '../../lib/http-client.js';
 
 interface TelegramSticker {
     thumb?: {file_id?: string};
@@ -37,20 +37,17 @@ export default definePlugin({
     let packName = args[0].replace("https://t.me/addstickers/", "")
     const telegramApi = `https://api.telegram.org/bot${ENV.TELEGRAM_BOT_TOKEN}`;
     const telegramFileApi = `https://api.telegram.org/file/bot${ENV.TELEGRAM_BOT_TOKEN}`;
-    let gas = await fetch(`${telegramApi}/getStickerSet?name=${encodeURIComponent(packName)}`, {
+    const json = await httpJson<TelegramStickerSetResponse>(`${telegramApi}/getStickerSet?name=${encodeURIComponent(packName)}`, {
         method: "GET",
         headers: {"User-Agent": "GoogleBot"}
     })
-    if (!gas.ok) throw new Error(`Telegram API error ${gas.status}`)
-    let json = await gas.json() as TelegramStickerSetResponse
     const stickers = json.result?.stickers || [];
     if (!stickers.length) return m.reply('❌ No se encontraron stickers en ese pack.');
     m.reply(`✔️ *𝙎𝙏𝙄𝘾𝙆𝙀𝙍 𝙏𝙊𝙏𝘼𝙇𝙀𝙎:* ${stickers.length}\n*𝙀𝙉𝙑𝙄𝘼𝘿𝙊 𝙀𝙇:* ${stickers.length * 1.5} Segundos`.trim())
     for (let i = 0; i < stickers.length; i++) {
         let fileId = stickers[i].thumb?.file_id || stickers[i].thumbnail?.file_id;
         if (!fileId) continue;
-        let gasIn = await fetch(`${telegramApi}/getFile?file_id=${fileId}`)
-        let jisin = await gasIn.json() as TelegramFileResponse
+        const jisin = await httpJson<TelegramFileResponse>(`${telegramApi}/getFile?file_id=${fileId}`)
         if (!jisin.result?.file_path) continue;
         let stiker = await sticker(false, `${telegramFileApi}/${jisin.result.file_path}`, f, g)
         await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, {

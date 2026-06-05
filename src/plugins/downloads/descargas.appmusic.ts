@@ -1,9 +1,8 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
-import axios from 'axios';
 import * as cheerio from 'cheerio';
-import qs from 'qs';
 import type {proto} from '@whiskeysockets/baileys';
+import {httpJson, httpText} from '../../lib/http-client.js';
 
 interface SongData {
     name: string;
@@ -65,8 +64,7 @@ export default definePlugin({
     try {
         const downloadAttempts: Array<() => Promise<SongData>> = [async () => {
             const apiUrl = `${info.apis}/applemusicdl?url=${encodeURIComponent(text)}`;
-            const apiResponse = await fetch(apiUrl);
-            const delius = await apiResponse.json() as DeliriusAppleMusicResponse;
+            const delius = await httpJson<DeliriusAppleMusicResponse>(apiUrl);
             if (!delius.data?.name || !delius.data.download || !delius.data.image) throw new Error('Respuesta inválida de applemusicdl');
             return {
                 name: delius.data.name,
@@ -80,13 +78,12 @@ export default definePlugin({
                 const appledown = {
                     getData: async (urls: string): Promise<AppleSearchResponse> => {
                         const url = `https://aaplmusicdownloader.com/api/applesearch.php?url=${urls}`;
-                        const response = await axios.get<AppleSearchResponse>(url, {
+                        return httpJson<AppleSearchResponse>(url, {
                             headers: {
                                 'Accept': 'application/json',
                                 'User-Agent': 'MyApp/1.0'
                             }
                         });
-                        return response.data;
                     },
                     getAudio: async (trackName: string, artist: string, urlMusic: string, token: string): Promise<string> => {
                         const url = 'https://aaplmusicdownloader.com/api/composer/swd.php';
@@ -95,9 +92,13 @@ export default definePlugin({
                             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                             'User-Agent': 'MyApp/1.0'
                         };
-                        const response = await axios.post<{dlink?: string}>(url, qs.stringify(data), {headers});
-                        if (!response.data.dlink) throw new Error('No se pudo obtener el audio');
-                        return response.data.dlink;
+                        const response = await httpJson<{dlink?: string}>(url, {
+                            method: 'POST',
+                            headers,
+                            body: new URLSearchParams(data),
+                        });
+                        if (!response.dlink) throw new Error('No se pudo obtener el audio');
+                        return response.dlink;
                     },
                     download: async (urls: string): Promise<AppleDownloadedData> => {
                         const musicData = await appledown.getData(urls);
@@ -108,9 +109,11 @@ export default definePlugin({
                             'content-type': 'application/x-www-form-urlencoded',
                             'User-Agent': 'MyApp/1.0'
                         };
-                        const data = `data=${encodedData}`;
-                        const response = await axios.post<string>(url, data, {headers});
-                        const htmlData = response.data;
+                        const htmlData = await httpText(url, {
+                            method: 'POST',
+                            headers,
+                            body: new URLSearchParams({data: encodedData}),
+                        });
                         const $ = cheerio.load(htmlData);
                         const trackName = $('td:contains("Track Name:")').next().text();
                         const albumName = $('td:contains("Album:")').next().text();

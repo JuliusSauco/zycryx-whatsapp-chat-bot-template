@@ -1,7 +1,9 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
-import fetch from 'node-fetch';
 import type {QuotedMessage} from '../../types/context.js';
+import {httpJson} from '../../lib/http-client.js';
+import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
+import {replyReportableError} from '../../lib/reply-helpers.js';
 
 interface DriveFileData {
     url: string
@@ -41,42 +43,32 @@ export default definePlugin({
     try {
         const waitMessageSent = await conn.reply(m.chat, `*⌛ 𝐂𝐚𝐥𝐦𝐚 ✋ 𝐂𝐥𝐚𝐜𝐤, 𝐘𝐚 𝐞𝐬𝐭𝐨𝐲 𝐄𝐧𝐯𝐢𝐚𝐝𝐨 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 🚀*\n*𝐒𝐢 𝐧𝐨 𝐥𝐞 𝐥𝐥𝐞𝐠𝐚 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 𝐞𝐬 𝐝𝐞𝐛𝐢𝐝𝐨 𝐚 𝐪𝐮𝐞 𝐞𝐬 𝐦𝐮𝐲 𝐩𝐞𝐬𝐚𝐝𝐨*`, m)
         userCaptions.set(m.sender, waitMessageSent);
-        const downloadAttempts: Array<() => Promise<DriveFileData>> = [
-            async () => {
-                const api = await fetch(`https://api.siputzx.my.id/api/d/gdrive?url=${args[0]}`);
-                const data = await api.json() as SiputzDriveResponse;
+        const downloadProviders: Array<Provider<DriveFileData>> = [
+            {
+                name: 'siputz-gdrive',
+                run: async () => {
+                const data = await httpJson<SiputzDriveResponse>(`https://api.siputzx.my.id/api/d/gdrive?url=${args[0]}`);
                 if (!data.data?.download || !data.data?.name) throw new Error('Respuesta inválida de Siputz');
                 return {
                     url: data.data.download,
                     filename: data.data.name,
                 };
             },
-            async () => {
-                const api = await fetch(`https://apis.davidcyriltech.my.id/gdrive?url=${args[0]}`);
-                const data = await api.json() as DavidDriveResponse;
+            },
+            {
+                name: 'david-cyril-gdrive',
+                run: async () => {
+                const data = await httpJson<DavidDriveResponse>(`https://apis.davidcyriltech.my.id/gdrive?url=${args[0]}`);
                 if (!data.download_link || !data.name) throw new Error('Respuesta inválida de David Cyril');
                 return {
                     url: data.download_link,
                     filename: data.name,
                 }
             },
+            },
         ];
 
-        let fileData = null;
-
-        for (const attempt of downloadAttempts) {
-            try {
-                fileData = await attempt();
-                if (fileData) break; // Si se obtiene un resultado, salir del bucle
-            } catch (err: unknown) {
-                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
-                continue; // Si falla, intentar con la siguiente API
-            }
-        }
-
-        if (!fileData) {
-            throw new Error('No se pudo descargar el archivo desde ninguna API');
-        }
+        const fileData = await runFirstProvider(downloadProviders, 'No se pudo descargar el archivo desde ninguna API');
 
         const {url, filename} = fileData;
         const mimetype = getMimetype(filename);
@@ -89,7 +81,7 @@ export default definePlugin({
         await m.react("✅");
     } catch (e: unknown) {
         m.react(`❌`);
-        m.reply(`\`\`\`⚠️ OCURRIO UN ERROR ⚠️\`\`\`\n\n> *Reporta el siguiente error a mi creador con el comando:* #report\n\n>>> ${e} <<<<`);
+        await replyReportableError(m, e);
         logInfo(e);
     } finally {
         delete userRequests[m.sender];

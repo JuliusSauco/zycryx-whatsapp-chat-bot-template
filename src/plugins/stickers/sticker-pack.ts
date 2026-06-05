@@ -1,8 +1,8 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
-import fetch from 'node-fetch'
 import {sticker} from '../../lib/sticker.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js'
 import {definePlugin} from '../../core/define-plugin.js'
+import {httpJson} from '../../lib/http-client.js'
 
 interface StickerlyPack {
     name: string;
@@ -28,8 +28,7 @@ export default definePlugin({
     if (!text) return m.reply(`⚠️ Escribe algo para buscar sticker packs.\nEjemplo: *${usedPrefix + command} gatos*`)
 
     try {
-        const res = await fetch(`https://api.dorratz.com/v3/stickerly?query=${encodeURIComponent(text)}`)
-        const json = await res.json() as StickerlyResponse
+        const json = await httpJson<StickerlyResponse>(`https://api.dorratz.com/v3/stickerly?query=${encodeURIComponent(text)}`)
 
         if (!json.success || !json.data?.length) return m.reply(`❌ No se encontró ningún pack para: *${text}*`)
 

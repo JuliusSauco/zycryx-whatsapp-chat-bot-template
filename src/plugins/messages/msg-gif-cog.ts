@@ -1,6 +1,6 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
-import fs from 'fs'
+import {getAvailableMp4s, pickRandomFile} from './gif-media.js'
 import path from 'path'
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js'
 
@@ -24,19 +24,14 @@ export default definePlugin({
         const senderTag = senderResolved.tag
         const mentionedTags = mentionedResolved.map((x: ResolvedMention) => x.tag)
 
-        let mp4s: string[] = []
-        try {
-            mp4s = fs.readdirSync(GIF_FOLDER).filter(f => f.toLowerCase().endsWith('.mp4'))
-        } catch (e: unknown) {
-            logError('No se pudo leer la carpeta de medios para cog:', e)
-        }
+        const mp4s = getAvailableMp4s(GIF_FOLDER)
 
         if (!mp4s.length) {
             await m.reply('⚠️ Para enviarlo como “mensaje” (inline), convierte los GIFs a MP4 y guárdalos en `media/gifs/cog`.\n\nEjemplo ffmpeg:\nffmpeg -i input.gif -vf "fps=15,scale=320:-2:flags=lanczos" -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart -crf 30 -preset veryfast output.mp4')
             return
         }
 
-        const randomFile = mp4s[Math.floor(Math.random() * mp4s.length)]
+        const randomFile = pickRandomFile(mp4s)
         const filePath = path.join(GIF_FOLDER, randomFile)
         const texto = `😋🔥💗👙 *${senderTag}* se esta cogiendo bien duro a *${mentionedTags.join(', ')}*`
         const mentions = Array.from(new Set([senderResolved.mentionJid, ...mentionedResolved.map((x: ResolvedMention) => x.mentionJid)]))

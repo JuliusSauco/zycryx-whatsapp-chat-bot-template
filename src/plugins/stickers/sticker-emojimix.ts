@@ -1,9 +1,9 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
-import fetch from 'node-fetch'
 import {getStickerExif} from '../../services/sticker-settings.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {ENV} from '../../core/env.js';
+import {httpJson, type HttpRequestOptions} from '../../lib/http-client.js';
 
 interface TenorMediaFormat {
     url: string;
@@ -60,13 +60,4 @@ export default definePlugin({
     }
 })
 
-const fetchJson = <T>(url: string, options?: Parameters<typeof fetch>[1]) => new Promise<T>((resolve, reject) => {
-    fetch(url, options)
-        .then(response => response.json())
-        .then(json => {
-            resolve(json as T)
-        })
-        .catch((err) => {
-            reject(err)
-        })
-})
+const fetchJson = <T>(url: string, options?: HttpRequestOptions) => httpJson<T>(url, options)

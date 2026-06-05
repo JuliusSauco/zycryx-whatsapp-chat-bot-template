@@ -1,23 +1,24 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
-import fs from 'fs'
 import path from 'path'
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js'
+import {getCachedText} from '../../lib/static-resource-cache.js'
 
 /** Archivo con las frases, separadas por '|'. Path dinámico (sirve en producción). */
 const TXT_PATH = path.join(process.cwd(), 'media', 'text', 'msg-text-ins.txt')
 
 /** Lee las frases del .txt y las separa por '|'. */
 function getFrases(): string[] {
-    try {
-        return fs.readFileSync(TXT_PATH, 'utf-8')
-            .split('|')
-            .map(s => s.trim())
-            .filter(Boolean)
-    } catch (e: unknown) {
-        logError('No se pudo leer media/text/msg-text-ins.txt:', e)
+    const content = getCachedText(TXT_PATH)
+    if (!content) {
+        logError('No se pudo leer media/text/msg-text-ins.txt')
         return []
     }
+
+    return content
+        .split('|')
+        .map(s => s.trim())
+        .filter(Boolean)
 }
 
 export default definePlugin({

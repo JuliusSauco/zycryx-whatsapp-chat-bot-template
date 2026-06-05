@@ -1,9 +1,8 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
-import fetch from 'node-fetch';
-import axios from 'axios';
 import * as cheerio from "cheerio"
 import {definePlugin} from '../../core/define-plugin.js'
 import {ENV} from '../../core/env.js'
+import {httpJson, httpText, type HttpRequestOptions} from '../../lib/http-client.js';
 
 interface DorratzImageResponse {
     data?: {
@@ -38,8 +37,7 @@ export default definePlugin({
     if (!text) return m.reply(`*⚠️ 𝐈𝐧𝐠𝐫𝐞𝐬𝐞 𝐮𝐧 𝐭𝐞𝐱𝐭𝐨 𝐩𝐚𝐫𝐚 𝐜𝐫𝐞𝐚𝐫 𝐮𝐧𝐚 𝐢𝐦𝐚𝐠𝐞𝐧 𝐲 𝐚𝐬𝐢 𝐮𝐬𝐚𝐫 𝐥𝐚 𝐟𝐮𝐧𝐜𝐢𝐨𝐧 𝐝𝐞 𝐝𝐚𝐥𝐥-𝐞*\n\n*• 𝐄𝐣𝐞𝐦𝐩𝐥𝐨:*\n*${usedPrefix + command} gatitos llorando*`)
     m.react('⌛')
     try {
-        let response = await fetch(`https://api.dorratz.com/v3/ai-image?prompt=${text}`)
-        let res = await response.json() as DorratzImageResponse
+        const res = await httpJson<DorratzImageResponse>(`https://api.dorratz.com/v3/ai-image?prompt=${text}`)
         if (res.data?.status === "success" && res.data.image_link) {
             const imageUrl = res.data.image_link;
             await conn.sendFile(m.chat, imageUrl, 'error.jpg', `_💫 Resutados: ${text}_\n\n> *✨ Imagen generada por IA ✨*`, m);
@@ -56,8 +54,8 @@ export default definePlugin({
             try {
                 if (!ENV.UNSPLASH_ACCESS_KEY) throw new Error('UNSPLASH_ACCESS_KEY no configurado');
                 const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(text)}&client_id=${ENV.UNSPLASH_ACCESS_KEY}`;
-                const response = await axios.get<UnsplashResponse>(url);
-                const imageUrl = response.data.results?.[0]?.urls?.regular;
+                const response = await httpJson<UnsplashResponse>(url);
+                const imageUrl = response.results?.[0]?.urls?.regular;
                 if (!imageUrl) return m.react("❌")
                 await conn.sendFile(m.chat, imageUrl, 'error.jpg', `_*Resultado de:* ${text}_`, m);
                 m.react('✅');
@@ -65,15 +63,14 @@ export default definePlugin({
                 try {
                     if (!ENV.BETABOTZ_API_KEY) throw new Error('BETABOTZ_API_KEY no configurado');
                     const url = `https://api.betabotz.eu.org/api/search/bing-img?text=${encodeURIComponent(text)}&apikey=${ENV.BETABOTZ_API_KEY}`;
-                    const response = await axios.get<BetabotzImageResponse>(url);
-                    if (!response.data.result || response.data.result.length === 0) return m.react("❌")
-                    const imageUrl = response.data.result[0];
+                    const response = await httpJson<BetabotzImageResponse>(url);
+                    if (!response.result || response.result.length === 0) return m.react("❌")
+                    const imageUrl = response.result[0];
                     await conn.sendFile(m.chat, imageUrl, 'error.jpg', `_*Resultado de:* ${text}_`, m);
                     m.react('✅');
                 } catch (e: unknown) {
                     try {
-                        const tiores1 = await fetch(`https://vihangayt.me/tools/imagine?q=${text}`);
-                        const json1 = await tiores1.json() as VihangaImagineResponse;
+                        const json1 = await httpJson<VihangaImagineResponse>(`https://vihangayt.me/tools/imagine?q=${text}`);
                         if (!json1.data) throw new Error('Vihanga no devolvió imagen')
                         await conn.sendFile(m.chat, json1.data, 'error.jpg', `_*Resultado de:* ${text}_`, m);
                     } catch (e: unknown) {
@@ -104,8 +101,7 @@ const flux = async (prompt: string): Promise<string | null> => {
             "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, seperti Gecko) Chrome/129.0.0.0 Mobile Safari/537.36",
         Referer: "https://lusion.regem.in/?ref=taaft&utm_source=taaft&utm_medium=referral",
     }
-    const response = await fetch(url, {headers})
-    const html = await response.text()
+    const html = await httpText(url, {headers})
     const $ = cheerio.load(html)
     return $("a.btn-navy.btn-sm.mt-2").attr("href") || null
 }
@@ -121,8 +117,7 @@ const writer = async (input: string) => {
     }
     const formData = new URLSearchParams()
     formData.append("input", input)
-    const response = await fetch(url, {method: "POST", headers, body: formData})
-    return response.text()
+    return httpText(url, {method: "POST", headers, body: formData as unknown as HttpRequestOptions['body']})
 }
 
 const rephrase = async (input: string) => {
@@ -136,6 +131,5 @@ const rephrase = async (input: string) => {
     }
     const formData = new URLSearchParams()
     formData.append("input", input)
-    const response = await fetch(url, {method: "POST", headers, body: formData})
-    return response.text()
+    return httpText(url, {method: "POST", headers, body: formData as unknown as HttpRequestOptions['body']})
 }

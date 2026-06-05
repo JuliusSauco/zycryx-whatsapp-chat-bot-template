@@ -1,26 +1,16 @@
-import {getGroupSettings} from '../../services/group-settings.service.js';
-import {getSubbotConfig} from '../../services/subbot.service.js';
 import path from 'path';
 import {logError} from '../../lib/logger.js';
 import {getAudioConfig, type AudioEntry} from '../../services/audio-response.service.js';
-import type {ExtendedConn} from '../../types/context.js';
+import type {BeforePluginContext} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
 
-export async function before(m: BotMessage, {conn}: {conn: ExtendedConn}) {
+export async function before(m: BotMessage, {conn, botConfig, groupSettings}: BeforePluginContext) {
     if (!m || m.fromMe || !m.originalText || m.originalText.length > 500) return;
-    const botId = conn?.user?.id?.replace(/:\d+/, "") || "";
-    const config = await getSubbotConfig(botId);
-    const prefixes = Array.isArray(config?.prefix) ? config.prefix : ['.', '/', '#'];
+    const prefixes = Array.isArray(botConfig?.prefix) ? botConfig.prefix : ['.', '/', '#'];
     const texto = m.originalText.trim();
 
     if (prefixes.some((p) => texto.startsWith(p))) return;
-    try {
-        const settings = await getGroupSettings(m.chat);
-        if (!settings?.audios) return;
-    } catch (e: unknown) {
-        logError('[❌] Error al consultar configuración de audios:', e);
-        return;
-    }
+    if (!groupSettings?.audios) return;
 
     const lowerTexto = texto.toLowerCase();
     const chatId = m.chat.trim();

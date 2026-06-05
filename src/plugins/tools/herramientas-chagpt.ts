@@ -1,9 +1,9 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
-import fetch from 'node-fetch';
 import {blackboxAi} from '../../lib/scraper.js';
 import {chatCompletion} from '../../lib/ai.js';
 import {ensureSystemPrompt, getAiMemory, getAiPromptSettings, saveAiMemory} from '../../services/chat-memory.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
+import {httpJson} from '../../lib/http-client.js';
 
 interface TextApiResponse {
     data?: string;
@@ -40,8 +40,7 @@ export default definePlugin({
         } else {
             // Todas las keys de la DB fallaron → fallback a API pública.
             try {
-                let gpt = await fetch(`${info.apis}/ia/gptprompt?text=${encodeURIComponent(text)}&prompt=${encodeURIComponent(systemPrompt)}`);
-                let res = await gpt.json() as TextApiResponse;
+                let res = await httpJson<TextApiResponse>(`${info.apis}/ia/gptprompt?text=${encodeURIComponent(text)}&prompt=${encodeURIComponent(systemPrompt)}`);
                 result = res.data || "❌ No se pudo generar una respuesta.";
             } catch (e: unknown) {
                 result = "❌ No se pudo generar una respuesta.";
@@ -60,24 +59,20 @@ export default definePlugin({
     if (command == 'openai' || command == 'chatgpt2') {
         await conn.sendPresenceUpdate('composing', m.chat);
         try {
-            let gpt = await fetch(`https://api.dorratz.com/ai/gpt?prompt=${text}`)
-            let res = await gpt.json() as TextApiResponse
+            let res = await httpJson<TextApiResponse>(`https://api.dorratz.com/ai/gpt?prompt=${text}`)
             const decoded = decodeApiText(res.result);
             await m.reply(decoded);
         } catch (e: unknown) {
             try {
-                let gpt = await fetch(`${info.apis}/ia/gptweb?text=${text}`)
-                let res = await gpt.json() as TextApiResponse
+                let res = await httpJson<TextApiResponse>(`${info.apis}/ia/gptweb?text=${text}`)
                 await m.reply(res.gpt || '❌ No se pudo generar una respuesta.')
             } catch (e: unknown) {
                 try {
-                    let gpt = await fetch(`${info.apis}/api/ia2?text=${text}`)
-                    let res = await gpt.json() as TextApiResponse
+                    let res = await httpJson<TextApiResponse>(`${info.apis}/api/ia2?text=${text}`)
                     await m.reply(res.gpt || '❌ No se pudo generar una respuesta.')
                 } catch (e: unknown) {
                     try {
-                        let gpt = await fetch(`${info.apis}/ia/chatgpt?q=${text}`)
-                        let res = await gpt.json() as TextApiResponse
+                        let res = await httpJson<TextApiResponse>(`${info.apis}/ia/chatgpt?q=${text}`)
                         await m.reply(res.data || '❌ No se pudo generar una respuesta.')
                     } catch (e: unknown) {
                     }
@@ -89,8 +84,7 @@ export default definePlugin({
     if (command == 'deepseek') {
         await conn.sendPresenceUpdate('composing', m.chat);
         try {
-            const gpt = await fetch(`https://api.dorratz.com/ai/deepseek?prompt=${encodeURIComponent(text)}`);
-            const res = await gpt.json() as TextApiResponse;
+            const res = await httpJson<TextApiResponse>(`https://api.dorratz.com/ai/deepseek?prompt=${encodeURIComponent(text)}`);
             const decoded = decodeApiText(res.result);
             await m.reply(decoded);
         } catch (e: unknown) {
@@ -102,13 +96,11 @@ export default definePlugin({
     if (command == 'gemini') {
         await conn.sendPresenceUpdate('composing', m.chat)
         try {
-            let gpt = await fetch(`https://api.dorratz.com/ai/gemini?prompt=${text}`)
-            let res = await gpt.json() as TextApiResponse
+            let res = await httpJson<TextApiResponse>(`https://api.dorratz.com/ai/gemini?prompt=${text}`)
             await m.reply(res.message || '❌ No se pudo generar una respuesta.')
         } catch (e: unknown) {
             try {
-                let gpt = await fetch(`https://delirius-apiofc.vercel.app/ia/gemini?query=${text}`)
-                let res = await gpt.json() as TextApiResponse
+                let res = await httpJson<TextApiResponse>(`https://delirius-apiofc.vercel.app/ia/gemini?query=${text}`)
                 await m.reply(res.message || '❌ No se pudo generar una respuesta.')
             } catch (e: unknown) {
             }
@@ -124,8 +116,7 @@ export default definePlugin({
     if (command == 'copilot' || command == 'bing') {
         await conn.sendPresenceUpdate('composing', m.chat)
         try {
-            let gpt = await fetch(`https://api.dorratz.com/ai/bing?prompt=${text}`)
-            let res = await gpt.json() as BingResponse
+            let res = await httpJson<BingResponse>(`https://api.dorratz.com/ai/bing?prompt=${text}`)
             const responseText = res.result?.ai_response || '❌ No se pudo generar una respuesta.'
             await conn.sendMessage(m.chat, {
                 text: responseText, contextInfo: {
@@ -143,8 +134,7 @@ export default definePlugin({
 //m.reply(res.result.ai_response)
         } catch (e: unknown) {
             try {
-                let gpt = await fetch(`${info.apis}/ia/bingia?query=${text}`)
-                let res = await gpt.json() as TextApiResponse
+                let res = await httpJson<TextApiResponse>(`${info.apis}/ia/bingia?query=${text}`)
                 await m.reply(res.message || '❌ No se pudo generar una respuesta.')
             } catch (e: unknown) {
             }

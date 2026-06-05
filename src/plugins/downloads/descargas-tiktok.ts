@@ -1,8 +1,9 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fg from 'api-dylux';
-import axios from 'axios';
 import cheerio from 'cheerio';
+import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
+import {httpJson, httpText} from '../../lib/http-client.js';
 
 interface TikTokMedia {
     type?: string
@@ -37,36 +38,39 @@ export default definePlugin({
     await delay(1000);
     await conn.sendMessage(m.chat, {text: `⌛ 𝙔𝙖 𝙘𝙖𝙨𝙞 🏃‍♂️💨\n▰▰▰▰▰▰▰▱▱`, edit: key});
     try {
-        const downloadAttempts = [async () => {
-            const tTiktok = await tiktokdlF(args[0]);
-            return tTiktok.video;
-        },
-            async () => {
-                const {data} = await axios.get(`https://api.delirius.store/download/tiktok?url=${args[0]}`);
+        const downloadProviders: Array<Provider<string>> = [
+            {
+                name: 'tikdown',
+                run: async () => {
+                    const tTiktok = await tiktokdlF(args[0]);
+                    return tTiktok.video;
+                },
+            },
+            {
+                name: 'delirius-tiktok',
+                run: async () => {
+                const data = await httpJson<{data?: {meta?: {media?: TikTokMedia[]}}}>(`https://api.delirius.store/download/tiktok?url=${args[0]}`);
                 const video = (data?.data?.meta?.media as TikTokMedia[] | undefined)?.find(media => media.type === 'video');
                 return video?.org || video?.hd || video?.wm;
             },
-            async () => {
-                const response = await axios.get(`https://api.dorratz.com/v2/tiktok-dl?url=${args[0]}`);
-                return response.data.data.media.org;
             },
-            async () => {
+            {
+                name: 'dorratz-tiktok',
+                run: async () => {
+                const response = await httpJson<{data?: {media?: {org?: string}}}>(`https://api.dorratz.com/v2/tiktok-dl?url=${args[0]}`);
+                return response.data?.media?.org;
+            },
+            },
+            {
+                name: 'api-dylux-tiktok',
+                run: async () => {
                 const p = await fg.tiktok(args[0]);
                 return p.nowm;
-            }];
+            },
+            },
+        ];
 
-        let videoUrl = null;
-        for (const attempt of downloadAttempts) {
-            try {
-                videoUrl = await attempt();
-                if (videoUrl) break;
-            } catch (err: unknown) {
-                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
-                continue; // Si falla, intentar con la siguiente API
-            }
-        }
-
-        if (!videoUrl) throw new Error('No se pudo descargar el video desde ninguna API');
+        const videoUrl = await runFirstProvider(downloadProviders, 'No se pudo descargar el video desde ninguna API');
         await conn.sendFile(m.chat, videoUrl, 'tt.mp4', '*🔰 Aqui esta tu video de tiktok*', m);
 //conn.sendMessage(m.chat, {video: { url: videoUrl }, caption: `*🔰 Aqui esta tu video de tiktok*` }, { quoted: m });
         await conn.sendMessage(m.chat, {text: `✅ 𝘾𝙤𝙢𝙥𝙡𝙚𝙩𝙖𝙙𝙤\n▰▰▰▰▰▰▰▰▰`, edit: key});
@@ -85,15 +89,17 @@ const delay = (time: number) => new Promise(res => setTimeout(res, time));
 
 async function tiktokdlF(url: string) {
     if (!/tiktok/.test(url)) throw new Error(`URL de TikTok inválida`);
-    const gettoken = await axios.get('https://tikdown.org/id');
-    const $ = cheerio.load(gettoken.data);
+    const tokenHtml = await httpText('https://tikdown.org/id');
+    const $ = cheerio.load(tokenHtml);
     const token = $('#download-form > input[type=hidden]:nth-child(2)').attr('value');
     const param = {url, _token: token || ''};
-    const {data} = await axios.post<TikDownResponse>('https://tikdown.org/getAjax?', new URLSearchParams(Object.entries(param)), {
+    const data = await httpJson<TikDownResponse>('https://tikdown.org/getAjax?', {
+        method: 'POST',
         headers: {
             'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'user-agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Safari/537.36'
-        }
+        },
+        body: new URLSearchParams(Object.entries(param)),
     });
     const getdata = cheerio.load(data.html || '');
     if (data.status) {

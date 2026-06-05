@@ -1,42 +1,22 @@
-import {getGroupSettings} from '../../services/group-settings.service.js';
 import {logError} from '../../lib/logger.js';
-import type {GroupParticipant} from '@whiskeysockets/baileys';
-import type {ExtendedConn} from '../../types/context.js';
+import type {BeforePluginContext} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
 
 const linkRegex = /https?:\/\/\S+/i;
 type MessageKeyWithAlt = BotMessage['key'] & {participantAlt?: string};
 
-export async function before(m: BotMessage, {conn}: {conn: ExtendedConn}) {
+export async function before(m: BotMessage, {conn, groupSettings, isAdmin, isBotAdmin}: BeforePluginContext) {
     if (!m.isGroup || !m.originalText) return;
     const userTag = `@${m.sender.split('@')[0]}`;
     const bang = m.key.id;
     let delet = (m.key as MessageKeyWithAlt).participantAlt || m.key.participant || m.sender;
 
-    try {
-        const config = await getGroupSettings(m.chat);
-        if (!config?.antilink2) return;
-    } catch (e: unknown) {
-        logError(e);
-        return;
-    }
+    if (!groupSettings?.antilink2) return;
 
     const isGroupLink = linkRegex.test(m.originalText);
     if (!isGroupLink) return;
-    const metadata = await conn.groupMetadata(m.chat);
-    const botId = conn.user?.id?.replace(/:\d+@/, "@");
-    const isBotAdmin = metadata.participants.some((p: GroupParticipant) => {
-        const pid = p.id?.replace(/:\d+/, "");
-        return (pid === botId || pid === (conn.user?.lid || "").replace(/:\d+/, "")) && p.admin;
-    });
 
-    const senderVariants = [m.sender, m.lid].filter(Boolean).map(j => j.replace(/:\d+/, ""));
-    const isSenderAdmin = metadata.participants.some((p: GroupParticipant) => {
-        const pid = p.id?.replace(/:\d+/, "");
-        return senderVariants.includes(pid) && p.admin;
-    });
-
-    if (isSenderAdmin || m.fromMe) return;
+    if (isAdmin || m.fromMe) return;
     if (conn.groupInviteCode) {
         try {
             const code = await conn.groupInviteCode(m.chat);

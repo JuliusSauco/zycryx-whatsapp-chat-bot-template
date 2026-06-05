@@ -11,10 +11,10 @@ import uploadFile, {
     uguu
 } from '../../lib/uploadFile.js';
 import uploadImage from '../../lib/uploadImage.js';
-import fetch from "node-fetch";
 import FormData from "form-data";
 import {definePlugin} from '../../core/define-plugin.js';
 import {ENV} from '../../core/env.js';
+import {httpJson, type HttpRequestOptions} from '../../lib/http-client.js';
 
 type UploadService = (media: Buffer) => Promise<string | string[]>;
 
@@ -78,16 +78,15 @@ Subirá automáticamente el archivo a servidores como *qu.ax*, *catbox*, *cdn-sk
                 contentType: mime,
             });
 
-            const res = await fetch("https://cdn.skyultraplus.com/upload.php", {
+            const json = await httpJson<SkyUploadResponse>("https://cdn.skyultraplus.com/upload.php", {
                 method: "POST",
                 headers: {
                     ...form.getHeaders(),
                     "X-API-KEY": ENV.SKYULTRA_API_KEY,
                 },
-                body: form,
+                body: form as unknown as HttpRequestOptions['body'],
             });
-            const json: SkyUploadResponse = await (res.json() as Promise<SkyUploadResponse>).catch(() => ({}));
-            if (!json.ok) throw `Status: ${res.status}\nerror: ${JSON.stringify(json)}`;
+            if (!json.ok) throw `error: ${JSON.stringify(json)}`;
             const link = json.file?.url || json.url;
             if (!link) throw new Error('SkyUltra no devolvió URL')
             return m.reply(link);

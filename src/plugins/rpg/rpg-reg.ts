@@ -10,6 +10,7 @@ import {
     unregisterUser,
 } from '../../services/user.service.js';
 import type {SendMessageOptions} from '../../types/context.js';
+import {httpJson} from '../../lib/http-client.js';
 
 const Reg = /\|?(.*)([.|] *?)([0-9]*)$/i;
 
@@ -153,8 +154,7 @@ ${pref}menu
     try {
         const phone = formatPhoneNumber(who);
         if (phone) {
-            const response = await fetch(`${info.apis}/tools/country?text=${phone}`);
-            const data = await response.json() as CountryApiResponse;
+            const data = await httpJson<CountryApiResponse>(`${info.apis}/tools/country?text=${phone}`);
             userNationality = data.result ? `${data.result.name} ${data.result.emoji}` : null;
         }
     } catch (err: unknown) {

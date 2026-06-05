@@ -1,5 +1,5 @@
 import type {BotMessage} from './message.js';
-import type {PluginContext} from './context.js';
+import type {BeforePluginContext, PluginContext} from './context.js';
 
 export interface Plugin {
     command?: RegExp | string | string[];
@@ -16,9 +16,10 @@ export interface Plugin {
     limit?: number;
     money?: number;
     level?: number;
-    before?: (m: BotMessage, ctx: Pick<PluginContext, 'conn' | 'isOwner'>) => Promise<boolean | void | unknown>;
+    before?: (m: BotMessage, ctx: BeforePluginContext) => Promise<boolean | void | unknown>;
     runBeforeOnCommand?: boolean;
     __hasBefore?: boolean;
+    __name?: string;
 
     (m: BotMessage, ctx: PluginContext): Promise<unknown>;
 }

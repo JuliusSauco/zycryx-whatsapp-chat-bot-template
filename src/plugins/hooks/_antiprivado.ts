@@ -1,13 +1,10 @@
-import {getSubbotConfig} from '../../services/subbot.service.js'
 import {getPrivateWarn, setPrivateWarn} from '../../services/user.service.js'
-import type {ExtendedConn} from '../../types/context.js'
+import type {BeforePluginContext} from '../../types/context.js'
 import type {BotMessage} from '../../types/message.js'
 
 const comandosPermitidos = ['code', 'serbot', 'jadibot', 'bots', 'piedra', 'tijera', 'papel']
 
-export async function before(m: BotMessage, {conn, isOwner}: {conn: ExtendedConn; isOwner: boolean}) {
-    const botId = conn.user?.id || globalThis.conn.user?.id || ''
-    const config = await getSubbotConfig(botId)
+export async function before(m: BotMessage, {isOwner, botConfig}: BeforePluginContext) {
     const chatId = m.chat || m.key?.remoteJid || ''
     const sender = m.sender
     const texto = m.originalText?.toLowerCase().trim() || m.text?.toLowerCase().trim() || ''
@@ -16,8 +13,8 @@ export async function before(m: BotMessage, {conn, isOwner}: {conn: ExtendedConn
         return
     }
 
-    if (!config.anti_private) return
-    const prefixes = Array.isArray(config.prefix) ? config.prefix : [config.prefix || '/']
+    if (!botConfig.anti_private) return
+    const prefixes = Array.isArray(botConfig.prefix) ? botConfig.prefix : [botConfig.prefix || '/']
 
     let usedPrefix = ''
     for (const prefix of prefixes) {

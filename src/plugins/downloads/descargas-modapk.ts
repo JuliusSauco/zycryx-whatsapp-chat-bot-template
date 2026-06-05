@@ -1,6 +1,8 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {QuotedMessage} from '../../types/context.js';
+import {httpJson} from '../../lib/http-client.js';
+import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
 
 interface ApkData {
     name: string
@@ -48,46 +50,41 @@ export default definePlugin({
     userRequests[m.sender] = true;
     m.react("⌛");
     try {
-        const downloadAttempts: Array<() => Promise<ApkData>> = [async () => {
-            const res = await fetch(`https://api.dorratz.com/v2/apk-dl?text=${text}`);
-            const data = await res.json() as DorratzApkResponse;
-            if (!data.name || !data.size || !data.icon || !data.dllink) throw new Error('No data from dorratz API');
-            return {
-                name: data.name,
-                package: data.package,
-                lastUpdate: data.lastUpdate,
-                size: data.size,
-                icon: data.icon,
-                dllink: data.dllink
-            };
-        },
-            async () => {
-                const res = await fetch(`${info.apis}/download/apk?query=${text}`);
-                const data = await res.json() as MainApkResponse;
-                const apkData = data.data;
-                if (!apkData?.name || !apkData.size || !apkData.image || !apkData.download) throw new Error('Respuesta inválida de API principal');
-                return {
-                    name: apkData.name,
-                    developer: apkData.developer,
-                    publish: apkData.publish,
-                    size: apkData.size,
-                    icon: apkData.image,
-                    dllink: apkData.download
-                };
-            }];
+        const downloadProviders: Array<Provider<ApkData>> = [
+            {
+                name: 'dorratz-apk',
+                run: async () => {
+                    const data = await httpJson<DorratzApkResponse>(`https://api.dorratz.com/v2/apk-dl?text=${text}`);
+                    if (!data.name || !data.size || !data.icon || !data.dllink) throw new Error('No data from dorratz API');
+                    return {
+                        name: data.name,
+                        package: data.package,
+                        lastUpdate: data.lastUpdate,
+                        size: data.size,
+                        icon: data.icon,
+                        dllink: data.dllink
+                    };
+                },
+            },
+            {
+                name: 'main-apk',
+                run: async () => {
+                    const data = await httpJson<MainApkResponse>(`${info.apis}/download/apk?query=${text}`);
+                    const apkData = data.data;
+                    if (!apkData?.name || !apkData.size || !apkData.image || !apkData.download) throw new Error('Respuesta inválida de API principal');
+                    return {
+                        name: apkData.name,
+                        developer: apkData.developer,
+                        publish: apkData.publish,
+                        size: apkData.size,
+                        icon: apkData.image,
+                        dllink: apkData.download
+                    };
+                },
+            },
+        ];
 
-        let apkData: ApkData | null = null;
-        for (const attempt of downloadAttempts) {
-            try {
-                apkData = await attempt();
-                if (apkData) break;
-            } catch (err: unknown) {
-                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
-                continue;
-            }
-        }
-
-        if (!apkData) throw new Error('No se pudo descargar el APK desde ninguna API');
+        const apkData = await runFirstProvider(downloadProviders, 'No se pudo descargar el APK desde ninguna API');
         const response = `≪ＤＥＳＣＡＲＧＡＤＯ ＡＰＫＳ🚀≫
 
 ┏━━━━━━━━━━━━━━━━━━━━━━• 

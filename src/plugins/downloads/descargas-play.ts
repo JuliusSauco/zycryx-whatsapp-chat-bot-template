@@ -1,13 +1,13 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 //import { youtubedl, youtubedlv2 } from '@bochilteam/scraper'
-import fetch from 'node-fetch';
 import yts from 'yt-search';
 import {savetube} from '../../lib/yt-savetube.js'
 import {ogmp3} from '../../lib/youtubedl.js';
 import {ENV} from '../../core/env.js';
 import type {QuotedMessage} from '../../types/context.js';
 import type {YouTubeSearchVideo} from 'yt-search';
+import {httpJson, httpRequest} from '../../lib/http-client.js';
 
 const LimitAud = 725 * 1024 * 1024; // 725MB
 const LimitVid = 425 * 1024 * 1024; // 425MB
@@ -42,8 +42,7 @@ interface DownloadApi {
 }
 
 const fetchJson = async <T>(url: string): Promise<T> => {
-    const response = await fetch(url);
-    return await response.json() as T;
+    return httpJson<T>(url);
 }
 
 const downloadValue = (value: string | {url?: string} | undefined) => typeof value === 'string' ? value : value?.url;
@@ -298,7 +297,7 @@ function secondString(seconds: number | undefined) {
 
 async function getFileSize(url: string) {
     try {
-        const response = await fetch(url, {method: 'HEAD'});
+        const response = await httpRequest(url, {method: 'HEAD'});
         return parseInt(response.headers.get('content-length') || '0');
     } catch (e: unknown) {
         return 0; // Si falla, asumimos 0

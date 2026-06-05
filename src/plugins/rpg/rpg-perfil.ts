@@ -1,9 +1,9 @@
 import {definePlugin} from '../../core/define-plugin.js'
 import {createHash} from 'crypto'
-import fetch from 'node-fetch'
 import moment from 'moment-timezone'
 import {xpRange} from '../../lib/levelling.js'
 import {getUserById, getUserName} from '../../services/user.service.js'
+import {httpBuffer, httpJson} from '../../lib/http-client.js'
 
 interface StatusResponse {
     status?: string
@@ -36,7 +36,7 @@ export default definePlugin({
     const bio = await conn.fetchStatus(who).catch(() => ({} as StatusResponse)) as StatusResponse
     const biot = bio.status || 'Sin Info'
     const profilePic = await conn.profilePictureUrl(who, 'image').catch(() => 'https://telegra.ph/file/9d38415096b6c46bf03f8.jpg') as string
-    const buffer = await (await fetch(profilePic)).buffer()
+    const buffer = await httpBuffer(profilePic)
     const {exp, limite, nombre, registered, edad, marry, gender, birthday} = user
     const level = user.level ?? 0
     const {min, xp, max} = xpRange(level, global.multiplier || 1)
@@ -45,8 +45,7 @@ export default definePlugin({
 
     let nacionalidad = 'Desconocida'
     try {
-        const response = await fetch(`${info.apis}/tools/country?text=${phone}`)
-        const data = await response.json() as CountryResponse
+        const data = await httpJson<CountryResponse>(`${info.apis}/tools/country?text=${phone}`)
         if (data?.result?.name) nacionalidad = `${data.result.name} ${data.result.emoji}`
     } catch (_) {
     }

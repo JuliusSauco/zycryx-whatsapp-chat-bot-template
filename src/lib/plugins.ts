@@ -28,6 +28,11 @@ function normalizePlugin(module: PluginModule): Plugin {
     return Object.assign(base, module);
 }
 
+function setPluginName(plugin: Plugin, filename: string): Plugin {
+    plugin.__name = filename;
+    return plugin;
+}
+
 function normalizePluginPath(fullPath: string): string {
     return relative(pluginFolder, fullPath).split(sep).join('/');
 }
@@ -58,7 +63,7 @@ export async function loadPlugins(): Promise<void> {
         try {
             const pathFile = pathToFileURL(getPluginFullPath(filename)).href
             const module = asPluginModule(await import(`${pathFile}?update=${Date.now()}`))
-            const plugin = normalizePlugin(module)
+            const plugin = setPluginName(normalizePlugin(module), filename)
 
             globalThis.plugins[filename] = plugin
 
@@ -91,7 +96,7 @@ const reload = async (filename: string): Promise<void> => {
         try {
             const pathFile = pathToFileURL(fullPath).href
             const module = asPluginModule(await import(`${pathFile}?update=${Date.now()}`))
-            const plugin = normalizePlugin(module)
+            const plugin = setPluginName(normalizePlugin(module), filename)
 
             globalThis.plugins[filename] = plugin
             router.registerAll(globalThis.plugins)

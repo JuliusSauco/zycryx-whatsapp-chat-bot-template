@@ -1,7 +1,7 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
-import fetch from 'node-fetch'
 import {definePlugin} from '../../core/define-plugin.js'
+import {httpBuffer, httpJson} from '../../lib/http-client.js'
 
 interface ActionConfig {
     e: string;
@@ -63,7 +63,7 @@ export default definePlugin({
         const texto = `${act.e} ${senderName} ${act.v} ${mentionedNames.join(', ')}`
         const tipo = act.nsfw ? 'nsfw' : 'sfw'
         const endpoint = act.main
-        const {url} = await fetch(`https://api.waifu.pics/${tipo}/${endpoint}`).then(r => r.json() as Promise<WaifuPicsResponse>)
+        const {url} = await httpJson<WaifuPicsResponse>(`https://api.waifu.pics/${tipo}/${endpoint}`)
         if (!url) return m.reply('❌ La API no devolvió sticker.')
 
         let stiker
@@ -89,7 +89,7 @@ export default definePlugin({
             return
         }
 
-        const gifBuffer = await fetch(url).then(r => r.buffer())
+        const gifBuffer = await httpBuffer(url)
         await conn.sendMessage(m.chat, {
             video: gifBuffer,
             gifPlayback: true,

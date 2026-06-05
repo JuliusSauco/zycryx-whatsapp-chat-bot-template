@@ -2,7 +2,6 @@ import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 //Código elaborado por: https://github.com/elrebelde21
 
-import fetch from 'node-fetch'
 import {
     claimCharacter,
     completeCharacterSale,
@@ -11,6 +10,7 @@ import {
 } from '../../services/character.service.js'
 import {addWalletResource, addWalletResourcesAndSetFields, getWallet} from '../../services/wallet.service.js'
 import type {CharacterRecord} from '../../ports/repositories.js'
+import {httpJson} from '../../lib/http-client.js'
 
 interface AniListCharacterResponse {
     data?: {
@@ -47,13 +47,12 @@ async function getAniListCharacter() {
       }
     }`
 
-    const res = await fetch('https://graphql.anilist.co', {
+    const json = await httpJson<AniListCharacterResponse>('https://graphql.anilist.co', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({query}),
     })
 
-    const json = await res.json() as AniListCharacterResponse
     const c = json.data?.Character
     if (!c || !c.image?.large || !c.name?.full) return await getAniListCharacter()
 

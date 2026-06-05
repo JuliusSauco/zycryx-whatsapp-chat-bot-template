@@ -1,5 +1,4 @@
 import {definePlugin} from '../../core/define-plugin.js'
-import {getGroupSettings} from '../../services/group-settings.service.js'
 import {getNumberByLid} from '../../services/user.service.js'
 
 export default definePlugin({
@@ -8,16 +7,9 @@ export default definePlugin({
     command: ['infogrupo', 'groupinfo', 'infogp'],
     group: true,
     register: true,
-    async execute(m, {conn}) {
+    async execute(m, {conn, metadata: groupMetadata, participants, groupSettings}) {
     const pp = await conn.profilePictureUrl(m.chat, 'image').catch(() => "https://telegra.ph/file/39fb047cdf23c790e0146.jpg")
 
-    let groupMetadata
-    try {
-        groupMetadata = await conn.groupMetadata(m.chat)
-    } catch (e: unknown) {
-        return m.reply('*⚠️ Error al obtener información del grupo. Intenta nuevamente más tarde.*')
-    }
-    const participants = groupMetadata.participants || []
     const groupAdmins = participants.filter(p => p.admin)
     const usarLid = participants.some(p => p.id?.endsWith?.('@lid'))
     const listAdmin = await Promise.all(groupAdmins.map(async v => {
@@ -30,7 +22,7 @@ export default definePlugin({
         return `➥ ${numero ? `@${numero}` : `@Usuarios`}`
     }))
 
-    const data = await getGroupSettings(m.chat) || {}
+    const data = groupSettings || {}
     const {welcome, detect, antifake, antilink, virusTotal, modoadmin, primary_bot, modohorny, nsfw_horario, banned, messageLogging} = data
     const fallbackOwner = m.chat.includes('-') ? m.chat.split('-')[0] + '@s.whatsapp.net' : null
     const owner = groupMetadata.owner || groupAdmins.find(p => p.admin === 'superadmin')?.id || fallbackOwner || "Desconocido"

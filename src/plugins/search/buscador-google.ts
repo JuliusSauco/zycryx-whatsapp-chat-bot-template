@@ -1,8 +1,8 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 //import {googleIt} from '@bochilteam/scraper';
-import fetch from 'node-fetch';
 import {definePlugin} from '../../core/define-plugin.js';
 import {ENV} from '../../core/env.js';
+import {httpJson} from '../../lib/http-client.js';
 
 interface GoogleSearchResult {
     title?: string;
@@ -27,8 +27,7 @@ export default definePlugin({
     if (!text) return m.reply(`⚠️ 𝙌𝙪𝙚 𝙚𝙨𝙩𝙖 𝙗𝙪𝙨𝙘𝙖𝙣𝙙𝙤 🤔 𝙀𝙨𝙘𝙧𝙞𝙗𝙖 𝙡𝙤 𝙦𝙪𝙚 𝙦𝙪𝙞𝙚𝙧𝙖 𝙗𝙪𝙨𝙘𝙖𝙧\n• 𝙀𝙟: ${usedPrefix + command} loli`)
     m.react("⌛")
     try {
-        const res = await fetch(`${info.apis}/search/googlesearch?query=${text}`);
-        const data = await res.json() as GoogleSearchResponse;
+        const data = await httpJson<GoogleSearchResponse>(`${info.apis}/search/googlesearch?query=${text}`);
 
         if (data.status && data.data && data.data.length > 0) {
             let teks = `\`🔍 𝘙𝘌𝘚𝘜𝘓𝘛𝘈𝘋𝘖𝘚 𝘋𝘌:\` ${text}\n\n`;
@@ -43,8 +42,7 @@ export default definePlugin({
     } catch (e: unknown) {
         try {
             if (!ENV.ALYACHAN_API_KEY) throw new Error('ALYACHAN_API_KEY no configurado');
-            const res = await fetch(`https://api.alyachan.dev/api/google?q=${text}&apikey=${ENV.ALYACHAN_API_KEY}`);
-            const data = await res.json() as GoogleSearchResponse;
+            const data = await httpJson<GoogleSearchResponse>(`https://api.alyachan.dev/api/google?q=${text}&apikey=${ENV.ALYACHAN_API_KEY}`);
 
             if (data.status && data.data && data.data.length > 0) {
                 let teks = `🔍 *Resultados de:* ${text}\n\n`;

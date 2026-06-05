@@ -42,8 +42,10 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - Router de comandos con resolucion exacta, regex y custom prefixes.
 - Plugins nuevos mediante `definePlugin`.
 - Compatibilidad con hooks legacy que exportan `before`.
+- Hooks `before` con contexto enriquecido para reutilizar metadata, permisos, bot config y settings ya precargados.
 - Guards centralizados para owners, admins, grupo/privado, modo admin, NSFW, ban y recursos.
 - Context builder para sender, metadata, permisos, settings de grupo y config del bot.
+- Pipeline de eventos de grupo separado por responsabilidad: participantes, cambios de grupo, solicitudes de ingreso, antifake, welcome/bye y promote/demote.
 - Persistencia con Drizzle ORM sobre PostgreSQL.
 - Repositorios Drizzle separados por agregado.
 - Puertos de repositorio para desacoplar servicios del adapter concreto.
@@ -55,6 +57,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - Recursos base en `src/data` y recursos mutables de audios en base de datos.
 - Observabilidad con `LOG_LEVEL` y logs de performance configurables.
 - Integracion opcional con VirusTotal para analisis de enlaces y archivos.
+- Optimizaciones de latencia para evitar consultas repetidas a settings, subbot config y metadata en hooks y comandos de grupo frecuentes.
 - `src/**/*.ts` sin `any` ni `@ts-ignore`.
 
 <a id="tecnologias"></a>
@@ -112,6 +115,8 @@ Prepara la base de datos:
 npm run db:migrate
 ```
 
+Las migraciones no se ejecutan automaticamente al iniciar el bot. En deploys y ambientes compartidos ejecuta `npm run db:migrate` como paso previo controlado.
+
 Ejecuta en desarrollo:
 
 ```bash
@@ -122,6 +127,12 @@ O compila y ejecuta la version local:
 
 ```bash
 npm run start:local
+```
+
+Si estas levantando un ambiente nuevo y quieres build + migracion + arranque en un solo comando:
+
+```bash
+npm run start:local:migrate
 ```
 
 En la primera ejecucion el bot pedira QR o codigo de emparejamiento. Las sesiones se guardan en carpetas locales y no deben versionarse.
@@ -214,18 +225,21 @@ BOT_FIXED_OWNER_JIDS=573001112233@s.whatsapp.net,51999888777@s.whatsapp.net
 | `npm run db:generate` | Genera migraciones desde `src/db/schema.ts`. |
 | `npm run db:ensure-schema` | Crea el schema configurado si no existe. |
 | `npm run db:migrate` | Ejecuta `db:ensure-schema` y aplica migraciones. |
+| `npm run db:setup` | Alias explicito de preparacion de base. |
 | `npm run db:studio` | Abre Drizzle Studio. |
 | `npm run dev` | Ejecuta local con `tsx watch`. |
 | `npm run dev:dev` | Ejecuta con `NODE_ENV=dev`. |
 | `npm run dev:test` | Ejecuta con `NODE_ENV=test`. |
-| `npm run serve` | Ejecuta `dist` con `NODE_ENV=prod`. |
-| `npm run serve:local` | Ejecuta `dist` con `NODE_ENV=local`. |
-| `npm run serve:dev` | Ejecuta `dist` con `NODE_ENV=dev`. |
-| `npm run serve:test` | Ejecuta `dist` con `NODE_ENV=test`. |
-| `npm run start` | Build + serve prod. |
-| `npm run start:local` | Build + serve local. |
-| `npm run start:dev` | Build + serve dev. |
-| `npm run start:test` | Build + serve test. |
+| `npm run serve` | Ejecuta `dist` con `NODE_ENV=prod` sin migrar. |
+| `npm run serve:local` | Ejecuta `dist` con `NODE_ENV=local` sin migrar. |
+| `npm run serve:dev` | Ejecuta `dist` con `NODE_ENV=dev` sin migrar. |
+| `npm run serve:test` | Ejecuta `dist` con `NODE_ENV=test` sin migrar. |
+| `npm run serve:*:migrate` | Ejecuta migraciones y luego inicia `dist` para el ambiente indicado. |
+| `npm run start` | Build + serve prod sin migrar. |
+| `npm run start:local` | Build + serve local sin migrar. |
+| `npm run start:dev` | Build + serve dev sin migrar. |
+| `npm run start:test` | Build + serve test sin migrar. |
+| `npm run start:*:migrate` | Build + migraciones + serve para el ambiente indicado. |
 | `npm run bun:start:*` | Alternativas con Bun. |
 
 <a id="estructura"></a>
@@ -330,6 +344,15 @@ Componentes principales:
 | `core/context-builder.ts` | Construye permisos, metadata, bot config y settings de grupo. |
 | `core/router.ts` | Resuelve comandos exactos, regex y custom prefixes. |
 | `core/define-plugin.ts` | Factory para plugins nuevos. |
+| `core/group-events.ts` | Eventos de participantes del grupo. |
+| `core/group-join-request.ts` | Solicitudes de ingreso y auto-accept. |
+| `core/group-update-events.ts` | Cambios de nombre, descripcion y foto del grupo. |
+| `core/group-metadata.ts` | Cache y refresco de metadata para eventos. |
+| `core/group-antifake.ts` | Antifake para participantes agregados. |
+| `core/group-welcome-bye.ts` | Mensajes de bienvenida y despedida. |
+| `core/group-admin-events.ts` | Mensajes de promote/demote. |
+| `core/message-log.ts` | Conteo y auditoria de mensajes de grupo. |
+| `core/performance-logger.ts` | Logs `[PERF]` por etapas del pipeline. |
 | `lib/plugins.ts` | Loader recursivo y hot reload de plugins. |
 | `lib/logger.ts` | Logger con niveles configurables. |
 | `lib/simple.ts` | Normalizacion de mensajes y helpers custom de `conn`. |
@@ -406,6 +429,42 @@ src/adapters/drizzle/
 
 El handler no reparte calculos de permisos por todo el proyecto. `context-builder.ts` centraliza sender, JID/LID, admin, bot admin, owner, subbot config, metadata y group settings.
 
+Los hooks `before` reciben un contexto enriquecido (`BeforePluginContext`) con:
+
+- `metadata` y `participants`;
+- `isAdmin`, `isBotAdmin`, `isOwner` e `isGroup`;
+- `botConfig`;
+- `groupSettings`;
+- `chatId` y `sender`.
+
+Esto evita que hooks como antilink, audios, autolevelup, antiprivado y VirusTotal consulten de nuevo la base o pidan metadata del grupo.
+
+### 🧭 Event Modules
+
+Los eventos de WhatsApp estan separados del pipeline de mensajes:
+
+```text
+participantsUpdate -> group-events.ts
+groupsUpdate       -> group-update-events.ts
+groupJoinRequest   -> group-join-request.ts
+callUpdate         -> call-events.ts
+messageUpdate      -> message-update.ts
+```
+
+Los helpers de eventos viven en modulos pequenos:
+
+```text
+group-metadata.ts
+group-event-settings.ts
+group-participant-resolver.ts
+group-antifake.ts
+group-welcome-bye.ts
+group-admin-events.ts
+group-update-notifications.ts
+group-bot-identity.ts
+group-event-resources.ts
+```
+
 ### ⏱️ Scheduled Tasks
 
 Las tareas recurrentes viven fuera del pipeline de mensajes: expiracion de grupos, reportes pendientes y limpieza de memoria.
@@ -425,7 +484,7 @@ WhatsApp message
   -> context-builder precarga contexto
   -> upsert chat / contador / usuario
   -> message-parser extrae prefijo, comando, args y text
-  -> before hooks
+  -> before hooks con contexto ya precargado
   -> router resuelve plugin
   -> guards validan permisos y recursos
   -> plugin ejecuta accion
@@ -461,8 +520,9 @@ import {definePlugin} from '../../core/define-plugin.js';
 export default definePlugin({
     tags: ['group'],
     runBeforeOnCommand: true,
-    async before(m, {conn}) {
+    async before(m, {conn, groupSettings, isAdmin, isBotAdmin, metadata}) {
         if (!m.isGroup) return;
+        if (!groupSettings.antilink) return;
     },
     async execute() {
         return;
@@ -510,6 +570,14 @@ Para una base nueva:
 
 ```bash
 npm run db:migrate
+```
+
+El arranque del bot no aplica migraciones automaticamente. Esto evita que multiples replicas, reinicios o despliegues ejecuten cambios de schema sin control. La secuencia recomendada para dev/prod es:
+
+```bash
+npm run build
+npm run db:migrate
+npm run serve:dev
 ```
 
 Para generar cambios de schema:
@@ -632,6 +700,8 @@ Para ejecutar local desde build:
 npm run start:local
 ```
 
+Recuerda ejecutar `npm run db:migrate` antes si hay migraciones pendientes.
+
 O si ya compilaste:
 
 ```bash
@@ -649,6 +719,10 @@ npm run serve:local
 - Backend REST/GraphQL preparado como adapter pendiente, no activo por defecto.
 - Loader de plugins recursivo con soporte para carpetas por familia.
 - Plugins organizados en 19 familias.
+- Eventos de grupo separados por modulo: participantes, actualizaciones, solicitudes, recursos, metadata y mensajes auxiliares.
+- Hooks `before` optimizados con contexto compartido para evitar lecturas repetidas de settings, config y metadata.
+- Comandos de grupo frecuentes reutilizan `metadata`, `participants` y `groupSettings` del contexto.
+- Handler reducido a orquestacion del pipeline de mensajes, con deduplicacion, performance y logging separados.
 - Observabilidad configurable con `LOG_LEVEL`.
 - VirusTotal integrado como hook configurable.
 - `src/**/*.ts` sin `any` ni `@ts-ignore`.

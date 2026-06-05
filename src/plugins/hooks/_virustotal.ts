@@ -10,8 +10,7 @@ import {
     scanUrlWithVirusTotal,
 } from '../../lib/virustotal.js';
 import {logError} from '../../lib/logger.js';
-import {getGroupSettings} from '../../services/group-settings.service.js';
-import type {ExtendedConn} from '../../types/context.js';
+import type {BeforePluginContext, ExtendedConn} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
 import type {VirusTotalStats} from '../../lib/virustotal.js';
 
@@ -234,11 +233,10 @@ async function scanUrlsInText(conn: ExtendedConn, m: BotMessage, text: string): 
     }
 }
 
-export async function before(m: BotMessage, {conn}: {conn: ExtendedConn}) {
+export async function before(m: BotMessage, {conn, groupSettings}: BeforePluginContext) {
     if (!m.isGroup || m.fromMe) return;
     if (!isVirusTotalConfigured()) return;
-    const settings = await getGroupSettings(m.chat);
-    if (!settings?.virusTotal) return;
+    if (!groupSettings?.virusTotal) return;
 
     const media = getIncomingMedia(m);
     if (!media) {

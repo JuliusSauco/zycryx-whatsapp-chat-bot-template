@@ -1,13 +1,12 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
-import fetch from 'node-fetch'
 import yts from 'yt-search'
 import ytdl from 'ytdl-core'
-import axios from 'axios'
 import {savetube} from '../../lib/yt-savetube.js'
 import {ogmp3} from '../../lib/youtubedl.js';
 import {amdl, ytdown} from '../../lib/scraper.js';
 import {ENV} from '../../core/env.js';
+import {httpJson, httpText} from '../../lib/http-client.js';
 
 const userRequests: Record<string, boolean> = {};
 export default definePlugin({
@@ -86,8 +85,7 @@ export default definePlugin({
                         }
                     } catch (e: unknown) {
                         try {
-                            const res = await fetch(`https://api.siputzx.my.id/api/d/ytmp3?url=${args}`);
-                            let {data} = await res.json() as {data?: {dl?: string}};
+                            const {data} = await httpJson<{data?: {dl?: string}}>(`https://api.siputzx.my.id/api/d/ytmp3?url=${args}`);
                             await conn.sendMessage(m.chat, {
                                 [sendType]: {url: data?.dl},
                                 mimetype: 'audio/mpeg',
@@ -95,8 +93,7 @@ export default definePlugin({
                             }, {quoted: m});
                         } catch (e: unknown) {
                             try {
-                                const res = await fetch(`https://api.agatz.xyz/api/ytmp3?url=${args}`)
-                                let data = await res.json() as {data?: {downloadUrl?: string}};
+                                const data = await httpJson<{data?: {downloadUrl?: string}}>(`https://api.agatz.xyz/api/ytmp3?url=${args}`)
                                 await conn.sendMessage(m.chat, {
                                     [sendType]: {url: data.data?.downloadUrl},
                                     mimetype: 'audio/mpeg',
@@ -104,8 +101,7 @@ export default definePlugin({
                                 }, {quoted: m});
                             } catch (e: unknown) {
                                 try {
-                                    const res = await fetch(`https://api.zenkey.my.id/api/download/ytmp3?apikey=${ENV.ZENKEY_API_KEY}&url=${args}`)
-                                    let {result} = await res.json() as {result?: {download?: {url?: string}}}
+                                    const {result} = await httpJson<{result?: {download?: {url?: string}}}>(`https://api.zenkey.my.id/api/download/ytmp3?apikey=${ENV.ZENKEY_API_KEY}&url=${args}`)
                                     await conn.sendMessage(m.chat, {
                                         [sendType]: {url: result?.download?.url},
                                         mimetype: 'audio/mpeg',
@@ -114,8 +110,7 @@ export default definePlugin({
                                 } catch (e: unknown) {
                                     try {
                                         const apiUrl = `${info.apis}/download/ytmp3?url=${args}`;
-                                        const apiResponse = await fetch(apiUrl);
-                                        const delius = await apiResponse.json() as {status?: boolean; data?: {download?: {url?: string}}};
+                                        const delius = await httpJson<{status?: boolean; data?: {download?: {url?: string}}}>(apiUrl);
 
                                         if (!delius.status) {
                                             return m.react("❌")
@@ -201,8 +196,7 @@ export default definePlugin({
                             }
                         } catch (e: unknown) {
                             try {
-                                const res = await fetch(`https://api.siputzx.my.id/api/d/ytmp4?url=${args}`);
-                                let {data} = await res.json() as {data?: {dl?: string}};
+                                const {data} = await httpJson<{data?: {dl?: string}}>(`https://api.siputzx.my.id/api/d/ytmp4?url=${args}`);
                                 await conn.sendMessage(m.chat, {
                                     [sendType]: {url: data?.dl},
                                     fileName: `video.mp4`,
@@ -211,8 +205,7 @@ export default definePlugin({
                                 }, {quoted: m})
                             } catch (e: unknown) {
                                 try {
-                                    const res = await fetch(`https://api.agatz.xyz/api/ytmp4?url=${args}`)
-                                    let data = await res.json() as {data?: {downloadUrl?: string}};
+                                    const data = await httpJson<{data?: {downloadUrl?: string}}>(`https://api.agatz.xyz/api/ytmp4?url=${args}`)
                                     await conn.sendMessage(m.chat, {
                                         [sendType]: {url: data.data?.downloadUrl},
                                         fileName: `video.mp4`,
@@ -220,8 +213,7 @@ export default definePlugin({
                                     }, {quoted: m})
                                 } catch (e: unknown) {
                                     try {
-                                        const res = await fetch(`https://api.zenkey.my.id/api/download/ytmp4?apikey=${ENV.ZENKEY_API_KEY}&url=${args}`)
-                                        let {result} = await res.json() as {result?: {download?: {url?: string}}}
+                                        const {result} = await httpJson<{result?: {download?: {url?: string}}}>(`https://api.zenkey.my.id/api/download/ytmp4?apikey=${ENV.ZENKEY_API_KEY}&url=${args}`)
                                         await conn.sendMessage(m.chat, {
                                             [sendType]: {url: result?.download?.url},
                                             fileName: `video.mp4`,
@@ -230,8 +222,7 @@ export default definePlugin({
                                     } catch (e: unknown) {
                                         try {
                                             const axeelApi = `https://axeel.my.id/api/download/video?url=${args}`;
-                                            const axeelRes = await fetch(axeelApi);
-                                            const axeelJson = await axeelRes.json() as {downloads?: {url?: string}};
+                                            const axeelJson = await httpJson<{downloads?: {url?: string}}>(axeelApi);
                                             if (axeelJson.downloads?.url) {
                                                 const videoUrl = axeelJson.downloads.url;
                                                 await conn.sendMessage(m.chat, {
@@ -301,8 +292,7 @@ async function ytMp3(url: string) {
             }
             ;
             let resultFix = result.filter(x => x.audio != undefined && x.size != undefined)
-            let tiny = await axios.get(`https://tinyurl.com/api-create.php?url=${resultFix[0].audio}`);
-            let tinyUrl = tiny.data;
+            const tinyUrl = await httpText(`https://tinyurl.com/api-create.php?url=${resultFix[0].audio}`);
             let title = getUrl.videoDetails.title;
             let thumb = getUrl.player_response.microformat.playerMicroformatRenderer.thumbnail.thumbnails[0].url;
             resolve({title, result: tinyUrl, result2: resultFix, thumb})
@@ -324,8 +314,7 @@ async function ytMp4(url: string): Promise<{title: string; result: string; rersu
             }
             ;
             let resultFix = result.filter(x => x.video != undefined && x.size != undefined && x.quality != undefined)
-            let tiny = await axios.get(`https://tinyurl.com/api-create.php?url=${resultFix[0].video}`);
-            let tinyUrl = tiny.data;
+            const tinyUrl = await httpText(`https://tinyurl.com/api-create.php?url=${resultFix[0].video}`);
             let title = getUrl.videoDetails.title;
             let thumb = getUrl.player_response.microformat.playerMicroformatRenderer.thumbnail.thumbnails[0].url;
             resolve({title, result: tinyUrl, rersult2: resultFix[0].video, thumb})

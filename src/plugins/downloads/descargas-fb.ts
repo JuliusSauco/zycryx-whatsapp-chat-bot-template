@@ -1,7 +1,8 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fg from 'api-dylux';
-import fetch from 'node-fetch';
+import {httpJson} from '../../lib/http-client.js';
+import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
 
 interface FacebookMediaData {
     type: 'video' | 'image'
@@ -53,9 +54,10 @@ export default definePlugin({
     userRequests[m.sender] = true;
     m.react(`⌛`);
     try {
-        const downloadAttempts: Array<() => Promise<FacebookMediaData | undefined>> = [async () => {
-            const api = await fetch(`https://api.agatz.xyz/api/facebook?url=${args[0]}`);
-            const data = await api.json() as AgatzFacebookResponse;
+        const downloadProviders: Array<Provider<FacebookMediaData>> = [{
+            name: 'agatz-facebook',
+            run: async () => {
+            const data = await httpJson<AgatzFacebookResponse>(`https://api.agatz.xyz/api/facebook?url=${args[0]}`);
             const videoUrl = data.data?.hd || data.data?.sd;
             const imageUrl = data.data?.thumbnail;
             if (videoUrl && videoUrl.endsWith('.mp4')) {
@@ -64,30 +66,39 @@ export default definePlugin({
                 return {type: 'image', url: imageUrl, caption: '✅ Aquí está la imagen de Facebook'};
             }
         },
-            async () => {
-                const api = await fetch(`${info.fgmods.url}/downloader/fbdl?url=${args[0]}&apikey=${info.fgmods.key}`);
-                const data = await api.json() as FgmodsFacebookResponse;
+        },
+            {
+                name: 'fgmods-facebook',
+                run: async () => {
+                const data = await httpJson<FgmodsFacebookResponse>(`${info.fgmods.url}/downloader/fbdl?url=${args[0]}&apikey=${info.fgmods.key}`);
                 const downloadUrl = data.result?.[0]?.hd || data.result?.[0]?.sd;
                 if (!downloadUrl) throw new Error('Respuesta inválida de Fgmods');
                 return {type: 'video', url: downloadUrl, caption: '✅ Aquí está tu video de Facebook'};
             },
-            async () => {
+            },
+            {
+                name: 'main-facebook',
+                run: async () => {
                 const apiUrl = `${info.apis}/download/facebook?url=${args[0]}`;
-                const apiResponse = await fetch(apiUrl);
-                const delius = await apiResponse.json() as DeliusFacebookResponse;
+                const delius = await httpJson<DeliusFacebookResponse>(apiUrl);
                 const downloadUrl = delius.urls?.[0]?.hd || delius.urls?.[0]?.sd;
                 if (!downloadUrl) throw new Error('Respuesta inválida de API principal');
                 return {type: 'video', url: downloadUrl, caption: '✅ Aquí está tu video de Facebook'};
             },
-            async () => {
+            },
+            {
+                name: 'dorratz-facebook',
+                run: async () => {
                 const apiUrl = `https://api.dorratz.com/fbvideo?url=${encodeURIComponent(args[0])}`;
-                const response = await fetch(apiUrl);
-                const data = await response.json() as DorratzFacebookResponse;
+                const data = await httpJson<DorratzFacebookResponse>(apiUrl);
                 const downloadUrl = data.result?.hd || data.result?.sd;
                 if (!downloadUrl) throw new Error('Respuesta inválida de Dorratz');
                 return {type: 'video', url: downloadUrl, caption: '✅ Aquí está tu video de Facebook'};
             },
-            async () => {
+            },
+            {
+                name: 'api-dylux-facebook',
+                run: async () => {
                 const ress = await fg.fbdl(args[0]);
                 const urll = ress.data[0].url;
                 return {
@@ -95,20 +106,10 @@ export default definePlugin({
                     url: urll,
                     caption: '✅ 𝐀𝐐𝐔𝐈 𝐄𝐒𝐓𝐀 𝐓𝐔 𝐕𝐈𝐃𝐄𝐎 𝐃𝐄 𝐅𝐀𝐂𝐄𝐁𝐎𝐎𝐊\n\n'
                 };
+            }
             }];
 
-        let mediaData = null;
-        for (const attempt of downloadAttempts) {
-            try {
-                mediaData = await attempt();
-                if (mediaData) break;
-            } catch (err: unknown) {
-                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
-                continue;
-            }
-        }
-
-        if (!mediaData) throw new Error('No se pudo descargar el video o imagen desde ninguna API');
+        const mediaData = await runFirstProvider(downloadProviders, 'No se pudo descargar el video o imagen desde ninguna API');
         const fileName = mediaData.type === 'video' ? 'video.mp4' : 'thumbnail.jpg';
         await conn.sendFile(m.chat, mediaData.url, fileName, mediaData.caption, m);
         m.react('✅');

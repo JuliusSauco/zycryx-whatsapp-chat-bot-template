@@ -6,10 +6,9 @@ export default definePlugin({
     command: ['staff', 'admins', 'listadmin'],
     group: true,
     register: true,
-    async execute(m, {conn, text, participants, metadata, args}) {
+    async execute(m, {conn, text, metadata}) {
     try {
         if (!text || !text.trim()) return m.reply(`😾 Y el texto?`)
-        const metadata = await conn.groupMetadata(m.chat)
         const admins = metadata.participants.filter(p => p.admin)
         if (!admins.length) return m.reply("⚠️ No hay administradores en este grupo.")
 

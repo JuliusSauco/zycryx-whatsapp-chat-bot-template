@@ -1,6 +1,6 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
-import axios from 'axios';
+import {httpJson} from '../../lib/http-client.js';
 
 interface TikTokSearchItem {
     hd?: string
@@ -24,7 +24,7 @@ export default definePlugin({
     userRequests[m.sender] = true;
     m.react("⏳")
     try {
-        let {data: response} = await axios.get<TikTokSearchResponse>(`${info.apis}/search/tiktoksearch?query=${text}`);
+        const response = await httpJson<TikTokSearchResponse>(`${info.apis}/search/tiktoksearch?query=${text}`);
         if (!response || !response.meta || !Array.isArray(response.meta) || response.meta.length === 0) return m.reply(`❌ No se encontraron resultados para "${text}".`);
         let searchResults = response.meta;
         shuffleArray(searchResults);

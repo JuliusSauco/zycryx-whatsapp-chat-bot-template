@@ -1,7 +1,7 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
-import fetch from 'node-fetch'
 import {definePlugin} from '../../core/define-plugin.js'
+import {httpBuffer} from '../../lib/http-client.js'
 
 const slapGifs = [
     'https://media.tenor.com/XiYuU9h44-AAAAAC/anime-slap-mad.gif',
@@ -53,7 +53,7 @@ export default definePlugin({
             return
         }
 
-        const gifBuffer = await fetch(url).then(r => r.buffer())
+        const gifBuffer = await httpBuffer(url)
         await conn.sendMessage(m.chat, {
             video: gifBuffer,
             gifPlayback: true,

@@ -14,7 +14,7 @@
  *     }
  *   });
  */
-import type {PluginContext} from '../types/context.js';
+import type {BeforePluginContext, PluginContext} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
 import type {Plugin} from '../types/plugin.js';
 
@@ -50,7 +50,7 @@ export interface PluginDefinition {
     /** Permite que `before` corra también cuando el mensaje es un comando con prefijo. */
     runBeforeOnCommand?: boolean;
     /** Hook que se ejecuta ANTES de cualquier comando (para middlewares como antilink). */
-    before?: (m: BotMessage, ctx: Pick<PluginContext, 'conn' | 'isOwner'>) => Promise<boolean | void | unknown>;
+    before?: (m: BotMessage, ctx: BeforePluginContext) => Promise<boolean | void | unknown>;
     /** Lógica principal del plugin. */
     execute: (m: BotMessage, ctx: PluginContext) => Promise<unknown>;
 }

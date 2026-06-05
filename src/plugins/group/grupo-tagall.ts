@@ -26,8 +26,6 @@ export default definePlugin({
 
     if (/^(tagall|invocar|invocacion|todos|invocación)$/i.test(command)) {
         try {
-            const metadata = await conn.groupMetadata(m.chat)
-            const participants = metadata.participants || []
             if (!participants.length) return
             const users = participants.map(p => p.phoneNumber || p.id)
             const total = users.length

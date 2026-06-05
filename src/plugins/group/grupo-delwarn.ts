@@ -1,5 +1,6 @@
 import {definePlugin} from '../../core/define-plugin.js'
 import {decrementUserWarn, getUserWarnInfo} from '../../services/user.service.js';
+import {replyUserError} from '../../lib/reply-helpers.js';
 
 export default definePlugin({
     help: ['delwarn @user', 'unwarn @user'],
@@ -18,9 +19,9 @@ export default definePlugin({
             who = m.chat;
         }
 
-        if (!who) return m.reply(`*¿A quién le quito una advertencia?* Etiqueta a una persona con @tag o cita su mensaje, ¡no soy adivino! :)`)
+        if (!who) return replyUserError(m, `*¿A quién le quito una advertencia?* Etiqueta a una persona con @tag o cita su mensaje.`)
         const user = await getUserWarnInfo(who);
-        if (!user) return m.reply(`*¿A quién le quito una advertencia?* Etiqueta a una persona con @tag o cita su mensaje, ¡no soy adivino! :)`)
+        if (!user) return replyUserError(m, `No encontré al usuario para quitarle una advertencia.`)
         let warn = user.warn || 0;
 
         if (warn > 0) {

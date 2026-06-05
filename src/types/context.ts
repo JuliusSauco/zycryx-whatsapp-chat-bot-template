@@ -1,5 +1,6 @@
 import type {AnyMessageContent, GroupMetadata, GroupParticipant, MiscMessageGenerationOptions, proto, WASocket} from '@whiskeysockets/baileys';
 import type {BotMessage} from './message.js';
+import type {GroupSettings, SubbotConfig} from './config.js';
 
 export type MessageContent = AnyMessageContent | Record<string, unknown>;
 export type QuotedMessage = BotMessage | proto.IWebMessageInfo | string | null | undefined;
@@ -55,4 +56,22 @@ export interface PluginContext {
     isAdmin: boolean;
     isBotAdmin: boolean;
     isGroup: boolean;
+    botConfig?: SubbotConfig;
+    chatId?: string;
+    sender?: string;
+    groupSettings?: Partial<GroupSettings>;
+}
+
+export interface BeforePluginContext {
+    conn: ExtendedConn;
+    isOwner: boolean;
+    isAdmin: boolean;
+    isBotAdmin: boolean;
+    isGroup: boolean;
+    chatId: string;
+    sender: string;
+    participants: GroupParticipant[];
+    metadata: GroupMetadata;
+    botConfig: SubbotConfig;
+    groupSettings: Partial<GroupSettings>;
 }

@@ -1,7 +1,7 @@
 import {definePlugin} from '../../core/define-plugin.js'
-import fs from 'fs'
 import path from 'path'
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js'
+import {getAvailableMp4s, pickRandomFile} from './gif-media.js'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -12,30 +12,6 @@ const FFMPEG_HINT =
     '```\nffmpeg -i input.gif -vf "fps=15,scale=320:-2:flags=lanczos" \\\n' +
     '  -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart \\\n' +
     '  -crf 30 -preset veryfast output.mp4\n```'
-
-// ─── MP4 cache (reloads only if folder mtime changes) ─────────────────────────
-
-let _mp4Cache: string[] = []
-let _cacheMtime = 0
-
-function getAvailableMp4s(): string[] {
-    try {
-        const mtime = fs.statSync(GIF_FOLDER).mtimeMs
-        if (mtime !== _cacheMtime) {
-            _mp4Cache = fs
-                .readdirSync(GIF_FOLDER)
-                .filter(f => f.toLowerCase().endsWith('.mp4'))
-            _cacheMtime = mtime
-        }
-    } catch {
-        _mp4Cache = []
-    }
-    return _mp4Cache
-}
-
-function pickRandom<T>(arr: T[]): T {
-    return arr[Math.floor(Math.random() * arr.length)]
-}
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
@@ -53,7 +29,7 @@ export default definePlugin({
     if (!rawMentions.length) rawMentions.push(m.sender)
 
     // 2. Check media availability (sync, cached)
-    const mp4s = getAvailableMp4s()
+    const mp4s = getAvailableMp4s(GIF_FOLDER)
     if (!mp4s.length) {
         await m.reply(FFMPEG_HINT)
         return
@@ -81,7 +57,7 @@ export default definePlugin({
     await conn.sendMessage(
         m.chat,
         {
-            video: {url: path.join(GIF_FOLDER, pickRandom(mp4s))},
+            video: {url: path.join(GIF_FOLDER, pickRandomFile(mp4s))},
             mimetype: 'video/mp4',
             gifPlayback: true,
             caption,

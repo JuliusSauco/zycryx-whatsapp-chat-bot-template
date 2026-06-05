@@ -1,10 +1,10 @@
-import fetch from 'node-fetch';
 import {exoml} from '../../lib/scraper.js';
 import {chatCompletion} from '../../lib/ai.js';
 import {logDebug, logError, logWarn} from '../../lib/logger.js';
 import {ensureSystemPrompt, getAiMemory, getAiPromptSettings, saveAiMemory} from '../../services/chat-memory.service.js';
 import type {ExtendedConn} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
+import {httpJson} from '../../lib/http-client.js';
 
 const MAX_TURNS = 12;
 
@@ -73,8 +73,7 @@ export async function before(m: BotMessage, {conn}: {conn: ExtendedConn}) {
         logWarn('[AUTORESP] ninguna IA con key respondió, usando fallback público');
         try {
             // Pasar el texto del usuario (string), NO el array `memory` (daba [object Object]).
-            let gpt = await fetch(`${info.apis}/ia/gptprompt?text=${encodeURIComponent(query)}&prompt=${encodeURIComponent(systemPrompt)}`);
-            let res = await gpt.json() as TextApiResponse;
+            let res = await httpJson<TextApiResponse>(`${info.apis}/ia/gptprompt?text=${encodeURIComponent(query)}&prompt=${encodeURIComponent(systemPrompt)}`);
             result = res.data || '';
         } catch (err: unknown) {
             logWarn('[AUTORESP] fallback gptprompt falló, usando exoml:', err instanceof Error ? err.message : err);

@@ -1,6 +1,7 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fg from 'api-dylux'
+import {httpJson} from '../../lib/http-client.js'
 
 interface InstagramStalkResponse {
     data?: {
@@ -28,8 +29,7 @@ export default definePlugin({
     m.react("⌛");
     try {
         const apiUrl = `${info.apis}/tools/igstalk?username=${encodeURIComponent(args[0])}`;
-        const apiResponse = await fetch(apiUrl);
-        const delius = await apiResponse.json() as InstagramStalkResponse;
+        const delius = await httpJson<InstagramStalkResponse>(apiUrl);
         if (!delius || !delius.data) return m.react("❌");
         const profile = delius.data;
         const txt = `👤 *Perfil de Instagram*:

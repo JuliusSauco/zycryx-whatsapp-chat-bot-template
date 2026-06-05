@@ -4,6 +4,7 @@ import {fileURLToPath} from "url"
 import {spawn} from "child_process"
 import gTTS from "node-gtts"
 import {definePlugin} from '../../core/define-plugin.js'
+import {errorMessage, replyFailure, replyUsage, replyUserError} from '../../lib/reply-helpers.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -19,7 +20,7 @@ export default definePlugin({
     command: /^g?tts$/i,
     register: true,
     async execute(m, {conn, args, usedPrefix, command}) {
-    if (!args.length && !m.quoted?.text) return m.reply(`*Uso:* ${usedPrefix + command} <voz|idioma> <texto>\n\n*Voces:* anonymous, robot, grave, aguda, niño\n*Idiomas:* es, en, pt, fr, etc.\n\nEjemplo:\n${usedPrefix + command} anonymous Hola\n${usedPrefix + command} es hello`)
+    if (!args.length && !m.quoted?.text) return replyUsage(m, `${usedPrefix + command} <voz|idioma> <texto>`, `*Voces:* anonymous, robot, grave, aguda, niño\n*Idiomas:* es, en, pt, fr, etc.\n\nEjemplo:\n${usedPrefix + command} anonymous Hola\n${usedPrefix + command} es hello`)
     m.react("🎙️")
     conn.sendPresenceUpdate('recording', m.chat)
     const first = args[0].toLowerCase()
@@ -35,7 +36,7 @@ export default definePlugin({
         text = args.join(" ")
     }
 
-    if (!text) return m.reply("⚠️ Escribe un texto para convertir a voz.")
+    if (!text) return replyUserError(m, "Escribe un texto para convertir a voz.")
     try {
         const wav = await synthTTS(text, lang)
         const ogg = await applyEffect(wav, effect)
@@ -44,7 +45,7 @@ export default definePlugin({
         fs.unlinkSync(wav);
         fs.unlinkSync(ogg)
     } catch (e: unknown) {
-        m.reply("❌ Error: " + (e instanceof Error ? e.message : String(e)))
+        return replyFailure(m, "Error: " + errorMessage(e))
     }
     }
 })

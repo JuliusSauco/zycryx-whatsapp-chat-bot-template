@@ -1,7 +1,7 @@
 import {sticker} from '../../lib/sticker.js'
-import fetch from 'node-fetch'
 import {getStickerExif} from '../../services/sticker-settings.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
+import {httpJson} from '../../lib/http-client.js';
 
 interface NeoxrStickerResponse {
     status?: boolean;
@@ -40,8 +40,7 @@ export default definePlugin({
     }
 
     const getApiStickerUrl = async (url: string) => {
-        const res = await fetch(url)
-        const json = await res.json() as NeoxrStickerResponse
+        const json = await httpJson<NeoxrStickerResponse>(url)
         if (!json.status || !json.data?.url) return null
         return json.data.url
     }

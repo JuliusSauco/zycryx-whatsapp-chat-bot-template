@@ -1,5 +1,5 @@
-import axios from 'axios';
 import crypto from 'crypto';
+import {HttpError, httpJson} from './http-client.js';
 
 interface SavetubeResult {
     title: string;
@@ -49,7 +49,7 @@ interface SavetubeDecryptedData {
 
 const getErrorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
 const getStatusCode = (error: unknown): number => {
-    if (axios.isAxiosError(error)) return error.response?.status || 500;
+    if (error instanceof HttpError) return error.status;
     return 500;
 };
 
@@ -120,12 +120,11 @@ const savetube = {
 
     request: async (endpoint: string, data: Record<string, unknown> = {}, method: string = 'post'): Promise<SavetubeRequestResponse> => {
         try {
-            const {data: response} = await axios({
-                method,
-                url: `${endpoint.startsWith('http') ? '' : savetube.api.base}${endpoint}`,
-                data: method === 'post' ? data : undefined,
-                params: method === 'get' ? data : undefined,
-                headers: savetube.headers
+            const url = `${endpoint.startsWith('http') ? '' : savetube.api.base}${endpoint}`;
+            const response = await httpJson<unknown>(method === 'get' ? withQuery(url, data) : url, {
+                method: method.toUpperCase(),
+                headers: savetube.headers,
+                ...(method === 'post' ? {body: JSON.stringify(data)} : {}),
             });
             return {
                 status: true,
@@ -235,3 +234,12 @@ const savetube = {
 
 export {savetube};
 export type {SavetubeResponse, SavetubeResult};
+
+function withQuery(url: string, params: Record<string, unknown>): string {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined && value !== null) query.set(key, String(value));
+    }
+    const separator = url.includes('?') ? '&' : '?';
+    return query.size ? `${url}${separator}${query}` : url;
+}

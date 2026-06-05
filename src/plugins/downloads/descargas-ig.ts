@@ -1,7 +1,8 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
-import fetch from 'node-fetch';
 import {instagramdl} from '@bochilteam/scraper';
+import {httpJson, httpText} from '../../lib/http-client.js';
+import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
 
 interface InstagramMediaData {
     url: string
@@ -36,10 +37,11 @@ export default definePlugin({
     userRequests[m.sender] = true;
     await m.react('⌛');
     try {
-        const downloadAttempts: Array<() => Promise<InstagramMediaData>> = [
-            async () => {
-                const res = await fetch(`https://api.siputzx.my.id/api/d/igdl?url=${args[0]}`);
-                const data = await res.json() as InstagramArrayResponse;
+        const downloadProviders: Array<Provider<InstagramMediaData>> = [
+            {
+                name: 'siputz-instagram',
+                run: async () => {
+                const data = await httpJson<InstagramArrayResponse>(`https://api.siputzx.my.id/api/d/igdl?url=${args[0]}`);
                 const media = data.data?.[0];
                 if (!media?.url) throw new Error('Respuesta inválida de Siputz');
                 const fileType = media.url.includes('.webp') ? 'image' : 'video';
@@ -49,9 +51,11 @@ export default definePlugin({
                     caption: fileType === 'image' ? '_*Aqui tiene tu imagen de Instagram*_' : '*Aqui esta el video de Instagram*',
                 }
             },
-            async () => {
-                const res = await fetch(`${info.fgmods.url}/downloader/igdl?url=${args[0]}&apikey=${info.fgmods.key}`);
-                const data = await res.json() as FgmodsInstagramResponse;
+            },
+            {
+                name: 'fgmods-instagram',
+                run: async () => {
+                const data = await httpJson<FgmodsInstagramResponse>(`${info.fgmods.url}/downloader/igdl?url=${args[0]}&apikey=${info.fgmods.key}`);
                 const result = data.result?.[0];
                 if (!result?.url) throw new Error('Respuesta inválida de Fgmods');
                 const fileType = result.url.endsWith('.jpg') || result.url.endsWith('.png') ? 'image' : 'video';
@@ -61,10 +65,12 @@ export default definePlugin({
                     caption: fileType === 'image' ? '_*Aqui tiene tu imagen de Instagram*_' : '*Aqui esta el video de Instagram*',
                 }
             },
-            async () => {
+            },
+            {
+                name: 'main-instagram',
+                run: async () => {
                 const apiUrl = `${info.apis}/download/instagram?url=${encodeURIComponent(args[0])}`;
-                const apiResponse = await fetch(apiUrl);
-                const delius = await apiResponse.json() as InstagramArrayResponse;
+                const delius = await httpJson<InstagramArrayResponse>(apiUrl);
                 const media = delius.data?.[0];
                 if (!media?.url || !media.type) throw new Error('Respuesta inválida de API principal');
                 return {
@@ -73,9 +79,12 @@ export default definePlugin({
                     caption: media.type === 'image' ? '_*Aqui tiene tu imagen de Instagram*_' : '*Aqui esta el video de Instagram*',
                 }
             },
-            async () => {
+            },
+            {
+                name: 'bochil-instagram',
+                run: async () => {
                 const resultssss = await instagramdl(args[0]);
-                const shortUrl3 = await (await fetch(`https://tinyurl.com/api-create.php?url=${args[0]}`)).text();
+                const shortUrl3 = await httpText(`https://tinyurl.com/api-create.php?url=${args[0]}`);
                 const txt4 = `_${shortUrl3}_`.trim();
                 return {
                     url: resultssss[0].url,
@@ -83,20 +92,10 @@ export default definePlugin({
                     caption: txt4
                 };
             },
+            },
         ];
 
-        let fileData = null;
-        for (const attempt of downloadAttempts) {
-            try {
-                fileData = await attempt();
-                if (fileData) break;
-            } catch (err: unknown) {
-                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
-                continue;
-            }
-        }
-
-        if (!fileData) throw new Error('No se pudo descargar el archivo desde ninguna API');
+        const fileData = await runFirstProvider(downloadProviders, 'No se pudo descargar el archivo desde ninguna API');
         const fileName = fileData.type === 'image' ? 'ig.jpg' : 'ig.mp4';
         await conn.sendFile(m.chat, fileData.url, fileName, fileData.caption, m);
         await m.react('✅');

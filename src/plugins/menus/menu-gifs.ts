@@ -1,4 +1,3 @@
-import fs from 'fs';
 import {definePlugin} from '../../core/define-plugin.js';
 
 /**
@@ -63,13 +62,6 @@ ${renderSection('AGRESIVO', AGRESIVO)}
 ${renderSection('ADULTO 🔞', ADULTO)}
 
 *🅛🅞🅛🅘🅑🅞🅣-🅜🅓*`.trim();
-
-    let pp: Buffer | null = null;
-    try {
-        pp = fs.readFileSync('./media/Menu2.jpg');
-    } catch {
-        pp = null;
-    }
 
     await conn.sendMessage(m.chat, {
         text: str,

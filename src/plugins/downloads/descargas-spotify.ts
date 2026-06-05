@@ -1,7 +1,9 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
-import fetch from 'node-fetch';
 import type {QuotedMessage} from '../../types/context.js';
+import {httpJson} from '../../lib/http-client.js';
+import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
+import {replyReportableError} from '../../lib/reply-helpers.js';
 
 interface SpotifyTrack {
     title: string
@@ -39,8 +41,7 @@ export default definePlugin({
     userRequests[m.sender] = true;
     m.react(`⌛`);
     try {
-        const spotify = await fetch(`${info.apis}/search/spotify?q=${text}`);
-        const song = await spotify.json() as SpotifySearchResponse;
+        const song = await httpJson<SpotifySearchResponse>(`${info.apis}/search/spotify?q=${text}`);
         if (!song.data || song.data.length === 0) return m.reply('⚠️ No se encontraron resultados para esa búsqueda.')
         const track = song.data[0];
         const spotifyMessage = `*• Título:* ${track.title}\n*• Artista:* ${track.artist}\n*• Álbum:* ${track.album}\n*• Duración:* ${track.duration}\n*• Publicado:* ${track.publish}\n\n> 🚀 *ᴱⁿᵛᶦᵃⁿᵈᵒ ᶜᵃⁿᶜᶦᵒ́ⁿ ᵃᵍᵘᵃʳᵈᵉ ᵘⁿ ᵐᵒᵐᵉⁿᵗᵒ....*`;
@@ -64,29 +65,24 @@ export default definePlugin({
         }, {quoted: m});
         userMessages.set(m.sender, message);
 
-        const downloadAttempts: Array<() => Promise<string | undefined>> = [async () => {
-            const res = await fetch(`https://api.siputzx.my.id/api/d/spotify?url=${track.url}`);
-            const data = await res.json() as SpotifyDownloadResponse;
-            return data.data?.download;
-        },
-            async () => {
-                const res = await fetch(`${info.apis}/download/spotifydl?url=${track.url}`);
-                const data = await res.json() as SpotifyDownloadResponse;
-                return data.data?.url;
-            }];
+        const downloadProviders: Array<Provider<string>> = [
+            {
+                name: 'siputz-spotify',
+                run: async () => {
+                    const data = await httpJson<SpotifyDownloadResponse>(`https://api.siputzx.my.id/api/d/spotify?url=${track.url}`);
+                    return data.data?.download;
+                },
+            },
+            {
+                name: 'main-spotify',
+                run: async () => {
+                    const data = await httpJson<SpotifyDownloadResponse>(`${info.apis}/download/spotifydl?url=${track.url}`);
+                    return data.data?.url;
+                },
+            },
+        ];
 
-        let downloadUrl = null;
-        for (const attempt of downloadAttempts) {
-            try {
-                downloadUrl = await attempt();
-                if (downloadUrl) break;
-            } catch (err: unknown) {
-                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
-                continue;
-            }
-        }
-
-        if (!downloadUrl) throw new Error('No se pudo descargar la canción desde ninguna API');
+        const downloadUrl = await runFirstProvider(downloadProviders, 'No se pudo descargar la canción desde ninguna API');
         await conn.sendMessage(m.chat, {
             audio: {url: downloadUrl},
             fileName: `${track.title}.mp3`,
@@ -95,7 +91,7 @@ export default definePlugin({
         }, {quoted: m});
         m.react('✅️');
     } catch (error: unknown) {
-        m.reply(`\`\`\`⚠️ OCURRIO UN ERROR ⚠️\`\`\`\n\n> *Reporta el siguiente error a mi creador con el comando:* #report\n\n>>> ${error} <<<< `);
+        await replyReportableError(m, error);
         logInfo(error);
         m.react('❌');
     } finally {

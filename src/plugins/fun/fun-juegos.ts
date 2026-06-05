@@ -1,7 +1,7 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
-import fetch from 'node-fetch';
 import {definePlugin} from '../../core/define-plugin.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
+import {httpBuffer} from '../../lib/http-client.js';
 
 let toM = (a: string) => '@' + a.split('@')[0]
 export default definePlugin({
@@ -184,8 +184,7 @@ Sof02s32inf14.1e100.net
             let jawab = `@${who.split("@")[0]} Es 🏳️‍🌈 ${gayScore}% Gay\n\n${gay}`;
             const avatar = await conn.profilePictureUrl(who, 'image').catch(() => 'https://telegra.ph/file/24fa902ead26340f3df2c.png');
 
-            const imageRes = await fetch(`https://some-random-api.com/canvas/gay?avatar=${encodeURIComponent(String(avatar))}`);
-            const buffer = await imageRes.buffer();
+            const buffer = await httpBuffer(`https://some-random-api.com/canvas/gay?avatar=${encodeURIComponent(String(avatar))}`);
 
             await conn.sendMessage(m.chat, {
                 image: buffer,

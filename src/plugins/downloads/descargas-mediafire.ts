@@ -1,7 +1,8 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
-import fetch from 'node-fetch';
 import type {QuotedMessage} from '../../types/context.js';
+import {httpJson} from '../../lib/http-client.js';
+import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
 //import cheerio from 'cheerio';
 //import { mediafiredl } from '@bochilteam/scraper';
 
@@ -51,10 +52,11 @@ export default definePlugin({
     userRequests[m.sender] = true;
     m.react(`🚀`);
     try {
-        const downloadAttempts: Array<() => Promise<MediafireFileData>> = [
-            async () => {
-                const res = await fetch(`https://api.delirius.store/download/mediafire?url=${args[0]}`);
-                const data = await res.json() as MediafireArrayResponse;
+        const downloadProviders: Array<Provider<MediafireFileData>> = [
+            {
+                name: 'delirius-mediafire',
+                run: async () => {
+                const data = await httpJson<MediafireArrayResponse>(`https://api.delirius.store/download/mediafire?url=${args[0]}`);
                 const file = data.data?.[0];
                 if (!file?.link || !file.filename) throw new Error('Respuesta inválida de Delirius');
                 return {
@@ -64,9 +66,11 @@ export default definePlugin({
                     mimetype: file.mime
                 }
             },
-            async () => {
-                const res = await fetch(`${info.neoxr.url}/mediafire?url=${args[0]}&apikey=${info.neoxr.key}`);
-                const data = await res.json() as NeoxrMediafireResponse;
+            },
+            {
+                name: 'neoxr-mediafire',
+                run: async () => {
+                const data = await httpJson<NeoxrMediafireResponse>(`${info.neoxr.url}/mediafire?url=${args[0]}&apikey=${info.neoxr.key}`);
                 if (!data.status || !data.data) throw new Error('Error en Neoxr');
                 if (!data.data.url || !data.data.title) throw new Error('Respuesta inválida de Neoxr');
                 return {
@@ -76,9 +80,11 @@ export default definePlugin({
                     mimetype: data.data.mime
                 }
             },
-            async () => {
-                const res = await fetch(`https://api.agatz.xyz/api/mediafire?url=${args[0]}`);
-                const data = await res.json() as MediafireArrayResponse;
+            },
+            {
+                name: 'agatz-mediafire',
+                run: async () => {
+                const data = await httpJson<MediafireArrayResponse>(`https://api.agatz.xyz/api/mediafire?url=${args[0]}`);
                 const file = data.data?.[0];
                 if (!file?.link || !file.nama) throw new Error('Respuesta inválida de Agatz');
                 return {
@@ -88,9 +94,11 @@ export default definePlugin({
                     mimetype: file.mime
                 }
             },
-            async () => {
-                const res = await fetch(`https://api.siputzx.my.id/api/d/mediafire?url=${args[0]}`);
-                const data = await res.json() as MediafireArrayResponse;
+            },
+            {
+                name: 'siputz-mediafire',
+                run: async () => {
+                const data = await httpJson<MediafireArrayResponse>(`https://api.siputzx.my.id/api/d/mediafire?url=${args[0]}`);
                 const file = data.data?.[0];
                 if (!file?.link || !file.filename) throw new Error('Respuesta inválida de Siputz');
                 return {
@@ -100,22 +108,10 @@ export default definePlugin({
                     mimetype: file.mime
                 };
             }
+            },
         ];
 
-        let fileData = null;
-
-        for (const attempt of downloadAttempts) {
-            try {
-                fileData = await attempt();
-                if (fileData) break;
-            } catch (err: unknown) {
-                logError(`Error in attempt: ${err instanceof Error ? err.message : String(err)}`);
-                continue; // Si falla, intentar con la siguiente API
-            }
-        }
-
-        if (!fileData) throw new Error('No se pudo descargar el archivo desde ninguna API');
-        const file = Array.isArray(fileData) ? fileData[0] : fileData;
+        const file = await runFirstProvider(downloadProviders, 'No se pudo descargar el archivo desde ninguna API');
         const caption = `┏━━『 𝐌𝐄𝐃𝐈𝐀𝐅𝐈𝐑𝐄 』━━•
 ┃❥ 𝐍𝐨𝐦𝐛𝐫𝐞 : ${file.filename}
 ┃❥ 𝐏𝐞𝐬𝐨 : ${file.filesize}

@@ -1,7 +1,8 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
-import fetch from 'node-fetch';
 import {definePlugin} from '../../core/define-plugin.js';
 import {ENV} from '../../core/env.js';
+import {httpJson} from '../../lib/http-client.js';
+import {replyFailure, replyUsage} from '../../lib/reply-helpers.js';
 
 interface TranslateResponse {
     translatedText?: string;
@@ -14,10 +15,7 @@ export default definePlugin({
     register: true,
     async execute(m, {args, usedPrefix, command}) {
     const defaultLang = 'es';
-    if (!args || !args[0]) return m.reply(`⚠️ *Uso correcto del comando:*  
-» ${usedPrefix + command} (idioma destino) (texto a traducir)
-
-📌 *Ejemplos:*
+    if (!args || !args[0]) return replyUsage(m, `${usedPrefix + command} (idioma destino) (texto a traducir)`, `📌 *Ejemplos:*
 • ${usedPrefix + command} es Hello » Español
 • ${usedPrefix + command} en hola » inglés
 • ${usedPrefix + command} fr buenos días » Francés
@@ -35,10 +33,10 @@ export default definePlugin({
 
     if (!text && m.quoted && m.quoted.text) text = m.quoted.text;
 
-    if (!text) return m.reply(`⚠️ *Uso correcto del comando:*\n${usedPrefix + command} es Hello`);
+    if (!text) return replyUsage(m, `${usedPrefix + command} es Hello`);
 
     try {
-        const res = await fetch("https://tr.skyultraplus.com/translate", {
+        const json = await httpJson<TranslateResponse>("https://tr.skyultraplus.com/translate", {
             method: "POST",
             body: JSON.stringify({
                 q: text,
@@ -51,14 +49,12 @@ export default definePlugin({
             headers: {"Content-Type": "application/json"}
         });
 
-        const json = await res.json() as TranslateResponse;
-
         if (!json || !json.translatedText) throw '❌ No se pudo traducir.';
 
         await m.reply(`*Traducción:*\n${json.translatedText}`);
     } catch (e: unknown) {
         logError(e);
-        await m.reply('*[❗𝐈𝐍𝐅𝐎❗] ERROR, VUELVA A INTENTARLO*');
+        await replyFailure(m, 'Error al traducir. Vuelve a intentarlo.');
     }
     }
 });

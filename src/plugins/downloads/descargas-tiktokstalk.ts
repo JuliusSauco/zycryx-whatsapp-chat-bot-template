@@ -1,6 +1,7 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fg from 'api-dylux'
+import {httpJson} from '../../lib/http-client.js'
 
 interface TikTokStalkResponse {
     result?: {
@@ -32,8 +33,7 @@ export default definePlugin({
     m.react("⌛");
     try {
         const apiUrl = `${info.apis}/tools/tiktokstalk?q=${encodeURIComponent(args[0])}`;
-        const apiResponse = await fetch(apiUrl);
-        const delius = await apiResponse.json() as TikTokStalkResponse;
+        const delius = await httpJson<TikTokStalkResponse>(apiUrl);
         if (!delius || !delius.result || !delius.result.users) return m.react("❌");
         const profile = delius.result.users;
         const stats = delius.result.stats || {};

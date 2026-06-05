@@ -1,10 +1,10 @@
 import {logError, logInfo, logWarn} from '../../lib/logger.js';
-import fs from 'fs';
-import fetch from 'node-fetch';
 import similarity from 'similarity';
 import {definePlugin} from '../../core/define-plugin.js';
 import {addWalletResource} from '../../services/wallet.service.js';
 import type {proto} from '@whiskeysockets/baileys';
+import {httpRequest} from '../../lib/http-client.js';
+import {getCachedJson} from '../../lib/static-resource-cache.js';
 
 const timeout = 50000;
 const timeout2 = 20000;
@@ -52,8 +52,8 @@ async function obtenerPregunta(tipo: GameType): Promise<GuessQuestion | null> {
     for (let i = 0; i < 6; i++) {
         try {
             if (!info.neoxr.key) throw new Error('NEOXR_API_KEY no configurado');
-            const res = await fetch(`${info.neoxr.url}/gptweb?text=${encodeURIComponent(prompt)}&apikey=${info.neoxr.key}`);
-            if (!res.ok || res.headers.get('content-type')?.includes('text/html')) throw new Error(`Invalid API response (${res.status})`);
+            const res = await httpRequest(`${info.neoxr.url}/gptweb?text=${encodeURIComponent(prompt)}&apikey=${info.neoxr.key}`);
+            if (res.headers.get('content-type')?.includes('text/html')) throw new Error(`Invalid API response (${res.status})`);
             const json = await res.json() as NeoxrGptResponse;
             if (json?.data) {
                 const match = json.data.match(/```json\s*([\s\S]*?)\s*```/);
@@ -71,7 +71,7 @@ async function obtenerPregunta(tipo: GameType): Promise<GuessQuestion | null> {
 
     try {
         const archivo = `./src/data/game/${archivosRespaldo[tipo]}`;
-        const data = JSON.parse(fs.readFileSync(archivo, 'utf-8')) as GuessQuestion[];
+        const data = getCachedJson<GuessQuestion[]>(archivo) || [];
         const pregunta = data[Math.floor(Math.random() * data.length)];
         if (!pregunta?.question || !pregunta.response) return null;
         preguntasUsadas.add(pregunta.question);
