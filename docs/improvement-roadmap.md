@@ -4,13 +4,10 @@ Esta lista se mantiene fuera del README para separar la documentacion publica de
 
 ## Prioridad actual
 
-1. Refactorizar textos largos en plugins.
-2. Extraer datos estaticos RPG a modulos `.data.ts`.
-3. Refactorizar plugins pesados por responsabilidades.
-4. Revisar recursos mutables/data.
-5. Revisar excepciones internas del HTTP client.
-6. Consolidar compatibilidad legacy de `Array.prototype.getRandom`.
-7. Evaluar pruebas unitarias para helpers compartidos.
+1. Ampliar pruebas unitarias de router, guards, context builder y servicios con repositorios mockeados.
+2. Definir contrato real para `DATA_SOURCE=backend` si se decide activarlo.
+3. Auditar comandos owner sensibles y endurecer timeouts, permisos, errores y limites de salida.
+4. Continuar reduciendo plugins medianos/grandes cuando aparezcan puntos de complejidad.
 
 ## Estado
 
@@ -40,6 +37,16 @@ Esta lista se mantiene fuera del README para separar la documentacion publica de
 - [x] Revisar excepciones internas del HTTP client: `src/lib/scraper.ts`, `src/lib/ezgif-convert.ts`.
 - [x] Consolidar compatibilidad legacy de `Array.prototype.getRandom`.
 - [x] Evaluar pruebas unitarias para `random`, `command-alias`, locks y provider fallback.
+
+### Roadmap v3
+
+- [x] Endurecer permisos de comandos owner con red arbitraria: `owner-fetch.ts`.
+- [x] Eliminar uso directo de `Math.random()` en plugins y pasar por `src/utils/random.ts`.
+- [ ] Ampliar pruebas unitarias para router, guards y context builder.
+- [ ] Agregar pruebas de servicios con repositorios mockeados.
+- [ ] Definir contrato REST/GraphQL real para `DATA_SOURCE=backend`.
+- [ ] Auditar comandos owner que ejecutan codigo, procesos o red.
+- [ ] Revisar nuevos candidatos a refactor: `descargas-play2.ts`, `_virustotal.ts`, `config-on-y-off.ts`, `rpg-reg.ts`, `rpg-rw.ts`.
 
 ## Notas tecnicas
 

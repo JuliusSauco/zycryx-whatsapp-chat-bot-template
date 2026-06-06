@@ -6,6 +6,7 @@ export default definePlugin({
     help: ['fetch'].map(v => v + ' *<url>*'),
     tags: ['owner'],
     command: /^(fetch|get)$/i,
+    rowner: true,
     register: true,
     async execute(m, {conn, text, usedPrefix, command}) {
         if (m.fromMe) return

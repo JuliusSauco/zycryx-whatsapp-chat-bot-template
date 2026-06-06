@@ -2,9 +2,11 @@ import type {GroupParticipant} from '@whiskeysockets/baileys';
 import {httpBuffer} from '../../lib/http-client.js';
 import type {ExtendedConn} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
+import {resolveMention, type ParticipantLike, type ResolvedMention} from '../../utils/mention.js';
 import {delay, pickRandom, randomInt} from '../../utils/random.js';
 
 export const toM = (jid: string) => '@' + jid.split('@')[0];
+type TopParticipant = ResolvedMention;
 
 export type PercentageCommand =
     | 'gay2'
@@ -57,20 +59,14 @@ const percentageReplies: Record<PercentageCommand, (target: string, command: str
 };
 
 interface TopTemplate {
-    render: (users: string[]) => string;
-    audioUrl?: string;
-    audioFile?: string;
+    render: (users: TopParticipant[]) => string;
 }
 
 const topTemplates: Record<TopCommand, TopTemplate> = {
     topgays: {
-        audioUrl: 'https://qu.ax/HfeP.mp3',
-        audioFile: 'error.mp3',
         render: users => renderTopRows('*🌈TOP 10 GAYS/LESBIANAS DEL GRUPO🌈*', users, ['🏳️‍🌈', '🪂', '🪁'], 'emoji-both'),
     },
     topotakus: {
-        audioUrl: 'https://qu.ax/ZgFZ.mp3',
-        audioFile: 'otaku.mp3',
         render: users => renderTopRows('*🌸 TOP 10 OTAKUS DEL GRUPO 🌸*', users, ['💮', '🌷'], 'emoji-both'),
     },
     topintegrantes: {
@@ -81,16 +77,16 @@ const topTemplates: Record<TopCommand, TopTemplate> = {
     },
     toplagrasa: {
         render: users => renderCustomTop('*_Uwu TOP 10 LA GRASA Uwu_*', users, [
-            user => `Bv ${toM(user)} Bv`,
-            user => `:v ${toM(user)} :v`,
-            user => `:D ${toM(user)} :D`,
-            user => `Owo ${toM(user)} Owo`,
-            user => `U.u ${toM(user)} U.u`,
-            user => `>:v ${toM(user)} >:v`,
-            user => `:'v ${toM(user)} :'v`,
-            user => `._. ${toM(user)} ._._`,
-            user => `:V ${toM(user)} :V`,
-            user => `XD ${toM(user)} XD`,
+            user => `Bv ${user.tag} Bv`,
+            user => `:v ${user.tag} :v`,
+            user => `:D ${user.tag} :D`,
+            user => `Owo ${user.tag} Owo`,
+            user => `U.u ${user.tag} U.u`,
+            user => `>:v ${user.tag} >:v`,
+            user => `:'v ${user.tag} :'v`,
+            user => `._. ${user.tag} ._._`,
+            user => `:V ${user.tag} :V`,
+            user => `XD ${user.tag} XD`,
         ]),
     },
     topgrasa: {
@@ -163,7 +159,7 @@ export async function replyPercentageGame(conn: ExtendedConn, m: BotMessage, com
 }
 
 export async function replyRandomPair(m: BotMessage, participants: GroupParticipant[], mode: 'friendship' | 'couple') {
-    const [a, b] = getRandomParticipants(participants, 2, m.sender);
+    const [a, b] = getRandomParticipantIds(participants, 2, m.sender);
     const text = mode === 'friendship'
         ? `*🔰 Vamos a hacer algunas amistades 🔰*\n\n*Oye ${toM(a)} hablale al privado a ${toM(b)} para que jueguen y se haga una amistad 🙆*\n\n*Las mejores amistades empiezan con un juego 😉*`
         : `*${toM(a)}, 𝙔𝙖 𝙚𝙨 𝙝𝙤𝙧𝙖 𝙙𝙚 𝙦𝙪𝙚 𝙩𝙚 💍 𝘾𝙖𝙨𝙚𝙨 𝙘𝙤𝙣 ${toM(b)}, 𝙇𝙞𝙣𝙙𝙖 𝙋𝙖𝙧𝙚𝙟𝙖 😉💓*`;
@@ -268,73 +264,91 @@ export async function replyGayCanvas(conn: ExtendedConn, m: BotMessage) {
 export async function replyFreeTop(conn: ExtendedConn, m: BotMessage, participants: GroupParticipant[], text: string, usedPrefix: string) {
     if (!text) return m.reply(`𝙔 𝙚𝙡 𝙩𝙚𝙭𝙩𝙤? 🤔\n📍 Ejemplo: ${usedPrefix}top nedro`);
     const users = getRandomParticipants(participants, 10, m.sender);
-    const k = randomInt(70);
+    const mentions = users.map(user => user.mentionJid);
     const x = pickRandom(['🤓', '😅', '😂', '😳', '😎', '🥵', '😱', '🤑', '🙄', '💩', '🍑', '🤨', '🥴', '🔥', '👇🏻', '😔', '👀', '🌚']);
-    const vn = `https://hansxd.nasihosting.com/sound/sound${k}.mp3`;
-    const top = `*${x} Top 10 ${text} ${x}*\n    \n${users.map((jid, index) => `*${index + 1}. ${toM(jid)}*`).join('\n')}`;
-    await m.reply(top, null, {mentions: users});
-    return conn.sendFile(m.chat, vn, 'error.mp3', undefined, m, true, {
-        type: 'audioMessage',
-        ptt: true
-    });
+    const top = `*${x} Top 10 ${text} ${x}*\n    \n${users.map((user, index) => `*${index + 1}. ${user.tag}*`).join('\n')}`;
+    await m.reply(top, null, {mentions});
 }
 
-export async function replyTopCommand(conn: ExtendedConn, m: BotMessage, participants: GroupParticipant[], command: TopCommand) {
+export async function replyTopCommand(_conn: ExtendedConn, m: BotMessage, participants: GroupParticipant[], command: TopCommand) {
     const users = getRandomParticipants(participants, 10, m.sender);
     const template = topTemplates[command];
     const text = template.render(users);
-    await m.reply(text, null, {mentions: users});
-
-    if (template.audioUrl) {
-        await conn.sendFile(m.chat, template.audioUrl, template.audioFile || 'top.mp3', undefined, m, true, {
-            type: 'audioMessage',
-            ptt: true
-        });
-    }
+    await m.reply(text, null, {mentions: users.map(user => user.mentionJid)});
 }
 
 function randomPercent(): number {
     return randomInt(500);
 }
 
-function getRandomParticipants(participants: GroupParticipant[], count: number, fallback: string): string[] {
-    const ids = participants.map(participant => participant.id).filter(Boolean);
-    const source = ids.length ? ids : [fallback];
+function getRandomParticipantIds(participants: GroupParticipant[], count: number, fallback: string): string[] {
+    const source = getParticipantIdSource(participants, fallback);
     return Array.from({length: count}, () => pickRandom(source));
 }
 
-function renderTopRows(title: string, users: string[], emojis: string[], mode: 'emoji-both' | 'suffix', suffix?: string): string {
-    const rows = users.map((jid, index) => {
+function getRandomParticipants(participants: GroupParticipant[], count: number, fallback: string): TopParticipant[] {
+    const source = getParticipantIdSource(participants, fallback);
+    const shuffled = shuffle(source);
+    const selected = shuffled.slice(0, Math.min(count, shuffled.length));
+    const seen = new Set<string>();
+
+    return selected
+        .map(jid => resolveMention(jid, participants as ParticipantLike[]))
+        .filter(user => {
+            if (seen.has(user.mentionJid)) return false;
+            seen.add(user.mentionJid);
+            return true;
+        });
+}
+
+function getParticipantIdSource(participants: GroupParticipant[], fallback: string): string[] {
+    const ids = participants.map(participant => participant.id).filter(Boolean);
+    return ids.length ? ids : [fallback];
+}
+
+function shuffle<T>(items: T[]): T[] {
+    const shuffled = [...items];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = randomInt(i + 1);
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+function renderTopRows(title: string, users: TopParticipant[], emojis: string[], mode: 'emoji-both' | 'suffix', suffix?: string): string {
+    const rows = users.map((user, index) => {
         const emoji = emojis[index % emojis.length];
-        const label = `${emoji} ${toM(jid)}`;
+        const label = `${emoji} ${user.tag}`;
         const end = mode === 'emoji-both' ? emoji : suffix || '';
         return `*_${index + 1}.- ${label}_* ${end}`;
     });
     return `${title}\n    \n${rows.join('\n')}`;
 }
 
-function renderCustomTop(title: string, users: string[], renderers: Array<(jid: string) => string>): string {
-    const rows = users.map((jid, index) => `*_${index + 1}.- ${renderers[index](jid)}_*`);
+function renderCustomTop(title: string, users: TopParticipant[], renderers: Array<(user: TopParticipant) => string>): string {
+    const rows = users.map((user, index) => `*_${index + 1}.- ${renderers[index](user)}_*`);
     return `${title} \n    \n${rows.join('\n')}`;
 }
 
-function renderCouplesTop(users: string[]): string {
-    return `*_😍 Las 5 maravillosas parejas del grupo 😍_*
-    
-*_1.- ${toM(users[0])} 💘 ${toM(users[1])}_* 
-Que hermosa pareja 💖, me invitan a su Boda 🛐
+function renderCouplesTop(users: TopParticipant[]): string {
+    const pairMessages = [
+        'Que hermosa pareja 💖, me invitan a su Boda 🛐',
+        '🌹 Ustedes se merecen lo mejor del mundo 💞',
+        'Tan enamorados 😍, para cuando la familia 🥰',
+        '💗 Decreto que ustedes son la pareja del Año 💗',
+        'Genial! 💝, están de Luna de miel 🥵✨❤️‍🔥',
+    ];
+    const pairCount = Math.floor(users.length / 2);
 
-*_2.- ${toM(users[2])} 💘 ${toM(users[3])}_*  
-🌹 Ustedes se merecen lo mejor del mundo 💞
+    if (pairCount === 0) return '*_😍 No hay suficientes integrantes para formar parejas 😍_*';
 
-*_3.- ${toM(users[4])} 💘 ${toM(users[5])}_* 
-Tan enamorados 😍, para cuando la familia 🥰
+    const rows = Array.from({length: pairCount}, (_, index) => {
+        const first = users[index * 2];
+        const second = users[index * 2 + 1];
+        return `*_${index + 1}.- ${first.tag} 💘 ${second.tag}_*\n${pairMessages[index]}`;
+    });
 
-*_4.- ${toM(users[6])} 💘 ${toM(users[7])}_* 
-💗 Decreto que ustedes son la pareja del Año 💗 
-
-*_5.- ${toM(users[8])} 💘 ${toM(users[9])}_* 
-Genial! 💝, están de Luna de miel 🥵✨❤️‍🔥`;
+    return `*_😍 Las ${pairCount} maravillosas parejas del grupo 😍_*\n    \n${rows.join('\n\n')}`;
 }
 
 function getGayLabel(score: number): string {

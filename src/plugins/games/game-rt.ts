@@ -1,5 +1,6 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {addWalletResourceAndSetWait, getWallet} from '../../services/wallet.service.js';
+import {randomInt} from '../../utils/random.js';
 import {formatDurationCompact} from '../../utils/time.js';
 
 export default definePlugin({
@@ -37,9 +38,9 @@ export default definePlugin({
 });
 
 function getRandomColor() {
-    const random = Math.random() * 100;
-    if (random < 47.5) return 'red';
-    if (random < 95) return 'black';
+    const random = randomInt(10_000);
+    if (random < 4750) return 'red';
+    if (random < 9500) return 'black';
     return 'green';
 }
 
