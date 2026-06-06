@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {listGroupMessageCounts} from '../../services/chat.service.js';
 import {getGroupSettings, setGroupBooleanFlag} from '../../services/group-settings.service.js';

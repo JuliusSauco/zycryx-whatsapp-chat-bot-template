@@ -1,13 +1,13 @@
-import {logError, logInfo, logWarn} from './logger.js';
+import {logError} from './logger.js';
 import * as baileys from "@whiskeysockets/baileys";
 import {fileTypeFromBuffer} from 'file-type'
 import {httpBuffer} from './http-client.js';
 import type {BotMessage} from '../types/message.js';
 import type {ExtendedConn, MediaInput, MessageContent, QuotedMessage, SendMessageOptions} from '../types/context.js';
 import {getUserName} from '../services/user.service.js';
+import {installLegacyArrayRandom} from './legacy-array-random.js';
 
 const {
-    proto,
     downloadMediaMessage,
     downloadContentFromMessage,
     generateWAMessage,
@@ -158,11 +158,7 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
         }
     };
 
-    if (!Array.prototype.getRandom) {
-        Array.prototype.getRandom = function () {
-            return this[Math.floor(Math.random() * this.length)];
-        };
-    }
+    installLegacyArrayRandom();
 
     if (!conn.__zycryxSendMessageWrapped) {
         const originalSendMessage = conn.sendMessage.bind(conn);
@@ -227,7 +223,7 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
         };
     }
 
-    conn.sendFile = async function (jid: string, path: MediaInput, filename: string = '', caption: string = '', quoted: QuotedMessage = null, ptt: boolean = false, options: SendMessageOptions = {}) {
+    conn.sendFile = async function (jid: string, path: MediaInput, filename: string = '', caption: string = '', quoted: QuotedMessage = null, _ptt: boolean = false, options: SendMessageOptions = {}) {
         const contextInfo = getContextInfo(options) ?? await defaultContextInfo(caption, this);
         if (contextInfo.externalAdReply) contextInfo.externalAdReply = formatExternalAdReply(contextInfo.externalAdReply);
         delete options.contextInfo;
@@ -324,7 +320,7 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
         caption: string = '',
         fakeNumber: string = '0@s.whatsapp.net',
         fakeCaption: string = '',
-        quoted: QuotedMessage = null,
+        _quoted: QuotedMessage = null,
         options: SendMessageOptions = {}
     ) {
         const contextInfo = getContextInfo(options) ?? await defaultContextInfo(caption, this);
@@ -464,12 +460,6 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
     };
 
     return m;
-}
-
-function cleanJid(jid: string): string {
-    if (!jid) return jid;
-    if (jid.includes('@lid')) return jid;
-    return jid.replace(/:\d+/, '').replace('@s.whatsapp.net', '') + '@s.whatsapp.net';
 }
 
 async function streamToBuffer(stream: AsyncIterableStream): Promise<Buffer> {

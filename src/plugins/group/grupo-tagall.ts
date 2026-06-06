@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {listGroupMessageCounts} from '../../services/chat.service.js';
 import {getNumberByLid} from '../../services/user.service.js';
@@ -22,7 +22,7 @@ export default definePlugin({
     admin: true,
     botAdmin: true,
     group: true,
-    async execute(m, {conn, text, participants, metadata, args, command}) {
+    async execute(m, {conn, text, participants, metadata, command}) {
 
     if (/^(tagall|invocar|invocacion|todos|invocación)$/i.test(command)) {
         try {

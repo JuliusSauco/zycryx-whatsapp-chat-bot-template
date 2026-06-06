@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from './logger.js';
+import {logError} from './logger.js';
 import {convert} from "./ezgif-convert.js"
 import {Blob} from 'formdata-node'
 import {fileTypeFromBuffer} from "file-type"

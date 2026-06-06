@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 //Código elaborado por: https://github.com/elrebelde21
 

@@ -1,4 +1,4 @@
-import {and, eq, sql} from 'drizzle-orm';
+import {eq, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {usuarios} from '../../db/schema.js';
 import type {RewardTimestampField, UserRepository, WalletResource} from '../../ports/repositories.js';

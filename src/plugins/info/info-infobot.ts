@@ -3,40 +3,14 @@ import {countChats, countChatsByBot} from '../../services/chat.service.js'
 import {countUsers} from '../../services/user.service.js'
 import {sumCommandUsage} from '../../services/stats.service.js'
 import {definePlugin} from '../../core/define-plugin.js'
-import fs from 'fs'
-import path from 'path'
+import {pickRandom} from '../../utils/random.js'
 import os from 'os'
 import speed from 'performance-now'
-import {sizeFormatter} from 'human-readable'
-
-const format = sizeFormatter({
-    std: 'JEDEC',
-    decimalPlaces: 2,
-    keepTrailingZeroes: false,
-    render: (literal: string | number, symbol: string) => `${literal} ${symbol}B`
-})
 
 const getCpuUsage = () => {
     const load = os.loadavg()[0]
     const cores = os.cpus().length
     return ((load / cores) * 100).toFixed(2) + '%'
-}
-
-const getFolderSize = (folderPath: string) => {
-    let totalSize = 0
-
-    function calculateSize(directory: string) {
-        const files = fs.readdirSync(directory)
-        for (const file of files) {
-            const filePath = path.join(directory, file)
-            const stats = fs.statSync(filePath)
-            if (stats.isDirectory()) calculateSize(filePath)
-            else totalSize += stats.size
-        }
-    }
-
-    calculateSize(folderPath)
-    return humanFileSize(totalSize)
 }
 
 const getSystemInfo = async () => {
@@ -122,7 +96,7 @@ export default definePlugin({
             forwardingScore: 1,
             isForwarded: true,
             externalAdReply: {
-                mediaUrl: [info.nna, info.nna2, info.md].getRandom(),
+                mediaUrl: pickRandom([info.nna, info.nna2, info.md]),
                 mediaType: 2,
                 title: `INFO - BOT`,
                 thumbnailUrl: "https://telegra.ph/file/39fb047cdf23c790e0146.jpg",

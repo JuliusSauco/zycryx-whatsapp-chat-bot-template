@@ -6,7 +6,7 @@ export default definePlugin({
     tags: ['convertidor'],
     command: /^to(mp3|audio)$/i,
     register: true,
-    async execute(m, {conn, usedPrefix, command}) {
+    async execute(m, {conn}) {
     const q = m.quoted ? m.quoted : m;
     const mime = q.mimetype || q.msg?.mimetype || q.mediaType || '';
     if (!/video|audio/.test(mime)) throw `*⚠️ ¿𝐘 𝐞𝐥 𝐯𝐢𝐝𝐞𝐨? 𝐑𝐞𝐬𝐩𝐨𝐧𝐝𝐞 𝐚 𝐮𝐧 𝐯𝐢𝐝𝐞𝐨 𝐨 𝐧𝐨𝐭𝐚 𝐝𝐞 𝐯𝐨𝐳 𝐩𝐚𝐫𝐚 𝐜𝐨𝐧𝐯𝐞𝐫𝐭𝐢𝐫 𝐚 𝐌𝐏𝟑*`;

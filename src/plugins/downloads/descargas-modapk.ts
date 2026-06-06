@@ -1,8 +1,9 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {QuotedMessage} from '../../types/context.js';
 import {httpJson} from '../../lib/http-client.js';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
+import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 
 interface ApkData {
     name: string
@@ -36,7 +37,7 @@ interface MainApkResponse {
 }
 
 const userMessages = new Map<string, QuotedMessage>();
-const userRequests: Record<string, boolean> = {};
+const userRequests = createUserRequestLocks();
 
 export default definePlugin({
     help: ['apk', 'apkmod'],
@@ -46,8 +47,7 @@ export default definePlugin({
     limit: 2,
     async execute(m, {conn, text}) {
     if (!text) return m.reply(`⚠️ *𝙀𝙨𝙘𝙧𝙞𝙗𝙖 𝙚𝙡 𝙣𝙤𝙢𝙗𝙧𝙚 𝙙𝙚𝙡 𝘼𝙋𝙆*`)
-    if (userRequests[m.sender]) return await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} pendejo, ya estás descargando un APK 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆`, userMessages.get(m.sender) || m)
-    userRequests[m.sender] = true;
+    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} pendejo, ya estás descargando un APK 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆`, userMessages.get(m.sender) || m)
     m.react("⌛");
     try {
         const downloadProviders: Array<Provider<ApkData>> = [
@@ -115,7 +115,7 @@ ${apkData.developer ? `┃👤 𝘿𝙀𝙎𝘼𝙍𝙍𝙊𝙇𝙇𝙊: ${apkDa
         m.react('❌');
         logInfo(e);
     } finally {
-        delete userRequests[m.sender];
+        userRequests.release(m.sender);
     }
     }
 });

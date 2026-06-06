@@ -1,51 +1,25 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
-//import { youtubedl, youtubedlv2 } from '@bochilteam/scraper'
 import yts from 'yt-search';
-import {savetube} from '../../lib/yt-savetube.js'
-import {ogmp3} from '../../lib/youtubedl.js';
-import {ENV} from '../../core/env.js';
 import type {QuotedMessage} from '../../types/context.js';
 import type {YouTubeSearchVideo} from 'yt-search';
-import {httpJson, httpRequest} from '../../lib/http-client.js';
+import {createUserRequestLocks} from '../../lib/user-request-locks.js';
+import {
+    buildAudioApis,
+    buildVideoApis,
+    getFileSize,
+    runDownloadProviders,
+    searchYouTube,
+    secondString,
+    selectQuality,
+    youtubeRegexID,
+} from './youtube-download.helpers.js';
 
 const LimitAud = 725 * 1024 * 1024; // 725MB
 const LimitVid = 425 * 1024 * 1024; // 425MB
-const youtubeRegexID = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/;
 const userCaptions = new Map<string, QuotedMessage>();
-const userRequests: Record<string, boolean> = {};
+const userRequests = createUserRequestLocks();
 
-interface DownloadResult {
-    result?: {
-        download?: string | {url?: string}
-        dl_url?: string
-    }
-    data?: {
-        url?: string
-        dl?: string
-        download?: {
-            url?: string
-        }
-    }
-    dl?: string
-    status?: boolean
-    medias?: Array<{
-        quality?: string
-        extension?: string
-        url?: string
-    }>
-}
-
-interface DownloadApi {
-    url: () => Promise<DownloadResult>
-    extract: (data: DownloadResult) => {data?: string | null; isDirect: boolean}
-}
-
-const fetchJson = async <T>(url: string): Promise<T> => {
-    return httpJson<T>(url);
-}
-
-const downloadValue = (value: string | {url?: string} | undefined) => typeof value === 'string' ? value : value?.url;
 
 export default definePlugin({
     help: ['play', 'play2', 'play3', 'play4', 'playdoc'],
@@ -55,11 +29,10 @@ export default definePlugin({
     async execute(m, {conn, command, args, text, usedPrefix}) {
     if (!text) return m.reply(`*🤔Que está buscando? 🤔*\n*Ingrese el nombre de la canción*\n\n*Ejemplo:*\n${usedPrefix + command} emilia 420`);
     const tipoDescarga = command === 'play' || command === 'musica' ? 'audio' : command === 'play2' ? 'video' : command === 'play3' ? 'audio (documento)' : command === 'play4' ? 'video (documento)' : '';
-    if (userRequests[m.sender]) return await conn.reply(m.chat, `⏳ Hey @${m.sender.split('@')[0]} espera pendejo, ya estás descargando algo 🙄\nEspera a que termine tu solicitud actual antes de hacer otra...`, userCaptions.get(m.sender) || m);
-    userRequests[m.sender] = true;
+    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, `⏳ Hey @${m.sender.split('@')[0]} espera pendejo, ya estás descargando algo 🙄\nEspera a que termine tu solicitud actual antes de hacer otra...`, userCaptions.get(m.sender) || m);
     try {
         let videoIdToFind = text.match(youtubeRegexID) || null;
-        const yt_play = await search(args.join(' '));
+        const yt_play = await searchYouTube(args.join(' '));
         if (!yt_play[0]) return m.reply('❌ No se encontraron resultados.')
         const ytResult = await yts(videoIdToFind === null ? text : 'https://youtu.be/' + videoIdToFind[1]);
         let ytplay2: YouTubeSearchVideo | undefined;
@@ -92,110 +65,19 @@ export default definePlugin({
         }, {quoted: m})
         userCaptions.set(m.sender, PlayText);
 
-        const [input, qualityInput = command === 'play' || command === 'musica' || command === 'play3' ? '320' : '720'] = text.split(' ');
-        const audioQualities = ['64', '96', '128', '192', '256', '320'];
-        const videoQualities = ['240', '360', '480', '720', '1080'];
+        const [, qualityInput = command === 'play' || command === 'musica' || command === 'play3' ? '320' : '720'] = text.split(' ');
         const isAudioCommand = command === 'play' || command === 'musica' || command === 'play3';
-        const selectedQuality = (isAudioCommand ? audioQualities : videoQualities).includes(qualityInput) ? qualityInput : (isAudioCommand ? '320' : '720');
+        const selectedQuality = selectQuality(qualityInput, isAudioCommand);
         const isAudio = command.toLowerCase().includes('mp3') || command.toLowerCase().includes('audio')
         const format = isAudio ? 'mp3' : '720'
+        const videoUrl = yt_play[0].url;
+        const title = yt_play[0].title;
 
-        const audioApis: DownloadApi[] = [
-            {
-                url: () => savetube.download(yt_play[0].url, format),
-                extract: data => ({data: downloadValue(data.result?.download), isDirect: false})
-            },
-            {
-                url: () => ogmp3.download(yt_play[0].url, selectedQuality, 'audio'),
-                extract: data => ({data: downloadValue(data.result?.download), isDirect: false})
-            },
-            {
-                url: () => fetchJson<DownloadResult>(`https://api.dorratz.com/v3/ytdl?url=${yt_play[0].url}`),
-                extract: data => {
-                    const mp3 = data.medias?.find(media => media.quality === "160kbps" && media.extension === "mp3");
-                    return {data: mp3?.url, isDirect: false}
-                }
-            },
-            {
-                url: () => fetchJson<DownloadResult>(`${info.neoxr.url}/youtube?url=${yt_play[0].url}&type=audio&quality=128kbps&apikey=${info.neoxr.key}`),
-                extract: data => ({data: data.data?.url, isDirect: false})
-            },
-            {
-                url: () => fetchJson<DownloadResult>(`${info.fgmods.url}/downloader/ytmp4?url=${yt_play[0].url}&apikey=${info.fgmods.key}`),
-                extract: data => ({data: data.result?.dl_url, isDirect: false})
-            },
-            {
-                url: () => fetchJson<DownloadResult>(`https://api.siputzx.my.id/api/d/ytmp4?url=${yt_play[0].url}`),
-                extract: data => ({data: data.dl, isDirect: false})
-            },
-            {
-                url: () => fetchJson<DownloadResult>(`${info.apis}/download/ytmp3?url=${yt_play[0].url}`),
-                extract: data => ({data: data.status ? data.data?.download?.url : null, isDirect: false})
-            },
-            {
-                url: () => fetchJson<DownloadResult>(`https://api.zenkey.my.id/api/download/ytmp3?apikey=${ENV.ZENKEY_API_KEY}&url=${yt_play[0].url}`),
-                extract: data => ({data: downloadValue(data.result?.download), isDirect: false})
-            },
-            {
-                url: () => fetchJson<DownloadResult>(`https://exonity.tech/api/dl/playmp3?query=${yt_play[0].title}`),
-                extract: data => ({data: downloadValue(data.result?.download), isDirect: false})
-            }];
-
-        const videoApis: DownloadApi[] = [
-            {
-                url: () => savetube.download(yt_play[0].url, '720'),
-                extract: data => ({data: downloadValue(data.result?.download), isDirect: false})
-            },
-            {
-                url: () => ogmp3.download(yt_play[0].url, selectedQuality, 'video'),
-                extract: data => ({data: downloadValue(data.result?.download), isDirect: false})
-            },
-            {
-                url: () => fetchJson<DownloadResult>(`https://api.siputzx.my.id/api/d/ytmp4?url=${yt_play[0].url}`),
-                extract: data => ({data: data.dl, isDirect: false})
-            },
-            {
-                url: () => fetchJson<DownloadResult>(`${info.neoxr.url}/youtube?url=${yt_play[0].url}&type=video&quality=720p&apikey=${info.neoxr.key}`),
-                extract: data => ({data: data.data?.url, isDirect: false})
-            },
-            {
-                url: () => fetchJson<DownloadResult>(`${info.fgmods.url}/downloader/ytmp4?url=${yt_play[0].url}&apikey=${info.fgmods.key}`),
-                extract: data => ({data: data.result?.dl_url, isDirect: false})
-            },
-            {
-                url: () => fetchJson<DownloadResult>(`${info.apis}/download/ytmp4?url=${encodeURIComponent(yt_play[0].url)}`),
-                extract: data => ({data: data.status ? data.data?.download?.url : null, isDirect: false})
-            },
-            {
-                url: () => fetchJson<DownloadResult>(`https://exonity.tech/api/dl/playmp4?query=${encodeURIComponent(yt_play[0].title)}`),
-                extract: data => ({data: downloadValue(data.result?.download), isDirect: false})
-            }];
-
-        const download = async (apis: DownloadApi[]) => {
-            let mediaData = null;
-            let isDirect = false;
-            for (const api of apis) {
-                try {
-                    const data = await api.url();
-                    const {data: extractedData, isDirect: direct} = api.extract(data);
-                    if (extractedData) {
-                        const size = await getFileSize(extractedData);
-                        if (size >= 1024) {
-                            mediaData = extractedData;
-                            isDirect = direct;
-                            break;
-                        }
-                    }
-                } catch (e: unknown) {
-                    logInfo(`Error con API: ${e}`);
-                    continue;
-                }
-            }
-            return {mediaData, isDirect};
-        };
+        const audioApis = buildAudioApis(videoUrl, title, format, selectedQuality);
+        const videoApis = buildVideoApis(videoUrl, title, selectedQuality);
 
         if (command === 'play' || command === 'musica') {
-            const {mediaData, isDirect} = await download(audioApis);
+            const {mediaData, isDirect} = await runDownloadProviders(audioApis);
             if (mediaData) {
                 const fileSize = await getFileSize(mediaData);
                 if (fileSize > LimitAud) {
@@ -218,7 +100,7 @@ export default definePlugin({
         }
 
         if (command === 'play2' || command === 'video') {
-            const {mediaData, isDirect} = await download(videoApis);
+            const {mediaData, isDirect} = await runDownloadProviders(videoApis);
             if (mediaData) {
                 const fileSize = await getFileSize(mediaData);
                 const messageOptions = {
@@ -240,7 +122,7 @@ export default definePlugin({
         }
 
         if (command === 'play3' || command === 'playdoc') {
-            const {mediaData, isDirect} = await download(audioApis);
+            const {mediaData, isDirect} = await runDownloadProviders(audioApis);
             if (mediaData) {
                 await conn.sendMessage(m.chat, {
                     document: isDirect ? mediaData : {url: mediaData},
@@ -254,7 +136,7 @@ export default definePlugin({
         }
 
         if (command === 'play4' || command === 'playdoc2') {
-            const {mediaData, isDirect} = await download(videoApis);
+            const {mediaData, isDirect} = await runDownloadProviders(videoApis);
             if (mediaData) {
                 await conn.sendMessage(m.chat, {
                     document: isDirect ? mediaData : {url: mediaData},
@@ -271,35 +153,8 @@ export default definePlugin({
         logError(error);
         m.react("❌️")
     } finally {
-        delete userRequests[m.sender];
+        userRequests.release(m.sender);
     }
     }
 })
 ;
-
-async function search(query: string, options: Record<string, unknown> = {}) {
-    const search = await yts.search({query, hl: 'es', gl: 'ES', ...options});
-    return search.videos;
-}
-
-function secondString(seconds: number | undefined) {
-    seconds = Number(seconds);
-    const d = Math.floor(seconds / (3600 * 24));
-    const h = Math.floor((seconds % (3600 * 24)) / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    const dDisplay = d > 0 ? d + (d == 1 ? ' día, ' : ' días, ') : '';
-    const hDisplay = h > 0 ? h + (h == 1 ? ' hora, ' : ' horas, ') : '';
-    const mDisplay = m > 0 ? m + (m == 1 ? ' minuto, ' : ' minutos, ') : '';
-    const sDisplay = s > 0 ? s + (s == 1 ? ' segundo' : ' segundos') : '';
-    return dDisplay + hDisplay + mDisplay + sDisplay;
-}
-
-async function getFileSize(url: string) {
-    try {
-        const response = await httpRequest(url, {method: 'HEAD'});
-        return parseInt(response.headers.get('content-length') || '0');
-    } catch (e: unknown) {
-        return 0; // Si falla, asumimos 0
-    }
-}

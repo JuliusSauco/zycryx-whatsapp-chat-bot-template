@@ -1,8 +1,9 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import * as cheerio from 'cheerio';
 import type {proto} from '@whiskeysockets/baileys';
 import {httpJson, httpText} from '../../lib/http-client.js';
+import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 
 interface SongData {
     name: string;
@@ -45,7 +46,7 @@ interface AppleDownloadedData {
 }
 
 const userMessages = new Map<string, proto.WebMessageInfo>();
-const userRequests: Record<string, boolean> = {};
+const userRequests = createUserRequestLocks();
 
 export default definePlugin({
     help: ['applemusic'],
@@ -55,11 +56,10 @@ export default definePlugin({
     limit: 1,
     async execute(m, {conn, text, usedPrefix, command}) {
     if (!text) return m.reply(`Ejemplo de uso: ${usedPrefix + command} https://music.apple.com/us/album/glimpse-of-us/1625328890?i=1625328892`);
-    if (userRequests[m.sender]) {
+    if (!userRequests.acquire(m.sender)) {
         conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} pendejo, ya estás descargando una canción 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆`, userMessages.get(m.sender) || m)
         return;
     }
-    userRequests[m.sender] = true;
     m.react("⌛");
     try {
         const downloadAttempts: Array<() => Promise<SongData>> = [async () => {
@@ -175,7 +175,7 @@ export default definePlugin({
         m.reply("Ocurrió un error al intentar obtener el enlace de descarga.");
         m.react("❌");
     } finally {
-        delete userRequests[m.sender];
+        userRequests.release(m.sender);
     }
     }
 });

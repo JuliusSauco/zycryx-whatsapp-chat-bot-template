@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError, logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {proto} from '@whiskeysockets/baileys'
 
@@ -14,7 +14,7 @@ export default definePlugin({
     botAdmin: true,
     group: true,
     register: true,
-    async execute(m, {conn, args, usedPrefix, command}) {
+    async execute(m, {conn, args}) {
 
     if (!m.quoted && !m.mentionedJid?.length && !args[0]) return m.reply(`⚠️ Responde al mensaje que quiere eliminar pelotudito.`)
     try {

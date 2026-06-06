@@ -29,6 +29,11 @@ export interface GroupSettings {
     modoadmin: boolean;
     antifake: boolean;
     message_logging: boolean;
+    antilink: boolean;
+    antilink2: boolean;
+    virusTotal: boolean;
+    audios: boolean;
+    autolevelup: boolean;
 }
 
 export interface HandlerContext {
@@ -60,6 +65,11 @@ const EMPTY_GROUP_SETTINGS: GroupSettings = {
     modoadmin: false,
     antifake: false,
     message_logging: false,
+    antilink: false,
+    antilink2: false,
+    virusTotal: false,
+    audios: false,
+    autolevelup: true,
 };
 
 /**

@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../lib/logger.js';
+import {logError} from '../lib/logger.js';
 import type {SubbotConfig} from '../types/config.js';
 import {getCachedSubbotConfig, invalidateSubbotConfig, setCachedSubbotConfig} from '../lib/db-cache.js';
 import {repositories} from './data-source.js';

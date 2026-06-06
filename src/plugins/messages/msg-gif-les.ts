@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {getAvailableMp4s, pickRandomFile} from './gif-media.js'
 import path from 'path'

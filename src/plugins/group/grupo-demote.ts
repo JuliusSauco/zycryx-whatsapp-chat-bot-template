@@ -7,7 +7,7 @@ export default definePlugin({
     botAdmin: true,
     group: true,
     register: true,
-    async execute(m, {conn, usedPrefix, text}) {
+    async execute(m, {conn, text}) {
     let number = '';
     if (isNaN(Number(text)) && !text.match(/@/g)) {
     } else if (isNaN(Number(text))) {

@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {MessageContent} from '../../types/context.js'
 
@@ -9,7 +9,7 @@ export default definePlugin({
     admin: true,
     group: true,
     register: true,
-    async execute(m, {conn, text, participants, isOwner, usedPrefix, command, isAdmin}) {
+    async execute(m, {conn, text, participants, usedPrefix, command}) {
     if (!m.quoted && !text) return m.reply(`𝙔 𝙀𝙇 𝙏𝙀𝙓𝙏𝙊?`)
     let users = participants.map(u => conn.decodeJid(u.id))
     if (m.quoted && m.quoted.message) {

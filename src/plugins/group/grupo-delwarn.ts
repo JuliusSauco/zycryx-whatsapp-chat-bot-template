@@ -10,7 +10,7 @@ export default definePlugin({
     botAdmin: true,
     group: true,
     register: true,
-    async execute(m, {conn, args, usedPrefix, command, metadata}) {
+    async execute(m, {conn}) {
     try {
         let who: string;
         if (m.isGroup) {

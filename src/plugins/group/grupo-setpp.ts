@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {Jimp, JimpMime} from "jimp";
 import {S_WHATSAPP_NET} from "@whiskeysockets/baileys";

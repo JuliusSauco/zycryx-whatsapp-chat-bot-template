@@ -1,5 +1,7 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {addWalletResourcesAndSetFields, getWallet} from '../../services/wallet.service.js';
+import {formatShortThousands, formatThousandsDot} from '../../utils/format.js';
+import {formatDurationHoursMinutesShort} from '../../utils/time.js';
 
 const free = 5000;
 const expIncrease = 1000;
@@ -21,7 +23,7 @@ export default definePlugin({
         const nextClaimTime = lastClaim + 86400000;
         const restante = Math.max(0, nextClaimTime - now);
 
-        if (now - lastClaim < 86400000) return m.reply(`⚠️ Ya reclamaste tu recompensa diaria, vuelve en *${msToTime(restante)}* para reclamar de nuevo 🎁.`);
+        if (now - lastClaim < 86400000) return m.reply(`⚠️ Ya reclamaste tu recompensa diaria, vuelve en *${formatDurationHoursMinutesShort(restante)}* para reclamar de nuevo 🎁.`);
 
         const newStreak = (now - lastClaim < 172800000) ? streak + 1 : 1;
         const currentExp = free + (newStreak - 1) * expIncrease;
@@ -35,7 +37,7 @@ export default definePlugin({
                 fields: {lastclaim: now, dailystreak: newStreak},
             });
 
-            bonusText = `\n\n🎉 *¡BONUS por 7 días de racha!* 🎉\n> +${formatNumber(bonusExp)} XP extra\n> +${bonusLimit} Diamantes 💎\n> +${formatNumber(bonusMoney)} LoliCoins 🪙\n\n`;
+            bonusText = `\n\n🎉 *¡BONUS por 7 días de racha!* 🎉\n> +${formatThousandsDot(bonusExp)} XP extra\n> +${bonusLimit} Diamantes 💎\n> +${formatThousandsDot(bonusMoney)} LoliCoins 🪙\n\n`;
         } else {
             await addWalletResourcesAndSetFields({
                 userId: m.sender,
@@ -44,21 +46,6 @@ export default definePlugin({
             });
         }
 
-        await conn.fakeReply(m.chat, `*🔸 𝐇𝐀𝐒 𝐑𝐄𝐂𝐈𝐁𝐈𝐃𝐎:* Tu recompensa diaria de: *${formatNumber(currentExp)} XP* (Día  ${newStreak})\n` + bonusText + `> _*Mañana no te olviden de seguir reclamado tu recompensa ganaras: ${formatK(nextExp)} (${formatNumber(nextExp)}) XP*_\n`, '13135550002@s.whatsapp.net', `🎁 Obtener un regalo 🎁`, 'status@broadcast');
+        await conn.fakeReply(m.chat, `*🔸 𝐇𝐀𝐒 𝐑𝐄𝐂𝐈𝐁𝐈𝐃𝐎:* Tu recompensa diaria de: *${formatThousandsDot(currentExp)} XP* (Día  ${newStreak})\n` + bonusText + `> _*Mañana no te olviden de seguir reclamado tu recompensa ganaras: ${formatShortThousands(nextExp)} (${formatThousandsDot(nextExp)}) XP*_\n`, '13135550002@s.whatsapp.net', `🎁 Obtener un regalo 🎁`, 'status@broadcast');
     }
 });
-
-function msToTime(duration: number) {
-    const totalSeconds = Math.floor(Math.max(0, duration) / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    return `${hours}h ${minutes}min`;
-}
-
-function formatNumber(num: number) {
-    return num.toLocaleString('en').replace(/,/g, '.');
-}
-
-function formatK(num: number) {
-    return (num / 1000).toFixed(1) + 'k';
-}

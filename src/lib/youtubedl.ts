@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import {HttpError, httpJson} from './http-client.js';
+import {pickRandom} from '../utils/random.js';
 
 interface OgmpResult {
     title: string;
@@ -122,7 +123,7 @@ const ogmp3 = {
     request: async (endpoint: string, data: Record<string, unknown> = {}, method: string = 'post'): Promise<OgmpRequestResponse> => {
         try {
             const ae = Object.values(ogmp3.api.endpoints);
-            const be = ae[Math.floor(Math.random() * ae.length)];
+            const be = pickRandom(ae);
 
             const fe = endpoint.startsWith('http') ? endpoint : `${be}${endpoint}`;
 

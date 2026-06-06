@@ -14,7 +14,7 @@ export default definePlugin({
     tags: ['owner'],
     customPrefix: /^[$]\s?/,
     rowner: true,
-    async execute(m, {conn, isROwner}) {
+    async execute(m, {isROwner}) {
         if (!isROwner) return;
 
         m.react("💻");

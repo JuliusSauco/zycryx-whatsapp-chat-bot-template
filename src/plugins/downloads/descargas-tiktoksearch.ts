@@ -1,6 +1,8 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {httpJson} from '../../lib/http-client.js';
+import {createUserRequestLocks} from '../../lib/user-request-locks.js';
+import {randomInt} from '../../utils/random.js';
 
 interface TikTokSearchItem {
     hd?: string
@@ -10,7 +12,7 @@ interface TikTokSearchResponse {
     meta?: TikTokSearchItem[]
 }
 
-const userRequests: Record<string, boolean> = {};
+const userRequests = createUserRequestLocks();
 
 export default definePlugin({
     help: ['tiktoksearch <texto>'],
@@ -20,8 +22,7 @@ export default definePlugin({
     limit: 4,
     async execute(m, {conn, usedPrefix, command, text}) {
     if (!text) throw `*⚠️ Ingresa el nombre del video que buscas*\nEjemplo: ${usedPrefix + command} emilia_mernes`
-    if (userRequests[m.sender]) return m.reply(`⏳ *Espera...* Ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra.`)
-    userRequests[m.sender] = true;
+    if (!userRequests.acquire(m.sender)) return m.reply(`⏳ *Espera...* Ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra.`)
     m.react("⏳")
     try {
         const response = await httpJson<TikTokSearchResponse>(`${info.apis}/search/tiktoksearch?query=${text}`);
@@ -36,7 +37,7 @@ export default definePlugin({
         m.react("❌️")
         logError(error);
     } finally {
-        delete userRequests[m.sender];
+        userRequests.release(m.sender);
     }
     }
 });
@@ -45,7 +46,7 @@ export default definePlugin({
 
 function shuffleArray<T>(array: T[]) {
     for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = randomInt(i + 1);
         [array[i], array[j]] = [array[j], array[i]];
     }
 }

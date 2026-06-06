@@ -18,6 +18,7 @@ export interface Plugin {
     level?: number;
     before?: (m: BotMessage, ctx: BeforePluginContext) => Promise<boolean | void | unknown>;
     runBeforeOnCommand?: boolean;
+    needsFullGroupSettings?: boolean;
     __hasBefore?: boolean;
     __name?: string;
 

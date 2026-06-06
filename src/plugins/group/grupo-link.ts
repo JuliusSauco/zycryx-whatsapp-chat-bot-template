@@ -7,7 +7,7 @@ export default definePlugin({
     botAdmin: true,
     group: true,
     register: true,
-    async execute(m, {conn, args}) {
+    async execute(m, {conn}) {
     const group = m.chat;
     const code = await conn.groupInviteCode(group).catch(() => null)
     if (!code) return replyFailure(m, 'No se pudo obtener el enlace del grupo.')

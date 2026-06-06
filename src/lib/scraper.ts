@@ -7,6 +7,7 @@ import * as cheerio from 'cheerio';
 import {CookieJar} from 'tough-cookie';
 import {ENV} from '../core/env.js';
 import {httpText} from './http-client.js';
+import {pickRandom, randomInt} from '../utils/random.js';
 
 type UnknownRecord = Record<string, unknown>;
 type ChatMessage = {role: string; content: string; id?: string};
@@ -196,7 +197,7 @@ async function blackboxAi(query: string): Promise<BlackboxResult> {
 //-------------------[IA EXOML]--------------------
 
 const exoml = {
-    getRandom: () => {
+    createRequestIds: () => {
         const gen = (length: number, charSet: Partial<Record<'lowerCase' | 'upperCase' | 'symbol' | 'number', boolean>> = {}) => {
             const l = "abcdefghijklmnopqrstuvwxyz" // lowercase
             const u = l.toUpperCase() // uppercase
@@ -215,7 +216,7 @@ const exoml = {
                 if (number) cs += n
             }
 
-            const result = Array.from({length}, (_ => cs[Math.floor(Math.random() * cs.length)])).join("") || null
+            const result = Array.from({length}, () => cs[randomInt(cs.length)]).join("") || null
             return result
         }
 
@@ -234,7 +235,7 @@ const exoml = {
                 systemPrompt,
                 model,
                 "isAuthenticated": true,
-                ...exoml.getRandom()
+                ...exoml.createRequestIds()
             }
         )
 
@@ -255,42 +256,6 @@ const exoml = {
 
     }
 }
-
-// cara pakai
-const yourQuestion = "apa bedanya undefined dan null pada javascript"
-const systemPrompt = "balas singkat. tidak bertele tele. straight to the poin."
-
-const modelList = [
-    "llama",
-    "gemma",
-    "qwen-3-235b",
-    "gpt-4.1",
-    "gpt-4o",
-    "gpt-4o-mini",
-    "llama-4-scout",
-    "llama-4-maverick",
-    "deepseek-r1",
-    "qwq-32b"]
-
-const model = modelList[3] //gpt-4.1
-
-const messages = [
-    {
-        "role": "user",
-        "content": "halo",
-
-    },
-    {
-        "role": "assistant",
-        "content": "Halo! Ada yang bisa saya bantu?",
-
-    },
-    {
-        "role": "user",
-        "content": yourQuestion,
-
-    }
-]
 
 //-------------------[IA PERPLEXITY]--------------------
 
@@ -422,7 +387,7 @@ const perplexity = {
 
     key: () => {
         if (!perplexity.api.keys.length) throw new Error('PERPLEXITY_API_KEYS no está configurado');
-        return perplexity.api.keys[Math.floor(Math.random() * perplexity.api.keys.length)];
+        return pickRandom(perplexity.api.keys);
     },
 
     delay: (ms: number) => new Promise(resolve => setTimeout(resolve, ms)),

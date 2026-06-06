@@ -1,7 +1,8 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {proto} from '@whiskeysockets/baileys'
 import {httpJson} from '../../lib/http-client.js'
+import {createUserRequestLocks} from '../../lib/user-request-locks.js'
 
 interface UserRequest {
     active: boolean
@@ -23,7 +24,7 @@ interface ThreadsFallbackResponse {
     }>
 }
 
-const userRequests: Record<string, UserRequest> = {};
+const userRequests = createUserRequestLocks<UserRequest>();
 
 export default definePlugin({
     help: ['thread'],
@@ -34,13 +35,10 @@ export default definePlugin({
     async execute(m, {conn, args, usedPrefix, command}) {
     if (!args[0]) return m.reply(`*⚠️ ¿Qué estás buscando? Ingresa el link de algún video de Threads!!*\n*• Ejemplo:*\n${usedPrefix + command} https://www.threads.net/@adri_leclerc_/post/C_dSNIOOlpy?xmt=AQGzxbmyveDB91QgFo_KQWzqL6PT2yCy2eg8BkhPTO-6Kw`)
 
-    if (userRequests[m.sender]) return await conn.reply(m.chat, `⏳ Hey @${m.sender.split('@')[0]} pendejo, ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra`, userRequests[m.sender].message || m)
-    const {key} = await conn.sendMessage(m.chat, {text: `⌛ 𝙀𝙨𝙥𝙚𝙧𝙚 ✋\n▰▰▰▱▱▱▱▱▱`}, {quoted: m});
-    userRequests[m.sender] = {active: true, message: {key, chat: m.chat, fromMe: true}};
-    await delay(1000);
-    await conn.sendMessage(m.chat, {text: `⌛ 𝙀𝙨𝙥𝙚𝙧𝙚 ✋ \n▰▰▰▰▰▱▱▱▱`, edit: key});
-    await delay(1000);
-    await conn.sendMessage(m.chat, {text: `⌛ 𝙔𝙖 𝙘𝙖𝙨𝙞 🏃‍♂️💨\n▰▰▰▰▰▰▰▱▱`, edit: key});
+    const activeRequest = userRequests.get(m.sender)
+    if (activeRequest) return await conn.reply(m.chat, `⏳ Hey @${m.sender.split('@')[0]} pendejo, ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra`, activeRequest.message || m)
+    const {key} = await conn.sendMessage(m.chat, {text: `⌛ Descargando contenido de Threads...`}, {quoted: m});
+    userRequests.acquire(m.sender, {active: true, message: {key, chat: m.chat, fromMe: true}});
     m.react(`⌛`)
     try {
         const data = await httpJson<ThreadsAgatzResponse>(`https://api.agatz.xyz/api/threads?url=${args[0]}`)
@@ -80,9 +78,8 @@ export default definePlugin({
             logInfo(e)
         }
     } finally {
-        delete userRequests[m.sender];
+        userRequests.release(m.sender);
     }
     }
 })
 
-const delay = (time: number) => new Promise(res => setTimeout(res, time))

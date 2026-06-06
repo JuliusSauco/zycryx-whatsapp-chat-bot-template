@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from './logger.js';
+import {logError} from './logger.js';
 import pg from 'pg';
 import {ENV} from '../core/env.js';
 

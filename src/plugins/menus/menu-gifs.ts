@@ -44,9 +44,6 @@ export default definePlugin({
     command: /^(menu3|menugif|menugifs|menú3|menú-gif|menú-gifs|menu-gif|menu-gifs|gifs|gif)$/i,
     register: true,
     async execute(m, {conn, usedPrefix}) {
-    const nombreBot = conn.user?.name || 'Bot';
-    const isPrincipal = conn === global.conn;
-    const tipo = isPrincipal ? 'Bot Oficial' : 'Sub Bot';
     const taguser = '@' + m.sender.split('@')[0];
     const pref = usedPrefix || '#';
 

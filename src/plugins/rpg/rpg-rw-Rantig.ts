@@ -12,9 +12,7 @@ export default definePlugin({
 
     try {
         const characters = await listCharacterClaimOwners();
-        const totalCharacters = characters.length;
         const claimedCharacters = characters.filter(c => c.claimed_by);
-        const freeCharacters = characters.filter(c => !c.claimed_by);
 
         const userClaims = claimedCharacters.reduce<Record<string, number>>((acc, character) => {
             if (!character.claimed_by) return acc;

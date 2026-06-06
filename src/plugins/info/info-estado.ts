@@ -1,32 +1,18 @@
 import {definePlugin} from '../../core/define-plugin.js'
+import {pickRandom} from '../../utils/random.js'
 
 export default definePlugin({
     help: ['estado'],
     tags: ['main'],
     command: /^(estado|status|estate|state|stado|stats|botstat(us)?)$/i,
-    async execute(m, {conn, command, usedPrefix}) {
-    let name = m.pushName
-    let usuario = `${m.sender.split("@")[0]}`
-    let aa = usuario + '@s.whatsapp.net'
+    async execute(m, {conn}) {
     let _uptime = process.uptime() * 1000
-    let _muptime
     if (process.send) {
         process.send('uptime')
-        const uptimeMessage = await new Promise<unknown>(resolve => {
+        await new Promise<unknown>(resolve => {
             process.once('message', resolve)
             setTimeout(resolve, 1000)
         })
-        _muptime = typeof uptimeMessage === 'number' ? uptimeMessage * 1000 : undefined
-    }
-    let fkontak = {
-        "key": {
-            "participants": "0@s.whatsapp.net",
-            "remoteJid": "status@broadcast",
-            "fromMe": false,
-            "id": "Halo"
-        },
-        "message": {"contactMessage": {"vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`}},
-        "participant": "0@s.whatsapp.net"
     }
     let uptime = clockString(_uptime)
     let estado = `${pickRandom([`*┌───⊷ *ミ🤖 Estado del Bot 🤖彡*\n┆ *=> Bot activo ✅*\n┆┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n┆ *=> Bot uso público ✅️*\n┆┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n┆=> 𝘼𝙘𝙩𝙞𝙫𝙤 𝙙𝙪𝙧𝙖𝙣𝙩𝙚\n┆=> ${uptime} ✅\n╰──────────────────`, `*Online ${uptime} ✅*`, `*Saturado 🥵*`, `Estoy activo desde: ${uptime}`, `Estamos activo papu 🤙`])}
@@ -42,10 +28,6 @@ export default definePlugin({
     ╰──────────────────`, fkontak, { mentions: [aa,] })*/
     }
 })
-
-function pickRandom<T>(list: T[]): T {
-    return list[Math.floor(Math.random() * list.length)]
-}
 
 function clockString(ms: number) {
     let h = isNaN(ms) ? '--' : Math.floor(ms / 3600000)

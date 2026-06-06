@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError, logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {getSubbotConfig, setSubbotOwners} from '../../services/subbot.service.js';
 

@@ -8,7 +8,7 @@ export default definePlugin({
     tags: ['econ'],
     command: /^buy(all)?$/i,
     register: true,
-    async execute(m, {conn, command, args}) {
+    async execute(m, {command, args}) {
     let user = await getWallet(m.sender);
     if (!user) return m.reply('✳️ El usuario no se encuentra en la base de datos.');
     let count = 1;

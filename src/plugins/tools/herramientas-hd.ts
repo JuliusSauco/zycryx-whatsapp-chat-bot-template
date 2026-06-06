@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import uploadImage from '../../lib/uploadImage.js'
 import {definePlugin} from '../../core/define-plugin.js'
 import {httpJson} from '../../lib/http-client.js'
@@ -17,7 +17,7 @@ export default definePlugin({
     command: ['hd', 'remini', 'enhance'],
     register: true,
     limit: 1,
-    async execute(m, {conn, usedPrefix, command}) {
+    async execute(m, {conn}) {
     try {
         let q = m.quoted ? m.quoted : m
         let mime = (q.msg || q).mimetype || q.mediaType || ""

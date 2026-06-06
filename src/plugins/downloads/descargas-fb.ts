@@ -1,8 +1,9 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fg from 'api-dylux';
 import {httpJson} from '../../lib/http-client.js';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
+import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 
 interface FacebookMediaData {
     type: 'video' | 'image'
@@ -39,7 +40,7 @@ interface DorratzFacebookResponse {
     }
 }
 
-const userRequests: Record<string, boolean> = {};
+const userRequests = createUserRequestLocks();
 
 export default definePlugin({
     help: ['fb', 'facebook', 'fbdl'],
@@ -50,8 +51,7 @@ export default definePlugin({
     async execute(m, {conn, args, command, usedPrefix}) {
     if (!args[0]) return m.reply(`⚠️ 𝙄𝙣𝙜𝙧𝙚𝙨𝙚 𝙪𝙣 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚 𝙁𝙖𝙘𝙚𝙗𝙤𝙤𝙠 𝙥𝙖𝙧𝙖 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙧 𝙚𝙡 𝙑𝙞𝙙𝙚𝙤\n• *𝙀𝙟 :* ${usedPrefix + command} https://www.facebook.com/share/r/1E1RojVvdJ/`)
     if (!args[0].match(/www.facebook.com|fb.watch/g)) return m.reply(`⚠️ 𝙄𝙣𝙜𝙧𝙚𝙨𝙚 𝙪𝙣 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚 𝙁𝙖𝙘𝙚𝙗𝙤𝙤𝙠 𝙥𝙖𝙧𝙖 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙧 𝙚𝙡 𝙑𝙞𝙙𝙚𝙤\n• *𝙀𝙟 :* ${usedPrefix + command} https://www.facebook.com/share/r/1E1RojVvdJ/`)
-    if (userRequests[m.sender]) return await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} Calmao, ya estás bajando un video 🙄\nEspera a que termine tu descarga actual antes de pedir otra...`, m)
-    userRequests[m.sender] = true;
+    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} Calmao, ya estás bajando un video 🙄\nEspera a que termine tu descarga actual antes de pedir otra...`, m)
     m.react(`⌛`);
     try {
         const downloadProviders: Array<Provider<FacebookMediaData>> = [{
@@ -117,7 +117,7 @@ export default definePlugin({
         m.react('❌');
         logInfo(e);
     } finally {
-        delete userRequests[m.sender];
+        userRequests.release(m.sender);
     }
     }
 });

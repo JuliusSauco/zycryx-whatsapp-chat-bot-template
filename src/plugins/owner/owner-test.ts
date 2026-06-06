@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {countSubbotsByType, listSubbotConfigs} from '../../services/subbot.service.js';
 
@@ -11,7 +11,6 @@ export default definePlugin({
     async execute(m, {conn, args}) {
         const id = conn.user?.id;
         if (!id) return m.reply("❌ No se pudo identificar este bot.");
-        const cleanId = id.replace(/:\d+/, '');
 
         try {
             const tipoFiltro = args[0] === '1' ? 'oficial' : args[0] === '2' ? 'subbot' : null;

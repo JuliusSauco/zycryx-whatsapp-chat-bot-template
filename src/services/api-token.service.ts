@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../lib/logger.js';
+import {logError} from '../lib/logger.js';
 import {repositories} from './data-source.js';
 
 const tokenCache = new Map<string, string | null>();

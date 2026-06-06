@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import moment from 'moment-timezone'
 import {xpRange} from '../../lib/levelling.js'
 import {countUsers, getUserById} from '../../services/user.service.js';
@@ -115,9 +115,6 @@ export default definePlugin({
     }
     const toUsers = toNum(totalreg);
     const toUserReg = toNum(rtotalreg);
-    const nombreBot = conn.user?.name || 'Bot'
-    const isPrincipal = conn === global.conn;
-    const tipo = isPrincipal ? 'Bot Oficial' : 'Sub Bot';
     let botOfc = '';
     let BoTag = "";
     if (conn.user?.id && global.conn?.user?.id) {

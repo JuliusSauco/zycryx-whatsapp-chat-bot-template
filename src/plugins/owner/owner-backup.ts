@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import fs from 'fs'
 import {definePlugin} from '../../core/define-plugin.js'
 

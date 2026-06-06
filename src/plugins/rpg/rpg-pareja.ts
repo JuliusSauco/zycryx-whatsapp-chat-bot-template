@@ -27,7 +27,7 @@ export default definePlugin({
     }
 
     },
-    async execute(m, {conn, args}) {
+    async execute(m, {conn}) {
     const user = await getUserById(m.sender)
     if (!user) return m.reply('⚠️ No apareces en mi base de datos.')
 

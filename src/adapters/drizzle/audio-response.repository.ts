@@ -1,4 +1,4 @@
-import {and, eq, inArray} from 'drizzle-orm';
+import {inArray} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {audioResponses} from '../../db/schema.js';
 import type {AudioResponseRepository} from '../../ports/repositories.js';

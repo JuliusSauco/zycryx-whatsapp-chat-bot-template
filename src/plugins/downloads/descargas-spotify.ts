@@ -1,9 +1,10 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {QuotedMessage} from '../../types/context.js';
 import {httpJson} from '../../lib/http-client.js';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
 import {replyReportableError} from '../../lib/reply-helpers.js';
+import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 
 interface SpotifyTrack {
     title: string
@@ -27,7 +28,7 @@ interface SpotifyDownloadResponse {
 }
 
 const userMessages = new Map<string, QuotedMessage>();
-const userRequests: Record<string, boolean> = {};
+const userRequests = createUserRequestLocks();
 
 export default definePlugin({
     help: ['spotify'],
@@ -37,8 +38,7 @@ export default definePlugin({
     limit: 1,
     async execute(m, {conn, text, usedPrefix, command}) {
     if (!text) return m.reply(`*🤔 ¿Que esta buscando? ingresa el nombre para descargar sus música de Spotify, Ejemplo:* ${usedPrefix + command} ozuna`)
-    if (userRequests[m.sender]) return await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} pendejo, ya estás descargando una canción 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆`, userMessages.get(m.sender) || m)
-    userRequests[m.sender] = true;
+    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} pendejo, ya estás descargando una canción 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆`, userMessages.get(m.sender) || m)
     m.react(`⌛`);
     try {
         const song = await httpJson<SpotifySearchResponse>(`${info.apis}/search/spotify?q=${text}`);
@@ -95,7 +95,7 @@ export default definePlugin({
         logInfo(error);
         m.react('❌');
     } finally {
-        delete userRequests[m.sender];
+        userRequests.release(m.sender);
     }
     }
 });

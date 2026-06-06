@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {execSync} from 'child_process';
 import {definePlugin} from '../../core/define-plugin.js';
 
@@ -36,9 +36,6 @@ export default definePlugin({
                 }
             } catch (error: unknown) {
                 logError(error);
-                if (error instanceof Error) {
-                    const errorMessage2 = `\n⚠️ ` + error.message;
-                }
                 await m.reply(`⚠️ ERROR NOSE QUE PASO?, Editarte desde puto servidor idiota 🙄`)
             }
         }

@@ -241,6 +241,11 @@ export interface GroupSettingsRepository {
         modoadmin: boolean;
         antifake: boolean;
         message_logging: boolean;
+        antilink: boolean;
+        antilink2: boolean;
+        virusTotal: boolean;
+        audios: boolean;
+        autolevelup: boolean;
     } | null>;
     findNsfwSettings(groupId: string): Promise<{
         modohorny: boolean;
@@ -410,4 +415,4 @@ export interface AppRepositories {
     chatMemory: ChatMemoryRepository;
     database: DatabaseRepository;
 }
-import type {GroupSettings, SubbotConfig, Usuario} from '../types/config.js';
+import type {GroupSettings, SubbotConfig} from '../types/config.js';

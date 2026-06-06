@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../lib/logger.js';
+import {logWarn} from '../lib/logger.js';
 import {createBackendRepositories} from '../adapters/backend/repositories.js';
 import {createDrizzleRepositories} from '../adapters/drizzle/repositories.js';
 import {ENV} from '../core/env.js';

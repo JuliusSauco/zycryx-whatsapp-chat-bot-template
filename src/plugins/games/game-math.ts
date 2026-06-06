@@ -1,5 +1,6 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {addWalletResource} from '../../services/wallet.service.js';
+import {pickRandom, randomInt} from '../../utils/random.js';
 
 type MathOperator = '+' | '-' | '*' | '/';
 type DifficultyKey = keyof typeof dificultades;
@@ -26,7 +27,7 @@ export default definePlugin({
     tags: ['game'],
     command: ['math', 'mates', 'matemáticas'],
     register: true,
-    async execute(m, {conn, args, command}) {
+    async execute(m, {conn, args}) {
     const dificultad = (args[0] || '').toLowerCase();
     if (!isDifficultyKey(dificultad)) {
         return m.reply(`⚠️ Debes elegir una dificultad válida.
@@ -41,11 +42,11 @@ ${Object.keys(dificultades).map(k => `- ${k}`).join('\n')}`);
     }
 
     const nivel = dificultades[dificultad];
-    const a = Math.floor(Math.random() * (nivel.max - nivel.min + 1)) + nivel.min;
-    const b = Math.floor(Math.random() * (nivel.max - nivel.min + 1)) + nivel.min;
-    const op = nivel.ops[Math.floor(Math.random() * nivel.ops.length)];
+    const a = randomInt(nivel.min, nivel.max);
+    const b = randomInt(nivel.min, nivel.max);
+    const op = pickRandom(nivel.ops);
     const result = calculate(a, b, op);
-    const recompensa = Math.floor(Math.random() * (nivel.exp[1] - nivel.exp[0] + 1)) + nivel.exp[0];
+    const recompensa = randomInt(nivel.exp[0], nivel.exp[1]);
     mathGames.set(m.sender, {result, exp: recompensa, intentos: 3});
 
     setTimeout(() => {
@@ -64,11 +65,11 @@ ${Object.keys(dificultades).map(k => `- ${k}`).join('\n')}`);
 ╰━━━⊰ 𓃠 ${info.vs} ⊱━━━━დ`);
     },
 
-    async before(m, {conn}) {
+    async before(m) {
     if (!mathGames.has(m.sender)) return;
     const data = mathGames.get(m.sender);
     if (!data) return;
-    const {result, exp, intentos} = data;
+    const {result, exp} = data;
     const entrada = m.originalText.trim();
     let correcta = false;
     if (String(result).includes('.') || entrada.includes('.')) {

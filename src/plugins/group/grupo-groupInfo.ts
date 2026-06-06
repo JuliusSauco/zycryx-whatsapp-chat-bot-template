@@ -7,6 +7,7 @@ export default definePlugin({
     command: ['infogrupo', 'groupinfo', 'infogp'],
     group: true,
     register: true,
+    needsFullGroupSettings: true,
     async execute(m, {conn, metadata: groupMetadata, participants, groupSettings}) {
     const pp = await conn.profilePictureUrl(m.chat, 'image').catch(() => "https://telegra.ph/file/39fb047cdf23c790e0146.jpg")
 

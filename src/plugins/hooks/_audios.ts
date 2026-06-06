@@ -3,6 +3,7 @@ import {logError} from '../../lib/logger.js';
 import {getAudioConfig, type AudioEntry} from '../../services/audio-response.service.js';
 import type {BeforePluginContext} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
+import {pickRandom} from '../../utils/random.js';
 
 export async function before(m: BotMessage, {conn, botConfig, groupSettings}: BeforePluginContext) {
     if (!m || m.fromMe || !m.originalText || m.originalText.length > 500) return;
@@ -34,7 +35,7 @@ export async function before(m: BotMessage, {conn, botConfig, groupSettings}: Be
         try {
             await conn.sendPresenceUpdate('recording', m.chat);
             const listaAudios = audio.audios?.length ? audio.audios : audio.audio ? [audio.audio] : [];
-            const elegido = listaAudios[Math.floor(Math.random() * listaAudios.length)];
+            const elegido = pickRandom(listaAudios);
             if (!elegido) continue;
 
             await conn.sendMessage(m.chat, {

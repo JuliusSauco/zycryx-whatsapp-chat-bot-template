@@ -1,6 +1,7 @@
 import "./config.js";
 import chalk from "chalk";
-import {logCommand, logError} from "../lib/logger.js";
+import {logCommand, logError} from '../lib/logger.js';
+import {enqueueBackgroundTask} from '../lib/background-task-queue.js';
 import {smsg} from "../lib/simple.js";
 import {parseMessage} from './message-parser.js';
 import {buildContext} from './context-builder.js';
@@ -35,6 +36,9 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     if (isDuplicateMessage(m, MESSAGE_DEDUP_TTL)) return;
     markPerf(marks, 'dedup', perfStart);
 
+    if (shouldSkipMessage(m, chatId)) return;
+    markPerf(marks, 'skip', perfStart);
+
     // 2. Setup reply helper + smsg (enriquece m con .db, .quoted, .download, etc.)
     m.reply = async (text: string) => {
         const contextInfo = {
@@ -64,7 +68,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     if (await antifakeCheck(conn, m, ctx)) return;
 
     // 7. Upsert user data (fire-and-forget — m.sender/m.lid ya resueltos en buildContext)
-    upsertUser(m).catch(logError);
+    enqueueBackgroundTask('upsert-user', () => upsertUser(m));
 
     // 8. Parse message (antes de before hooks para que m.originalText y m.text estén disponibles)
     const prefixes = Array.isArray(ctx.botConfig.prefix) ? ctx.botConfig.prefix : [ctx.botConfig.prefix];
@@ -75,12 +79,9 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
 
     // 9. Run before hooks
     const isPrefixedCommand = !!parsed.usedPrefix && !!parsed.command;
-    const beforePlugins = router.getBeforePlugins();
-    const beforeGroupSettings = ctx.isGroup && beforePlugins.length
-        ? await getEventGroupSettings(ctx.chatId)
-        : {};
+    const beforePlugins = router.getBeforePluginsFor(isPrefixedCommand);
+    const hookGroupSettings = ctx.isGroup ? ctx.groupSettings : {};
     for (const plugin of beforePlugins) {
-        if (isPrefixedCommand && !plugin.runBeforeOnCommand) continue;
         const hookStart = performance.now();
         let result: boolean | void | unknown;
         try {
@@ -95,7 +96,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
                 participants: ctx.participants,
                 metadata: ctx.metadata,
                 botConfig: ctx.botConfig,
-                groupSettings: beforeGroupSettings,
+                groupSettings: hookGroupSettings,
             });
         } catch (e: unknown) {
             logError(chalk.red(e));
@@ -132,6 +133,10 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     // 12. Execute plugin
     const pluginStart = performance.now();
     try {
+        const pluginGroupSettings = ctx.isGroup && plugin.needsFullGroupSettings
+            ? await getEventGroupSettings(ctx.chatId)
+            : hookGroupSettings;
+
         logCommand({
             conn,
             sender: ctx.sender,
@@ -157,7 +162,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
             botConfig: ctx.botConfig,
             chatId: ctx.chatId,
             sender: ctx.sender,
-            groupSettings: beforeGroupSettings,
+            groupSettings: pluginGroupSettings,
         });
         addPerfDetail(perfDetails, `plugin:${getPluginLogName(plugin)}`, pluginStart);
 
@@ -181,12 +186,12 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
 // ---- Helpers privados del handler ----
 
 function upsertChat(chatId: string, conn: ExtendedConn): void {
-    upsertActiveChat({
+    enqueueBackgroundTask('upsert-active-chat', () => upsertActiveChat({
         chatId,
         isGroup: chatId.endsWith('@g.us'),
         timestamp: Date.now(),
         botId: jidToPhone(cleanJid(conn.user?.id || '')),
-    }).catch(logError);
+    }));
 }
 
 async function antifakeCheck(conn: ExtendedConn, m: BotMessage, ctx: Pick<HandlerContext, 'chatId' | 'isGroup' | 'isAdmin' | 'isBotAdmin' | 'botJid' | 'groupSettings'>): Promise<boolean> {
@@ -239,4 +244,22 @@ function addPerfDetail(details: PerfDetail[], label: string, start: number): voi
 function getPluginLogName(plugin: {__name?: string}): string {
     return plugin.__name?.replace(/\.(js|ts)$/i, '') || 'anonymous';
 }
+
+function shouldSkipMessage(m: BotMessage, chatId: string): boolean {
+    if (!chatId) return true;
+    if (chatId === 'status@broadcast' || chatId.endsWith('@newsletter')) return true;
+    if (!m.message) return true;
+
+    const messageKeys = Object.keys(m.message);
+    if (!messageKeys.length) return true;
+
+    return messageKeys.every((key) => PASSIVE_IGNORED_MESSAGE_TYPES.has(key));
+}
+
+const PASSIVE_IGNORED_MESSAGE_TYPES = new Set([
+    'messageContextInfo',
+    'protocolMessage',
+    'reactionMessage',
+    'senderKeyDistributionMessage',
+]);
 

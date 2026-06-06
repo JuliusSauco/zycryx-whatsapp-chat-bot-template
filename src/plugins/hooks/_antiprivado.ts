@@ -1,11 +1,15 @@
 import {getPrivateWarn, setPrivateWarn} from '../../services/user.service.js'
 import type {BeforePluginContext} from '../../types/context.js'
 import type {BotMessage} from '../../types/message.js'
+import {pickRandom} from '../../utils/random.js'
 
 const comandosPermitidos = ['code', 'serbot', 'jadibot', 'bots', 'piedra', 'tijera', 'papel']
 
+function pickOfficialGroupLink(): string {
+    return pickRandom([info.nn, info.nn2, info.nn3, info.nn4, info.nn5, info.nn6])
+}
+
 export async function before(m: BotMessage, {isOwner, botConfig}: BeforePluginContext) {
-    const chatId = m.chat || m.key?.remoteJid || ''
     const sender = m.sender
     const texto = m.originalText?.toLowerCase().trim() || m.text?.toLowerCase().trim() || ''
 
@@ -25,7 +29,7 @@ export async function before(m: BotMessage, {isOwner, botConfig}: BeforePluginCo
     }
 
     const withoutPrefix = texto.slice(usedPrefix.length).trim()
-    const [commandName, ...args] = withoutPrefix.split(/\s+/)
+    const [commandName] = withoutPrefix.split(/\s+/)
     const command = commandName ? commandName.toLowerCase() : ''
 
     if (comandosPermitidos.includes(command)) {
@@ -37,13 +41,13 @@ export async function before(m: BotMessage, {isOwner, botConfig}: BeforePluginCo
 
         if (warned === null) {
             await setPrivateWarn(sender, true)
-            await m.reply(`Hola, está prohibido usar los comandos en privado...\n\n*\`🔰 SI QUIERES HACERTE UN SUB BOT, USA LOS SIGUIENTES COMANDOS:\`*\n/serbot\n/code\n\n> _*Para usar mis funciones, únete al grupo oficial 👇*_\n${[info.nn, info.nn2, info.nn3, info.nn4, info.nn5, info.nn6].getRandom()}`)
+            await m.reply(`Hola, está prohibido usar los comandos en privado...\n\n*\`🔰 SI QUIERES HACERTE UN SUB BOT, USA LOS SIGUIENTES COMANDOS:\`*\n/serbot\n/code\n\n> _*Para usar mis funciones, únete al grupo oficial 👇*_\n${pickOfficialGroupLink()}`)
             return false
         }
 
         if (!warned) {
             await setPrivateWarn(sender, true)
-            await m.reply(`Hola, está prohibido usar los comandos en privado...\n\n*\`🔰 SI QUIERES HACERTE UN SUB BOT, USA LOS SIGUIENTES COMANDOS:\`*\n/serbot\n/code\n\n> _*Para usar mis funciones, únete al grupo oficial 👇*_\n${[info.nn, info.nn2, info.nn3, info.nn4, info.nn5, info.nn6].getRandom()}`)
+            await m.reply(`Hola, está prohibido usar los comandos en privado...\n\n*\`🔰 SI QUIERES HACERTE UN SUB BOT, USA LOS SIGUIENTES COMANDOS:\`*\n/serbot\n/code\n\n> _*Para usar mis funciones, únete al grupo oficial 👇*_\n${pickOfficialGroupLink()}`)
             return false
         }
 

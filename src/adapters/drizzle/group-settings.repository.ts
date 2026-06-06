@@ -55,6 +55,11 @@ export const groupSettingsRepository: GroupSettingsRepository = {
                 modoadmin: groupSettings.modoadmin,
                 antifake: groupSettings.antifake,
                 message_logging: groupSettings.messageLogging,
+                antilink: groupSettings.antilink,
+                antilink2: groupSettings.antilink2,
+                virusTotal: groupSettings.virusTotal,
+                audios: groupSettings.audios,
+                autolevelup: groupSettings.autolevelup,
             })
             .from(groupSettings)
             .where(eq(groupSettings.groupId, groupId))
@@ -67,6 +72,11 @@ export const groupSettingsRepository: GroupSettingsRepository = {
                 modoadmin: !!row.modoadmin,
                 antifake: !!row.antifake,
                 message_logging: !!row.message_logging,
+                antilink: !!row.antilink,
+                antilink2: !!row.antilink2,
+                virusTotal: !!row.virusTotal,
+                audios: !!row.audios,
+                autolevelup: row.autolevelup ?? true,
             }
             : null;
     },

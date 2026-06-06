@@ -1,4 +1,4 @@
-import {logError} from '../lib/logger.js';
+import {enqueueBackgroundTask} from '../lib/background-task-queue.js';
 import {incrementMessageCount, logGroupMessage} from '../services/chat.service.js';
 import type {BotMessage} from '../types/message.js';
 import type {HandlerContext} from './context-builder.js';
@@ -16,7 +16,7 @@ export function trackMessageCount(ctx: {
     if (ctx.sender === ctx.botJid) return;
     if (ctx.isAdmin) return;
 
-    incrementMessageCount(ctx.sender, ctx.chatId).catch(logError);
+    enqueueBackgroundTask('increment-message-count', () => incrementMessageCount(ctx.sender, ctx.chatId));
 }
 
 export function trackGroupMessageLog(m: BotMessage, ctx: Pick<HandlerContext, 'chatId' | 'sender' | 'botJid' | 'isGroup' | 'groupSettings'>): void {
@@ -27,7 +27,7 @@ export function trackGroupMessageLog(m: BotMessage, ctx: Pick<HandlerContext, 'c
     const entry = buildMessageLogEntry(m);
     if (!entry) return;
 
-    logGroupMessage({
+    enqueueBackgroundTask('log-group-message', () => logGroupMessage({
         groupId: ctx.chatId,
         userId: ctx.sender,
         messageId: m.key?.id || m.id || `${Date.now()}-${ctx.sender}`,
@@ -35,7 +35,7 @@ export function trackGroupMessageLog(m: BotMessage, ctx: Pick<HandlerContext, 'c
         messageType: entry.type,
         isReply: entry.isReply,
         replyToMessageId: entry.replyToMessageId,
-    }).catch(logError);
+    }));
 }
 
 function buildMessageLogEntry(m: BotMessage): {

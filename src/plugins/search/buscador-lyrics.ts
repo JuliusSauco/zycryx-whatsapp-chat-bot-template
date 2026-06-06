@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {httpJson} from '../../lib/http-client.js';
 import {replyReportableError} from '../../lib/reply-helpers.js';

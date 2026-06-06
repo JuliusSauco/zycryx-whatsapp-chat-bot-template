@@ -1,5 +1,8 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {addWalletResourceAndSetWait, getWallet, isWalletResource} from '../../services/wallet.service.js';
+import {formatThousandsDot} from '../../utils/format.js';
+import {delay, pickRandom} from '../../utils/random.js';
+import {formatDurationCompact} from '../../utils/time.js';
 
 type SlotSymbol = string;
 type SlotRow = [SlotSymbol, SlotSymbol, SlotSymbol];
@@ -19,7 +22,7 @@ export default definePlugin({
 
     const last = Number(user?.wait) || 0;
     const remaining = last + cooldown - now;
-    if (remaining > 0) return conn.reply(m.chat, `🕓 Calma crack, espera *${msToTime(remaining)}* antes de volver a jugar.`, m);
+    if (remaining > 0) return conn.reply(m.chat, `🕓 Calma crack, espera *${formatDurationCompact(remaining)}* antes de volver a jugar.`, m);
 
     const tipoArg = (args[0] || '').toLowerCase();
     const tipo = tipoArg === 'xp' ? 'exp' : tipoArg;
@@ -29,7 +32,7 @@ export default definePlugin({
     if (!cantidad || isNaN(cantidad) || cantidad < 10) return m.reply(`❌ Mínimo 10 para apostar.`);
 
     const saldo = user[tipo];
-    if (saldo < cantidad) return m.reply(`❌ No tienes suficiente ${tipo.toUpperCase()} para apostar. Tienes *${formatNumber(saldo)}*`);
+    if (saldo < cantidad) return m.reply(`❌ No tienes suficiente ${tipo.toUpperCase()} para apostar. Tienes *${formatThousandsDot(saldo)}*`);
 
     const emojis: SlotSymbol[] = ['💎', '⚡', '🪙', '🧿', '💣', '🔮'];
     let final: SlotMatrix | null = null;
@@ -42,9 +45,9 @@ export default definePlugin({
             await conn.sendMessage(m.chat, {text: render(renderRandom(emojis)), edit: msg.key});
         } else {
             final = [
-                [rand(emojis), rand(emojis), rand(emojis)],
-                [rand(emojis), rand(emojis), rand(emojis)],
-                [rand(emojis), rand(emojis), rand(emojis)],
+                [pickRandom(emojis), pickRandom(emojis), pickRandom(emojis)],
+                [pickRandom(emojis), pickRandom(emojis), pickRandom(emojis)],
+                [pickRandom(emojis), pickRandom(emojis), pickRandom(emojis)],
             ];
             await conn.sendMessage(m.chat, {text: render(final), edit: msg.key});
         }
@@ -56,13 +59,13 @@ export default definePlugin({
 
     if (resultado === 'triple') {
         ganancia = cantidad * 3;
-        textoFinal = `🎉 ¡Triple! Ganaste *${formatNumber(ganancia)} ${tipoBonito(tipo)}*`;
+        textoFinal = `🎉 ¡Triple! Ganaste *${formatThousandsDot(ganancia)} ${tipoBonito(tipo)}*`;
     } else if (resultado === 'doble') {
         ganancia = cantidad;
-        textoFinal = `😏 Dos iguales. Recuperaste *${formatNumber(ganancia)} ${tipoBonito(tipo)}*`;
+        textoFinal = `😏 Dos iguales. Recuperaste *${formatThousandsDot(ganancia)} ${tipoBonito(tipo)}*`;
     } else {
         ganancia = -cantidad;
-        textoFinal = `💀 Mala suerte. Perdiste *${formatNumber(cantidad)} ${tipoBonito(tipo)}*`;
+        textoFinal = `💀 Mala suerte. Perdiste *${formatThousandsDot(cantidad)} ${tipoBonito(tipo)}*`;
     }
 
     await addWalletResourceAndSetWait(m.sender, tipo, ganancia, now);
@@ -71,19 +74,15 @@ export default definePlugin({
     }
 });
 
-function rand<T>(arr: T[]): T {
-    return arr[Math.floor(Math.random() * arr.length)];
-}
-
 function render(matriz: SlotMatrix) {
     return `🎰 | *SLOTS* | 🎰\n────────────\n${matriz.map(row => row.join(' | ')).join('\n')}\n────────────`;
 }
 
 function renderRandom(emojis: SlotSymbol[]): SlotMatrix {
     const temp = [
-        [rand(emojis), rand(emojis), rand(emojis)],
-        [rand(emojis), rand(emojis), rand(emojis)],
-        [rand(emojis), rand(emojis), rand(emojis)],
+        [pickRandom(emojis), pickRandom(emojis), pickRandom(emojis)],
+        [pickRandom(emojis), pickRandom(emojis), pickRandom(emojis)],
+        [pickRandom(emojis), pickRandom(emojis), pickRandom(emojis)],
     ] as SlotMatrix;
     return temp;
 }
@@ -93,20 +92,6 @@ function evaluarLinea(arr: SlotRow) {
     if (a === b && b === c) return 'triple';
     if (a === b || b === c || a === c) return 'doble';
     return 'nada';
-}
-
-function delay(ms: number) {
-    return new Promise(res => setTimeout(res, ms));
-}
-
-function formatNumber(num: number) {
-    return num.toLocaleString('en').replace(/,/g, '.');
-}
-
-function msToTime(duration: number) {
-    const s = Math.floor(duration / 1000) % 60;
-    const m = Math.floor(duration / (1000 * 60)) % 60;
-    return `${m ? `${m}m ` : ''}${s}s`;
 }
 
 function tipoBonito(tipo: string) {

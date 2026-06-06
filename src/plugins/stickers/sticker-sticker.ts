@@ -1,10 +1,11 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import uploadFile from '../../lib/uploadFile.js'
 import uploadImage from '../../lib/uploadImage.js'
 import {webp2png} from '../../lib/webp2mp4.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
+import {pickRandom} from '../../utils/random.js';
 
 export default definePlugin({
     help: ['sticker'],
@@ -53,7 +54,7 @@ export default definePlugin({
                     title: info.wm,
                     body: ``,
                     mediaType: 2,
-                    sourceUrl: [info.nna, info.nna2, info.md, info.yt].getRandom(),
+                    sourceUrl: pickRandom([info.nna, info.nna2, info.md, info.yt]),
                     thumbnail: m.pp
                 }
             }

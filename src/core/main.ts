@@ -139,7 +139,6 @@ async function cargarSubbots() {
 
 async function startBot() {
     const {state, saveCreds} = await baileys.useMultiFileAuthState(BOT_SESSION_FOLDER);
-    const msgRetryCounterMap = new Map();
     const msgRetryCounterCache = new NodeCache({stdTTL: 0, checkperiod: 0});
     const userDevicesCache = new NodeCache({stdTTL: 0, checkperiod: 0});
     const groupCache = new NodeCache({stdTTL: 3600, checkperiod: 300});
@@ -163,7 +162,6 @@ async function startBot() {
         getMessage: async () => undefined,
         msgRetryCounterCache: msgRetryCounterCache,
         userDevicesCache: userDevicesCache as unknown as SocketConfig['userDevicesCache'],
-//msgRetryCounterMap,
         cachedGroupMetadata: async (jid: string) => groupCache.get(jid),
         version: version,
         defaultQueryTimeoutMs: 30_000,

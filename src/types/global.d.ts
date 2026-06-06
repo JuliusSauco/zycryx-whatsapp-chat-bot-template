@@ -12,6 +12,7 @@ declare global {
     var videoList: Array<{from: string; urls: string[]}>;
 
     interface Array<T> {
+        /** @deprecated Use pickRandom from src/utils/random.ts in new code. */
         getRandom(): T;
     }
 }

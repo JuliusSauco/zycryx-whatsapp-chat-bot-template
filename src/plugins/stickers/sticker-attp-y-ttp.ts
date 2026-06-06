@@ -15,7 +15,7 @@ export default definePlugin({
     tags: ['sticker'],
     command: /^(attp|ttp|ttp2|ttp3|ttp4|attp2|brat|brat2|bratvid)$/i,
     register: true,
-    async execute(m, {conn, text, args, usedPrefix, command}) {
+    async execute(m, {conn, text, usedPrefix, command}) {
     const {packname: f, author: g} = await getStickerExif(m.sender);
     if (!text) return m.reply(`⚠️ 𝙀𝙨𝙘𝙧𝙞𝙗𝙖 𝙥𝙖𝙧𝙖 𝙦𝙪𝙚 𝙚𝙡 𝙩𝙚𝙭𝙩𝙤 𝙨𝙚 𝙘𝙤𝙣𝙫𝙞𝙚𝙧𝙩𝙖 𝙚𝙡 𝙨𝙩𝙞𝙘𝙠𝙚𝙧\n𝙀𝙟𝙚𝙢𝙥𝙡𝙤\n*${usedPrefix + command}* Nuevo Sticker`)
     let teks = encodeURI(text)

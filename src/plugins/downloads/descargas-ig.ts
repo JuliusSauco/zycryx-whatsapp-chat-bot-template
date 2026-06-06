@@ -1,8 +1,9 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {instagramdl} from '@bochilteam/scraper';
 import {httpJson, httpText} from '../../lib/http-client.js';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
+import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 
 interface InstagramMediaData {
     url: string
@@ -23,7 +24,7 @@ interface FgmodsInstagramResponse {
     }>
 }
 
-const userRequests: Record<string, boolean> = {};
+const userRequests = createUserRequestLocks();
 
 export default definePlugin({
     help: ['instagram *<link ig>*'],
@@ -33,8 +34,7 @@ export default definePlugin({
     limit: 1,
     async execute(m, {conn, args, command, usedPrefix}) {
     if (!args[0]) return m.reply(`⚠️ Ingresa el enlace del vídeo de Instagram junto al comando.\n\nEjemplo: *${usedPrefix + command}* https://www.instagram.com/p/C60xXk3J-sb/?igsh=YzljYTk1ODg3Zg==`)
-    if (userRequests[m.sender]) return await conn.reply(m.chat, `Oye @${m.sender.split('@')[0]}, calma, ya estás descargando algo 😒\nEspera a que termine tu solicitud actual antes de hacer otra...`, m)
-    userRequests[m.sender] = true;
+    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, `Oye @${m.sender.split('@')[0]}, calma, ya estás descargando algo 😒\nEspera a que termine tu solicitud actual antes de hacer otra...`, m)
     await m.react('⌛');
     try {
         const downloadProviders: Array<Provider<InstagramMediaData>> = [
@@ -103,7 +103,7 @@ export default definePlugin({
         await m.react('❌');
         logInfo(e);
     } finally {
-        delete userRequests[m.sender];
+        userRequests.release(m.sender);
     }
     }
 });

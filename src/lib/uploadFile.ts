@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from './logger.js';
+import {logInfo} from './logger.js';
 import {Blob, FormData} from 'formdata-node'
 import {fileTypeFromBuffer} from 'file-type'
 import {httpJson, httpText} from './http-client.js'
@@ -6,11 +6,6 @@ import type {RequestInit} from 'node-fetch'
 
 type FetchBody = RequestInit['body'];
 type UploadFileItem = {url?: string; src?: string};
-
-interface FileIoResponse {
-    success?: boolean;
-    link?: string;
-}
 
 interface RestfulApiResponse {
     files?: UploadFileItem[];
@@ -31,20 +26,6 @@ interface GenericUploadResponse {
         downloadPage?: string;
         url?: string;
     };
-}
-
-const fileIO = async (buffer: Buffer): Promise<string> => {
-    const result = await fileTypeFromBuffer(buffer) || {} as { ext?: string; mime?: string }
-    const {ext, mime} = result
-    const form = new FormData()
-    const blob = new Blob([buffer], {type: mime})
-    form.append('file', blob, 'tmp.' + ext)
-    const json = await httpJson<FileIoResponse>('https://file.io/?expires=1d', {
-        method: 'POST',
-        body: form as unknown as FetchBody,
-    })
-    if (!json.success || !json.link) throw json
-    return json.link
 }
 
 const RESTfulAPI = async (inp: Buffer | Buffer[]): Promise<string | string[]> => {

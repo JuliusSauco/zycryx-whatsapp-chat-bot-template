@@ -7,9 +7,6 @@ export default definePlugin({
     command: /^(menu2|audios|menú2|memu2|menuaudio|menuaudios|memuaudios|memuaudio|audios|audio)$/i,
     register: true,
     async execute(m, {conn}) {
-    const nombreBot = conn.user?.name || 'Bot';
-    const isPrincipal = conn === global.conn;
-    const tipo = isPrincipal ? 'Bot Oficial' : 'Sub Bot';
     const taguser = '@' + m.sender.split('@')[0];
     const chatId = m.chat?.trim();
     const audios = await getAudioConfig([chatId, 'global']);

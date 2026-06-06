@@ -2,6 +2,7 @@ import {definePlugin} from '../../core/define-plugin.js'
 import {listWallets} from '../../services/wallet.service.js'
 import type {UserWallet} from '../../ports/repositories.js'
 import type {proto} from '@whiskeysockets/baileys'
+import {formatCompactNumber} from '../../utils/format.js'
 
 type RankedWallet = UserWallet & {jid: string}
 type RankingProp = 'exp' | 'limite' | 'money' | 'banco'
@@ -26,11 +27,6 @@ export default definePlugin({
     const timeLeft = COOLDOWN_DURATION - (now - chatData.lastUsed)
 
     if (timeLeft > 0) {
-        const secondsLeft = Math.ceil(timeLeft / 1000)
-        const minutes = Math.floor(secondsLeft / 60)
-        const remainingSeconds = secondsLeft % 60
-        const timeMessage = minutes > 0 ? `${minutes} min${minutes !== 1 ? 's' : ''}${remainingSeconds > 0 ? ` y ${remainingSeconds} seg${remainingSeconds !== 1 ? 's' : ''}` : ''}` : `${remainingSeconds} seg${remainingSeconds !== 1 ? 's' : ''}`
-
         await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} Hay ya se mostró el ranking pendejo 🙄, Solo se muestra cada 3 minutos para evitar spam, Desplázate hacia arriba para verlo completo.👆`, chatData.rankingMessage || m)
         return
     }
@@ -45,7 +41,7 @@ export default definePlugin({
 
     const format = (list: RankedWallet[], prop: RankingProp, icon: string) =>
         list.slice(0, len).map(({jid, [prop]: value}, i) =>
-            `${i + 1}. @${jid.split('@')[0]} *${formatNumber(value)}* (${value}) ${icon}`).join('\n')
+            `${i + 1}. @${jid.split('@')[0]} *${formatCompactNumber(value)}* (${value}) ${icon}`).join('\n')
 
     const text = `\`🏆 𝚃𝙰𝙱𝙻𝙰 𝙳𝙴 𝙲𝙻𝙰𝚂𝙸𝙲𝙰𝙲𝙸𝙾𝙽\`
 
@@ -77,8 +73,3 @@ ${format(sortedBanc, 'banco', '💵')}
     }
 })
 
-function formatNumber(num: number) {
-    return num >= 1e6 ? (num / 1e6).toFixed(1) + 'M'
-        : num >= 1e3 ? (num / 1e3).toFixed(1) + 'k'
-            : num.toString()
-}

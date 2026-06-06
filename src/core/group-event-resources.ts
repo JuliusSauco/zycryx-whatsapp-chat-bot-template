@@ -3,6 +3,7 @@ import {httpBuffer} from '../lib/http-client.js';
 import {getCachedBuffer, getCachedText} from '../lib/static-resource-cache.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
 import type {EventConn} from './group-event-types.js';
+import {pickRandom as pickRandomItem} from '../utils/random.js';
 
 export const DEFAULT_PP_PATH = path.join(process.cwd(), 'media', 'Menu1.jpg');
 
@@ -17,7 +18,7 @@ export function getByeText(): string {
 }
 
 export function pickRandom<T>(arr: T[]): T {
-    return arr[Math.floor(Math.random() * arr.length)];
+    return pickRandomItem(arr);
 }
 
 export function uniqueJids(jids: Array<string | null | undefined>): string[] {

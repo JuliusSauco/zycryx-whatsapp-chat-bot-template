@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 import syntaxerror from 'syntax-error'
 import {format} from 'util'
 import {fileURLToPath} from 'url'

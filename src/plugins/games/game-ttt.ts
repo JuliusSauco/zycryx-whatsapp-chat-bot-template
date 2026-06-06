@@ -1,6 +1,7 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {addWalletResource} from '../../services/wallet.service.js';
 import type {ExtendedConn} from '../../types/context.js';
+import {randomInt} from '../../utils/random.js';
 
 type TttSymbol = '❌' | '⭕';
 type BoardCell = TttSymbol | string;
@@ -145,7 +146,7 @@ Usa: /ttt para unirte.`);
                 if (ganador === 'empate') {
                     texto = '🤝 ¡Empate! Buen juego.';
                 } else {
-                    const xp = Math.floor(Math.random() * 3000) + 1000;
+                    const xp = randomInt(1000, 3999);
                     const ganadorId = sala.jugadores[sala.tablero[idx] === symbols[0] ? 0 : 1];
                     const perdedorId = sala.jugadores.find((j) => j !== ganadorId);
                     if (!ganadorId || !perdedorId) return;

@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../lib/logger.js';
+import {logError} from '../lib/logger.js';
 import type {Guard} from '../types/guard.js';
 import {SILENT_REJECT} from '../types/guard.js';
 import {cleanJid, isUserJid} from '../utils/jid.js';

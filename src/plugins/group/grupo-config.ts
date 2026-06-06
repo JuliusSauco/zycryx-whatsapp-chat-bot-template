@@ -3,7 +3,7 @@ export default definePlugin({
     help: ['group open/close', 'grupo abrir/cerrar', 'grupo aprobar +number'],
     tags: ['group'],
     command: /^(group|grupo)$/i,
-    async execute(m, {conn, args, usedPrefix, command, isOwner, text}) {
+    async execute(m, {conn, args, usedPrefix, command, isOwner}) {
     let groupId = m.isGroup ? m.chat : null;
     if (!m.isGroup && !isOwner) return m.reply('⚠️ Solo el owner puede usar este comando en privado.');
     let identifier, action, target;

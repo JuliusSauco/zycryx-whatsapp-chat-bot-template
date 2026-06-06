@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {getUserWarnInfo, incrementUserWarn, resetUserWarn} from '../../services/user.service.js';
 
@@ -12,7 +12,7 @@ export default definePlugin({
     botAdmin: true,
     group: true,
     register: true,
-    async execute(m, {conn, text, args, usedPrefix, command, metadata}) {
+    async execute(m, {conn, text}) {
     try {
         let who: string;
         if (m.isGroup) {

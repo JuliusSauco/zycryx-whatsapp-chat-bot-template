@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {listJoinedGroupIdsByBot} from '../../services/chat.service.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';

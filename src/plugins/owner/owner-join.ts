@@ -1,8 +1,14 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {getSubbotConfig} from '../../services/subbot.service.js'
 import {setGroupExpiration} from '../../services/group-settings.service.js'
 import {decrementUserLimit, getUserResources} from '../../services/user.service.js'
 import {definePlugin} from '../../core/define-plugin.js'
+import {
+    buildJoinedGroupGreeting,
+    buildJoinRequestQueuedMessage,
+    buildJoinUsageMessage,
+    buildOwnerJoinRequestMessage,
+} from './owner-join.messages.js'
 
 const linkRegex = /chat\.whatsapp\.com\/([0-9A-Za-z]{20,24})/i
 
@@ -20,7 +26,8 @@ export default definePlugin({
     let link = allText.match(linkRegex)?.[0]
     let code = link?.match(linkRegex)?.[1]
 
-    if (!code) throw `🤔 𝙔 𝙚𝙡 𝙚𝙣𝙡𝙖𝙘𝙚? 𝙄𝙣𝙜𝙧𝙚𝙨𝙖 𝙪𝙣 𝙚𝙣𝙡𝙖𝙘𝙚 𝙫𝙖́𝙡𝙞𝙙𝙤 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙥𝙖𝙧𝙖 𝙦𝙪𝙚 𝙚𝙡 𝙗𝙤𝙩 𝙥𝙪𝙚𝙙𝙖 𝙪𝙣𝙞𝙧𝙨𝙚.\n\n📝 *¿𝘾𝙤́𝙢𝙤 𝙪𝙨𝙖𝙧 𝙚𝙡 𝙘𝙤𝙢𝙖𝙣𝙙𝙤?*\nUsa: #join <enlace> [tiempo]\n- Si no pones tiempo, el bot se une por 30 minutos (usuarios) o 1 día (propietario).\n- Puedes especificar el tiempo con: minuto, hora, día o mes.\n\n📌 *Ejemplos:*\n- #join ${info.nn} (por defecto)\n- #join ${info.nn2} 60 minuto (1 hora)\n- #join ${info.nn} 2 día (2 días)\n- #join ${info.nn} 1 mes (30 días)`;
+    if (!code) throw buildJoinUsageMessage();
+    const groupLink = link || `chat.whatsapp.com/${code}`;
 
     let waMeMatch = allText.match(/wa\.me\/(\d{8,})/)
     let solicitante = waMeMatch ? waMeMatch[1] : m.sender.split('@')[0]
@@ -48,11 +55,11 @@ export default definePlugin({
     }
 
     if (!prestar && !isOwner) {
-        await m.reply(`𝙎𝙪 𝙚𝙣𝙡𝙖𝙘𝙚 𝙨𝙚 𝙚𝙣𝙫𝙞𝙤́ 𝙖𝙡 𝙢𝙞 𝙥𝙧𝙤𝙥𝙞𝙚𝙩𝙖𝙧𝙞𝙤(𝙖)*.\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n⚠️ *𝙎𝙪 𝙜𝙧𝙪𝙥𝙤 𝙨𝙚𝙧𝙖́ 𝙚𝙫𝙖𝙡𝙪𝙖𝙙𝙤 𝙮 𝙦𝙪𝙚𝙙𝙖𝙧𝙖́ 𝙖 𝙙𝙚𝙘𝙞𝙨𝙞𝙤́𝙣 𝙙𝙚𝙡 𝙢𝙞 𝙥𝙧𝙤𝙥𝙞𝙚𝙩𝙖𝙧𝙞𝙤(𝙖).*\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n❕ *𝙀𝙨 𝙥𝙤𝙨𝙞𝙗𝙡𝙚 𝙦𝙪𝙚 𝙨𝙪 𝙨𝙤𝙡𝙞𝙘𝙞𝙩𝙪𝙙 𝙨𝙚𝙖 𝙧𝙚𝙘𝙝𝙖𝙯𝙖𝙙𝙖 𝙥𝙤𝙧 𝙡𝙖𝙨 𝙨𝙞𝙜𝙪𝙞𝙚𝙣𝙩𝙚𝙨 𝙘𝙖𝙪𝙨𝙖𝙨:*\n1️⃣ *𝙀𝙡 𝙗𝙤𝙩 𝙚𝙨𝙩𝙖́ 𝙨𝙖𝙩𝙪𝙧𝙖𝙙𝙤* .\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n2️⃣ *𝙀𝙡 𝙗𝙤𝙩 𝙛𝙪𝙚 𝙚𝙡𝙞𝙢𝙞𝙣𝙖𝙙𝙤 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤.*\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n3️⃣ *𝙀𝙡 𝙜𝙧𝙪𝙥𝙤 𝙣𝙤 𝙘𝙪𝙢𝙥𝙡𝙞𝙧 𝙘𝙤𝙣 𝙡𝙖𝙨 𝙣𝙤𝙧𝙢𝙖𝙩𝙞𝙫𝙖 𝙙𝙚 𝙀𝙡 𝙗𝙤𝙩*\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n4⃣ *𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙩𝙞𝙚𝙣𝙚 𝙦𝙪𝙚 𝙩𝙚𝙣𝙚𝙧 𝙢𝙞𝙣𝙞𝙢𝙤 80 𝙥𝙖𝙧𝙩𝙞𝙘𝙞𝙥𝙖𝙣𝙩𝙚𝙨 𝙥𝙖𝙧𝙖 𝙚𝙫𝙞𝙩𝙖𝙧 𝙜𝙧𝙪𝙥𝙤 𝙞𝙣𝙖𝙘𝙩𝙞𝙫𝙤 𝙮 𝙨𝙖𝙩𝙪𝙧𝙖 𝙖𝙡 𝙗𝙤𝙩*\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n5⃣ *𝙀𝙡 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤 𝙨𝙚 𝙧𝙚𝙨𝙩𝙖𝙗𝙡𝙚𝙘𝙞𝙤*.\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n6️⃣ *𝙉𝙤 𝙨𝙚 𝙖𝙜𝙧𝙚𝙜𝙖 𝙖𝙡 𝙜𝙧𝙪𝙥𝙤 𝙨𝙚𝙜𝙪́𝙣 𝙢𝙞 𝙥𝙧𝙤𝙥𝙞𝙚𝙩𝙖𝙧𝙞𝙤(𝙖)*.\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n💌 *𝙇𝙖𝙨 𝙨𝙤𝙡𝙞𝙘𝙞𝙩𝙪𝙙 𝙥𝙪𝙚𝙙𝙚 𝙩𝙖𝙧𝙙𝙖 𝙝𝙤𝙧𝙖𝙨 𝙚𝙣 𝙨𝙚𝙧 𝙧𝙚𝙨𝙥𝙤𝙣𝙍𝙞𝙙𝙖𝙨. 𝙋𝙤𝙧 𝙛𝙖𝙫𝙤𝙧 𝙩𝙚𝙣𝙚𝙧 𝙥𝙖𝙘𝙞𝙚𝙣𝙘𝙞𝙖 𝙜𝙧𝙖𝙘𝙞𝙖𝙨*\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n*ᴾᵘᵉᵈᵉ ᵃᵖᵒʸᵃʳ ᵉˡ ᵇᵒᵗ ᶜᵒⁿ ᵘⁿᵃ ᴱˢᵗʳᵉˡˡᶦᵗᵃ ᵉˡ ⁿᵘᵉˢᵗʳᵒ ʳᵉᵖᵒˢᶦᵗᵒʳᶦᵒ ᵒᶠᶦᶜᶦᵃˡ ʸ ˢᵘˢᶜʳᶦʳᵗᵉ ᵃ ⁿᵘᵉˢᵗʳᵒ ᶜᵃⁿᵃˡ ᵈᵉˡ ʸᵒᵘᵀᵘᵇᵉ ᵐᵃⁿᵈᵃ ᶜᵃʳᵗᵘʳᵃ ᵃ ᵐᶦ ᶜʳᵉᵃᵈᵒʳ ᵖᵃʳᵃ ᵠᵘᵉ ᵖᵘᵉᵈᵃ ᵃᵍʳᵉᵍᵃ ᵉˡ ᵇᵒᵗ ᵃ ᵗᵘ ᵍʳᵘᵖᵒ 💫*\n${[info.yt, info.md].getRandom()}`)
+        await m.reply(buildJoinRequestQueuedMessage())
         let ownerJid = "573226873710@s.whatsapp.net";
         if (ownerJid !== botId) {
             await conn.sendMessage(ownerJid, {
-                text: `*⪨ 𝙎𝙊𝙇𝙄𝘾𝙄𝙏𝙐𝘿 𝘿𝙀 𝘽𝙊𝙏 𝙋𝘼𝙍𝘼 𝙐𝙉 𝙂𝙍𝙐𝙋𝙊 ⪩*\n\n👤 𝙉𝙪𝙢𝙚𝙧𝙤 𝙨𝙤𝙡𝙞𝙘𝙞𝙩𝙖𝙣𝙩𝙚:\nwa.me/${m.sender.split('@')[0]}\n🔮 𝙇𝙞𝙣𝙠 𝙙𝙚𝙡 𝙜𝙧𝙪𝙥𝙤:\nhttp://${link}\n\n⏳ 𝙏𝙞𝙚𝙢𝙥𝙤 𝙨𝙤𝙡𝙞𝙘𝙞𝙩𝙖𝙙𝙤: ${time} ${unit}${time > 1 ? 's' : ''}`,
+                text: buildOwnerJoinRequestMessage(m.sender, groupLink, time, unit),
                 contextInfo: {mentionedJid: [m.sender]}
             });
         }
@@ -79,9 +86,7 @@ export default definePlugin({
         if (!res) return m.reply("❌ No pude unirme al grupo. Verifica el enlace e inténtalo de nuevo.")
 
         await new Promise(r => setTimeout(r, 3000))
-        let groupMeta = await conn.groupMetadata(res)
-        let groupName = groupMeta.subject || "este grupo"
-        let mes = `Hola a todos 👋🏻\n\nSoy *${conn.user?.name || 'Bot'}*.\nFui invitado por *@${solicitante}*\nPara ver el menú escribe: *#menu*\n\nEl bot saldrá automáticamente después de:\n${time} ${unit}${time > 1 ? 's' : ''}`
+        let mes = buildJoinedGroupGreeting(conn.user?.name || 'Bot', solicitante, time, unit)
         await conn.sendMessage(res, {text: mes, contextInfo: {mentionedJid: [`${solicitante}@s.whatsapp.net`]}})
         await setGroupExpiration(res, Date.now() + timeInMs)
         await m.reply(`*El Bot se ha unido al grupo ✅* por *${time} ${unit}${time > 1 ? 's' : ''}*`)

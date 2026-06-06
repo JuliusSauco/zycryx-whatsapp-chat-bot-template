@@ -6,7 +6,7 @@ export default definePlugin({
     tags: ['sticker'],
     command: ['exif'],
     register: true,
-    async execute(m, {conn, args, usedPrefix, command}) {
+    async execute(m, {args, usedPrefix, command}) {
     if (!args[0]) return m.reply(`*⚠️ Uso:* ${usedPrefix}${command} packname | author\n*Ejemplo:* ${usedPrefix}${command} LoliBot | elrebelde21`)
 
     let text = args.join(' ').split('|');

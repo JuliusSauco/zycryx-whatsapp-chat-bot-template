@@ -1,7 +1,8 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import path from 'path'
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js'
+import {pickRandom} from '../../utils/random.js'
 import {getCachedText} from '../../lib/static-resource-cache.js'
 
 /** Archivo con las frases, separadas por '|'. Path dinámico (sirve en producción). */
@@ -44,7 +45,7 @@ export default definePlugin({
         const mentionedTags = mentionedResolved.map((x: ResolvedMention) => x.tag)
         const mentions = Array.from(new Set(mentionedResolved.map((x: ResolvedMention) => x.mentionJid)))
 
-        const fraseRandom = frases[Math.floor(Math.random() * frases.length)]
+        const fraseRandom = pickRandom(frases)
         const texto = `${mentionedTags.join(' ')} ${fraseRandom}`
 
         await conn.sendMessage(m.chat, {

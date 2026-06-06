@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {blackboxAi} from '../../lib/scraper.js';
 import {chatCompletion} from '../../lib/ai.js';
 import {ensureSystemPrompt, getAiMemory, getAiPromptSettings, saveAiMemory} from '../../services/chat-memory.service.js';

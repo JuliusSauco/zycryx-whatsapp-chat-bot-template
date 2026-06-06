@@ -49,6 +49,8 @@ export interface PluginDefinition {
     level?: number;
     /** Permite que `before` corra también cuando el mensaje es un comando con prefijo. */
     runBeforeOnCommand?: boolean;
+    /** Solicita `groupSettings` completas en execute. Usar solo si el comando consume campos fuera del contexto mínimo. */
+    needsFullGroupSettings?: boolean;
     /** Hook que se ejecuta ANTES de cualquier comando (para middlewares como antilink). */
     before?: (m: BotMessage, ctx: BeforePluginContext) => Promise<boolean | void | unknown>;
     /** Lógica principal del plugin. */
@@ -80,6 +82,7 @@ export function definePlugin(def: PluginDefinition): Plugin {
     if (def.money !== undefined) fn.money = def.money;
     if (def.level !== undefined) fn.level = def.level;
     if (def.runBeforeOnCommand !== undefined) fn.runBeforeOnCommand = def.runBeforeOnCommand;
+    if (def.needsFullGroupSettings !== undefined) fn.needsFullGroupSettings = def.needsFullGroupSettings;
     if (def.before) fn.before = def.before;
 
     return fn;

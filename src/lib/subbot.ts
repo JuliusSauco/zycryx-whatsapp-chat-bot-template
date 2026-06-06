@@ -3,7 +3,6 @@ import {
     fetchLatestBaileysVersion,
     makeWASocket,
     useMultiFileAuthState,
-    type WAMessage,
     type WASocket
 } from '@whiskeysockets/baileys';
 import pino from 'pino';
@@ -80,7 +79,6 @@ export async function startSubBot(
     sock.ev.on('creds.update', saveCreds);
     setupGroupEvents(sock);
     sock.isInit = false
-    let isInit = true
 
     sock.ev.on('connection.update', async ({connection, lastDisconnect, isNewLogin, qr}) => {
         if (isNewLogin) sock.isInit = false

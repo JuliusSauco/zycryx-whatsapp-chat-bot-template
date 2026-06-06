@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js';
 import {definePlugin} from '../../core/define-plugin.js';

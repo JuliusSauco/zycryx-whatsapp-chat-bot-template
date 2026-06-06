@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from './logger.js';
+import {logError} from './logger.js';
 import * as path from 'path';
 import {dirname} from 'path';
 import {fileURLToPath} from 'url';

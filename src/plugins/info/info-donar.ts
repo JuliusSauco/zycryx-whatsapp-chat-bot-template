@@ -6,7 +6,7 @@ export default definePlugin({
     tags: ['main'],
     command: /^dona(te|si)|donar|apoyar|paypal|donating|creditos$/i,
     register: true,
-    async execute(m, {conn, command}) {
+    async execute(m, {conn}) {
     let fkontak = {
         "key": {
             "participants": "0@s.whatsapp.net",

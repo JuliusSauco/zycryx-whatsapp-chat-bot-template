@@ -1,0 +1,33 @@
+export const crimeSuccessMessages = [
+    'Robaste un Banco 🏦 y Obtuviste',
+    'Negociaste con el jefe de la mafia y Obtuviste:',
+    'Casi te atrapa la policía, pero lograste robar una cantidad valiosa de 💰. ¡Ten cuidado la próxima vez! Obtuviste:',
+    'Los mafiosos te han pagado:',
+    'Le has robado al Administrador del Grupo:',
+    'Le robaste a tu presidente una suma de:',
+    'Le robaste a un famoso un valor de:',
+    'Entraste sigilosamente en el museo y robaste una obra de arte valiosa:',
+    'Infiltraste una joyería y obtuviste un botín impresionante:',
+    'Te convertiste en el ladrón más buscado del país, obtuviste:',
+    'Robaste un camión lleno de productos valiosos y obtuviste:',
+    'Asaltaste un tren y conseguiste:',
+    'Robaste un avión cargado de mercancía y obtuviste:',
+    'Te hiciste pasar por un millonario para robar una joya única, obtuviste:',
+    'Entraste a la casa de un coleccionista de arte y robaste una pieza invaluable, obtuviste:',
+    'Secuestraste a un empresario y conseguiste un rescate importante:',
+    'Amenazaste a un político y obtuviste una gran suma de dinero:',
+    'Sobornaste a un oficial de policía para obtener información valiosa, conseguiste:',
+];
+
+export const crimeFailureMessages = [
+    'LA POLICIA TE VIO 🙀👮‍♂️ PERDISTE',
+    'Fuiste a robar un banco 🏦 y tu ayudante te vendió a la policía, perdiste:',
+    'No pudiste escapar de la Policía 🚔🤡, perdiste:',
+    'Intentaste robar un casino pero te descubrieron, perdiste:',
+    'Te atraparon tratando de robar una tienda, perdiste:',
+    'La alarma sonó cuando intentabas robar un almacén, perdiste:',
+    'El dueño del lugar te atrapó in fraganti, perdiste:',
+    'Intentaste hackear una cuenta bancaria pero te rastrearon, perdiste:',
+    'Fuiste descubierto tratando de sobornar a un oficial, perdiste:',
+    'Tu plan para chantajear a un empresario salió mal, perdiste:',
+];

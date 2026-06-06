@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fg from 'api-dylux'
 import {httpJson} from '../../lib/http-client.js'
@@ -24,7 +24,7 @@ export default definePlugin({
     command: ['igstalk', 'igsearch', 'instagramsearch'],
     register: true,
     limit: 1,
-    async execute(m, {conn, args, text, usedPrefix, command}) {
+    async execute(m, {conn, args, usedPrefix, command}) {
     if (!args[0]) return m.reply(`⚠️ Ingrese el Username de Instagram\n\n*• Ejemplo:* ${usedPrefix + command} GataDios`)
     m.react("⌛");
     try {

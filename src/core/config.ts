@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../lib/logger.js';
+import {logInfo} from '../lib/logger.js';
 import {unwatchFile, watchFile} from 'fs'
 import chalk from 'chalk'
 import {fileURLToPath} from 'url'

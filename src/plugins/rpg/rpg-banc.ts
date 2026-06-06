@@ -6,7 +6,7 @@ export default definePlugin({
     tags: ['econ'],
     command: /^(dep|depositar|retirar|toremove)$/i,
     register: true,
-    async execute(m, {conn, command, args}) {
+    async execute(m, {command, args}) {
     const user = await getWallet(m.sender)
     if (!user) return m.reply('✳️ El usuario no se encuentra en la base de datos.')
     const limite = user.limite ?? 0

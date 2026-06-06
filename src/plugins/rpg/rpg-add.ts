@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {getNumberByLid, getUserById} from '../../services/user.service.js';
 import {addWalletResource} from '../../services/wallet.service.js';

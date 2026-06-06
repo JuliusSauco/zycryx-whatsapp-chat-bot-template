@@ -1,13 +1,9 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {QuotedMessage} from '../../types/context.js';
 import {httpJson} from '../../lib/http-client.js';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
-//import cheerio from 'cheerio';
-//import { mediafiredl } from '@bochilteam/scraper';
-
-let free = 150;
-let prem = 500;
+import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 interface MediafireFileData {
     url: string
     filename: string
@@ -36,7 +32,7 @@ interface NeoxrMediafireResponse {
 }
 
 const userCaptions = new Map<string, QuotedMessage>();
-const userRequests: Record<string, boolean> = {};
+const userRequests = createUserRequestLocks();
 
 export default definePlugin({
     help: ['mediafire', 'mediafiredl'],
@@ -48,8 +44,7 @@ export default definePlugin({
     const sticker = 'https://qu.ax/Wdsb.webp';
     if (!args[0]) return m.reply(`⚠️ 𝙄𝙣𝙜𝙧𝙚𝙨𝙚 𝙪𝙣 𝙀𝙣𝙡𝙖𝙘𝙚 𝙫𝙖𝙡𝙞𝙙𝙤 𝙙𝙚𝙡 𝙢𝙚𝙙𝙞𝙖𝙛𝙞𝙧𝙚 𝙀𝙟:*\n${usedPrefix + command} https://www.mediafire.com/file/sd9hl31vhhzf76v/EvolutionV1.1-beta_%2528Recomendado%2529.apk/file`)
 
-    if (userRequests[m.sender]) return await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} pendejo, ya estás descargando algo 🙄\nEspera a que termine tu solicitud actual antes de hacer otra...`, userCaptions.get(m.sender) || m);
-    userRequests[m.sender] = true;
+    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} pendejo, ya estás descargando algo 🙄\nEspera a que termine tu solicitud actual antes de hacer otra...`, userCaptions.get(m.sender) || m);
     m.react(`🚀`);
     try {
         const downloadProviders: Array<Provider<MediafireFileData>> = [
@@ -127,7 +122,7 @@ export default definePlugin({
         m.react('❌');
         logError(e);
     } finally {
-        delete userRequests[m.sender];
+        userRequests.release(m.sender);
     }
     }
 });

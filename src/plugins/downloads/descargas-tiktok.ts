@@ -1,9 +1,10 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fg from 'api-dylux';
 import cheerio from 'cheerio';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
 import {httpJson, httpText} from '../../lib/http-client.js';
+import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 
 interface TikTokMedia {
     type?: string
@@ -17,7 +18,7 @@ interface TikDownResponse {
     html?: string
 }
 
-const userRequests: Record<string, boolean> = {};
+const userRequests = createUserRequestLocks();
 
 export default definePlugin({
     help: ['tiktok'],
@@ -27,16 +28,8 @@ export default definePlugin({
     async execute(m, {conn, text, args, usedPrefix, command}) {
     if (!text) return m.reply(`⚠️ *Que tiktok buscar? 🤔*\n\n⚡ *Ingrese un enlace de tiktok para descarga el video*\n*Ej:* ${usedPrefix + command} https://vm.tiktok.com/ZM6T4X1RY/`)
     if (!/(?:https:?\/{2})?(?:w{3}|vm|vt|t)?\.?tiktok.com\/([^\s&]+)/gi.test(text)) return m.reply(`❌ Error`)
-    if (userRequests[m.sender]) return await conn.reply(m.chat, `Oye @${m.sender.split('@')[0]}, calma bro, ya estás descargando algo 😒\n> Espera a que termine tu solicitud actual antes de hacer otra...`, m)
-    userRequests[m.sender] = true;
-    const {key} = await conn.sendMessage(m.chat, {text: `⌛ 𝙀𝙨𝙥𝙚𝙧𝙚 ✋\n▰▰▰▱▱▱▱▱▱\n𝙔𝙖 𝙚𝙨𝙩𝙤𝙮 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙙𝙤... 𝙨𝙪𝙨 𝙫𝙞𝙙𝙚𝙤 𝙙𝙚𝙡 𝙏𝙞𝙠𝙏𝙤𝙠 🔰`}, {quoted: m});
-    await delay(1000);
-    await conn.sendMessage(m.chat, {
-        text: `⌛ 𝙀𝙨𝙥𝙚𝙧𝙚 ✋ \n▰▰▰▰▰▱▱▱▱\n𝙔𝙖 𝙚𝙨𝙩𝙤𝙮 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙙𝙤... 𝙨𝙪𝙨 𝙫𝙞𝙙𝙚𝙤 𝙙𝙚𝙡 𝙏𝙞𝙠𝙏𝙤𝙠 🔰`,
-        edit: key
-    });
-    await delay(1000);
-    await conn.sendMessage(m.chat, {text: `⌛ 𝙔𝙖 𝙘𝙖𝙨𝙞 🏃‍♂️💨\n▰▰▰▰▰▰▰▱▱`, edit: key});
+    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, `Oye @${m.sender.split('@')[0]}, calma bro, ya estás descargando algo 😒\n> Espera a que termine tu solicitud actual antes de hacer otra...`, m)
+    const {key} = await conn.sendMessage(m.chat, {text: `⌛ Descargando video de TikTok...`}, {quoted: m});
     try {
         const downloadProviders: Array<Provider<string>> = [
             {
@@ -78,14 +71,12 @@ export default definePlugin({
         logInfo(e);
         m.react(`❌`);
     } finally {
-        delete userRequests[m.sender];
+        userRequests.release(m.sender);
     }
     }
 });
 
 ;
-
-const delay = (time: number) => new Promise(res => setTimeout(res, time));
 
 async function tiktokdlF(url: string) {
     if (!/tiktok/.test(url)) throw new Error(`URL de TikTok inválida`);

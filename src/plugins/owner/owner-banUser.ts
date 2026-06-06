@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {getUserById, setUserBanStatus} from '../../services/user.service.js';
 import type {MessageContent} from '../../types/context.js';

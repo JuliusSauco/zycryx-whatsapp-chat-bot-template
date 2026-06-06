@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 //Código elaborado por: https://github.com/elrebelde21
 
@@ -11,6 +11,8 @@ import {
 import {addWalletResource, addWalletResourcesAndSetFields, getWallet} from '../../services/wallet.service.js'
 import type {CharacterRecord} from '../../ports/repositories.js'
 import {httpJson} from '../../lib/http-client.js'
+import {pickRandom, randomChance, randomInt} from '../../utils/random.js'
+import {formatDurationPaddedMinutesSeconds} from '../../utils/time.js'
 
 interface AniListCharacterResponse {
     data?: {
@@ -32,7 +34,7 @@ type TemporaryCharacter = CharacterRecord & {
 const tempCharacterStore = new Map<string, TemporaryCharacter>()
 
 async function getAniListCharacter() {
-    const id = Math.floor(Math.random() * 200000)
+    const id = randomInt(200000)
     const query = `query {
       Character(id: ${id}) {
         name { full }
@@ -57,11 +59,11 @@ async function getAniListCharacter() {
     if (!c || !c.image?.large || !c.name?.full) return await getAniListCharacter()
 
     const rarezas = ['Común', 'Raro', 'Épico', 'Legendario']
-    const rareza = rarezas[Math.floor(Math.random() * rarezas.length)]
+    const rareza = pickRandom(rarezas)
     const favs = c.favourites || 0
     let price = Math.floor(favs * 0.5)
     if (price < 6500) price = 6500
-    if (rareza === 'Legendario' && price < 50000) price = 50000 + Math.floor(Math.random() * 10000)
+    if (rareza === 'Legendario' && price < 50000) price = 50000 + randomInt(10000)
     return {
         name: c.name.full,
         url: c.image.large,
@@ -144,9 +146,9 @@ export default definePlugin({
         const lastTime = user?.ryTime || 0
         const now = Date.now()
 
-        if (now - lastTime < 600000) return conn.reply(m.chat, `🤚 Pa, espera ${msToTime(lastTime + 600000 - now)} para volver a usar este comando`, m)
+        if (now - lastTime < 600000) return conn.reply(m.chat, `🤚 Pa, espera ${formatDurationPaddedMinutesSeconds(lastTime + 600000 - now)} para volver a usar este comando`, m)
         const character = await getAniListCharacter()
-        const esGratis = Math.random() < 0.5
+        const esGratis = randomChance(0.5)
         let claimedCharacter = await findCharacterByUrl(character.url)
 
         if (!claimedCharacter) {
@@ -166,7 +168,7 @@ export default definePlugin({
                     title: "✨️ Character Details ✨️",
                     body: info.wm,
                     thumbnailUrl: m.pp,
-                    sourceUrl: [info.nna, info.nna2, info.md].getRandom(),
+                    sourceUrl: pickRandom([info.nna, info.nna2, info.md]),
                     mediaType: 1,
                     showAdAttribution: false,
                     renderLargerThumbnail: false
@@ -184,10 +186,3 @@ export default definePlugin({
     },
 })
 
-function msToTime(duration: number) {
-    const seconds = Math.floor((duration / 1000) % 60)
-    const minutes = Math.floor((duration / (1000 * 60)) % 60)
-    const minutesStr = minutes < 10 ? `0${minutes}` : minutes
-    const secondsStr = seconds < 10 ? `0${seconds}` : seconds
-    return `${minutesStr} min ${secondsStr} seg`
-}

@@ -1,10 +1,11 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {addWalletResourceAndSetWait, getWallet} from '../../services/wallet.service.js';
+import {formatDurationCompact} from '../../utils/time.js';
 
 export default definePlugin({
-    help: ['rt <color> <cantidad>'],
+    help: ['rt <color> <cantidad>', 'ruleta <color> <cantidad>'],
     tags: ['game'],
-    command: ['rt'],
+    command: ['rt', 'ruleta', 'ruletas'],
     register: true,
     async execute(m, {conn, args, command, usedPrefix}) {
     const cooldown = 30_000;
@@ -14,7 +15,7 @@ export default definePlugin({
     const lastWait = Number(user?.wait) || 0;
     const remaining = lastWait + cooldown - now;
 
-    if (remaining > 0) return conn.fakeReply(m.chat, `*🕓 Calma crack 🤚, Espera ${msToTime(remaining)} antes de volver a usar el comando*`, m.sender, `ᴺᵒ ʰᵃᵍᵃⁿ ˢᵖᵃᵐ`, 'status@broadcast');
+    if (remaining > 0) return conn.fakeReply(m.chat, `*🕓 Calma crack 🤚, Espera ${formatDurationCompact(remaining)} antes de volver a usar el comando*`, m.sender, `ᴺᵒ ʰᵃᵍᵃⁿ ˢᵖᵃᵐ`, 'status@broadcast');
     if (args.length < 2) return conn.reply(m.chat, `⚠️ Formato incorrecto. Usa: ${usedPrefix + command} <color> <cantidad>\n\nEjemplo: ${usedPrefix + command} black 100`, m);
     const color = args[0].toLowerCase();
     const betAmount = parseInt(args[1]);
@@ -47,10 +48,3 @@ function formatExp(amount: number) {
     return amount.toLocaleString();
 }
 
-function msToTime(duration: number) {
-    if (isNaN(duration) || duration <= 0) return '0s';
-    const totalSeconds = Math.floor(duration / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes > 0 ? minutes + 'm ' : ''}${seconds}s`;
-}

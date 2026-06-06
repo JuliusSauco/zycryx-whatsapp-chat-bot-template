@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {setPrimaryBot} from '../../services/group-settings.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
 
@@ -8,7 +8,7 @@ export default definePlugin({
     command: /^setprimary$/i,
     group: true,
     admin: true,
-    async execute(m, {conn, args, participants, isAdmin, isGroup, command}) {
+    async execute(m, {conn}) {
     const mentioned = m.mentionedJid?.[0];
 
     if (!mentioned) {

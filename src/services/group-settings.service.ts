@@ -1,4 +1,5 @@
-import {logError, logInfo, logWarn} from '../lib/logger.js';
+import {logError} from '../lib/logger.js';
+import {enqueueBackgroundTask} from '../lib/background-task-queue.js';
 import {
     getCachedGroupSettings,
     getCachedFullGroupSettings,
@@ -15,6 +16,11 @@ export interface ContextGroupSettings {
     modoadmin: boolean;
     antifake: boolean;
     message_logging: boolean;
+    antilink: boolean;
+    antilink2: boolean;
+    virusTotal: boolean;
+    audios: boolean;
+    autolevelup: boolean;
 }
 
 const EMPTY_CONTEXT_SETTINGS: ContextGroupSettings = {
@@ -23,6 +29,11 @@ const EMPTY_CONTEXT_SETTINGS: ContextGroupSettings = {
     modoadmin: false,
     antifake: false,
     message_logging: false,
+    antilink: false,
+    antilink2: false,
+    virusTotal: false,
+    audios: false,
+    autolevelup: true,
 };
 
 export async function getContextGroupSettings(chatId: string): Promise<ContextGroupSettings> {
@@ -113,7 +124,8 @@ export async function listBannedGroups(): Promise<string[]> {
 }
 
 export function clearPrimaryBot(chatId: string): void {
-    repositories.groupSettings.clearPrimaryBot(chatId)
-        .then(() => invalidateGroupSettings(chatId))
-        .catch(logError);
+    enqueueBackgroundTask('clear-primary-bot', async () => {
+        await repositories.groupSettings.clearPrimaryBot(chatId);
+        invalidateGroupSettings(chatId);
+    });
 }

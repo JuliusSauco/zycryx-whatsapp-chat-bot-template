@@ -101,12 +101,6 @@ export default definePlugin({
 })
 
 
-function special(type: string) {
-    let b = type.toLowerCase()
-    let special = (['common', 'uncoommon', 'mythic', 'legendary', 'pet'].includes(b) ? ' Crate' : '')
-    return special
-}
-
 function isNumber(x: string | undefined) {
     return x !== undefined && !isNaN(Number(x))
 }

@@ -6,6 +6,7 @@
     "clean": "if exist dist rmdir /s /q dist 2>nul & if exist tsconfig.tsbuildinfo del /f /q tsconfig.tsbuildinfo 2>nul",
     "build": "npm run clean && tsc",
     "typecheck": "tsc --noEmit",
+    "test:helpers": "tsx tests/helpers.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:ensure-schema": "tsx src/db/ensure-schema.ts",
     "db:migrate": "npm run db:ensure-schema && drizzle-kit migrate",

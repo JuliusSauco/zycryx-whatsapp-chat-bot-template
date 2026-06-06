@@ -1,8 +1,8 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 import * as cheerio from "cheerio"
 import {definePlugin} from '../../core/define-plugin.js'
 import {ENV} from '../../core/env.js'
-import {httpJson, httpText, type HttpRequestOptions} from '../../lib/http-client.js';
+import {httpJson, httpText} from '../../lib/http-client.js';
 
 interface DorratzImageResponse {
     data?: {
@@ -106,30 +106,3 @@ const flux = async (prompt: string): Promise<string | null> => {
     return $("a.btn-navy.btn-sm.mt-2").attr("href") || null
 }
 
-const writer = async (input: string) => {
-    const url = `https://ai-server.regem.in/api/index.php`
-    const headers = {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        Accept: "*/*",
-        "User-Agent":
-            "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, seperti Gecko) Chrome/129.0.0.0 Mobile Safari/537.36",
-        Referer: "https://regem.in/ai-writer/",
-    }
-    const formData = new URLSearchParams()
-    formData.append("input", input)
-    return httpText(url, {method: "POST", headers, body: formData as unknown as HttpRequestOptions['body']})
-}
-
-const rephrase = async (input: string) => {
-    const url = `https://ai-server.regem.in/api/rephrase.php`
-    const headers = {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        Accept: "*/*",
-        "User-Agent":
-            "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, seperti Gecko) Chrome/129.0.0.0 Mobile Safari/537.36",
-        Referer: "https://regem.in/ai-rephrase-tool/",
-    }
-    const formData = new URLSearchParams()
-    formData.append("input", input)
-    return httpText(url, {method: "POST", headers, body: formData as unknown as HttpRequestOptions['body']})
-}

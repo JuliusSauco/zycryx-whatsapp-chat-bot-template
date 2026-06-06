@@ -1,8 +1,8 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import crypto from 'crypto';
 import {downloadContentFromMessage} from '@whiskeysockets/baileys';
 import {httpJson} from '../../lib/http-client.js';
-import {deleteAudioEntry, findAudioEntryInScopes, getAudioConfig, upsertAudioEntry, type AudioEntry} from '../../services/audio-response.service.js';
+import {deleteAudioEntry, findAudioEntryInScopes, getAudioConfig, upsertAudioEntry} from '../../services/audio-response.service.js';
 import {getDecodedApiToken} from '../../services/api-token.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
 

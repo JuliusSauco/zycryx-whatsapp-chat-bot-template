@@ -12,6 +12,7 @@ export class CommandRouter {
     private regex: [RegExp, Plugin][] = [];
     private customPrefixPlugins: [CustomPrefixMatcher, Plugin][] = [];
     private beforePlugins: Plugin[] = [];
+    private commandBeforePlugins: Plugin[] = [];
 
     /**
      * Registra todos los plugins. Llamar cada vez que global.plugins cambia.
@@ -22,11 +23,13 @@ export class CommandRouter {
         this.regex = [];
         this.customPrefixPlugins = [];
         this.beforePlugins = [];
+        this.commandBeforePlugins = [];
 
         for (const plugin of Object.values(plugins)) {
             // Registrar before hooks
             if (typeof plugin.before === 'function') {
                 this.beforePlugins.push(plugin);
+                if (plugin.runBeforeOnCommand) this.commandBeforePlugins.push(plugin);
             }
 
             const cmd = plugin.command;
@@ -85,6 +88,11 @@ export class CommandRouter {
     /** Retorna los plugins que tienen hooks `before`. */
     getBeforePlugins(): Plugin[] {
         return this.beforePlugins;
+    }
+
+    /** Retorna solo los hooks que aplican al tipo de mensaje actual. */
+    getBeforePluginsFor(isPrefixedCommand: boolean): Plugin[] {
+        return isPrefixedCommand ? this.commandBeforePlugins : this.beforePlugins;
     }
 }
 

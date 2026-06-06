@@ -1,6 +1,7 @@
 import type {Guard} from '../types/guard.js';
 import {SILENT_REJECT} from '../types/guard.js';
 import {getNsfwSettings} from '../services/group-settings.service.js';
+import {pickRandom} from '../utils/random.js';
 
 /** Verifica si un comando NSFW puede ejecutarse según modohorny y horario del grupo. */
 export const nsfwGuard: Guard = async ({m, conn, ctx, plugin}) => {
@@ -16,7 +17,7 @@ export const nsfwGuard: Guard = async ({m, conn, ctx, plugin}) => {
     if (!modohorny || !dentro) {
         const stickerUrls = ['https://qu.ax/bXMB.webp', 'https://qu.ax/TxtQ.webp'];
         try {
-            await conn.sendFile(ctx.chatId, stickerUrls.getRandom(), 'desactivado.webp', '', m, true, {
+            await conn.sendFile(ctx.chatId, pickRandom(stickerUrls), 'desactivado.webp', '', m, true, {
                 contextInfo: {
                     forwardingScore: 200,
                     isForwarded: false,

@@ -1,7 +1,8 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import {definePlugin} from '../../core/define-plugin.js'
 import {httpBuffer} from '../../lib/http-client.js'
+import {pickRandom} from '../../utils/random.js'
 
 const slapGifs = [
     'https://media.tenor.com/XiYuU9h44-AAAAAC/anime-slap-mad.gif',
@@ -26,7 +27,7 @@ export default definePlugin({
         const senderName = await getName(m.sender)
         const mentionedNames = await Promise.all(m.mentionedJid.map(getName))
         const texto = `🖐 ${senderName} le dio una bofetada a ${mentionedNames.join(', ')}`
-        const url = slapGifs[Math.floor(Math.random() * slapGifs.length)]
+        const url = pickRandom(slapGifs)
 
         let stiker
         try {

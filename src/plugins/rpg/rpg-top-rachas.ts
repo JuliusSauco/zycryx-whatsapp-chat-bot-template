@@ -7,7 +7,7 @@ export default definePlugin({
     tags: ['econ'],
     command: ['topstreak', 'streaktop', 'streak'],
     register: true,
-    async execute(m, {conn, args}) {
+    async execute(m, {args}) {
     const page = Math.max(1, parseInt(args[0]) || 1);
     const pageSize = 10;
     const offset = (page - 1) * pageSize;

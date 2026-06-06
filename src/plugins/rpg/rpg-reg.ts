@@ -141,15 +141,7 @@ ${pref}menu
     }
     },
     async execute(m, {conn, text, args, usedPrefix, command}) {
-    let fkontak = {
-        key: {participants: "0@s.whatsapp.net", remoteJid: "status@broadcast", fromMe: false, id: "Halo"},
-        message: {contactMessage: {vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`}},
-        participant: "0@s.whatsapp.net"
-    };
     let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user?.id || m.sender : m.sender;
-//let ppch = await conn.profilePictureUrl(who, 'image').catch(_ => imageUrl.getRandom()) 
-    const date = moment.tz('America/Bogota').format('DD/MM/YYYY')
-    const time = moment.tz('America/Argentina/Buenos_Aires').format('LT')
     let userNationality = null;
     try {
         const phone = formatPhoneNumber(who);
@@ -162,10 +154,7 @@ ${pref}menu
     }
 
     const user = await getUserById(who);
-    const input = text.trim()
-    const step = estados[who]?.step || 0
     let name2 = m.pushName || 'loli'
-    const rtotalreg = (await countUsers()).registered;
 
     if (command === 'reg' || command === 'verify' || command === 'verificar') {
         if (user?.registered) return m.reply(`*Ya estás registrado 🤨*`)
@@ -174,7 +163,7 @@ ${pref}menu
 
         const regMatch = text.match(Reg)
         if (!regMatch) return m.reply(`*⚠️ ¿No sabes cómo usar este comando?* Usa de la siguiente manera:\n\n*${usedPrefix + command} nombre.edad*\n*• Ejemplo:* ${usedPrefix + command} ${name2}.16`)
-        let [_, name, splitter, age] = regMatch
+        let [, name, , age] = regMatch
         if (!name) return m.reply('*¿Y el nombre?*')
         if (!age) return m.reply('*La edad no puede estar vacía, agrega tu edad*')
         if (name.length >= 45) return m.reply('*¿Qué?, ¿tan largo va a ser tu nombre?*')

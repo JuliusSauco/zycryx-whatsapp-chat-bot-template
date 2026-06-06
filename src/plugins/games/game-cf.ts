@@ -1,5 +1,8 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {addWalletResourceAndSetWait, getWallet} from '../../services/wallet.service.js';
+import {formatThousandsDot} from '../../utils/format.js';
+import {randomChance} from '../../utils/random.js';
+import {formatDurationCompact} from '../../utils/time.js';
 
 export default definePlugin({
     help: ['cf <cantidad>'],
@@ -12,25 +15,15 @@ export default definePlugin({
     const now = Date.now();
     if (!bet || bet <= 0) return m.reply('❌ Ingresa una cantidad válida para apostar.');
     const user = await getWallet(m.sender);
-    if (!user || user.exp < bet) return m.reply(`❌ No tienes suficiente experiencia (exp) para esta apuesta. Solo tienes ${formatNumber(user?.exp || 0)} XP.`);
+    if (!user || user.exp < bet) return m.reply(`❌ No tienes suficiente experiencia (exp) para esta apuesta. Solo tienes ${formatThousandsDot(user?.exp || 0)} XP.`);
 
     const last = Number(user.wait) || 0;
     const remaining = last + cooldown - now;
-    if (now - last < cooldown) return conn.fakeReply(m.chat, `*🕓 Calma crack 🤚, Espera ${msToTime(remaining)} antes de volver usar en comando*`, m.sender, `ᴺᵒ ʰᵃᵍᵃⁿ ˢᵖᵃᵐ`, 'status@broadcast');
+    if (now - last < cooldown) return conn.fakeReply(m.chat, `*🕓 Calma crack 🤚, Espera ${formatDurationCompact(remaining)} antes de volver usar en comando*`, m.sender, `ᴺᵒ ʰᵃᵍᵃⁿ ˢᵖᵃᵐ`, 'status@broadcast');
 
-    const outcome = Math.random() < 0.5 ? 'cara' : 'cruz';
+    const outcome = randomChance(0.5) ? 'cara' : 'cruz';
     const win = outcome === 'cara';
     await addWalletResourceAndSetWait(m.sender, 'exp', win ? bet * 2 : -bet, now);
-    return m.reply(`${win ? '🎉' : '💀'} La moneda cayó en *${outcome}* y ${win ? `ganaste *${formatNumber(bet * 2)}* XP.` : `perdiste *${formatNumber(bet)}* XP.`}`);
+    return m.reply(`${win ? '🎉' : '💀'} La moneda cayó en *${outcome}* y ${win ? `ganaste *${formatThousandsDot(bet * 2)}* XP.` : `perdiste *${formatThousandsDot(bet)}* XP.`}`);
     }
 });
-
-function msToTime(duration: number) {
-    let seconds = Math.floor((duration / 1000) % 60);
-    const formattedSeconds = seconds < 10 ? '0' + seconds : String(seconds);
-    return `${formattedSeconds} segundos `;
-}
-
-function formatNumber(num: number) {
-    return num.toLocaleString('en').replace(/,/g, '.');
-}

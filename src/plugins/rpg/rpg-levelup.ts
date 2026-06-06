@@ -37,7 +37,6 @@ Tus estadisticas en tiempo real 🕐
     const newRole = getRole(newLevel).name
     await setUserLevelRole(m.sender, newLevel, newRole)
 
-    const teks = `🎊 Felicidades ${name} llegaste a un nuevo nivel:`
     const str = `*[ 𝐋𝐄𝐕𝐄𝐋 𝐔𝐏 ]*
         
 *• 𝐍𝐢𝐯𝐞𝐥 𝐚𝐧𝐭𝐞𝐫𝐢𝐨𝐫:* ${before}

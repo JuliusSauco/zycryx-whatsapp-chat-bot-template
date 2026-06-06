@@ -1,4 +1,3 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {pinterest} from '../../lib/scraper.js';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';

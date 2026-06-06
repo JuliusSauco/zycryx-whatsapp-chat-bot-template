@@ -1,10 +1,11 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError} from '../../lib/logger.js';
 import similarity from 'similarity';
 import {definePlugin} from '../../core/define-plugin.js';
 import {addWalletResource} from '../../services/wallet.service.js';
 import type {proto} from '@whiskeysockets/baileys';
 import {httpRequest} from '../../lib/http-client.js';
 import {getCachedJson} from '../../lib/static-resource-cache.js';
+import {pickRandom} from '../../utils/random.js';
 
 const timeout = 50000;
 const timeout2 = 20000;
@@ -72,7 +73,7 @@ async function obtenerPregunta(tipo: GameType): Promise<GuessQuestion | null> {
     try {
         const archivo = `./src/data/game/${archivosRespaldo[tipo]}`;
         const data = getCachedJson<GuessQuestion[]>(archivo) || [];
-        const pregunta = data[Math.floor(Math.random() * data.length)];
+        const pregunta = pickRandom(data);
         if (!pregunta?.question || !pregunta.response) return null;
         preguntasUsadas.add(pregunta.question);
         return pregunta;
@@ -116,7 +117,7 @@ export default definePlugin({
     }
     },
 
-    async before(m, {conn}) {
+    async before(m) {
     const id = m.chat;
     const juego = juegos[id];
     if (!juego || !m.quoted?.key?.id || !juego.caption?.key?.id || m.quoted.key.id !== juego.caption.key.id) return;

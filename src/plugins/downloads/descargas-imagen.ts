@@ -1,6 +1,7 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {googleImage} from '@bochilteam/scraper';
+import {pickRandom} from '../../utils/random.js';
 
 export default definePlugin({
     help: ['gimage <query>', 'imagen <query>'],
@@ -14,7 +15,7 @@ export default definePlugin({
     if (forbiddenWords.some(word => m.text.toLowerCase().includes(word))) return m.reply('🙄 No voy a buscar tu pendejadas....')
     try {
         const res = await googleImage(text);
-        const image = await res.getRandom();
+        const image = pickRandom(res);
         const link = image;
         conn.sendFile(m.chat, link, 'error.jpg', `_🔎 𝙍𝙚𝙨𝙪𝙡𝙩𝙖𝙙𝙤𝙨 𝙙𝙚: ${text}_`, m);
     } catch (e: unknown) {

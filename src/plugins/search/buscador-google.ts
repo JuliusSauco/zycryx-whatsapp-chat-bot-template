@@ -1,4 +1,4 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logInfo} from '../../lib/logger.js';
 //import {googleIt} from '@bochilteam/scraper';
 import {definePlugin} from '../../core/define-plugin.js';
 import {ENV} from '../../core/env.js';
@@ -23,7 +23,7 @@ export default definePlugin({
     command: /^googlef?$/i,
     register: true,
     limit: 1,
-    async execute(m, {conn, text, command, args, usedPrefix}) {
+    async execute(m, {conn, text, command, usedPrefix}) {
     if (!text) return m.reply(`⚠️ 𝙌𝙪𝙚 𝙚𝙨𝙩𝙖 𝙗𝙪𝙨𝙘𝙖𝙣𝙙𝙤 🤔 𝙀𝙨𝙘𝙧𝙞𝙗𝙖 𝙡𝙤 𝙦𝙪𝙚 𝙦𝙪𝙞𝙚𝙧𝙖 𝙗𝙪𝙨𝙘𝙖𝙧\n• 𝙀𝙟: ${usedPrefix + command} loli`)
     m.react("⌛")
     try {

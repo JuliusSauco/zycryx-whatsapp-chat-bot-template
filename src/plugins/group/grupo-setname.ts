@@ -9,7 +9,6 @@ export default definePlugin({
     botAdmin: true,
     group: true,
     async execute(m, {conn, args, text}) {
-    const pp = await conn.profilePictureUrl(m.chat, 'image').catch(() => null) || './media/Menu1.jpg'
     if (!text) throw "⚠️ Ingresar el texto para el grupo"
     try {
         let text = args.join(' ')

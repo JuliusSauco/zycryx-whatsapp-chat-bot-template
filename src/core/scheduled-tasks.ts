@@ -7,11 +7,11 @@ import {
     listPendingReports,
 } from '../services/runtime-tasks.service.js';
 import {logDebug, logError, logInfo} from '../lib/logger.js';
+import {pickRandom} from '../utils/random.js';
 
 let started = false;
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-const pickRandom = <T>(items: T[]): T => items[Math.floor(Math.random() * items.length)];
 
 export function startScheduledTasks(): void {
     if (started) return;

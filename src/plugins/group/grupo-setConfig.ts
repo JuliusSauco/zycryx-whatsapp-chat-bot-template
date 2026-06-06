@@ -8,7 +8,7 @@ export default definePlugin({
     admin: true,
     group: true,
     register: true,
-    async execute(m, {args, command, conn, text}) {
+    async execute(m, {command, text}) {
     if (!text) {
         const tipo = command === 'setwelcome' ? 'bienvenida' : command === 'setbye' ? 'despedida' : command === 'setpromote' ? 'ascenso' : 'degradación'
 

@@ -1,5 +1,8 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {addWalletResource} from '../../services/wallet.service.js';
+import {formatThousandsDot} from '../../utils/format.js';
+import {pickRandom, randomInt} from '../../utils/random.js';
+import {formatDurationCompact} from '../../utils/time.js';
 
 const cooldown = 30_000;
 type Jugada = 'piedra' | 'papel' | 'tijera';
@@ -31,26 +34,26 @@ export default definePlugin({
     const now = Date.now();
     const userId = m.sender;
     const cooldownRestante = (cooldowns.get(userId) || 0) + cooldown - now;
-    if (cooldownRestante > 0) return conn.fakeReply(m.chat, `*🕓 𝙃𝙚𝙮, 𝙀𝙨𝙥𝙚𝙧𝙖 ${msToTime(cooldownRestante)} 𝙖𝙣𝙩𝙚𝙨 𝙙𝙚 𝙪𝙨𝙖𝙧 𝙤𝙩𝙧𝙤𝙨 𝙘𝙤𝙢𝙖𝙣𝙙𝙤*`, m.sender, `ᴺᵒ ʰᵃᵍᵃⁿ ˢᵖᵃᵐ`, 'status@broadcast');
+    if (cooldownRestante > 0) return conn.fakeReply(m.chat, `*🕓 𝙃𝙚𝙮, 𝙀𝙨𝙥𝙚𝙧𝙖 ${formatDurationCompact(cooldownRestante)} 𝙖𝙣𝙩𝙚𝙨 𝙙𝙚 𝙪𝙨𝙖𝙧 𝙤𝙩𝙧𝙤𝙨 𝙘𝙤𝙢𝙖𝙣𝙙𝙤*`, m.sender, `ᴺᵒ ʰᵃᵍᵃⁿ ˢᵖᵃᵐ`, 'status@broadcast');
 
     const opponent = m.mentionedJid?.[0];
     const input = args[0]?.toLowerCase();
 
     if (!opponent && isJugada(input)) {
         cooldowns.set(userId, now);
-        const botJugada = jugadasValidas[Math.floor(Math.random() * 3)];
+        const botJugada = pickRandom(jugadasValidas);
         const resultado = evaluar(input, botJugada);
-        const xp = Math.floor(Math.random() * 2000) + 500;
+        const xp = randomInt(500, 2499);
 
         let text = '';
         let result = "";
         if (resultado === 'gana') {
             await addWalletResource(userId, 'exp', xp);
-            text += `✅ *Ganaste* y obtuviste *${formatNumber(xp)} XP*`;
+            text += `✅ *Ganaste* y obtuviste *${formatThousandsDot(xp)} XP*`;
             result = '𝙃𝘼 𝙂𝘼𝙉𝘼𝘿𝙊! 🎉';
         } else if (resultado === 'pierde') {
             await addWalletResource(userId, 'exp', -xp);
-            text += `❌ *Perdiste*. Te quitaron *${formatNumber(xp)} XP*`;
+            text += `❌ *Perdiste*. Te quitaron *${formatThousandsDot(xp)} XP*`;
             result = '𝙃𝘼 𝙋𝙀𝙍𝘿𝙄𝘿𝙊! 🤡';
         } else {
             result = '𝙀𝙈𝙋𝘼𝙏𝙀 🤝';
@@ -124,7 +127,7 @@ export default definePlugin({
             const jugada2 = eleccion[j2];
             if (!jugada1 || !jugada2) return;
             const resultado = evaluar(jugada1, jugada2);
-            const xp = Math.floor(Math.random() * 2000) + 500;
+            const xp = randomInt(500, 2499);
             let mensaje = `✊🖐✌️ *Piedra, Papel o Tijera*\n\n@${j1.split('@')[0]} eligió: *${jugada1}*\n@${j2.split('@')[0]} eligió: *${jugada2}*\n\n`;
 
             if (resultado === 'empate') {
@@ -134,7 +137,7 @@ export default definePlugin({
                 const perdedor = ganador === j1 ? j2 : j1;
                 await addWalletResource(ganador, 'exp', xp * 2);
                 await addWalletResource(perdedor, 'exp', -xp);
-                mensaje += `🎉 @${ganador.split('@')[0]} gana *${formatNumber(xp * 2)} XP*\n💀 @${perdedor.split('@')[0]} pierde *${formatNumber(xp)} XP*`;
+                mensaje += `🎉 @${ganador.split('@')[0]} gana *${formatThousandsDot(xp * 2)} XP*\n💀 @${perdedor.split('@')[0]} pierde *${formatThousandsDot(xp)} XP*`;
             }
 
             return conn.sendMessage(chat, {text: mensaje, mentions: [j1, j2]});
@@ -157,12 +160,3 @@ function evaluar(a: Jugada, b: Jugada): Resultado {
     return 'pierde';
 }
 
-function formatNumber(n: number) {
-    return n.toLocaleString('en').replace(/,/g, '.');
-}
-
-function msToTime(ms: number) {
-    const s = Math.floor(ms / 1000) % 60;
-    const m = Math.floor(ms / 60000) % 60;
-    return `${m ? `${m}m ` : ''}${s}s`;
-}

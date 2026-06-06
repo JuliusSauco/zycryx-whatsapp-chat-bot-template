@@ -14,7 +14,7 @@ export default definePlugin({
     tags: ['sticker'],
     command: /^(qc)$/i,
     register: true,
-    async execute(m, {conn, args, usedPrefix, command}) {
+    async execute(m, {conn, args}) {
     const {packname: f, author: g} = await getStickerExif(m.sender);
     let text
     if (args.length >= 1) {

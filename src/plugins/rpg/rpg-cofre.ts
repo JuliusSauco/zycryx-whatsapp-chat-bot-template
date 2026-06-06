@@ -1,5 +1,7 @@
 import {definePlugin} from '../../core/define-plugin.js'
 import {addWalletResourcesAndSetFields, getWallet} from '../../services/wallet.service.js';
+import {randomInt} from '../../utils/random.js';
+import {formatDurationHoursMinutes} from '../../utils/time.js';
 
 export default definePlugin({
     help: ['cofre', 'coffer', 'abrircofre'],
@@ -15,12 +17,12 @@ export default definePlugin({
     const lastCofre = Number(user?.lastcofre) || 0;
     const nextTime = lastCofre + cooldown;
     const restante = Math.max(0, nextTime - now);
-    if (restante > 0) return m.reply(`🕛 𝐘𝐚 𝐫𝐞𝐜𝐥𝐚𝐦𝐚𝐬𝐭𝐞 𝐭𝐮 𝐜𝐨𝐟𝐫𝐞 🎁\n𝐕𝐮𝐞𝐥𝐯𝐞 𝐞𝐧 *${msToTime(restante)}* 𝐩𝐚𝐫𝐚 𝐫𝐞𝐜𝐥𝐚𝐦𝐚𝐫 𝐧𝐮𝐞𝐯𝐚𝐦𝐞𝐧𝐭𝐞`);
+    if (restante > 0) return m.reply(`🕛 𝐘𝐚 𝐫𝐞𝐜𝐥𝐚𝐦𝐚𝐬𝐭𝐞 𝐭𝐮 𝐜𝐨𝐟𝐫𝐞 🎁\n𝐕𝐮𝐞𝐥𝐯𝐞 𝐞𝐧 *${formatDurationHoursMinutes(restante)}* 𝐩𝐚𝐫𝐚 𝐫𝐞𝐜𝐥𝐚𝐦𝐚𝐫 𝐧𝐮𝐞𝐯𝐚𝐦𝐞𝐧𝐭𝐞`);
 
     const img = 'https://img.freepik.com/vector-gratis/cofre-monedas-oro-piedras-preciosas-cristales-trofeo_107791-7769.jpg?w=2000';
-    const diamantes = Math.floor(Math.random() * 30);
-    const coins = Math.floor(Math.random() * 4000);
-    const xp = Math.floor(Math.random() * 5000);
+    const diamantes = randomInt(30);
+    const coins = randomInt(4000);
+    const xp = randomInt(5000);
 
     await addWalletResourcesAndSetFields({
         userId: m.sender,
@@ -51,11 +53,3 @@ export default definePlugin({
 
 ;
 
-// Helpers
-
-function msToTime(duration: number) {
-    const totalMinutes = Math.floor(duration / 60000);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours} Horas ${minutes} Minutos`;
-}

@@ -1,8 +1,9 @@
-import {logError, logInfo, logWarn} from '../../lib/logger.js';
+import {logError, logInfo} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js'
 import {definePlugin} from '../../core/define-plugin.js'
 import {httpJson} from '../../lib/http-client.js'
+import {pickRandom} from '../../utils/random.js'
 
 interface StickerlyPack {
     name: string;
@@ -42,7 +43,6 @@ export default definePlugin({
 
         let enviados = 0
         for (const pack of packs) {
-            const infoText = `📦 *${pack.name}*\n👤 ${pack.author}\n🧷 ${pack.stickerCount} stickers\n👁 ${pack.viewCount.toLocaleString()} vistas\n📤 ${pack.exportCount.toLocaleString()} exportados\n🔗 ${pack.url}`
             try {
                 const stkr = await sticker(false, pack.thumbnailUrl, packname, author)
                 if (stkr) {
@@ -55,12 +55,11 @@ export default definePlugin({
                                 title: info.wm,
                                 body: pack.name,
                                 mediaType: 2,
-                                sourceUrl: [info.nna, info.nna2, info.md, info.yt].getRandom(),
+                                sourceUrl: pickRandom([info.nna, info.nna2, info.md, info.yt]),
                                 thumbnail: m.pp
                             }
                         }
                     })
-                    //conn.sendFile(m.chat, stkr, 'sticker.webp', infoText, m, true)
                     enviados++
                     await new Promise(r => setTimeout(r, 700))
                 }

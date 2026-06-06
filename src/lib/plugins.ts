@@ -5,7 +5,7 @@ import chalk from "chalk"
 import syntaxerror from 'syntax-error'
 import {format} from 'util'
 import {router} from '../core/router.js'
-import {logDebug, logError, logInfo, logWarn} from './logger.js'
+import {logDebug, logError, logInfo, logWarn} from './logger.js';
 import type {Plugin} from '../types/plugin.js'
 
 const __libDir = dirname(fileURLToPath(import.meta.url))

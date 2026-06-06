@@ -6,7 +6,7 @@ export default definePlugin({
     help: ["listablock", "listaban", "listaadv", "chatsbaneados", "listaparejas"],
     tags: ["owner"],
     command: /^listablock|listaban|listaadv|chatsbaneados|listaparejas$/i,
-    async execute(m, {conn, command, isOwner}) {
+    async execute(m, {conn, command}) {
     let txt = "";
 
     if (command === "listablock") {
