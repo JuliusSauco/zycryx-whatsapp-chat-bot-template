@@ -1,6 +1,6 @@
 import path from 'path';
 import {logError} from '../../lib/logger.js';
-import {getAudioConfig, type AudioEntry} from '../../services/audio-response.service.js';
+import {findMatchingAudioInScopes} from '../../services/audio-response.service.js';
 import type {BeforePluginContext} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
 import {pickRandom} from '../../utils/random.js';
@@ -15,36 +15,20 @@ export async function before(m: BotMessage, {conn, botConfig, groupSettings}: Be
 
     const lowerTexto = texto.toLowerCase();
     const chatId = m.chat.trim();
-    const audios = await getAudioConfig([chatId, 'global']);
-    const sources = [audios[chatId], audios.global].filter((source): source is Record<string, AudioEntry> => Boolean(source));
+    const audio = await findMatchingAudioInScopes([chatId, 'global'], lowerTexto);
+    if (!audio) return;
 
-    for (const source of sources) {
-        const clave = Object.keys(source).find(k => {
-            try {
-                const regex = new RegExp(source[k].regex, 'i');
-                const matches = lowerTexto.match(regex);
-                return matches?.[0]?.length === lowerTexto.length;
-            } catch {
-                return false;
-            }
-        });
+    try {
+        await conn.sendPresenceUpdate('recording', m.chat);
+        const listaAudios = audio.audios?.length ? audio.audios : audio.audio ? [audio.audio] : [];
+        const elegido = pickRandom(listaAudios);
+        if (!elegido) return;
 
-        if (!clave) continue;
-
-        const audio = source[clave];
-        try {
-            await conn.sendPresenceUpdate('recording', m.chat);
-            const listaAudios = audio.audios?.length ? audio.audios : audio.audio ? [audio.audio] : [];
-            const elegido = pickRandom(listaAudios);
-            if (!elegido) continue;
-
-            await conn.sendMessage(m.chat, {
-                audio: elegido.startsWith('data:audio/') ? Buffer.from(elegido.split(',')[1], 'base64') : elegido.startsWith('./') || elegido.startsWith('/') ? {url: path.resolve(elegido)} : {url: elegido},
-                mimetype: 'audio/mpeg'
-            }, {quoted: m});
-            break;
-        } catch (err: unknown) {
-            logError('[❌] Error enviando audio automático:', err);
-        }
+        await conn.sendMessage(m.chat, {
+            audio: elegido.startsWith('data:audio/') ? Buffer.from(elegido.split(',')[1], 'base64') : elegido.startsWith('./') || elegido.startsWith('/') ? {url: path.resolve(elegido)} : {url: elegido},
+            mimetype: 'audio/mpeg'
+        }, {quoted: m});
+    } catch (err: unknown) {
+        logError('[❌] Error enviando audio automático:', err);
     }
 }

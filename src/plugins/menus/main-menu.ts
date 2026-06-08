@@ -112,8 +112,6 @@ ${renderAccessList(infoCommands, prefix)}
 ${renderAccessList(menuAccess, prefix)}
 
 > Usa el comando del menú que necesites para ver descripción y modo de uso de cada comando.
-
-*🅛🅞🅛🅘🅑🅞🅣-🅜🅓*
 `.trim();
 }
 

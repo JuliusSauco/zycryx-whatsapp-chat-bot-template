@@ -16,7 +16,8 @@ El proyecto esta organizado por capas:
 - `src/db`: schema Drizzle, cliente y migraciones.
 - `src/lib`: utilidades compartidas e integraciones.
 - `src/utils`: helpers puros y reutilizables.
-- `src/data`: datos estaticos versionados, no estado mutable de runtime.
+- `resources/data`: datos estaticos versionados, no estado mutable de runtime.
+- `resources/media`: imagenes, audios, textos y GIFs de reaccion en MP4 usados por plugins.
 - `docs`: documentacion tecnica y roadmap interno.
 
 ## Estado actual
@@ -61,7 +62,8 @@ La ultima etapa grande fue el commit `69db9b9 refactor: complete roadmap v2 bot 
 ## Reglas de mantenimiento
 
 - No agregar SQL directo en plugins. Usar servicios y repositorios.
-- No escribir estado mutable en `src/data`; usar DB o backend cuando exista contrato.
+- No escribir estado mutable en `resources/data`; usar DB o backend cuando exista contrato.
+- Mantener medios locales versionados en `resources/media`; los GIFs de reaccion se guardan como MP4 en `resources/media/reaction-gifs`.
 - No usar `fetch`, `node-fetch` ni `axios` directamente en plugins. Usar `src/lib/http-client.ts`.
 - Excepciones conocidas: `src/lib/scraper.ts` y `src/lib/ezgif-convert.ts` pueden usar internals especiales por cookies, redirects, multipart y response handling.
 - Para seleccion aleatoria usar `src/utils/random.ts`; `Array.prototype.getRandom` queda solo para compatibilidad legacy.

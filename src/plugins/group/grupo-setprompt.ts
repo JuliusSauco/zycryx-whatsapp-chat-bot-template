@@ -1,21 +1,28 @@
 import {definePlugin} from '../../core/define-plugin.js'
 import {clearAiMemory} from '../../services/chat-memory.service.js';
 import {setAutorespondPrompt, setMemoryTtl} from '../../services/group-settings.service.js';
-import {httpText} from '../../lib/http-client.js';
+import {readFile} from 'fs/promises';
+import path from 'path';
 
 const presets: Record<'1' | '2' | '3' | '4', () => Promise<string> | string> = {
-    1: () => httpText('https://raw.githubusercontent.com/Skidy89/chat-gpt-jailbreak/main/Text.txt'),
-    2: () => httpText('https://raw.githubusercontent.com/elrebelde21/ChinaMitzuki/master/src/text-chatgpt.txt'),
-    3: () => 'actual como un nene millonario cheto, se llama NeneFlok, hablar en tono cheto y no te importa nada, es anti negro, anti bola de grasa, anti pobres, y hablar mal hablaron y hacer los que quiere le gusta hacer broma y tira indirecta, Hablar con muchas falta de ortografía pero se cree importante.',
-    4: () => httpText('https://raw.githubusercontent.com/elrebelde21/LoliBot-MD/main/src/text-chatgpt.txt')
+    1: () => readPromptPreset('asistente-general.txt'),
+    2: () => readPromptPreset('china-mitzuki.txt'),
+    3: () => readPromptPreset('neneflok.txt'),
+    4: () => readPromptPreset('multipersonalidad.txt')
 };
 
 const prompt_name: Record<'1' | '2' | '3' | '4', string> = {
-    1: '💣 exploit mode',
-    2: '🇨🇳 china',
+    1: '🤖 asistente general',
+    2: '🇨🇳 China Mitzuki',
     3: '💸 NeneFlok',
     4: '🧠 IA multipersonalidad'
 };
+
+const PROMPTS_DIR = path.join(process.cwd(), 'resources', 'text', 'prompts');
+
+async function readPromptPreset(fileName: string): Promise<string> {
+    return (await readFile(path.join(PROMPTS_DIR, fileName), 'utf-8')).trim();
+}
 
 export default definePlugin({
     help: ['setprompt', 'resetai', 'timeIA'],

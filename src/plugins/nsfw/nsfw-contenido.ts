@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {httpJson, httpRequest} from '../../lib/http-client.js'
+import {loadStringArrayResource} from '../../lib/local-json-resource.js'
 import {buildAliasMap, buildAliasRegex} from '../../utils/command-alias.js'
 import {pickRandom} from '../../utils/random.js'
 import {nsfwContent, type NsfwContentItem} from './nsfw-contenido.data.js'
@@ -34,8 +35,8 @@ export default definePlugin({
         }
 
         if (item.type === 'json') {
-            if (!item.url) return m.reply('❌ Fuente JSON no configurada.')
-            const data = await httpJson<string[]>(item.url)
+            if (!item.dataFile) return m.reply('❌ Fuente JSON no configurada.')
+            const data = await loadStringArrayResource(item.dataFile)
             const img = pickRandom(data)
             await conn.sendFile(m.chat, img, 'nsfw.jpg', item.label, m)
             return

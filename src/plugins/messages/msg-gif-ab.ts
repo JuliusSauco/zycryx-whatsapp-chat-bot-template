@@ -4,7 +4,7 @@ import {getAvailableMp4s, pickRandomFile} from './gif-media.js'
 import path from 'path'
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js'
 
-const GIF_FOLDER = path.join(process.cwd(), 'media', 'gifs', 'ab')
+const GIF_FOLDER = path.join(process.cwd(), 'resources', 'media', 'reaction-gifs', 'ab')
 
 export default definePlugin({
     help: ['msg-gif-ab'],
@@ -27,7 +27,7 @@ export default definePlugin({
         const mp4s = getAvailableMp4s(GIF_FOLDER)
 
         if (!mp4s.length) {
-            await m.reply('⚠️ Para enviarlo como “mensaje” (inline), convierte los GIFs a MP4 y guárdalos en `media/gifs/ks`.\n\nEjemplo ffmpeg:\nffmpeg -i input.gif -vf "fps=15,scale=320:-2:flags=lanczos" -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart -crf 30 -preset veryfast output.mp4')
+            await m.reply('⚠️ Para enviarlo como “mensaje” (inline), convierte los GIFs a MP4 y guárdalos en `resources/media/reaction-gifs/ab`.\n\nEjemplo ffmpeg:\nffmpeg -i input.gif -vf "fps=15,scale=320:-2:flags=lanczos" -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart -crf 30 -preset veryfast output.mp4')
             return
         }
 
@@ -51,5 +51,5 @@ export default definePlugin({
     }
     }
 })
-
+
 

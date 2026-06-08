@@ -5,9 +5,9 @@ import type {GroupParticipant} from '@whiskeysockets/baileys';
 import type {EventConn} from './group-event-types.js';
 import {pickRandom as pickRandomItem} from '../utils/random.js';
 
-export const DEFAULT_PP_PATH = path.join(process.cwd(), 'media', 'Menu1.jpg');
+export const DEFAULT_PP_PATH = path.join(process.cwd(), 'resources', 'media', 'menus', 'Menu1.jpg');
 
-const TEXT_DIR = path.join(process.cwd(), 'media', 'text');
+const TEXT_DIR = path.join(process.cwd(), 'resources', 'text', 'messages');
 
 export function getWelcomeText(): string {
     return readTextFile('welcome.txt', 'HOLAA!! @user, ¡Bienvenido a *@group*! 🎉');

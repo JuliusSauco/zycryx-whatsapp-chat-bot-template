@@ -10,7 +10,11 @@
  * remota) se reemplaza por una lectura de Map (sub-milisegundo).
  */
 
-const TTL_MS = 60_000;
+import {ENV} from '../core/env.js';
+
+const TTL_MS = Number.isFinite(ENV.DB_CACHE_TTL_MS) && ENV.DB_CACHE_TTL_MS > 0
+    ? ENV.DB_CACHE_TTL_MS
+    : 300_000;
 
 interface CacheEntry<T> {
     data: T;

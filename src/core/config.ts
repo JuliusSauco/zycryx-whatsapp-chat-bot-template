@@ -10,7 +10,7 @@ const splitList = (value: string): string[] => value.split(',').map(v => v.trim(
 const groupLinks = splitList(ENV.BOT_GROUP_LINKS);
 const channelLinks = splitList(ENV.BOT_CHANNEL_LINKS);
 const configuredOwners = splitList(ENV.BOT_OWNER_NUMBERS).map(v => [v.replace(/[^0-9]/g, '')]).filter(([v]) => v);
-const menuImagePath = ENV.DEFAULT_MENU_IMAGE || './media/Menu2.jpg';
+const menuImagePath = ENV.DEFAULT_MENU_IMAGE || './resources/media/menus/Menu2.jpg';
 const menuImage = getCachedBuffer(menuImagePath) || Buffer.alloc(0);
 
 //owner

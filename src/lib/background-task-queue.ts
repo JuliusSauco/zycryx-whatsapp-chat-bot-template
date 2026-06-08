@@ -1,4 +1,5 @@
 import {logDebug, logError, logWarn} from './logger.js';
+import {ENV} from '../core/env.js';
 
 type BackgroundTask = () => Promise<void> | void;
 
@@ -7,7 +8,9 @@ interface QueuedTask {
     task: BackgroundTask;
 }
 
-const DEFAULT_CONCURRENCY = 2;
+const DEFAULT_CONCURRENCY = Number.isFinite(ENV.BACKGROUND_TASK_CONCURRENCY) && ENV.BACKGROUND_TASK_CONCURRENCY > 0
+    ? ENV.BACKGROUND_TASK_CONCURRENCY
+    : 4;
 const WARN_PENDING_THRESHOLD = 250;
 const WARN_INTERVAL_MS = 30_000;
 

@@ -1,0 +1,484 @@
+{
+  "global": {
+    "ara ara": {
+      "regex": "(ara ara)",
+      "audio": "./resources/media/audio/seed/ara.mp3"
+    },
+    "a": {
+      "regex": "(ª|a|A)",
+      "audio": "./resources/media/audio/seed/a.mp3"
+    },
+    "buen dia grupo": {
+      "regex": "(Buen día grupo|Buen dia grupo|🙌)",
+      "audio": "./resources/media/audio/seed/buen-dia-grupo.mp3"
+    },
+    "abduzcan": {
+      "regex": "(abduzcan|Abduzcan|adbuzcan|Adbuzcan)",
+      "audio": "./resources/media/audio/seed/abduzcan.mp3"
+    },
+    "A bueno adios master": {
+      "regex": "(A Bueno master|Bueno master|Bueno Máster|🫂)",
+      "audio": "./resources/media/audio/seed/a-bueno-adios-master.mp3"
+    },
+    "Blackpink": {
+      "regex": "(Blackpink in your area|blackpink in your area|in your area|In your area)",
+      "audio": "./resources/media/audio/seed/blackpink-in-your-area.mp3"
+    },
+    "Bienvenido": {
+      "regex": "(bienveni|🥳|🤗|👋)",
+      "audio": "./resources/media/audio/seed/bienvenido.mp3"
+    },
+    "Calla Fan de bts": {
+      "regex": "(Calla Fan de bts|bts|Amo a bts|Chino|Chinos)",
+      "audio": "./resources/media/audio/seed/calla-fan-de-bts.mp3"
+    },
+    "Cambiate a Movistar": {
+      "regex": "(Cambiate a Movistar|cambiate a Movistar|cambiate a movistar|Cambiate a movistar|movistar)",
+      "audio": "./resources/media/audio/seed/cambiate-a-movistar.mp3"
+    },
+    "corte": {
+      "regex": "(Corte Corte|corte|pelea|pelear|golpear|golpea)",
+      "audio": "./resources/media/audio/seed/corte-corte.mp3"
+    },
+    "El Toxico": {
+      "regex": "(El Toxico|El tóxico|Toxico|tóxico|malo|mala|estupido|estupida)",
+      "audio": "./resources/media/audio/seed/el-toxico.mp3"
+    },
+    "elmo sabe donde vives": {
+      "regex": "(Elmo sabe donde vives|Elmo sabe dónde vives|elmo|vives|de donde eres|eres de|sabes)",
+      "audio": "./resources/media/audio/seed/elmo-sabe-donde-vives.mp3"
+    },
+    "en caso de una investigación": {
+      "regex": "(En caso de una investigación|En caso de una investigacion|fbi|cia|nasa|detective|👤|🕵️‍|♀️🕵️‍♂️)",
+      "audio": "./resources/media/audio/seed/en-caso-de-una-investigacion.mp3"
+    },
+    "eres fuerte": {
+      "regex": "(Eres Fuerte|god|🙌|🤜|🤛|🦾|👊)",
+      "audio": "./resources/media/audio/seed/eres-fuerte.mp3"
+    },
+    "esta zzzz": {
+      "regex": "(Zzzz|zzz|😴|💩|👽)",
+      "audio": "./resources/media/audio/seed/esta-zzzz.mp3"
+    },
+    "las reglas del grupo": {
+      "regex": "(Las reglas del grupo|lee|leíste|leiste)",
+      "audio": "./resources/media/audio/seed/las-reglas-del-grupo.mp3"
+    },
+    "me anda buscando anonymous": {
+      "regex": "(Me anda buscando anonymous|me anda buscando anonymous|Me está buscando anonymous|me está buscando anonymous|Me está buscando anonimo|Me esta buscando anonimo|anonimus|anónimo)",
+      "audio": "./resources/media/audio/seed/me-anda-buscando-anonymous.mp3"
+    },
+    "momento equisde": {
+      "regex": "(Momento equisde|momento equisde|Momento|fuera|xd|🤘|👄|🕴️|💃|🕺)",
+      "audio": "./resources/media/audio/seed/momento-equisde.mp3"
+    },
+    "motivacion": {
+      "regex": "(Motivacion|Motivación|💥|☘️)",
+      "audio": "./resources/media/audio/seed/motivacion.mp3"
+    },
+    "muchachos": {
+      "regex": "(Muchachos|⛈️|🌩️|🌦️|🌤️|🌪️|escucharon)",
+      "audio": "./resources/media/audio/seed/muchachos.mp3"
+    },
+    "nico nico": {
+      "regex": "(Nico Nico|🐄|🐖|🐬|🐼|🐰|🐇|🦦|🐋)",
+      "audio": "./resources/media/audio/seed/nico-nico.mp3"
+    },
+    "no rompas mas": {
+      "regex": "(No Rompas más|No Rompas mas|💔|😖|😫|😣|😿)",
+      "audio": "./resources/media/audio/seed/no-rompas-mas.mp3"
+    },
+    "porque ta tite": {
+      "regex": "(Porque ta tite|Por qué ta tite|🥺|😕|😟|😞|😔)",
+      "audio": "./resources/media/audio/seed/porque-ta-tite.mp3"
+    },
+    "potaxio": {
+      "regex": "(Potaxio|Potasio|🥑)",
+      "audio": "./resources/media/audio/seed/potaxio.mp3"
+    },
+    "que tal grupo": {
+      "regex": "(Que tal Grupo|qué tal grupo|grupos)",
+      "audio": "./resources/media/audio/seed/que-tal-grupo.mp3"
+    },
+    "se están riendo de mi": {
+      "regex": "(Se están riendo de mí|Se estan riendo de mi|Se esta riendo de mi|Se está riendo de mi|se estan)",
+      "audio": "./resources/media/audio/seed/se-estan-riendo-de-mi.mp3"
+    },
+    "su nivel de pendejo": {
+      "regex": "(Su nivel de pendejo|pendeja|pendejo|idiota|tonto|tonta|😐|🙄|😜|🤪)",
+      "audio": "./resources/media/audio/seed/su-nivel-de-pendejo.mp3"
+    },
+    "tal vez": {
+      "regex": "(tal vez|puede ser|posible|🧘‍|♀️🧘|🍦|🍡|🌮|🍕|🍔|🌭|🍖|😋|🎩)",
+      "audio": "./resources/media/audio/seed/tal-vez.mp3"
+    },
+    "te gusta el pepino": {
+      "regex": "(Te gusta el Pepino|🥒|🍆|nepe)",
+      "audio": "./resources/media/audio/seed/te-gusta-el-pepino.mp3"
+    },
+    "todo bien": {
+      "regex": "(Todo bien)",
+      "audio": "./resources/media/audio/seed/todo-bien.mp3"
+    },
+    "traiganle una falda": {
+      "regex": "(Traigan le una falda|Traiganle una falda|Nina|niña|niño)",
+      "audio": "./resources/media/audio/seed/traigan-le-una-falda.mp3"
+    },
+    "y este quien es": {
+      "regex": "(Y este quien es|Y este quien poronga es|Y este quien porongas es|vida)",
+      "audio": "./resources/media/audio/seed/y-este-quien-es.mp3"
+    },
+    "ya antojaron": {
+      "regex": "(Goku pervertido|pervertido|pervertida|goku|antojen|antogen|😈|👿|👉👌|👌👈)",
+      "audio": "./resources/media/audio/seed/ya-antojaron.mp3"
+    },
+    "tengo los calzones del admin": {
+      "regex": "(TENGO LOS CALZONES|Tengo los calzones|tengo los calzones|tengo los calzones del admin|🥶|😨|calzones)",
+      "audio": "./resources/media/audio/seed/admin-calzones.mp3"
+    },
+    "a nadie le importa": {
+      "regex": "(anadieleimporta|a nadie le importa|y que|no importa|literal)",
+      "audio": "./resources/media/audio/seed/dylan1.mp3"
+    },
+    "miarda de bot": {
+      "regex": "(miarda de bot|mierda de bot|mearda de bot|Miarda de Bot|Mierda de Bot|Mearda de Bot|bot puto|Bot puto|Bot CTM|Bot ctm|bot CTM|bot ctm|bot pendejo|Bot pendejo|bot de mierda)",
+      "audio": "./resources/media/audio/seed/insultar.mp3"
+    },
+    "baneado": {
+      "regex": "(baneado|Baneado|baneada)",
+      "audio": "./resources/media/audio/seed/baneado.mp3"
+    },
+    "basado": {
+      "regex": "(Cada|Basado|Basada|Basadisimo|BASADO|basado|basada|Que basado|Que basada|que basado)",
+      "audio": "./resources/media/audio/seed/basado.mp3"
+    },
+    "bien pensado woody": {
+      "regex": "(Bien pensado woody|bien pensado woody|Bien pensado|bien pensado|Bien pensado wudy|bien pensado wudy|Bien pensado Woody|bien pensado Woody|Bien pensado woodi|bien pensado woodi)",
+      "audio": "./resources/media/audio/seed/bien-pensado-woody.mp3"
+    },
+    "bañate": {
+      "regex": "(bañate|Bañat)",
+      "audio": "./resources/media/audio/seed/banate.mp3"
+    },
+    "boanoite": {
+      "regex": "(buenas noches|Buenas noches|Boanoite|boanoite)",
+      "audio": "./resources/media/audio/seed/boanoite.mp3"
+    },
+    "bueno si": {
+      "regex": "(Bueno si|bueno si|bueno sí|Bueno sí)",
+      "audio": "./resources/media/audio/seed/bueno-si.mp3"
+    },
+    "buenos dias": {
+      "regex": "(buenos dias|Buenos dias|buenos días|Buenos días)",
+      "audio": "./resources/media/audio/seed/buenos-dias-2.mp3"
+    },
+    "me olvide": {
+      "regex": "(Me olvide|ME OLVIDE|me olvide|Me olvidé|me olvidé|lgante)",
+      "audio": "./resources/media/audio/seed/chica-lgante.mp3"
+    },
+    "diagnosticado con gay": {
+      "regex": "(giagnosticadocongay|diagnosticado con gay|diagnosticado gay|te diagnóstico con gay|diagnóstico gay|te diagnostico con gay|te diagnóstico con gay|te diagnosticó con gay|te diagnostico con gay)",
+      "audio": "./resources/media/audio/seed/diagnosticadocongay.mp3"
+    },
+    "el pepe": {
+      "regex": "(El pepe|el pepe|El Pepe|el Pepe)",
+      "audio": "./resources/media/audio/seed/el-pepe.mp3"
+    },
+    "el rap de fernanfloo": {
+      "regex": "(el rap de fernanfloo)",
+      "audio": "./resources/media/audio/seed/el-rap-de-fernanfloo.mp3"
+    },
+    "enojado": {
+      "regex": "(Enojado|ENOJADO|enojado|Molesto|Enojada|ENOJADA|enojada|Molesta|🤬|😡|😠|😤)",
+      "audio": "./resources/media/audio/seed/asen.mp3"
+    },
+    "entrada": {
+      "regex": "(ENTRADA|entrada|Entrada|Entra|ENTRA|Entra|Ingresa|ingresa|INGRESA|ingresar|INGRESAR|Ingresar)",
+      "audio": "./resources/media/audio/seed/entrada-epica-al-chat.mp3"
+    },
+    "esto va a hacer epico papus": {
+      "regex": "(Esto va ser épico papus|esto va ser épico papus|Esto va ser|Esto va a hacer|esto va acer|Esto va aser|esto va ser|esto va a hacer)",
+      "audio": "./resources/media/audio/seed/esto-va-a-hacer-epico-papus.mp3"
+    },
+    "esto va para ti": {
+      "regex": "(Esto va para ti|esto va para ti)",
+      "audio": "./resources/media/audio/seed/esto-va-para-ti.mp3"
+    },
+    "feliz cumple": {
+      "regex": "(feliz cumpleaños|feliz cumple|felizcumpleaños|happy birthday)",
+      "audio": "./resources/media/audio/seed/feliz-cumple.mp3"
+    },
+    "fiesta del administrador": {
+      "regex": "(fiesta del admin2|fiesta del admin 2|fiestadeladmin2|fiesta del administrador)",
+      "audio": "./resources/media/audio/seed/fiesta.mp3"
+    },
+    "fiesta del admin": {
+      "regex": "(Fiesta del admin|fiesta del admin)",
+      "audio": "./resources/media/audio/seed/admin.mp3"
+    },
+    "atención grupo": {
+      "regex": "(fiesta del admin 3|atención grupo|atencion grupo|aviso importante|fiestadeladmin3|fiesta en casa)",
+      "audio": "./resources/media/audio/seed/fiesta1.mp3"
+    },
+    "fino señores": {
+      "regex": "(Fino señores|fino señores|Fino senores|fino senores|Fino🧐|🤨|🧐🍷|🧐🍷|🐍|🙊|🙉|🙈)",
+      "audio": "./resources/media/audio/seed/fino-senores.mp3"
+    },
+    "chao": {
+      "regex": "(Me voy|me voy|ME VOY|Me fui|me fui|ME FUI|Se fue|se fue|SE FUE|Adios|adios|ADIOS|Chao|chao|CHAO)",
+      "audio": "./resources/media/audio/seed/flash.mp3"
+    },
+    "tunometecabrasaramambiche": {
+      "regex": "(tunometecabrasaramambiche|tunometecabrasaramanbiche|tunometecabrasarananbiche|tunometecabrasaranambiche)",
+      "audio": "./resources/media/audio/seed/tunometecabrasaramambiche.mp3"
+    },
+    "gemidos": {
+      "regex": "(gemidos|gemime|gime|gemime|gemi2)",
+      "audio": "./resources/media/audio/seed/gemi2.mp3"
+    },
+    "hablar primos": {
+      "regex": "(hablar primos|Hablar primos)",
+      "audio": "./resources/media/audio/seed/hablar-primos.mp3"
+    },
+    "audio hentai": {
+      "regex": "(audio hentai|Audio hentai|audiohentai|Audiohentai)",
+      "audio": "./resources/media/audio/seed/hentai.mp3"
+    },
+    "hello": {
+      "regex": "(hola|ola|hi|hello)",
+      "audio": "./resources/media/audio/seed/hola.mp3"
+    },
+    "homero chino": {
+      "regex": "(Homero chino|homero chino|Omero chino|omero chino|Homero Chino)",
+      "audio": "./resources/media/audio/seed/homero-chino.mp3"
+    },
+    "sexo": {
+      "regex": "(sexo|Sexo|Hora de sexo|hora de sexo)",
+      "audio": "./resources/media/audio/seed/maau1.mp3"
+    },
+    "jesucristo": {
+      "regex": "(Jesucristo|jesucristo|Jesús|jesús|Auronplay|Auron|Dios)",
+      "audio": "./resources/media/audio/seed/jesucristo.mp3"
+    },
+    "la voz de hombre": {
+      "regex": "(La voz de hombre|la voz de hombre|La voz del hombre|la voz del hombre|La voz|la voz|🥸|👨|👩|🤦)",
+      "audio": "./resources/media/audio/seed/la-voz-de-hombre.mp3"
+    },
+    "La biblia": {
+      "regex": "(laoracion|La biblia|La oración|La biblia|La oración|la biblia|La Biblia|oremos|recemos|rezemos|🙌|👏|🙏)",
+      "audio": "./resources/media/audio/seed/ora.mp3"
+    },
+    "Marica quien": {
+      "regex": "(Marica tu|cancion1|Marica quien|maricon|bando)",
+      "audio": "./resources/media/audio/seed/cancion.mp3"
+    },
+    "masivo": {
+      "regex": "(MA MA MASIVO|ma ma masivo|Ma ma masivo|Bv|BV|bv|masivo|Masivo|MASIVO)",
+      "audio": "./resources/media/audio/seed/masivo-cancion.mp3"
+    },
+    "me vengo": {
+      "regex": "(ho me vengo|oh me vengo|o me vengo|Ho me vengo|Oh me vengo|O me vengo)",
+      "audio": "./resources/media/audio/seed/vengo.mp3"
+    },
+    "me pican los cocos": {
+      "regex": "(Me pica los cocos|ME PICA |me pica|Me pican los cocos|ME PICAN)",
+      "audio": "./resources/media/audio/seed/me-pican-los-cocos.mp3"
+    },
+    "mmm": {
+      "regex": "(mmm|Mmm|MmM)",
+      "audio": "./resources/media/audio/seed/mmm.mp3"
+    },
+    "moshi moshi": {
+      "regex": "(Moshi moshi|Shinobu|mundo)",
+      "audio": "./resources/media/audio/seed/moshi-moshi.mp3"
+    },
+    "murio el grupo": {
+      "regex": "(Murió el grupo|Murio el grupo|murio el grupo|murió el grupo|Grupo muerto|grupo muerto)",
+      "audio": "./resources/media/audio/seed/murio.m4a"
+    },
+    "nadie te pregunto": {
+      "regex": "(nadie te pregunto|Nadie te pregunto|Nadie te preguntó|nadie te preguntó)",
+      "audio": "./resources/media/audio/seed/nadie-te-pregunto.mp3"
+    },
+    "Feliz navidad": {
+      "regex": "(Feliz navidad|feliz navidad|Merry Christmas|merry chritmas)",
+      "audio": "./resources/media/audio/seed/navidad.m4a"
+    },
+    "niconico": {
+      "regex": "(niconico|NICONICO|Niconico|niconiconi|Niconiconi|NICONICONI)",
+      "audio": "./resources/media/audio/seed/niconico.mp3"
+    },
+    "no chu": {
+      "regex": "(No chupa la|No chupala|no chupala|No chu|no chu|No, chupala|No, chupa la)",
+      "audio": "./resources/media/audio/seed/no-chu.mp3"
+    },
+    "no me hables": {
+      "regex": "(No me hables|no me hables)",
+      "audio": "./resources/media/audio/seed/no-me-hables.mp3"
+    },
+    "no me hagas usar esto": {
+      "regex": "(no me hagas usar esto|No me hagas usar esto|No me agas usar esto)",
+      "audio": "./resources/media/audio/seed/no-me-hagas-usar-esto.mp3"
+    },
+    "no digas eso papu": {
+      "regex": "(NO DIGAS ESO PAPU|no digas eso papu|No gigas eso papu|NO PAPU|No papu|NO papu|no papu)",
+      "audio": "./resources/media/audio/seed/no-digas-eso-papu.mp3"
+    },
+    "noche de paz": {
+      "regex": "(noche de paz|Noche de paz|Noche de amor|noche de amor|Noche de Paz|🌚|🌕|🌖|🌗|🌘|🌑|🌒|🌓|🌔|🌙|🪐)",
+      "audio": "./resources/media/audio/seed/noche.mp3"
+    },
+    "otaku": {
+      "regex": "(Nyapasu|Nyanpasu|nyapasu|Nyapasu|Gambure|Yabure|🐨|🐣|🐥|🦄|🤙)",
+      "audio": "./resources/media/audio/seed/otaku.mp3"
+    },
+    "ohayo": {
+      "regex": "(Ohayo|ohayo|Ojayo|ojayo|Ohallo|ohallo|Ojallo|ojallo|🏮|🎎|⛩️|🐲|🐉|🌸|🍙|🍘)",
+      "audio": "./resources/media/audio/seed/ohayo.mp3"
+    },
+    "omaiga": {
+      "regex": "(OMAIGA|OMG|omg|omaiga|Omg|Omaiga|OMAIGA)",
+      "audio": "./resources/media/audio/seed/omaiga.mp3"
+    },
+    "onichan": {
+      "regex": "(oni-chan|onichan|o-onichan)",
+      "audio": "./resources/media/audio/seed/onichan.mp3"
+    },
+    "orale": {
+      "regex": "(orale|Orale)",
+      "audio": "./resources/media/audio/seed/orale.mp3"
+    },
+    "Pasa pack": {
+      "regex": "(Pasa pack|vendes tu nudes|pasa video hot|pasa tu pack|pasa fotos hot|vendes tu pack|Vendes tu pack|Vendes tu pack\\?|vendes tu pack|Pasa Pack Bot|pasa pack Bot|pasa tu pack Bot|Pásame tus fotos desnudas|pásame tu pack|me pasas tu pak|me pasas tu pack|pasa pack)",
+      "audio": "./resources/media/audio/seed/elmo.mp3"
+    },
+    "contexto": {
+      "regex": "(Contexto|CONTEXTO|contexto|Pasen contexto|PASEN CONTEXTO|pasen contexto|Y el contexto|Y EL CONTEXTO|y el contexto)",
+      "audio": "./resources/media/audio/seed/contexto.mp3"
+    },
+    "Pero esto ya es otro nivel": {
+      "regex": "(Pero esto|pero esto|Pero esto ya es otro nivel|pero esto ya es otro nivel|Otro nivel|otro nivel)",
+      "audio": "./resources/media/audio/seed/pero-esto-ya-es-otro-nivel.mp3"
+    },
+    "pikachu": {
+      "regex": "(PIKA|pica|Pica|Pikachu|pikachu|PIKACHU|picachu|Picachu)",
+      "audio": "./resources/media/audio/seed/pikachu.mp3"
+    },
+    "pokemon": {
+      "regex": "(Pokemon|pokemon|Pokémon|pokémon)",
+      "audio": "./resources/media/audio/seed/pokemon.mp3"
+    },
+    "Quién es tu senpai botsito 7u7": {
+      "regex": "(Quién es tu senpai botsito 7u7|Quien es tu senpai botsito 7u7|Quién es tu sempai botsito 7u7|Quien es tu sempai botsito 7u7|Quién es tu senpai botsito 7w7|Quien es tu senpai botsito 7w7|quién es tu senpai botsito 7u7|quien es tu senpai botsito 7u7|Quién es tu sempai botsito 7w7|Quien es tu sempai botsito 7w7|Quién es tu senpai botsito|Quien es tu senpai botsito|Quién es tu sempai botsito|Quien es tu sempai botsito|Quién es tu senpai botsito|Quien es tu senpai botsito|quién es tu senpai botsito|quien es tu senpai botsito|Quién es tu sempai botsito|Quien es tu sempai botsito)",
+      "audio": "./resources/media/audio/seed/tu.mp3"
+    },
+    "rawr": {
+      "regex": "(rawr|Rawr|RAWR|raawwr|rraawr|rawwr)",
+      "audio": "./resources/media/audio/seed/rawr.mp3"
+    },
+    "háblame": {
+      "regex": "(hablame|Habla me|Hablame|habla me|Háblame|háblame)",
+      "audio": "./resources/media/audio/seed/sempai.mp3"
+    },
+    "Pvp": {
+      "regex": "(Cagaste|Miedo|miedo|Pvp|PVP|temor|que pasa|Que sucede|Que pasa|que sucede|Qué pasa|Qué sucede|Dime|dime)",
+      "audio": "./resources/media/audio/seed/suspenso.mp3"
+    },
+    "Yoshi": {
+      "regex": "(YOSHI|Yoshi|YoShi|yoshi)",
+      "audio": "./resources/media/audio/seed/yoshi-cancion.mp3"
+    },
+    "verdad que te engañe": {
+      "regex": "(Verdad que te engañe|verdad que te engañe|verdad que|Verdad que)",
+      "audio": "./resources/media/audio/seed/verdad-que-te-engane.mp3"
+    },
+    "vivan los novios": {
+      "regex": "(vivan|vivan los novios|vivanlosnovios)",
+      "audio": "./resources/media/audio/seed/vivan.mp3"
+    },
+    "yamete kudasai": {
+      "regex": "(Yamete|yamete|Yamete kudasai|yamete kudasai)",
+      "audio": "./resources/media/audio/seed/yamete-kudasai.mp3"
+    },
+    "usted está detenido": {
+      "regex": "(Usted esta detenido|usted esta detenido|usted está detenido|Usted está detenido)",
+      "audio": "./resources/media/audio/seed/usted-esta-detenido.mp3"
+    },
+    "una pregunta": {
+      "regex": "(una pregunta|pregunton|preguntona)",
+      "audio": "./resources/media/audio/seed/una-pregunta.mp3"
+    },
+    "Chiste": {
+      "regex": "(oye|🐔|Chiste)",
+      "audio": "./resources/media/audio/seed/dylan2.mp3"
+    },
+    "ig del la minita": {
+      "regex": "(gaspi y la minita|Gaspi y la mina|ig del la minita)",
+      "audio": "./resources/media/audio/seed/gaspi6.mp3"
+    },
+    "gaspi frase": {
+      "regex": "(gaspi frase|frase)",
+      "audio": "./resources/media/audio/seed/gaspi9.mp3"
+    },
+    "vamo": {
+      "regex": "(Vamos|vamo)",
+      "audio": "./resources/media/audio/seed/vamo.mp3"
+    },
+    ":v": {
+      "regex": "(:V|:v|v:)",
+      "audio": "./resources/media/audio/seed/viejo1.mp3"
+    },
+    "vete a la vrg": {
+      "regex": "(vetealavrg|vete a la vrg|vete a la verga)",
+      "audio": "./resources/media/audio/seed/vete-a-la-verga.mp3"
+    },
+    "wtf": {
+      "regex": "(WTF|wtf|Wtf|wataf|watafac|watafack)",
+      "audio": "./resources/media/audio/seed/wtf.mp3"
+    },
+    "uwu": {
+      "regex": "(UwU|uwu|Uwu|uwU|UWU)",
+      "audio": "./resources/media/audio/seed/uwu.mp3"
+    },
+    "jai": {
+      "regex": "(Hey|Hei|jai|hey|HEY)",
+      "audio": "./resources/media/audio/seed/jai.mp3"
+    },
+    "joder": {
+      "regex": "(Joder|joder)",
+      "audio": "./resources/media/audio/seed/joder.mp3"
+    },
+    ":c": {
+      "regex": "(:c|c)",
+      "audio": "./resources/media/audio/seed/toma.mp3"
+    },
+    "siuuu": {
+      "regex": "(siu|siiuu|ssiiuu|siuuu|siiuuu|siiiuuuu|siuuuu|siiiiuuuuu|SIIIIUUU)",
+      "audio": "./resources/media/audio/seed/siu.mp3"
+    },
+    "among us": {
+      "regex": "(Sus|sus|Amongos|among us|Among us|Among)",
+      "audio": "./resources/media/audio/seed/sus.mp3"
+    },
+    "te amo": {
+      "regex": "(te amo|teamo)",
+      "audio": "./resources/media/audio/seed/te-amo.mp3"
+    },
+    "Estoy triste": {
+      "regex": "(Estoy triste|ESTOY TRISTE|estoy triste|Triste|TRISTE|triste|Troste|TROSTE|troste|Truste|TRUSTE|truste)",
+      "audio": "./resources/media/audio/seed/violin.mp3"
+    },
+    "un Pato": {
+      "regex": "(un Pato| un pato|un pato que va caminando alegremente|Un pato|Un Pato)",
+      "audio": "./resources/media/audio/seed/pato.mp3"
+    },
+    "viernes": {
+      "regex": "(fiesta viernes|viernes|Viernes|viernes fiesta)",
+      "audio": "./resources/media/audio/seed/viernes.mp3"
+    },
+    "yokese": {
+      "regex": "(Yokese|yokese|YOKESE)",
+      "audio": "./resources/media/audio/seed/yokese.mp3"
+    }
+  }
+}

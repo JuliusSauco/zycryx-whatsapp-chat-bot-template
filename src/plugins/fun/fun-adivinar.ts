@@ -71,7 +71,7 @@ async function obtenerPregunta(tipo: GameType): Promise<GuessQuestion | null> {
     }
 
     try {
-        const archivo = `./src/data/game/${archivosRespaldo[tipo]}`;
+        const archivo = `./resources/data/game/${archivosRespaldo[tipo]}`;
         const data = getCachedJson<GuessQuestion[]>(archivo) || [];
         const pregunta = pickRandom(data);
         if (!pregunta?.question || !pregunta.response) return null;

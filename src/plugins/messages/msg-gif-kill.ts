@@ -5,9 +5,9 @@ import {getAvailableMp4s, pickRandomFile} from './gif-media.js'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const GIF_FOLDER = path.join(process.cwd(), 'media', 'gifs', 'kl')
+const GIF_FOLDER = path.join(process.cwd(), 'resources', 'media', 'reaction-gifs', 'kl')
 const FFMPEG_HINT =
-    '⚠️ No hay videos en `media/gifs/kl`.\n\n' +
+    '⚠️ No hay videos en `resources/media/reaction-gifs/kl`.\n\n' +
     'Convierte tus GIFs a MP4 con ffmpeg:\n' +
     '```\nffmpeg -i input.gif -vf "fps=15,scale=320:-2:flags=lanczos" \\\n' +
     '  -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart \\\n' +
@@ -71,5 +71,5 @@ export default definePlugin({
 })
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
-
+
 

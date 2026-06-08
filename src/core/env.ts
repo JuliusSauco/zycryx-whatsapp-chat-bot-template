@@ -62,7 +62,7 @@ export const ENV = {
     VIRUSTOTAL_MAX_FILE_MB: parseInt(process.env.VIRUSTOTAL_MAX_FILE_MB || '32', 10),
     VIRUSTOTAL_POLL_ATTEMPTS: parseInt(process.env.VIRUSTOTAL_POLL_ATTEMPTS || '6', 10),
     VIRUSTOTAL_POLL_INTERVAL_MS: parseInt(process.env.VIRUSTOTAL_POLL_INTERVAL_MS || '10000', 10),
-    DEFAULT_MENU_IMAGE: process.env.DEFAULT_MENU_IMAGE || './media/Menu2.jpg',
+    DEFAULT_MENU_IMAGE: process.env.DEFAULT_MENU_IMAGE || './resources/media/menus/Menu2.jpg',
     DB_HOST: process.env.DB_HOST || 'localhost',
     DB_PORT: parseInt(process.env.DB_PORT || '5432', 10),
     DB_NAME: process.env.DB_NAME || 'zycryx_bot',
@@ -73,4 +73,7 @@ export const ENV = {
     LOG_LEVEL: process.env.LOG_LEVEL || 'command',
     PERF_LOG_THRESHOLD_MS: parseInt(process.env.PERF_LOG_THRESHOLD_MS || '750', 10),
     HTTP_TIMEOUT_MS: parseInt(process.env.HTTP_TIMEOUT_MS || '15000', 10),
+    DB_CACHE_TTL_MS: parseInt(process.env.DB_CACHE_TTL_MS || '300000', 10),
+    AUDIO_CACHE_TTL_MS: parseInt(process.env.AUDIO_CACHE_TTL_MS || '300000', 10),
+    BACKGROUND_TASK_CONCURRENCY: parseInt(process.env.BACKGROUND_TASK_CONCURRENCY || '4', 10),
 } as const;

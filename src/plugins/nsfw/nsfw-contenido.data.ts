@@ -2,7 +2,7 @@ export interface NsfwContentItem {
     label: string;
     type: 'json' | 'api' | 'waifu' | 'array';
     aliases: string[];
-    url?: string;
+    dataFile?: string;
     api?: string;
     field?: string;
     array?: string[];
@@ -12,49 +12,43 @@ export const nsfwContent = {
     pack: {
         label: '_🥵 aqui tiene mi Pack 😏_',
         type: 'json',
-        url: 'https://raw.githubusercontent.com/elrebelde21/The-LoliBot-MD2/main/src/nsfw/pack.json',
+        dataFile: 'resources/data/nsfw/pack.json',
         aliases: []
     },
     pack2: {
         label: '_🥵 aqui tiene mi Pack 😏_',
         type: 'json',
-        url: 'https://raw.githubusercontent.com/elrebelde21/The-LoliBot-MD2/main/src/nsfw/packgirl.json',
+        dataFile: 'resources/data/nsfw/packgirl.json',
         aliases: []
     },
     pack3: {
         label: '_🥵 aqui tiene mi Pack 😏_',
         type: 'json',
-        url: 'https://raw.githubusercontent.com/elrebelde21/The-LoliBot-MD2/main/src/nsfw/packmen.json',
+        dataFile: 'resources/data/nsfw/packmen.json',
         aliases: []
     },
     tetas: {
         label: '🥵 dame lechita de hay 🥵',
         type: 'json',
-        url: 'https://raw.githubusercontent.com/elrebelde21/The-LoliBot-MD2/main/src/nsfw/tetas.json',
+        dataFile: 'resources/data/nsfw/tetas.json',
         aliases: ['pechos']
     },
     videoxxx: {
         label: '_*ᴅɪsғʀᴜᴛᴀ ᴅᴇʟ ᴠɪᴅᴇᴏ 🥵_',
         type: 'json',
-        url: 'https://raw.githubusercontent.com/elrebelde21/The-LoliBot-MD2/main/src/nsfw/videoxxxc.json',
+        dataFile: 'resources/data/nsfw/videoxxxc.json',
         aliases: ['vídeoxxx']
     },
     videoxxxlesbi: {
         label: '_*ᴅɪsғʀᴜᴛᴀ ᴅᴇʟ ᴠɪᴅᴇᴏ 🥵_',
         type: 'json',
-        url: 'https://raw.githubusercontent.com/elrebelde21/The-LoliBot-MD2/main/src/nsfw/videoxxxc2.json',
+        dataFile: 'resources/data/nsfw/videoxxxc2.json',
         aliases: ['videolesbixxx', 'pornolesbivid']
-    },
-    pornololi: {
-        label: '🥵',
-        type: 'json',
-        url: 'https://raw.githubusercontent.com/elrebelde21/The-LoliBot-MD2/main/src/nsfw/pornololi.json',
-        aliases: ['pornololi']
     },
     yuri: {
         label: '👩‍❤️‍👩 Yuri',
         type: 'json',
-        url: 'https://raw.githubusercontent.com/BrunoSobrino/TheMystic-Bot-MD/master/src/JSON/yuri.json',
+        dataFile: 'resources/data/nsfw/yuri.json',
         aliases: []
     },
     yaoi: {

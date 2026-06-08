@@ -3,7 +3,7 @@ export interface RandomContentItem {
     type?: 'api' | 'json' | 'video' | 'static';
     api?: string;
     nsfwApi?: string;
-    url?: string;
+    dataFile?: string;
     vids?: string[];
     imgs?: string[];
     isMeme?: boolean;
@@ -30,25 +30,25 @@ export const randomAnimeContent = {
     loli: {
         label: '*Yo soy tu loli uwu 😍*',
         type: 'json',
-        url: 'https://raw.githubusercontent.com/elrebelde21/The-LoliBot-MD2/main/src/randow/loli.json',
+        dataFile: 'resources/data/random/loli.json',
         aliases: ['kawaii']
     },
     navidad: {
         label: '🎄 Navidad',
         type: 'json',
-        url: 'https://raw.githubusercontent.com/elrebelde21/The-LoliBot-MD2/main/src/randow/navidad.json',
+        dataFile: 'resources/data/random/navidad.json',
         aliases: []
     },
     messi: {
         label: '*🇦🇷 Messi*',
         type: 'json',
-        url: 'https://raw.githubusercontent.com/elrebelde21/The-LoliBot-MD2/main/src/randow/messi.json',
+        dataFile: 'resources/data/random/messi.json',
         aliases: []
     },
     ronaldo: {
         label: '_*Siiiuuuuuu*_',
         type: 'json',
-        url: 'https://raw.githubusercontent.com/elrebelde21/The-LoliBot-MD2/main/src/randow/CristianoRonaldo.json',
+        dataFile: 'resources/data/random/CristianoRonaldo.json',
         aliases: []
     }
 } satisfies Record<string, RandomContentItem>

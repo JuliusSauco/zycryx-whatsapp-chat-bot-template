@@ -54,7 +54,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - Soporte para `DB_SCHEMA` usando `search_path`.
 - Subbots con sesiones independientes.
 - Tareas programadas para reportes, expiracion de grupos y limpieza de memoria.
-- Recursos base en `src/data` y recursos mutables de audios en base de datos.
+- Recursos base en `resources/data` y recursos mutables de audios en base de datos.
 - Observabilidad con `LOG_LEVEL` y logs de performance configurables.
 - Integracion opcional con VirusTotal para analisis de enlaces y archivos.
 - Optimizaciones de latencia para evitar consultas repetidas a settings, subbot config y metadata en hooks y comandos de grupo frecuentes.
@@ -164,7 +164,7 @@ BOT_WEBSITE_URL=
 BOT_OWNER_NUMBERS=573001112233,51999888777
 BOT_FIXED_OWNER_JIDS=573001112233@s.whatsapp.net,51999888777@s.whatsapp.net
 BOT_MOD_GROUP_ID=
-DEFAULT_MENU_IMAGE=./media/Menu2.jpg
+DEFAULT_MENU_IMAGE=./resources/media/menus/Menu2.jpg
 
 DATA_SOURCE=local
 LOG_LEVEL=command
@@ -248,15 +248,23 @@ BOT_FIXED_OWNER_JIDS=573001112233@s.whatsapp.net,51999888777@s.whatsapp.net
 ```text
 zycryx-whatsapp-chat-bot-template/
 ├── database/
-├── media/
+├── resources/
+│   ├── data/
+│   │   ├── game/
+│   │   └── nsfw/
+│   └── media/
+│       ├── audio/
+│       ├── avatars/
+│       ├── menus/
+│       └── reaction-gifs/
+│   └── text/
+│       ├── messages/
+│       └── prompts/
 ├── src/
 │   ├── adapters/
 │   │   ├── backend/
 │   │   └── drizzle/
 │   ├── core/
-│   ├── data/
-│   │   ├── game/
-│   │   └── nsfw/
 │   ├── db/
 │   │   └── migrations/
 │   ├── guards/
@@ -295,12 +303,14 @@ zycryx-whatsapp-chat-bot-template/
 | Ruta | Responsabilidad |
 |---|---|
 | `database/` | SQL auxiliar para referencias y migracion legacy. |
-| `media/` | Imagenes, audios, textos y recursos usados por plugins. |
+| `resources/data/` | Datos estaticos y seeds readonly. |
+| `resources/media/` | Imagenes, audios y recursos multimedia usados por plugins. |
+| `resources/media/reaction-gifs/` | GIFs de reaccion guardados como MP4 para envio inline en WhatsApp. |
+| `resources/text/` | Textos versionados: mensajes base y prompts. |
 | `src/adapters/backend/` | Scaffold REST/GraphQL futuro. |
 | `src/adapters/drizzle/` | Implementacion local de repositorios con Drizzle. |
 | `src/core/` | Arranque, entorno, router, parser, handler, contexto y tareas. |
 | `src/db/` | Cliente, schema y migraciones Drizzle. |
-| `src/data/` | Datos estaticos y seeds readonly. |
 | `src/guards/` | Validaciones previas a ejecutar comandos. |
 | `src/lib/` | Integraciones, loader de plugins, subbots, multimedia, logs y scraping. |
 | `src/plugins/` | Comandos y hooks agrupados por familia. |
@@ -620,17 +630,29 @@ El servicio `api-token.service.ts` decodifica `token_b64` y mantiene cache en me
 <a id="recursos"></a>
 ## 📦 Recursos
 
-`src/data` contiene recursos base readonly:
+`resources/data` contiene recursos base readonly:
 
-- `src/data/audios.json`;
-- `src/data/characters.json`;
-- `src/data/game/*.json`;
-- `src/data/nsfw/*.json`.
+- `resources/data/audios.json`;
+- `resources/data/characters.json`;
+- `resources/data/game/*.json`;
+- `resources/data/nsfw/*.json`.
 
-Los audios personalizados ya no se escriben en `src/data/audios.json`. El flujo actual es:
+`resources/text` contiene todos los recursos `.txt` versionados:
+
+- `resources/text/messages/*.txt`;
+- `resources/text/prompts/*.txt`.
+
+`resources/media` contiene medios locales usados por plugins y configuracion:
+
+- `resources/media/avatars/*.png`;
+- `resources/media/audio/*`;
+- `resources/media/menus/*.jpg`;
+- `resources/media/reaction-gifs/**/*.mp4`.
+
+Los audios personalizados ya no se escriben en `resources/data/audios.json`. El flujo actual es:
 
 ```text
-src/data/audios.json -> seed base
+resources/data/audios.json -> seed base
 audio_responses      -> overrides, altas y bajas dinamicas
 audio-response.service.ts -> merge de seed + DB
 ```
@@ -736,6 +758,6 @@ npm run serve:local
 - Ubicar cada plugin dentro de su familia.
 - Usar servicios existentes antes de crear nuevos accesos a datos.
 - No agregar SQL directo en plugins.
-- No escribir recursos mutables dentro de `src/data`.
+- No escribir recursos mutables dentro de `resources/data`.
 - Ejecutar `typecheck`, `build` y busqueda de `any/@ts-ignore` antes de subir.
 - Documentar APIs externas nuevas en `.env.example`.

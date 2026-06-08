@@ -128,6 +128,7 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
         return await streamToBuffer(stream);
     };
 
+    if (!conn.__zycryxHelpersInstalled) {
     conn.decodeJid = (jid: string): string => {
         if (!jid) return jid;
         if (jid.endsWith('@lid')) return jid;
@@ -197,13 +198,6 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
             forwardingScore: 1
         };
         return await conn.sendMessage(chatId, {text, contextInfo}, {quoted, ...options});
-    };
-
-    m.react = async (emoji: string) => {
-        if (!emoji) return;
-        await conn.sendMessage(m.chat || m.key.remoteJid || '', {
-            react: {text: emoji, key: m.key}
-        });
     };
 
     const defaultContextInfo = async (caption: string, conn: ExtendedConn): Promise<ContextInfoLike> => ({
@@ -457,6 +451,15 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
             },
             {quoted}
         );
+    };
+        conn.__zycryxHelpersInstalled = true;
+    }
+
+    m.react = async (emoji: string) => {
+        if (!emoji) return;
+        await conn.sendMessage(m.chat || m.key.remoteJid || '', {
+            react: {text: emoji, key: m.key}
+        });
     };
 
     return m;

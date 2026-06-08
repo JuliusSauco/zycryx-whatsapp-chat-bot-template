@@ -6,13 +6,13 @@ import {pickRandom} from '../../utils/random.js'
 import {getCachedText} from '../../lib/static-resource-cache.js'
 
 /** Archivo con las frases, separadas por '|'. Path dinámico (sirve en producción). */
-const TXT_PATH = path.join(process.cwd(), 'media', 'text', 'msg-text-ins.txt')
+const TXT_PATH = path.join(process.cwd(), 'resources', 'text', 'messages', 'msg-text-ins.txt')
 
 /** Lee las frases del .txt y las separa por '|'. */
 function getFrases(): string[] {
     const content = getCachedText(TXT_PATH)
     if (!content) {
-        logError('No se pudo leer media/text/msg-text-ins.txt')
+        logError('No se pudo leer resources/text/messages/msg-text-ins.txt')
         return []
     }
 
@@ -36,7 +36,7 @@ export default definePlugin({
 
         const frases = getFrases()
         if (!frases.length) {
-            await m.reply('⚠️ No hay frases en `media/text/msg-text-ins.txt`. Sepáralas con el carácter |.')
+            await m.reply('⚠️ No hay frases en `resources/text/messages/msg-text-ins.txt`. Sepáralas con el carácter |.')
             return
         }
 
@@ -60,5 +60,4 @@ export default definePlugin({
     }
     }
 })
-
 

@@ -40,6 +40,7 @@ export type ExtendedConn = Omit<WASocket, 'sendMessage'> & {
     chats?: Record<string, {messages?: Record<string, unknown>}>;
     getFile?: (input: MediaInput) => Promise<FileInfo>;
     __zycryxSendMessageWrapped?: boolean;
+    __zycryxHelpersInstalled?: boolean;
     [key: string]: unknown;
 };
 
