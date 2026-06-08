@@ -1,0 +1,20 @@
+{
+  "presets": {
+    "1": {
+      "label": "🤖 asistente general",
+      "file": "resources/text/prompts/asistente-general.txt"
+    },
+    "2": {
+      "label": "🇨🇳 China Mitzuki",
+      "file": "resources/text/prompts/china-mitzuki.txt"
+    },
+    "3": {
+      "label": "💸 NeneFlok",
+      "file": "resources/text/prompts/neneflok.txt"
+    },
+    "4": {
+      "label": "🧠 IA multipersonalidad",
+      "file": "resources/text/prompts/multipersonalidad.txt"
+    }
+  }
+}

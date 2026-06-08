@@ -17,7 +17,8 @@ El proyecto esta organizado por capas:
 - `src/lib`: utilidades compartidas e integraciones.
 - `src/utils`: helpers puros y reutilizables.
 - `resources/data`: datos estaticos versionados, no estado mutable de runtime.
-- `resources/media`: imagenes, audios, textos y GIFs de reaccion en MP4 usados por plugins.
+- `resources/media`: imagenes, audios y GIFs de reaccion en MP4 usados por plugins.
+- `resources/text`: textos planos versionados usados por mensajes y prompts.
 - `docs`: documentacion tecnica y roadmap interno.
 
 ## Estado actual
@@ -63,6 +64,7 @@ La ultima etapa grande fue el commit `69db9b9 refactor: complete roadmap v2 bot 
 
 - No agregar SQL directo en plugins. Usar servicios y repositorios.
 - No escribir estado mutable en `resources/data`; usar DB o backend cuando exista contrato.
+- Usar `resources/data/messages.json`, `resources/data/prompts.json` y `resources/data/reactions.json` como manifiestos para mapear prompts, mensajes y reacciones a archivos en `resources/text` o `resources/media`.
 - Mantener medios locales versionados en `resources/media`; los GIFs de reaccion se guardan como MP4 en `resources/media/reaction-gifs`.
 - No usar `fetch`, `node-fetch` ni `axios` directamente en plugins. Usar `src/lib/http-client.ts`.
 - Excepciones conocidas: `src/lib/scraper.ts` y `src/lib/ezgif-convert.ts` pueden usar internals especiales por cookies, redirects, multipart y response handling.

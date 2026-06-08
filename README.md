@@ -635,7 +635,8 @@ El servicio `api-token.service.ts` decodifica `token_b64` y mantiene cache en me
 - `resources/data/audios.json`;
 - `resources/data/characters.json`;
 - `resources/data/game/*.json`;
-- `resources/data/nsfw/*.json`.
+- `resources/data/nsfw/*.json`;
+- `resources/data/messages.json`, `resources/data/prompts.json` y `resources/data/reactions.json` para manifiestos de prompts, mensajes y reacciones.
 
 `resources/text` contiene todos los recursos `.txt` versionados:
 
@@ -645,7 +646,8 @@ El servicio `api-token.service.ts` decodifica `token_b64` y mantiene cache en me
 `resources/media` contiene medios locales usados por plugins y configuracion:
 
 - `resources/media/avatars/*.png`;
-- `resources/media/audio/*`;
+- `resources/media/audio/seed/*`;
+- `resources/media/audio/custom/*`;
 - `resources/media/menus/*.jpg`;
 - `resources/media/reaction-gifs/**/*.mp4`.
 
@@ -654,10 +656,13 @@ Los audios personalizados ya no se escriben en `resources/data/audios.json`. El 
 ```text
 resources/data/audios.json -> seed base
 audio_responses      -> overrides, altas y bajas dinamicas
+resources/media/audio/custom -> archivos agregados por addaudios
 audio-response.service.ts -> merge de seed + DB
 ```
 
 Los comandos `addaudios` y `delaudios` persisten cambios en PostgreSQL mediante `audio_responses`.
+
+Los comandos de reacciones multimedia se describen en `resources/data/reactions.json`. El plugin generico `msg-gif-reactions.ts` resuelve aliases, carpeta y caption desde ese manifiesto; `msg-gif-dp.ts` se conserva aparte porque el comando `trio` necesita reglas especiales de dos objetivos.
 
 <a id="observabilidad"></a>
 ## 📊 Observabilidad

@@ -4,28 +4,51 @@ import path from 'path'
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js'
 import {pickRandom} from '../../utils/random.js'
 import {getCachedText} from '../../lib/static-resource-cache.js'
+import {loadCachedJsonResource} from '../../lib/local-json-resource.js'
 
-/** Archivo con las frases, separadas por '|'. Path dinámico (sirve en producción). */
-const TXT_PATH = path.join(process.cwd(), 'resources', 'text', 'messages', 'msg-text-ins.txt')
+interface TextCommandResource {
+    commands: string[];
+    file: string;
+    separator: string;
+    emptyMessage: string;
+}
+
+interface MessageResourcesManifest {
+    textCommands: Record<string, TextCommandResource>;
+}
+
+const MESSAGE_RESOURCES_PATH = 'resources/data/messages.json'
+const DEFAULT_INS_CONFIG: TextCommandResource = {
+    commands: ['ins', 'insult', 'insulto', 'insultar'],
+    file: 'resources/text/messages/msg-text-ins.txt',
+    separator: '|',
+    emptyMessage: '⚠️ No hay frases en `resources/text/messages/msg-text-ins.txt`. Sepáralas con el carácter |.',
+}
+const INS_CONFIG = loadCachedJsonResource<MessageResourcesManifest>(MESSAGE_RESOURCES_PATH)?.textCommands?.ins || DEFAULT_INS_CONFIG
+const COMMAND_REGEX = new RegExp(`^(${INS_CONFIG.commands.map(escapeRegExp).join('|')})$`, 'i')
 
 /** Lee las frases del .txt y las separa por '|'. */
 function getFrases(): string[] {
-    const content = getCachedText(TXT_PATH)
+    const content = getCachedText(path.resolve(process.cwd(), INS_CONFIG.file))
     if (!content) {
-        logError('No se pudo leer resources/text/messages/msg-text-ins.txt')
+        logError(`No se pudo leer ${INS_CONFIG.file}`)
         return []
     }
 
     return content
-        .split('|')
+        .split(INS_CONFIG.separator)
         .map(s => s.trim())
         .filter(Boolean)
+}
+
+function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 export default definePlugin({
     help: ['msg-text-ins'],
     tags: ['fun'],
-    command: /^(ins|insult|insulto|insultar)$/i,
+    command: COMMAND_REGEX,
     register: false,
     async execute(m, {conn, participants}) {
     try {
@@ -36,7 +59,7 @@ export default definePlugin({
 
         const frases = getFrases()
         if (!frases.length) {
-            await m.reply('⚠️ No hay frases en `resources/text/messages/msg-text-ins.txt`. Sepáralas con el carácter |.')
+            await m.reply(INS_CONFIG.emptyMessage)
             return
         }
 
@@ -60,4 +83,3 @@ export default definePlugin({
     }
     }
 })
-

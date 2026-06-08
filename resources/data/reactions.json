@@ -1,0 +1,98 @@
+{
+  "ab": {
+    "help": "msg-gif-ab",
+    "commands": ["ab", "abrazo", "hug", "embrace", "abrazar"],
+    "folder": "resources/media/reaction-gifs/ab",
+    "caption": "🫣🫣 {sender} le abrazo fuertemente a {targets} 😄😄"
+  },
+  "an": {
+    "help": "msg-gif-cog",
+    "commands": ["cogeranal", "anal", "por-el-culo", "sexo-anal", "anosex"],
+    "folder": "resources/media/reaction-gifs/an",
+    "caption": "🍆💦🍑 {sender} le esta haciendo sexo anal a {targets} 👅"
+  },
+  "ap": {
+    "help": "msg-gif-ap",
+    "commands": ["ap", "cachetes", "agarrar-cachetes", "cheeks"],
+    "folder": "resources/media/reaction-gifs/ap",
+    "caption": "🫣🫣 {sender} le agarro fuertemente los cachetes a {targets} 🤭🤭"
+  },
+  "bt": {
+    "help": "msg-gif-bt",
+    "commands": ["bt", "bite", "morder", "mordisco", "comer"],
+    "folder": "resources/media/reaction-gifs/bt",
+    "caption": "😁🔥 {sender} ha mordido ferozmente a {targets} 🦷🦷"
+  },
+  "cog": {
+    "help": "msg-gif-cog",
+    "commands": ["coger", "follar", "sexear", "sexo"],
+    "folder": "resources/media/reaction-gifs/cog",
+    "caption": "😋🔥💗👙 {sender} se esta cogiendo bien duro a {targets}"
+  },
+  "dogst": {
+    "help": "msg-gif-dogst",
+    "commands": ["doggystyle", "encuatro", "en4", "deaperrito", "cogeren4", "coger4", "follar4"],
+    "folder": "resources/media/reaction-gifs/dogst",
+    "caption": "🍆💦 {sender} se esta cogiendo de a perrito a {targets}"
+  },
+  "fg": {
+    "help": "msg-gif-fg",
+    "commands": ["slap", "pegar", "cachetada", "golpear"],
+    "folder": "resources/media/reaction-gifs/fg",
+    "caption": "🤜 {sender} molio a golpes por pendejo/a a {targets} 👊😵"
+  },
+  "kc": {
+    "help": "msg-gif-kc",
+    "commands": ["kc", "ckiss", "beso-mejilla", "besito-dulce"],
+    "folder": "resources/media/reaction-gifs/kc",
+    "caption": "😗😗 {sender} le dio un lindo beso en la mejilla a {targets} 🤭"
+  },
+  "kill": {
+    "help": "msg-gif-kill",
+    "commands": ["kill", "asesinar", "matar", "slay", "stab"],
+    "folder": "resources/media/reaction-gifs/kl",
+    "caption": "🔪 {sender} asesinó fríamente a {targets} 😵"
+  },
+  "kiss": {
+    "help": "msg-gif-kiss",
+    "commands": ["kiss", "skiss", "kis", "besos", "beso", "besar", "besando"],
+    "folder": "resources/media/reaction-gifs/ks",
+    "caption": "💋 {sender} está besando a {targets}"
+  },
+  "lam": {
+    "help": "msg-gif-lam",
+    "commands": ["lick", "lamer", "lamida", "babear"],
+    "folder": "resources/media/reaction-gifs/lam",
+    "caption": "😝👅 {sender} relamio bien rico a {targets} 😋😜"
+  },
+  "les": {
+    "help": "msg-gif-les",
+    "commands": ["lesbian", "sexo-lesbiano", "lesbianas", "sexo-mujeres"],
+    "folder": "resources/media/reaction-gifs/les",
+    "caption": "👩‍❤️‍💋‍👩 {sender} tiene intenciones lesbicas 🫶 y ganas de hacer tijerasos ✂️ con {targets} 👭"
+  },
+  "oral": {
+    "help": "msg-gif-oral",
+    "commands": ["blowjob", "felacion", "chupar", "oral"],
+    "folder": "resources/media/reaction-gifs/oral",
+    "caption": "😋🤤🤤🔥 {sender} le esta haciendo un rico oral a {targets}"
+  },
+  "pat": {
+    "help": "msg-gif-pat",
+    "commands": ["pat", "palmaditas", "palmada-cabeza", "caricia"],
+    "folder": "resources/media/reaction-gifs/pat",
+    "caption": "🫳 {sender} le dio palmaditas en la cabeza a {targets} 🙇‍♂️🙇‍♀️"
+  },
+  "preg": {
+    "help": "msg-gif-preg",
+    "commands": ["preg", "embarazado", "embarazar", "preniado", "en-bola"],
+    "folder": "resources/media/reaction-gifs/preg",
+    "caption": "😰🥹 ATENCION!!!!! {sender} embarazo a {targets} 🙎‍♂️👶👶"
+  },
+  "spank": {
+    "help": "msg-gif-cog",
+    "commands": ["spank", "nalgear", "nalguear", "palmaso", "nalgaso"],
+    "folder": "resources/media/reaction-gifs/spank",
+    "caption": "🫱🍑 {sender} ha nalgeado bien duro a {targets} 🫣"
+  }
+}

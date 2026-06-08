@@ -3,25 +3,35 @@ import {clearAiMemory} from '../../services/chat-memory.service.js';
 import {setAutorespondPrompt, setMemoryTtl} from '../../services/group-settings.service.js';
 import {readFile} from 'fs/promises';
 import path from 'path';
+import {loadJsonResource} from '../../lib/local-json-resource.js';
 
-const presets: Record<'1' | '2' | '3' | '4', () => Promise<string> | string> = {
-    1: () => readPromptPreset('asistente-general.txt'),
-    2: () => readPromptPreset('china-mitzuki.txt'),
-    3: () => readPromptPreset('neneflok.txt'),
-    4: () => readPromptPreset('multipersonalidad.txt')
-};
+interface PromptPresetResource {
+    label: string;
+    file: string;
+}
 
-const prompt_name: Record<'1' | '2' | '3' | '4', string> = {
-    1: '🤖 asistente general',
-    2: '🇨🇳 China Mitzuki',
-    3: '💸 NeneFlok',
-    4: '🧠 IA multipersonalidad'
-};
+interface PromptResourcesManifest {
+    presets: Record<string, PromptPresetResource>;
+}
 
-const PROMPTS_DIR = path.join(process.cwd(), 'resources', 'text', 'prompts');
+const PROMPTS_MANIFEST_PATH = 'resources/data/prompts.json';
 
-async function readPromptPreset(fileName: string): Promise<string> {
-    return (await readFile(path.join(PROMPTS_DIR, fileName), 'utf-8')).trim();
+async function readPromptPreset(preset: PromptPresetResource): Promise<string> {
+    return (await readFile(path.resolve(process.cwd(), preset.file), 'utf-8')).trim();
+}
+
+async function getPromptManifest(): Promise<PromptResourcesManifest> {
+    return loadJsonResource<PromptResourcesManifest>(PROMPTS_MANIFEST_PATH);
+}
+
+function buildPromptUsage(command: string, presets: Record<string, PromptPresetResource>): string {
+    const presetLines = Object.entries(presets)
+        .map(([key, preset]) => `${command} ${key} - ${preset.label}`)
+        .join('\n');
+    return `📌 *Uso del comando ${command} de esta forma:*
+${presetLines}
+${command} tu texto - ✍️ prompt personalizado
+${command} delete|borrar - 🧹 borrar prompt y memoria`;
 }
 
 export default definePlugin({
@@ -32,6 +42,7 @@ export default definePlugin({
     group: true,
     async execute(m, {text, usedPrefix, command, isOwner}) {
     const input = text?.trim().toLowerCase();
+    const promptManifest = await getPromptManifest();
 
     if (command === 'clearmemory' || command === 'clearai' || command === 'resetai') {
         await clearAiMemory(m.chat);
@@ -63,22 +74,16 @@ ${usedPrefix + command} 0        → se borra en cada mensaje
         return m.reply(`✅ Tiempo de memoria actualizado a *${num}${unit}* (${seconds} segundos).`);
     }
 
-    if (!text) return m.reply(`📌 *Uso del comando ${command} de esta forma:*
-${usedPrefix + command} 1  - ${prompt_name[1]}
-${usedPrefix + command} 2 - ${prompt_name[2]}
-${usedPrefix + command} 3 - ${prompt_name[3]}
-${usedPrefix + command} 4 - ${prompt_name[4]}
-${usedPrefix + command} tu texto - ✍️ prompt personalizado
-${usedPrefix + command} delete|borrar - 🧹 borrar prompt y memoria`);
+    if (!text) return m.reply(buildPromptUsage(usedPrefix + command, promptManifest.presets));
     let prompt: string | null = null;
-    const isPreset = input === '1' || input === '2' || input === '3' || input === '4';
+    const preset = input ? promptManifest.presets[input] : undefined;
     const isDelete = ['delete', 'borrar'].includes(input);
     const resetMemory = true;
 
     if (isDelete) {
         prompt = null;
-    } else if (isPreset) {
-        prompt = await presets[input]();
+    } else if (preset) {
+        prompt = await readPromptPreset(preset);
     } else {
         prompt = text;
     }
@@ -87,7 +92,7 @@ ${usedPrefix + command} delete|borrar - 🧹 borrar prompt y memoria`);
     if (resetMemory) {
         await clearAiMemory(m.chat);
     }
-    const promptLabel = isPreset ? prompt_name[input] : prompt;
+    const promptLabel = preset ? preset.label : prompt;
     return m.reply(prompt ? `✅ *Configuración exitosa.*\n\n*Has establecido un nuevo prompt para este chat.*\n💬 A partir de ahora, el bot usará las indicaciones que hayas establecido.\n\n> *Recuerda etiquetar "@tag" o responder a un mensaje del bot para que te responda.*\n\n` + promptLabel : '🗑️ *Prompt borrado con éxito.*');
     }
 });

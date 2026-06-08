@@ -1,0 +1,21 @@
+{
+  "groupEvents": {
+    "defaultProfilePicture": "resources/media/menus/Menu1.jpg",
+    "welcome": {
+      "file": "resources/text/messages/welcome.txt",
+      "fallback": "HOLAA!! @user, ¡Bienvenido a *@group*! 🎉"
+    },
+    "bye": {
+      "file": "resources/text/messages/bye.txt",
+      "fallback": "Bueno, se fue @user 👋\n\nQue dios lo bendiga 😎"
+    }
+  },
+  "textCommands": {
+    "ins": {
+      "commands": ["ins", "insult", "insulto", "insultar"],
+      "file": "resources/text/messages/msg-text-ins.txt",
+      "separator": "|",
+      "emptyMessage": "⚠️ No hay frases en `resources/text/messages/msg-text-ins.txt`. Sepáralas con el carácter |."
+    }
+  }
+}

@@ -1,20 +1,45 @@
 import path from 'path';
 import {httpBuffer} from '../lib/http-client.js';
 import {getCachedBuffer, getCachedText} from '../lib/static-resource-cache.js';
+import {loadCachedJsonResource} from '../lib/local-json-resource.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
 import type {EventConn} from './group-event-types.js';
 import {pickRandom as pickRandomItem} from '../utils/random.js';
 
-export const DEFAULT_PP_PATH = path.join(process.cwd(), 'resources', 'media', 'menus', 'Menu1.jpg');
+interface GroupEventTextResource {
+    file: string;
+    fallback: string;
+}
 
-const TEXT_DIR = path.join(process.cwd(), 'resources', 'text', 'messages');
+interface MessageResourcesManifest {
+    groupEvents: {
+        defaultProfilePicture: string;
+        welcome: GroupEventTextResource;
+        bye: GroupEventTextResource;
+    };
+}
+
+const MESSAGE_RESOURCES_PATH = 'resources/data/messages.json';
+const DEFAULT_GROUP_EVENTS = {
+    defaultProfilePicture: 'resources/media/menus/Menu1.jpg',
+    welcome: {
+        file: 'resources/text/messages/welcome.txt',
+        fallback: 'HOLAA!! @user, ¡Bienvenido a *@group*! 🎉',
+    },
+    bye: {
+        file: 'resources/text/messages/bye.txt',
+        fallback: 'Bueno, se fue @user 👋\n\nQue dios lo bendiga 😎',
+    },
+} satisfies MessageResourcesManifest['groupEvents'];
+
+export const DEFAULT_PP_PATH = path.join(process.cwd(), DEFAULT_GROUP_EVENTS.defaultProfilePicture);
 
 export function getWelcomeText(): string {
-    return readTextFile('welcome.txt', 'HOLAA!! @user, ¡Bienvenido a *@group*! 🎉');
+    return readTextResource(getGroupEventsManifest().welcome);
 }
 
 export function getByeText(): string {
-    return readTextFile('bye.txt', 'Bueno, se fue @user 👋\n\nQue dios lo bendiga 😎');
+    return readTextResource(getGroupEventsManifest().bye);
 }
 
 export function pickRandom<T>(arr: T[]): T {
@@ -55,12 +80,17 @@ export async function getGroupEventImageBuffer(conn: EventConn, groupId: string,
     return getDefaultPpBuffer();
 }
 
-function readTextFile(fileName: string, fallback: string): string {
-    return getCachedText(path.join(TEXT_DIR, fileName))?.trim() || fallback;
+function getGroupEventsManifest(): MessageResourcesManifest['groupEvents'] {
+    return loadCachedJsonResource<MessageResourcesManifest>(MESSAGE_RESOURCES_PATH)?.groupEvents || DEFAULT_GROUP_EVENTS;
+}
+
+function readTextResource(resource: GroupEventTextResource): string {
+    return getCachedText(path.resolve(process.cwd(), resource.file))?.trim() || resource.fallback;
 }
 
 function getDefaultPpBuffer(): Buffer | null {
-    return getCachedBuffer(DEFAULT_PP_PATH);
+    const defaultProfilePicture = getGroupEventsManifest().defaultProfilePicture;
+    return getCachedBuffer(path.resolve(process.cwd(), defaultProfilePicture));
 }
 
 async function downloadImageBuffer(url: string | null): Promise<Buffer | null> {
