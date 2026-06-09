@@ -4,6 +4,7 @@ import {getAvailableMp4s, pickRandomFile} from './gif-media.js'
 import path from 'path'
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js'
 import {cleanJid} from '../../utils/jid.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
 const GIF_FOLDER = path.join(process.cwd(), 'resources', 'media', 'reaction-gifs', 'dp')
 
@@ -56,8 +57,10 @@ export default definePlugin({
             const mentionsForReply = [senderResolved.mentionJid, partialResolved.mentionJid]
 
             await conn.sendMessage(m.chat, {
-                text: `🙋 *${senderResolved.tag}*, para formar el trío necesitas *1 persona más*.\n` +
-                    `Ya tienes a *${partialResolved.tag}* — etiqueta a alguien más para completar.`,
+                text: renderTemplate(getRequiredPluginMessage('messages.gifDp.needOneMore'), {
+                    sender: senderResolved.tag,
+                    target: partialResolved.tag
+                }),
                 mentions: mentionsForReply,
                 contextInfo: {mentionedJid: mentionsForReply},
             }, {quoted: m})
@@ -71,7 +74,7 @@ export default definePlugin({
         const mp4s = getAvailableMp4s(GIF_FOLDER)
 
         if (!mp4s.length) {
-            await m.reply('⚠️ Para enviarlo como “mensaje” (inline), convierte los GIFs a MP4 y guárdalos en `resources/media/reaction-gifs/dp`.\n\nEjemplo ffmpeg:\nffmpeg -i input.gif -vf "fps=15,scale=320:-2:flags=lanczos" -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart -crf 30 -preset veryfast output.mp4')
+            await m.reply(getRequiredPluginMessage('messages.gifDp.ffmpegHint'))
             return
         }
 
@@ -81,8 +84,8 @@ export default definePlugin({
         const randomFile = pickRandomFile(mp4s)
         const filePath = path.join(GIF_FOLDER, randomFile)
         const texto = senderAlone
-            ? `🥲 *${senderResolved.tag}* quiso hacer un trío... pero está solito 😏`
-            : `🔥💦 *${senderResolved.tag}* está teniendo un trío con *${targetTags.join('* y *')}* 🍑🔥`
+            ? renderTemplate(getRequiredPluginMessage('messages.gifDp.alone'), {sender: senderResolved.tag})
+            : renderTemplate(getRequiredPluginMessage('messages.gifDp.trio'), {sender: senderResolved.tag, targets: targetTags.join('* y *')})
         const mentions = Array.from(new Set([senderResolved.mentionJid, ...targetsResolved.map(x => x.mentionJid)]))
 
         await conn.sendMessage(m.chat, {
@@ -100,5 +103,4 @@ export default definePlugin({
     }
     }
 })
-
 

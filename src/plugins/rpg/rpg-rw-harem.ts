@@ -2,6 +2,7 @@ import {definePlugin} from '../../core/define-plugin.js'
 //Código elaborado por: https://github.com/elrebelde21
 
 import {listCharactersByOwner} from '../../services/character.service.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
 export default definePlugin({
     help: ['harem @tag'],
@@ -19,8 +20,8 @@ export default definePlugin({
         const userCharacters = await listCharactersByOwner(targetUser);
 
         if (userCharacters.length === 0) {
-            const targetUsername = targetUser === m.sender ? 'tú' : `@${targetUser.split('@')[0]}`;
-            return conn.reply(m.chat, `*${targetUsername}* no tienes ningún personaje en tu harem.`, m, {mentions: [targetUser]});
+            const targetUsername = targetUser === m.sender ? getRequiredPluginMessage('rpg.rw.haremSelf') : `@${targetUser.split('@')[0]}`;
+            return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rw.haremEmpty'), {target: targetUsername}), m, {mentions: [targetUser]});
         }
 
         const itemsPerPage = 6;
@@ -34,17 +35,21 @@ export default definePlugin({
         const endIndex = startIndex + itemsPerPage;
         const currentPageCharacters = userCharacters.slice(startIndex, endIndex);
 
-        let message = `*\`🛍 Inventario de Compras\`*\n\n`;
-        message += `*• Usuario:* @${targetUser.split('@')[0]}\n`;
-        message += `*• Personajes comprados:* ${userCharacters.length}\n\n`;
-        message += `*\`○ Lista de Personajes:\`*\n`;
-        currentPageCharacters.forEach((character, index) => {
-            message += `${index + 1}. *${character.name}* (${character.price.toLocaleString()})\n`;
+        let message = renderTemplate(getRequiredPluginMessage('rpg.rw.haremHeader'), {
+            user: targetUser.split('@')[0],
+            count: userCharacters.length
         });
-        message += `\n> *• Página:* ${page} de ${totalPages}`;
+        currentPageCharacters.forEach((character, index) => {
+            message += renderTemplate(getRequiredPluginMessage('rpg.rw.haremLine'), {
+                position: index + 1,
+                name: character.name,
+                price: character.price.toLocaleString()
+            });
+        });
+        message += renderTemplate(getRequiredPluginMessage('rpg.rw.haremFooter'), {page, totalPages});
         return conn.reply(m.chat, message, m, {mentions: [targetUser]});
     } catch (e: unknown) {
-        return conn.reply(m.chat, '⚠️ Error al mostrar el inventario. Intenta de nuevo.', m);
+        return conn.reply(m.chat, getRequiredPluginMessage('rpg.rw.haremError'), m);
     }
     }
 })

@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js'
+import {getRequiredPluginMessage} from '../../lib/message-template.js'
 
 export default definePlugin({
     help: ['autoadmin'],
@@ -8,7 +9,7 @@ export default definePlugin({
     botAdmin: true,
     async execute(m, {conn, isAdmin}) {
         if (m.fromMe) throw 'Nggk'
-        if (isAdmin) return m.reply('Ya eres admin del grupo mi creador 🫡')
+        if (isAdmin) return m.reply(getRequiredPluginMessage('owner.autoAdmin.alreadyAdmin'))
         await conn.groupParticipantsUpdate(m.chat, [m.sender], "promote")
     }
 })

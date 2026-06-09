@@ -2,6 +2,7 @@ import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {listGroupMessageCounts} from '../../services/chat.service.js';
 import {getNumberByLid} from '../../services/user.service.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 type ParticipantWithAlt = {
     id: string
@@ -32,13 +33,15 @@ export default definePlugin({
 
             await m.react("📣")
             let mensaje = ""
-            mensaje += `*⺀ ＡＣＴＩＶＥ ＧＲＵＰＯ 🗣️⺀*\n\n`
+            mensaje += getRequiredPluginMessage('group.tagAll.header')
             if (text && text.trim()) {
-                mensaje += `❏ *Mensaje:* ${text.trim()}\n`
+                mensaje += renderTemplate(getRequiredPluginMessage('group.tagAll.messageLine'), {message: text.trim()})
             }
-            mensaje += `*👥 Miembros del grupo:* ${total}\n`
-            mensaje += `❏ *Etiquetas:*\n`
-            mensaje += users.map(u => `➥ @${u.replace(/@s\.whatsapp\.net|@lid/g, "").replace(/[^0-9]/g, "")}`).join(" \n ")
+            mensaje += renderTemplate(getRequiredPluginMessage('group.tagAll.totalLine'), {total})
+            mensaje += getRequiredPluginMessage('group.tagAll.tagsTitle')
+            mensaje += users.map(u => renderTemplate(getRequiredPluginMessage('group.tagAll.item'), {
+                user: u.replace(/@s\.whatsapp\.net|@lid/g, "").replace(/[^0-9]/g, ""),
+            })).join(" \n ")
 
             await conn.sendMessage(m.chat, {text: mensaje, mentions: users}, {quoted: m})
         } catch (e: unknown) {
@@ -58,12 +61,13 @@ export default definePlugin({
         memberData.sort((a, b) => b.messages - a.messages)
         let activeCount = memberData.filter(mem => mem.messages > 0).length
         let inactiveCount = memberData.filter(mem => mem.messages === 0).length
-        let teks = `*📊 Actividad del grupo 📊*\n\n`
-        teks += `□ Grupo: ${metadata.subject || 'Sin nombre'}\n`
-        teks += `□ Total de miembros: ${participants.length}\n`
-        teks += `□ Miembros activos: ${activeCount}\n`
-        teks += `□ Miembros inactivos: ${inactiveCount}\n\n`
-        teks += `*□ Lista de miembros:*\n`
+        let teks = getRequiredPluginMessage('group.tagAll.activityHeader')
+        teks += renderTemplate(getRequiredPluginMessage('group.tagAll.activitySummary'), {
+            group: metadata.subject || getRequiredPluginMessage('group.tagAll.unknownGroup'),
+            total: participants.length,
+            active: activeCount,
+            inactive: inactiveCount,
+        })
 
         for (let mem of memberData) {
             let numero = null
@@ -77,7 +81,10 @@ export default definePlugin({
                 numero = mem.id.split('@')[0]
             }
             if (numero) {
-                teks += `➥ @${numero} - Mensajes: ${mem.messages}\n`
+                teks += renderTemplate(getRequiredPluginMessage('group.tagAll.activityItem'), {
+                    user: numero,
+                    messages: mem.messages,
+                })
             }
         }
 

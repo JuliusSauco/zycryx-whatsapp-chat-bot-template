@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js'
+import {getRequiredPluginMessage} from '../../lib/message-template.js'
 export default definePlugin({
     help: ['*593xxx*', '*@usuario*', '*responder chat*'].map((v) => 'demote ' + v),
     tags: ['group'],
@@ -16,8 +17,8 @@ export default definePlugin({
         number = text;
     }
 
-    if (!text && !m.quoted) return conn.reply(m.chat, `*⚠️ ¿A quien le quitó admins?* etiquetas a una persona no soy adivinó :)`, m);
-    if (number.length > 13 || (number.length < 11 && number.length > 0)) return conn.reply(m.chat, `*Esta drogado o que ese número ingresado es incorrecto 🤓*, ingresa el número correctamente o mejor etiquetas al usuario.`, m);
+    if (!text && !m.quoted) return conn.reply(m.chat, getRequiredPluginMessage('group.demote.missing'), m);
+    if (number.length > 13 || (number.length < 11 && number.length > 0)) return conn.reply(m.chat, getRequiredPluginMessage('group.demote.invalidNumber'), m);
     let user = '';
     try {
         if (text) {
@@ -29,9 +30,9 @@ export default definePlugin({
         }
     } catch (e: unknown) {
     } finally {
-        if (!user) return m.reply('⚠️ No se pudo resolver el usuario.');
+        if (!user) return m.reply(getRequiredPluginMessage('group.demote.missingUser'));
         await conn.groupParticipantsUpdate(m.chat, [user], 'demote');
-        conn.reply(m.chat, `*[ ✅ ] ÓRDENES RECIBIDAS*`, m);
+        conn.reply(m.chat, getRequiredPluginMessage('group.demote.success'), m);
     }
     }
 });

@@ -4,6 +4,7 @@ import fg from 'api-dylux';
 import cheerio from 'cheerio';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
 import {httpJson, httpText} from '../../lib/http-client.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 
 interface TikTokMedia {
@@ -26,10 +27,14 @@ export default definePlugin({
     command: /^(tt|tiktok)(dl|nowm)?$/i,
     limit: 1,
     async execute(m, {conn, text, args, usedPrefix, command}) {
-    if (!text) return m.reply(`⚠️ *Que tiktok buscar? 🤔*\n\n⚡ *Ingrese un enlace de tiktok para descarga el video*\n*Ej:* ${usedPrefix + command} https://vm.tiktok.com/ZM6T4X1RY/`)
-    if (!/(?:https:?\/{2})?(?:w{3}|vm|vt|t)?\.?tiktok.com\/([^\s&]+)/gi.test(text)) return m.reply(`❌ Error`)
-    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, `Oye @${m.sender.split('@')[0]}, calma bro, ya estás descargando algo 😒\n> Espera a que termine tu solicitud actual antes de hacer otra...`, m)
-    const {key} = await conn.sendMessage(m.chat, {text: `⌛ Descargando video de TikTok...`}, {quoted: m});
+    if (!text) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.tiktok.missingUrl'), {
+        command: usedPrefix + command
+    }))
+    if (!/(?:https:?\/{2})?(?:w{3}|vm|vt|t)?\.?tiktok.com\/([^\s&]+)/gi.test(text)) return m.reply(getRequiredPluginMessage('downloads.tiktok.invalidUrl'))
+    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.tiktok.locked'), {
+        user: m.sender.split('@')[0]
+    }), m)
+    const {key} = await conn.sendMessage(m.chat, {text: getRequiredPluginMessage('downloads.tiktok.downloading')}, {quoted: m});
     try {
         const downloadProviders: Array<Provider<string>> = [
             {
@@ -64,9 +69,8 @@ export default definePlugin({
         ];
 
         const videoUrl = await runFirstProvider(downloadProviders, 'No se pudo descargar el video desde ninguna API');
-        await conn.sendFile(m.chat, videoUrl, 'tt.mp4', '*🔰 Aqui esta tu video de tiktok*', m);
-//conn.sendMessage(m.chat, {video: { url: videoUrl }, caption: `*🔰 Aqui esta tu video de tiktok*` }, { quoted: m });
-        await conn.sendMessage(m.chat, {text: `✅ 𝘾𝙤𝙢𝙥𝙡𝙚𝙩𝙖𝙙𝙤\n▰▰▰▰▰▰▰▰▰`, edit: key});
+        await conn.sendFile(m.chat, videoUrl, 'tt.mp4', getRequiredPluginMessage('downloads.tiktok.caption'), m);
+        await conn.sendMessage(m.chat, {text: getRequiredPluginMessage('downloads.tiktok.completed'), edit: key});
     } catch (e: unknown) {
         logInfo(e);
         m.react(`❌`);

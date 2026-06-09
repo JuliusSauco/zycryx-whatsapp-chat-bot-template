@@ -2,6 +2,7 @@ import {definePlugin} from '../../core/define-plugin.js'
 import moment from 'moment-timezone'
 import {getUserById, getUserName} from '../../services/user.service.js'
 import {httpBuffer, httpJson} from '../../lib/http-client.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
 interface CountryResponse {
     result?: {
@@ -11,9 +12,9 @@ interface CountryResponse {
 }
 
 const formatPhoneNumber = (jid: string) => {
-    if (!jid) return 'Desconocido';
+    if (!jid) return getRequiredPluginMessage('rpg.shared.unknown');
     const number = jid.replace('@s.whatsapp.net', '');
-    if (!/^\d{8,15}$/.test(number)) return 'Desconocido';
+    if (!/^\d{8,15}$/.test(number)) return getRequiredPluginMessage('rpg.shared.unknown');
     return `+${number}`;
 };
 
@@ -26,39 +27,39 @@ export default definePlugin({
     let who = m.mentionedJid?.[0] || (m.fromMe ? conn.user?.id || m.sender : m.sender)
 
     const user = await getUserById(who)
-    if (!user) return m.reply('✳️ El usuario no se encuentra en la base de datos.')
+    if (!user) return m.reply(getRequiredPluginMessage('rpg.shared.missingUser'))
     const profilePic = await conn.profilePictureUrl(who, 'image').catch(() => 'https://telegra.ph/file/9d38415096b6c46bf03f8.jpg') as string
     const buffer = await httpBuffer(profilePic)
     const {limite, nombre, registered, edad, marry, gender, birthday} = user
     const level = user.level ?? 0
     const phone = formatPhoneNumber(who)
 
-    let nacionalidad = 'Desconocida'
+    let nacionalidad = getRequiredPluginMessage('rpg.shared.unknownFemale')
     try {
         const data = await httpJson<CountryResponse>(`${info.apis}/tools/country?text=${phone}`)
         if (data?.result?.name) nacionalidad = `${data.result.name} ${data.result.emoji}`
     } catch (_) {
     }
 
-    let relacion = '❌ *No estás en ninguna relación, solter@ 🤑.*'
+    let relacion = getRequiredPluginMessage('rpg.profile.noRelationship')
     if (marry) {
-        const nombrePareja = await getUserName(marry) || 'Desconocido'
-        relacion = `💍 *Está en una relación con:* ${nombrePareja}`
+        const nombrePareja = await getUserName(marry) || getRequiredPluginMessage('rpg.shared.unknown')
+        relacion = renderTemplate(getRequiredPluginMessage('rpg.profile.relationship'), {spouseName: nombrePareja})
     }
 
-    const texto = `*「 PERFIL 」*
-
-👤 *Nombre:* ${nombre}
-☎️ *Número:* ${phone}
-🌐 *Link:* wa.me/${who.split('@')[0]}
-🌍 *Nacionalidad:* ${nacionalidad} ${edad ? `\n🎈 *Edad:* ${edad}` : ''} ${gender ? `\n⚧️ *Género:* ${gender}` : ''} ${birthday ? `\n🎂 *Cumpleaños:* ${moment(birthday).format('DD/MM/YYYY')}` : ''}
-💎 *Límite:* ${limite ?? 0}
-⚙️ *Nivel:* ${level}
-◯ *Registrado:* ${registered ? 'Sí' : 'No'}
-
-${relacion}
-
-*•━━━━⪻ 𝙿𝙴𝚁𝙵𝙸𝙻 ⪼━━━━•*`
+    const texto = renderTemplate(getRequiredPluginMessage('rpg.profile.caption'), {
+        name: nombre || getRequiredPluginMessage('rpg.shared.unknown'),
+        phone,
+        waNumber: who.split('@')[0],
+        nationality: nacionalidad,
+        ageLine: edad ? renderTemplate(getRequiredPluginMessage('rpg.profile.ageLine'), {age: edad}) : '',
+        genderLine: gender ? renderTemplate(getRequiredPluginMessage('rpg.profile.genderLine'), {gender}) : '',
+        birthdayLine: birthday ? renderTemplate(getRequiredPluginMessage('rpg.profile.birthdayLine'), {birthday: moment(birthday).format('DD/MM/YYYY')}) : '',
+        limit: limite ?? 0,
+        level,
+        registered: registered ? getRequiredPluginMessage('rpg.profile.registeredYes') : getRequiredPluginMessage('rpg.profile.registeredNo'),
+        relationship: relacion
+    })
     await conn.sendFile(m.chat, buffer, 'perfil.jpg', texto, m)
     }
 })

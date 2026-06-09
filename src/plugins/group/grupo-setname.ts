@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js'
+import {getRequiredPluginMessage} from '../../lib/message-template.js'
 //import Presence from '@adiwajshing/baileys'
 //let Presence = (await import(global.baileys)).default
 export default definePlugin({
@@ -9,7 +10,7 @@ export default definePlugin({
     botAdmin: true,
     group: true,
     async execute(m, {conn, args, text}) {
-    if (!text) throw "⚠️ Ingresar el texto para el grupo"
+    if (!text) throw getRequiredPluginMessage('group.setName.missing')
     try {
         let text = args.join(' ')
         if (!args || !args[0]) {
@@ -18,7 +19,7 @@ export default definePlugin({
         }
         m.react("✅️")
     } catch (e: unknown) {
-        throw "error"
+        throw getRequiredPluginMessage('group.setName.error')
     }
     }
-})
+})

@@ -3,6 +3,7 @@ import {sticker} from '../../lib/sticker.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js'
 import {definePlugin} from '../../core/define-plugin.js'
 import {httpJson} from '../../lib/http-client.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 import {pickRandom} from '../../utils/random.js'
 
 interface StickerlyPack {
@@ -26,12 +27,12 @@ export default definePlugin({
     tags: ['sticker'],
     register: true,
     async execute(m, {text, conn, usedPrefix, command}) {
-    if (!text) return m.reply(`⚠️ Escribe algo para buscar sticker packs.\nEjemplo: *${usedPrefix + command} gatos*`)
+    if (!text) return m.reply(renderTemplate(getRequiredPluginMessage('stickers.pack.usage'), {command: usedPrefix + command}))
 
     try {
         const json = await httpJson<StickerlyResponse>(`https://api.dorratz.com/v3/stickerly?query=${encodeURIComponent(text)}`)
 
-        if (!json.success || !json.data?.length) return m.reply(`❌ No se encontró ningún pack para: *${text}*`)
+        if (!json.success || !json.data?.length) return m.reply(renderTemplate(getRequiredPluginMessage('stickers.pack.notFound'), {query: text}))
 
         const packs = json.data.slice(0, 30)
 
@@ -39,7 +40,10 @@ export default definePlugin({
         const total = packs.length
         const max = Math.min(total, 30)
 
-        m.reply(`🎯 *Resultados para:* ${text}\n🧷 *Stickers a enviar:* ${max}\n> ⏳ Enviando... espera un momento...`)
+        m.reply(renderTemplate(getRequiredPluginMessage('stickers.pack.sending'), {
+            query: text,
+            count: String(max),
+        }))
 
         let enviados = 0
         for (const pack of packs) {
@@ -68,13 +72,13 @@ export default definePlugin({
             }
         }
 
-        if (enviados === 0) return m.reply('❌ No se pudo enviar ningún sticker.')
+        if (enviados === 0) return m.reply(getRequiredPluginMessage('stickers.pack.noneSent'))
         else return m.react("✅")
         // m.reply(`✅ *${enviados} stickers enviados.*`)
 
     } catch (e: unknown) {
         logError(e)
-        m.reply('❌ Error buscando stickers.')
+        m.reply(getRequiredPluginMessage('stickers.pack.searchError'))
     }
     }
 })

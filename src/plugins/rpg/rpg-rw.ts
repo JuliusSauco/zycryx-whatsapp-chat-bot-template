@@ -13,6 +13,7 @@ import type {CharacterRecord} from '../../ports/repositories.js'
 import {httpJson} from '../../lib/http-client.js'
 import {pickRandom, randomChance, randomInt} from '../../utils/random.js'
 import {formatDurationPaddedMinutesSeconds} from '../../utils/time.js'
+import {getRequiredPluginMessage, getRequiredPluginMessageList, renderTemplate} from '../../lib/message-template.js'
 
 interface AniListCharacterResponse {
     data?: {
@@ -58,7 +59,7 @@ async function getAniListCharacter() {
     const c = json.data?.Character
     if (!c || !c.image?.large || !c.name?.full) return await getAniListCharacter()
 
-    const rarezas = ['Común', 'Raro', 'Épico', 'Legendario']
+    const rarezas = getRequiredPluginMessageList('rpg.rw.rarities')
     const rareza = pickRandom(rarezas)
     const favs = c.favourites || 0
     let price = Math.floor(favs * 0.5)
@@ -67,8 +68,8 @@ async function getAniListCharacter() {
     return {
         name: c.name.full,
         url: c.image.large,
-        tipo: c.gender || 'no comun',
-        anime: c.media?.nodes?.[0]?.title?.romaji || 'Anime',
+        tipo: c.gender || getRequiredPluginMessage('rpg.rw.defaultType'),
+        anime: c.media?.nodes?.[0]?.title?.romaji || getRequiredPluginMessage('rpg.rw.defaultAnime'),
         rareza,
         price,
         previous_price: null,
@@ -91,16 +92,18 @@ export default definePlugin({
         try {
             const user = await getWallet(m.sender)
             const claimedCharacter = await findCharacterByUrl(character.url)
-            if (!claimedCharacter) return conn.sendMessage(m.chat, {text: '⚠️ Error: Personaje no encontrado.'}, {quoted: m})
+            if (!claimedCharacter) return conn.sendMessage(m.chat, {text: getRequiredPluginMessage('rpg.rw.notFound')}, {quoted: m})
 
             if (claimedCharacter.claimed_by) {
                 if (!claimedCharacter.for_sale) return conn.sendMessage(m.chat, {
-                    text: `⚠️ Este personaje ya ha sido comprado por @${claimedCharacter.claimed_by.split('@')[0]}`,
+                    text: renderTemplate(getRequiredPluginMessage('rpg.rw.alreadyBought'), {
+                        owner: claimedCharacter.claimed_by.split('@')[0]
+                    }),
                     contextInfo: {mentionedJid: [claimedCharacter.claimed_by]}
                 }, {quoted: m})
                 const seller = claimedCharacter.seller
-                if (seller === m.sender) return conn.sendMessage(m.chat, {text: '⚠️ No puedes comprar tu propio personaje.'}, {quoted: m})
-                if (!user || user.exp < character.price) return conn.sendMessage(m.chat, {text: '⚠️ No tienes suficientes exp para comprar este personaje.'}, {quoted: m})
+                if (seller === m.sender) return conn.sendMessage(m.chat, {text: getRequiredPluginMessage('rpg.rw.selfBuy')}, {quoted: m})
+                if (!user || user.exp < character.price) return conn.sendMessage(m.chat, {text: getRequiredPluginMessage('rpg.rw.notEnoughExp')}, {quoted: m})
 
                 const sellerExp = Math.floor(character.price * 0.9)
                 await addWalletResource(m.sender, 'exp', -character.price)
@@ -108,13 +111,20 @@ export default definePlugin({
                 await completeCharacterSale(claimedCharacter.id, m.sender)
 
                 await conn.sendMessage(m.chat, {
-                    text: `🎉 ¡Has comprado a ${character.name} por ${character.price} exp!`,
+                    text: renderTemplate(getRequiredPluginMessage('rpg.rw.bought'), {
+                        name: character.name,
+                        price: character.price
+                    }),
                     image: {url: character.url}
                 }, {quoted: m})
 
                 if (seller) {
                     await conn.sendMessage(seller, {
-                        text: `🎉 ¡Tu personaje ${character.name} ha sido comprado por @${m.sender.split('@')[0]}!\n💰 ${sellerExp} exp han sido transferidos a tu cuenta (después de la comisión).`,
+                        text: renderTemplate(getRequiredPluginMessage('rpg.rw.sellerNotice'), {
+                            name: character.name,
+                            buyer: m.sender.split('@')[0],
+                            exp: sellerExp
+                        }),
                         image: {url: character.url},
                         contextInfo: {mentionedJid: [m.sender]}
                     }, {quoted: m})
@@ -122,7 +132,7 @@ export default definePlugin({
             } else {
                 const esGratis = character.esGratis
                 if (!esGratis && (!user || user.exp < character.price)) {
-                    return conn.sendMessage(m.chat, {text: '⚠️ No tienes suficientes exp para comprar este personaje.'}, {quoted: m})
+                    return conn.sendMessage(m.chat, {text: getRequiredPluginMessage('rpg.rw.notEnoughExp')}, {quoted: m})
                 }
 
                 if (!esGratis) {
@@ -130,13 +140,18 @@ export default definePlugin({
                 }
 
                 await claimCharacter(claimedCharacter.id, m.sender)
-                const msg = esGratis ? `🎁 ¡Reclamaste a ${character.name} totalmente GRATIS!` : `🎉 ¡Has comprado a ${character.name} por ${character.price} exp!`
+                const msg = esGratis ? renderTemplate(getRequiredPluginMessage('rpg.rw.claimedFree'), {
+                    name: character.name
+                }) : renderTemplate(getRequiredPluginMessage('rpg.rw.bought'), {
+                    name: character.name,
+                    price: character.price
+                })
                 await conn.sendMessage(m.chat, {text: msg, image: {url: character.url}}, {quoted: m})
             }
             tempCharacterStore.delete(quotedId)
         } catch (e: unknown) {
             logError(e)
-            return conn.sendMessage(m.chat, {text: '⚠️ Error al procesar la compra. Intenta de nuevo.'}, {quoted: m})
+            return conn.sendMessage(m.chat, {text: getRequiredPluginMessage('rpg.rw.processBuyError')}, {quoted: m})
         }
     }
     },
@@ -146,7 +161,9 @@ export default definePlugin({
         const lastTime = user?.ryTime || 0
         const now = Date.now()
 
-        if (now - lastTime < 600000) return conn.reply(m.chat, `🤚 Pa, espera ${formatDurationPaddedMinutesSeconds(lastTime + 600000 - now)} para volver a usar este comando`, m)
+        if (now - lastTime < 600000) return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rw.cooldown'), {
+            time: formatDurationPaddedMinutesSeconds(lastTime + 600000 - now)
+        }), m)
         const character = await getAniListCharacter()
         const esGratis = randomChance(0.5)
         let claimedCharacter = await findCharacterByUrl(character.url)
@@ -158,14 +175,29 @@ export default definePlugin({
             })
         }
 
-        const status = claimedCharacter.for_sale ? `💸 Estado: @${claimedCharacter.claimed_by?.split('@')[0]} está vendiendo este personaje.` : claimedCharacter.claimed_by ? `🔒 Estado: Comprado por @${claimedCharacter.claimed_by.split('@')[0]}` : `🆓 Estado: Libre`
-        const priceMessage = !claimedCharacter.claimed_by && esGratis ? '🎁 ¡Puedes reclamarlo totalmente GRATIS!' : claimedCharacter.previous_price ? `~💰 Precio Anterior: ${claimedCharacter.previous_price} exp~\n💰 Precio Actual: ${claimedCharacter.price} exp` : `💰 Precio: ${claimedCharacter.price} exp`
-        const sentMessage = await conn.sendFile(m.chat, claimedCharacter.url, 'lp.jpg', `💥 Nombre: ${claimedCharacter.name}\n📺 Anime: ${claimedCharacter.anime}\n⚧️ Tipo: ${claimedCharacter.tipo}\n⭐ Rareza: ${claimedCharacter.rareza}\n${status}\n${priceMessage}\n\n> Responde con "c" a este mensaje para ${!claimedCharacter.claimed_by && esGratis ? 'reclamarlo gratis' : 'comprarlo'}`, m, false, {
+        const status = claimedCharacter.for_sale ? renderTemplate(getRequiredPluginMessage('rpg.rw.statusForSale'), {
+            owner: claimedCharacter.claimed_by?.split('@')[0] || ''
+        }) : claimedCharacter.claimed_by ? renderTemplate(getRequiredPluginMessage('rpg.rw.statusBought'), {
+            owner: claimedCharacter.claimed_by.split('@')[0]
+        }) : getRequiredPluginMessage('rpg.rw.statusFree')
+        const priceMessage = !claimedCharacter.claimed_by && esGratis ? getRequiredPluginMessage('rpg.rw.priceFree') : claimedCharacter.previous_price ? renderTemplate(getRequiredPluginMessage('rpg.rw.priceWithPrevious'), {
+            previousPrice: claimedCharacter.previous_price,
+            price: claimedCharacter.price
+        }) : renderTemplate(getRequiredPluginMessage('rpg.rw.price'), {price: claimedCharacter.price})
+        const sentMessage = await conn.sendFile(m.chat, claimedCharacter.url, 'lp.jpg', renderTemplate(getRequiredPluginMessage('rpg.rw.caption'), {
+            name: claimedCharacter.name,
+            anime: claimedCharacter.anime,
+            type: claimedCharacter.tipo,
+            rarity: claimedCharacter.rareza,
+            status,
+            priceMessage,
+            action: !claimedCharacter.claimed_by && esGratis ? getRequiredPluginMessage('rpg.rw.actionClaimFree') : getRequiredPluginMessage('rpg.rw.actionBuy')
+        }), m, false, {
             contextInfo: {
                 forwardingScore: 1,
                 isForwarded: true,
                 externalAdReply: {
-                    title: "✨️ Character Details ✨️",
+                    title: getRequiredPluginMessage('rpg.rw.adTitle'),
                     body: info.wm,
                     thumbnailUrl: m.pp,
                     sourceUrl: pickRandom([info.nna, info.nna2, info.md]),

@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 import {getWallet, isWalletResource, transferWalletResource} from '../../services/wallet.service.js'
 import type {BotMessage} from '../../types/message.js'
 import type {WalletResource} from '../../ports/repositories.js'
@@ -28,61 +29,51 @@ export default definePlugin({
 
     let user = await getWallet(sender)
     let userTo = await getWallet(to)
-    if (!user || !userTo) return m.reply('❌ Usuarios no válidos.')
+    if (!user || !userTo) return m.reply(getRequiredPluginMessage('rpg.transfer.invalidUsers'))
 
     if (/^no$/i.test(m.originalText)) {
         clearTimeout(timeout)
         delete confirmation[sender]
-        return m.reply('*CANCELADO*')
+        return m.reply(getRequiredPluginMessage('rpg.transfer.cancelled'))
     }
 
     if (/^si$/i.test(m.originalText)) {
-        if (!isWalletResource(type)) return m.reply('❌ Recurso inválido.')
+        if (!isWalletResource(type)) return m.reply(getRequiredPluginMessage('rpg.transfer.invalidResource'))
         const transferred = await transferWalletResource({from: sender, to, resource: type, amount: count})
-        if (!transferred) return m.reply(`⚠️ *𝙉𝙊 𝙏𝙄𝙀𝙉𝙀 𝙎𝙐𝙁𝙄𝘾𝙄𝙀𝙉𝙏𝙀 ${type.toUpperCase()}*`)
-        m.reply(`✅ *TRANSFERENCIA HECHA:*\n\n*${count} ${type} para* @${(to || '').replace(/@s\.whatsapp\.net/g, '')}`, null, {mentions: [to]})
+        if (!transferred) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.transfer.notEnough'), {resource: type.toUpperCase()}))
+        m.reply(renderTemplate(getRequiredPluginMessage('rpg.transfer.success'), {
+            amount: count,
+            resource: type,
+            user: (to || '').replace(/@s\.whatsapp\.net/g, '')
+        }), null, {mentions: [to]})
         clearTimeout(timeout)
         delete confirmation[sender]
     }
 
     },
     async execute(m, {conn, args, usedPrefix, command}) {
-    if (confirmation[m.sender]) return m.reply('𝙀𝙨𝙩𝙖𝙨 𝙝𝙖𝙘𝙞𝙚𝙣𝙙𝙤 𝙪𝙣𝙖 𝙩𝙧𝙖𝙣𝙨𝙛𝙚𝙧𝙚𝙣𝙘𝙞𝙖')
+    if (confirmation[m.sender]) return m.reply(getRequiredPluginMessage('rpg.transfer.alreadyPending'))
 
     let user = await getWallet(m.sender)
     if (!user) return
-    let lol = `\`⧼⧼⧼ 💱 𝙏𝙍𝘼𝙉𝙎𝙁𝙀𝙍𝙀𝙉𝘾𝙄𝘼 💱 ⧽⧽⧽\`
-
-> *${usedPrefix + command} tipo cantidad @tag*
-
-\`❏ 𝙀𝙅𝙀𝙈𝙋𝙇𝙊 :\`
-* *${usedPrefix + command} exp 30 @0*
-
-┏•「 *✅ 𝙍𝙀𝘾𝙐𝙍𝙎𝙊𝙎 𝘿𝙄𝙎𝙋𝙊𝙉𝙄𝘽𝙇𝙀𝙎* 」
-┃
-┃ 💎 𝘿𝙞𝙖𝙢𝙖𝙣𝙩𝙚𝙨 = limite
-┃ 🪙 𝙇𝙤𝙡𝙞𝘾𝙤𝙞𝙣𝙨 = money 
-┃ ⚡ 𝙀𝙭𝙥𝙚𝙧𝙞𝙚𝙣𝙘𝙞𝙖 = exp 
-┗•`.trim()
+    let lol = renderTemplate(getRequiredPluginMessage('rpg.transfer.usage'), {
+        command: usedPrefix + command
+    }).trim()
 
     const type = (args[0] || '').toLowerCase()
     if (!isWalletResource(type)) return m.reply(lol, m.chat, {mentions: await conn.parseMention(lol)})
     const count = Math.min(Number.MAX_SAFE_INTEGER, Math.max(1, (isNumber(args[1]) ? parseInt(args[1]) : 1))) * 1
     let who = m.mentionedJid?.[0] || (args[2] ? (args[2].replace(/[@ .+-]/g, '') + '@s.whatsapp.net') : '')
-    if (!who) return m.reply('⚠️ *𝙀𝙏𝙄𝙌𝙐𝙀𝙏𝙀 𝘼𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊*')
+    if (!who) return m.reply(getRequiredPluginMessage('rpg.transfer.missingTarget'))
     let userTo = await getWallet(who)
-    if (!userTo) return m.reply(`⚠️ *𝙀𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊 ${who} 𝙉𝙊 𝙎𝙀 𝙀𝙉𝘾𝙐𝙀𝙉𝙏𝙍𝘼 𝙀𝙉 𝙈𝙄 db*`)
-    if (user[type] * 1 < count) return m.reply(`⚠️ *𝙉𝙊 𝙏𝙄𝙀𝙉𝙀 𝙎𝙐𝙁𝙄𝘾𝙄𝙀𝙉𝙏𝙀 ${type.toUpperCase()}*`)
+    if (!userTo) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.transfer.targetNotFound'), {user: who}))
+    if (user[type] * 1 < count) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.transfer.notEnough'), {resource: type.toUpperCase()}))
 
-    let confirm = `\`ESTÁS A PUNTO DE HACER ESTA TRANSFERENCIA\`
-
-> 💹 *${count} ${type} para* *@${(who || '').replace(/@s\.whatsapp\.net/g, '')}*
-
-\`¿DESEAS CONTINUAR?\`
-> Tienes 60 segundos.
-
-> Escribe: (si) para aceptar
-> Escribe: (no) para cancelar`.trim()
+    let confirm = renderTemplate(getRequiredPluginMessage('rpg.transfer.confirm'), {
+        amount: count,
+        resource: type,
+        user: (who || '').replace(/@s\.whatsapp\.net/g, '')
+    }).trim()
 
     await conn.reply(m.chat, confirm, m, {mentions: [who]})
 
@@ -93,7 +84,7 @@ export default definePlugin({
         type,
         count,
         timeout: setTimeout(() => {
-            m.reply('*SU TIEMPO SE HA TERMINADO*')
+            m.reply(getRequiredPluginMessage('rpg.transfer.timeout'))
             delete confirmation[m.sender]
         }, 60 * 1000)
     }

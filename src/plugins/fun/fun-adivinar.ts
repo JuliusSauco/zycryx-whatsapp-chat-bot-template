@@ -4,6 +4,7 @@ import {definePlugin} from '../../core/define-plugin.js';
 import {addWalletResource} from '../../services/wallet.service.js';
 import type {proto} from '@whiskeysockets/baileys';
 import {httpRequest} from '../../lib/http-client.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {getCachedJson} from '../../lib/static-resource-cache.js';
 import {pickRandom} from '../../utils/random.js';
 
@@ -42,9 +43,9 @@ const archivosRespaldo: Record<GameType, string> = {
 };
 
 const prompts: Record<GameType, string> = {
-    acertijo: "Genera un acertijo con su respuesta en formato JSON: {\"question\": \"<pregunta>\", \"response\": \"<respuesta>\"}.",
-    pelicula: "Genera un juego de adivinar película con emojis como pista, formato JSON: {\"question\": \"<pregunta>\", \"response\": \"<respuesta>\"}.",
-    trivia: "Genera una trivia en formato JSON: {\"question\": \"<pregunta>\\n\\nA) ...\\nB) ...\\nC) ...\", \"response\": \"<letra correcta>\"}."
+    acertijo: getRequiredPluginMessage('fun.guess.prompts.acertijo'),
+    pelicula: getRequiredPluginMessage('fun.guess.prompts.pelicula'),
+    trivia: getRequiredPluginMessage('fun.guess.prompts.trivia'),
 };
 
 async function obtenerPregunta(tipo: GameType): Promise<GuessQuestion | null> {
@@ -90,16 +91,18 @@ export default definePlugin({
     register: true,
     async execute(m, {conn, command}) {
     const id = m.chat;
-    if (juegos[id]) return conn.reply(m.chat, '⚠️ Ya hay un juego activo en este chat.', m);
+    if (juegos[id]) return conn.reply(m.chat, getRequiredPluginMessage('fun.guess.active'), m);
 
     const tipo = getGameType(command);
     if (!tipo) return;
     const pregunta = await obtenerPregunta(tipo);
-    if (!pregunta) return m.reply('❌ No se pudo generar la pregunta.');
+    if (!pregunta) return m.reply(getRequiredPluginMessage('fun.guess.generationFailed'));
     const tiempo = tipo === 'trivia' ? timeout2 : timeout;
-    const texto = `${pregunta.question}
-
-*• Tiempo:* ${tiempo / 1000}s\n*• Bono:* +${poin} XP`;
+    const texto = renderTemplate(getRequiredPluginMessage('fun.guess.question'), {
+        question: pregunta.question,
+        seconds: String(tiempo / 1000),
+        points: String(poin),
+    });
     const enviado = await conn.sendMessage(m.chat, {text: texto}, {quoted: m});
 
     juegos[id] = {
@@ -110,7 +113,7 @@ export default definePlugin({
         intentos: 3,
         timeout: setTimeout(() => {
             if (juegos[id]) {
-                conn.reply(m.chat, `⏳ Se acabó el tiempo.\n*Respuesta:* ${pregunta.response}`, enviado);
+                conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('fun.guess.timeout'), {answer: pregunta.response}), enviado);
                 delete juegos[id];
             }
         }, tiempo)
@@ -128,17 +131,17 @@ export default definePlugin({
 
     if (esCorrecta) {
         await addWalletResource(m.sender, 'exp', juego.puntos);
-        m.reply(`✅ *¡Correcto!*\nGanaste +${juego.puntos} XP`);
+        m.reply(renderTemplate(getRequiredPluginMessage('fun.guess.correct'), {points: String(juego.puntos)}));
         clearTimeout(juego.timeout);
         delete juegos[id];
     } else {
         juego.intentos--;
         if (juego.intentos <= 0) {
-            m.reply(`❌ Fallaste 3 veces. La respuesta era: *${juego.pregunta.response}*`);
+            m.reply(renderTemplate(getRequiredPluginMessage('fun.guess.failed'), {answer: juego.pregunta.response}));
             clearTimeout(juego.timeout);
             delete juegos[id];
         } else {
-            m.reply(`❌ Incorrecto. Te quedan *${juego.intentos}* intento(s).`);
+            m.reply(renderTemplate(getRequiredPluginMessage('fun.guess.incorrect'), {attempts: String(juego.intentos)}));
         }
     }
     }

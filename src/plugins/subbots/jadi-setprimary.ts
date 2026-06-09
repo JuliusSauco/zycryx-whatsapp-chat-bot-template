@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {setPrimaryBot} from '../../services/group-settings.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ['setprimary'],
@@ -14,7 +15,7 @@ export default definePlugin({
     if (!mentioned) {
         try {
             await setPrimaryBot(m.chat, null);
-            await m.reply("✅ El bot primario ha sido eliminado de este grupo. Ahora cualquier subbot puede responder.");
+            await m.reply(getRequiredPluginMessage('subbots.primary.cleared'));
         } catch (err: unknown) {
             logError(err);
         }
@@ -27,7 +28,7 @@ export default definePlugin({
     if (selectedId !== botId) {
         try {
             await conn.sendMessage(m.chat, {
-                text: `✅ El bot @${selectedId} ha sido establecido como *BOT PRINCIPAL* de este grupo.`,
+                text: renderTemplate(getRequiredPluginMessage('subbots.primary.selected'), {bot: selectedId}),
                 mentions: [mentioned]
             }, {quoted: m});
             await setPrimaryBot(m.chat, mentioned);
@@ -36,7 +37,7 @@ export default definePlugin({
         }
     } else {
         await setPrimaryBot(m.chat, botId + "@s.whatsapp.net");
-        await m.reply("✅ Te has establecido como el bot principal de este grupo.");
+        await m.reply(getRequiredPluginMessage('subbots.primary.selfSelected'));
     }
     }
 });

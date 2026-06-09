@@ -2,7 +2,7 @@ import {getSubbotConfig} from '../../services/subbot.service.js'
 import {countChats, countChatsByBot} from '../../services/chat.service.js'
 import {countUsers} from '../../services/user.service.js'
 import {sumCommandUsage} from '../../services/stats.service.js'
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {pickRandom} from '../../utils/random.js'
 import os from 'os'
 import speed from 'performance-now'
@@ -32,20 +32,20 @@ const getSystemInfo = async () => {
     }
 }
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['infobot'],
     tags: ['main'],
     command: /^(infobot|informacionbot|infololi)$/i,
     register: true,
-    async execute(m, {conn}) {
+    async execute(_m, {sdk}) {
     const start = speed();
     const subbotsCount = (global.conns || []).filter(sock => {
         const id = sock?.userId || sock?.user?.id?.split('@')[0]
         const isAlive = sock?.userId && typeof sock?.uptime === 'number'
-        const mainId = conn.user?.id?.split('@')[0]?.split(':')[0]
+        const mainId = sdk.conn.user?.id?.split('@')[0]?.split(':')[0]
         return isAlive && id && id !== mainId
     }).length
-    const botId = (conn.user?.id || '').split(':')[0].replace('@s.whatsapp.net', '');
+    const botId = (sdk.conn.user?.id || '').split(':')[0].replace('@s.whatsapp.net', '');
     const botChats = await countChatsByBot(botId);
     const totalGrupos = botChats.totalGroups;
     const gruposUnidos = botChats.joinedGroups;
@@ -55,7 +55,7 @@ export default definePlugin({
     const totalPlugins = Object.values(global.plugins).filter((p) => p.help && p.tags).length;
     const latencia = speed() - start;
     const uptime = process.uptime() * 1000;
-    const config = await getSubbotConfig(conn.user?.id || '');
+    const config = await getSubbotConfig(sdk.conn.user?.id || '');
     const prefijos = Array.isArray(config.prefix) ? config.prefix.join(' ') : config.prefix;
     const modo = config.mode === 'private' ? 'Private' : 'Públic';
     const userCounts = await countUsers();
@@ -65,32 +65,31 @@ export default definePlugin({
     const comandosEjecutados = await sumCommandUsage();
     const sistema = await getSystemInfo();
 
-    const teks = `*≡ INFOBOT*
-
-*INFORMACIÓN*
-*▣ Grupos total:* ${totalGrupos}
-*▣ Grupos unidos:* ${gruposUnidos}
-*▣ Grupo salidos:* ${gruposSalidos}
-*▣ Chats privado:* ${privates}
-*▣ Chats totales:* ${chatsTotales}
-*▣ Sub-Bots conectado:* ${subbotsCount}
-*▣ Total plugins:* ${totalPlugins}
-*▣ Mode:* ${modo}
-*▣ Prefix:* ${prefijos}
-*▣ Velocidad:* ${latencia.toFixed(4)} ms
-*▣ Actividad:* ${new Date(uptime).toISOString().substr(11, 8)}
-
-*▣ Comandos ejecutados:* ${toNum(comandosEjecutados)} / ${comandosEjecutados}
-*▣ Grupos registrados:* ${toNum(totalChats)} / ${totalChats}
-*▣ Usuarios registrados:* ${toNum(registeredUsers)} de ${toNum(totalUsers)} users totales
-
-*≡ S E R V E R*
-▣ *Servidor:* ${os.hostname()}
-▣ *Plataforma:* ${sistema.plataforma}
-▣ *RAM usada:* ${sistema.usoRam}
-▣ *Uso de CPU:* ${sistema.usoCpu}
-▣ *Uptime:* ${sistema.tiempoActividad}`;
-    await conn.sendMessage(m.chat, {
+    const teks = sdk.content.renderMessage('info.botInfo.response', {
+        totalGroups: totalGrupos,
+        joinedGroups: gruposUnidos,
+        leftGroups: gruposSalidos,
+        privateChats: privates,
+        totalChats: chatsTotales,
+        subbotsCount,
+        totalPlugins,
+        mode: modo,
+        prefixes: prefijos,
+        latency: latencia.toFixed(4),
+        uptime: new Date(uptime).toISOString().substr(11, 8),
+        commandUsageShort: toNum(comandosEjecutados),
+        commandUsage: comandosEjecutados,
+        registeredGroupsShort: toNum(totalChats),
+        registeredGroups: totalChats,
+        registeredUsersShort: toNum(registeredUsers),
+        totalUsersShort: toNum(totalUsers),
+        hostname: os.hostname(),
+        platform: sistema.plataforma,
+        ramUsage: sistema.usoRam,
+        cpuUsage: sistema.usoCpu,
+        serverUptime: sistema.tiempoActividad,
+    });
+    await sdk.sendMessage({
         text: teks,
             contextInfo: {
             forwardingScore: 1,
@@ -98,12 +97,12 @@ export default definePlugin({
             externalAdReply: {
                 mediaUrl: pickRandom([info.nna, info.nna2, info.md]),
                 mediaType: 2,
-                title: `INFO - BOT`,
+                title: sdk.content.message('info.botInfo.adTitle'),
                 thumbnailUrl: "https://telegra.ph/file/39fb047cdf23c790e0146.jpg",
                 sourceUrl: info.yt
             }
         }
-    }, {quoted: m})
+    })
     }
 })
 

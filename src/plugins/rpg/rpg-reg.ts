@@ -11,6 +11,7 @@ import {
 } from '../../services/user.service.js';
 import type {SendMessageOptions} from '../../types/context.js';
 import {httpJson} from '../../lib/http-client.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 const Reg = /\|?(.*)([.|] *?)([0-9]*)$/i;
 
@@ -61,10 +62,10 @@ export default definePlugin({
         if (step === 1) {
             let lower = input.toLowerCase()
             let genero: Gender | null = lower === '1' || lower === 'hombre' ? 'hombre' : lower === '2' || lower === 'mujer' ? 'mujer' : lower === '3' || lower === 'otro' ? 'otro' : null
-            if (!genero) return m.reply('⚠️ Responde con 1, 2, 3, hombre, mujer u otro para seleccionar tu género')
+            if (!genero) return m.reply(getRequiredPluginMessage('rpg.registration.invalidGenderSelection'))
             estados[who].genero = genero
             estados[who].step = 2
-            return m.reply(`🎂 *Registro Paso 3: Fecha de cumpleaños (Opcional)*\n\nPuedes enviar tu fecha de cumpleaños en formato DD/MM/YYYY (ejemplo: 30/10/2000)\n\n> O escribe "omitir" si no quieres decirlo`)
+            return m.reply(getRequiredPluginMessage('rpg.registration.birthdayStep'))
         }
         if (step === 2) {
             let cumple = null
@@ -76,13 +77,13 @@ export default definePlugin({
                     cumple = fecha.format('YYYY-MM-DD')
                     cumpleTexto = input
                 } catch (e: unknown) {
-                    return m.reply('❌ Formato inválido. Ej: 27/5/2009')
+                    return m.reply(getRequiredPluginMessage('rpg.registration.invalidBirthdayShort'))
                 }
             }
             const pref = estados[who]?.usedPrefix || '.'
             const userNationality = estados[who]?.userNationality || ''
             const {nombre, edad, genero} = estados[who]
-            if (!genero) return m.reply('⚠️ Género inválido. Reinicia el registro.')
+            if (!genero) return m.reply(getRequiredPluginMessage('rpg.registration.invalidGenderRestart'))
             const serial = createHash('md5').update(who).digest('hex')
             const reg_time = new Date()
             await completeRegistration({
@@ -101,26 +102,19 @@ export default definePlugin({
             delete estados[who]
 
             return await conn.sendMessage(m.chat, {
-                text: `[ ✅ REGISTRO COMPLETADO ]
-
-◉ *Nombre:* ${nombre}
-◉ *Edad:* ${edad} años
-◉ *Género:* ${genero} ${cumpleTexto ? `\n◉ *Cumpleaños:* ${cumpleTexto}` : ''}
-◉ *Hora:* ${time}
-◉ *Fecha:* ${date} ${userNationality ? `\n◉ *País:* ${userNationality}` : ''}
-◉ *Número:* wa.me/${who.split('@')[0]}
-◉ *Número de serie:*
-⤷ ${serial}
-
-🎁 *Recompensa:*
-⤷ 2 diamantes 💎
-⤷ 400 Coins 🪙
-⤷ 150 exp
-
-*◉ Para ver los comandos del bot usar:*
-${pref}menu
-
-◉ *Total de usuarios registrados:* ${toNum(rtotalreg + 1)}`,
+                text: renderTemplate(getRequiredPluginMessage('rpg.registration.completed'), {
+                    name: nombre,
+                    age: edad,
+                    gender: genero,
+                    birthdayLine: cumpleTexto ? renderTemplate(getRequiredPluginMessage('rpg.registration.birthdayLine'), {birthday: cumpleTexto}) : '',
+                    time,
+                    date,
+                    countryLine: userNationality ? renderTemplate(getRequiredPluginMessage('rpg.registration.countryLine'), {country: userNationality}) : '',
+                    phone: who.split('@')[0],
+                    serial,
+                    prefix: pref,
+                    totalRegistered: toNum(rtotalreg + 1)
+                }),
                 contextInfo: {
                     forwardingScore: 9999999,
                     isForwarded: true,
@@ -129,8 +123,8 @@ ${pref}menu
                         mediaType: 2,
                         showAdAttribution: false,
                         renderLargerThumbnail: false,
-                        title: `𝐑𝐄𝐆𝐈𝐒𝐓𝐑𝐎 𝐂𝐎𝐌𝐏𝐋𝐄𝐓𝐀𝐃𝐎`,
-                        body: 'LoliBot',
+                        title: getRequiredPluginMessage('rpg.registration.completedTitle'),
+                        body: getRequiredPluginMessage('rpg.registration.completedBody'),
                         previewType: 'PHOTO',
                         thumbnailUrl: "https://telegra.ph/file/33bed21a0eaa789852c30.jpg",
                         sourceUrl: info.md
@@ -157,61 +151,67 @@ ${pref}menu
     let name2 = m.pushName || 'loli'
 
     if (command === 'reg' || command === 'verify' || command === 'verificar') {
-        if (user?.registered) return m.reply(`*Ya estás registrado 🤨*`)
-        if (estados[who]?.step) return m.reply('⚠️ Ya tienes un registro en curso. Completa el registro respondiendo el paso anterior.')
-        if (!Reg.test(text)) return m.reply(`*⚠️ ¿No sabes cómo usar este comando?* Usa de la siguiente manera:\n\n*${usedPrefix + command} nombre.edad*\n*• Ejemplo:* ${usedPrefix + command} ${name2}.16`)
+        if (user?.registered) return m.reply(getRequiredPluginMessage('rpg.registration.alreadyRegistered'))
+        if (estados[who]?.step) return m.reply(getRequiredPluginMessage('rpg.registration.alreadyInProgress'))
+        if (!Reg.test(text)) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.registration.usage'), {
+            command: usedPrefix + command,
+            name: name2
+        }))
 
         const regMatch = text.match(Reg)
-        if (!regMatch) return m.reply(`*⚠️ ¿No sabes cómo usar este comando?* Usa de la siguiente manera:\n\n*${usedPrefix + command} nombre.edad*\n*• Ejemplo:* ${usedPrefix + command} ${name2}.16`)
+        if (!regMatch) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.registration.usage'), {
+            command: usedPrefix + command,
+            name: name2
+        }))
         let [, name, , age] = regMatch
-        if (!name) return m.reply('*¿Y el nombre?*')
-        if (!age) return m.reply('*La edad no puede estar vacía, agrega tu edad*')
-        if (name.length >= 45) return m.reply('*¿Qué?, ¿tan largo va a ser tu nombre?*')
+        if (!name) return m.reply(getRequiredPluginMessage('rpg.registration.missingName'))
+        if (!age) return m.reply(getRequiredPluginMessage('rpg.registration.missingAge'))
+        if (name.length >= 45) return m.reply(getRequiredPluginMessage('rpg.registration.nameTooLong'))
         const ageNumber = parseInt(age)
-        if (ageNumber > 100) return m.reply('👴🏻 ¡Estás muy viejo para esto!')
-        if (ageNumber < 5) return m.reply('🚼 ¿Los bebés saben escribir? ✍️😳')
+        if (ageNumber > 100) return m.reply(getRequiredPluginMessage('rpg.registration.tooOld'))
+        if (ageNumber < 5) return m.reply(getRequiredPluginMessage('rpg.registration.tooYoung'))
 
         estados[who] = {step: 1, nombre: name, edad: ageNumber, usedPrefix, userNationality}
 
-        return m.reply(`🧑 Registro Paso 2: ¿Cuál es tu género?\n\n1. Hombre ♂️\n2. Mujer ♀️\n3. Otro 🧬\n\n*Responde con el número*`)
+        return m.reply(getRequiredPluginMessage('rpg.registration.genderStep'))
     }
 
     if (command == 'nserie' || command == 'myns' || command == 'sn') {
         const sn = user?.serialNumber || user?.serial_number || createHash('md5').update(m.sender).digest('hex');
-        await conn.fakeReply(m.chat, sn, '0@s.whatsapp.net', `⬇️ ᴇsᴛᴇ ᴇs sᴜs ɴᴜᴍᴇʀᴏ ᴅᴇʟ sᴇʀɪᴇ ⬇️`, 'status@broadcast')
+        await conn.fakeReply(m.chat, sn, '0@s.whatsapp.net', getRequiredPluginMessage('rpg.registration.serialQuoted'), 'status@broadcast')
 //m.reply(sn);
     }
 
     if (command == 'unreg') {
-        if (!args[0]) return m.reply(`✳️ *Ingrese número de serie*\nVerifique su número de serie con el comando...\n\n*${usedPrefix}nserie*`)
+        if (!args[0]) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.registration.unregMissingSerial'), {prefix: usedPrefix}))
         const user2 = await getUserById(m.sender);
         const sn = user2?.serialNumber || user2?.serial_number || createHash('md5').update(m.sender).digest('hex');
-        if (args[0] !== sn) return m.reply('⚠️ *Número de serie incorrecto*')
+        if (args[0] !== sn) return m.reply(getRequiredPluginMessage('rpg.registration.unregInvalidSerial'))
         await unregisterUser(m.sender);
-        await conn.fakeReply(m.chat, `😢 Ya no estas registrado`, '0@s.whatsapp.net', `ᴿᵉᵍᶦˢᵗʳᵒ ᵉˡᶦᵐᶦⁿᵃᵈᵒ`, 'status@broadcast')
+        await conn.fakeReply(m.chat, getRequiredPluginMessage('rpg.registration.unregSuccess'), '0@s.whatsapp.net', getRequiredPluginMessage('rpg.registration.unregQuoted'), 'status@broadcast')
     }
 
     if (command === 'setgenero') {
         const genero = (args[0] || '').toLowerCase()
-        if (!['hombre', 'mujer', 'otro'].includes(genero)) return m.reply(`✳️ *Usa:*\n${usedPrefix}setgenero <hombre|mujer|otro>\n📌 Ej: *${usedPrefix}setgenero hombre*`)
+        if (!['hombre', 'mujer', 'otro'].includes(genero)) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.registration.setGenderUsage'), {prefix: usedPrefix}))
         await setUserGender(who, genero)
-        return m.reply(`✅ *Género guardado:* ${genero}`)
+        return m.reply(renderTemplate(getRequiredPluginMessage('rpg.registration.setGenderSuccess'), {gender: genero}))
     }
 
     if (command === 'setbirthday') {
         let birthday = args.join(' ').trim()
-        if (!birthday) return m.reply(`✳️ *Usa:*\n${usedPrefix}setbirthday <fecha>\n📌 Ej: *${usedPrefix}setbirthday 30/10/2000*`)
+        if (!birthday) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.registration.setBirthdayUsage'), {prefix: usedPrefix}))
         if (birthday.toLowerCase() === 'borrar') {
             await setUserBirthday(who, null)
-            return m.reply('✅ *Cumpleaños eliminado correctamente.*')
+            return m.reply(getRequiredPluginMessage('rpg.registration.setBirthdayDeleted'))
         }
         try {
             const fecha = moment(birthday, ['DD/MM/YYYY', 'D [de] MMMM [de] YYYY'], true)
             if (!fecha.isValid()) throw new Error('formato')
             await setUserBirthday(who, fecha.format('YYYY-MM-DD'))
-            return m.reply(`✅ *Cumpleaños guardado:* ${birthday}`)
+            return m.reply(renderTemplate(getRequiredPluginMessage('rpg.registration.setBirthdaySuccess'), {birthday}))
         } catch (e: unknown) {
-            return m.reply('❌ Formato inválido. Ej: 25/7/2009')
+            return m.reply(getRequiredPluginMessage('rpg.registration.invalidBirthday'))
         }
     }
     },

@@ -1,8 +1,9 @@
 import {definePlugin} from '../../core/define-plugin.js'
-import {listWallets} from '../../services/wallet.service.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 import type {UserWallet} from '../../ports/repositories.js'
-import type {proto} from '@whiskeysockets/baileys'
+import {listWallets} from '../../services/wallet.service.js'
 import {formatCompactNumber} from '../../utils/format.js'
+import type {proto} from '@whiskeysockets/baileys'
 
 type RankedWallet = UserWallet & {jid: string}
 type RankingProp = 'exp' | 'limite' | 'money' | 'banco'
@@ -27,7 +28,9 @@ export default definePlugin({
     const timeLeft = COOLDOWN_DURATION - (now - chatData.lastUsed)
 
     if (timeLeft > 0) {
-        await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} Hay ya se mostró el ranking pendejo 🙄, Solo se muestra cada 3 minutos para evitar spam, Desplázate hacia arriba para verlo completo.👆`, chatData.rankingMessage || m)
+        await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.leaderboard.cooldown'), {
+            user: m.sender.split('@')[0]
+        }), chatData.rankingMessage || m)
         return
     }
 
@@ -41,35 +44,31 @@ export default definePlugin({
 
     const format = (list: RankedWallet[], prop: RankingProp, icon: string) =>
         list.slice(0, len).map(({jid, [prop]: value}, i) =>
-            `${i + 1}. @${jid.split('@')[0]} *${formatCompactNumber(value)}* (${value}) ${icon}`).join('\n')
+            renderTemplate(getRequiredPluginMessage('rpg.leaderboard.line'), {
+                position: i + 1,
+                user: jid.split('@')[0],
+                compactValue: formatCompactNumber(value),
+                value,
+                icon
+            })).join('\n')
 
-    const text = `\`🏆 𝚃𝙰𝙱𝙻𝙰 𝙳𝙴 𝙲𝙻𝙰𝚂𝙸𝙲𝙰𝙲𝙸𝙾𝙽\`
-
-💠 *𝐓𝐎𝐏 ${len} 𝐗𝐏 🎯* 
-𝐓𝐮: *${sortedExp.findIndex(u => u.jid === m.sender) + 1}* 𝐝𝐞 *${sortedExp.length} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*
-${format(sortedExp, 'exp', '⚡')}
-
-┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-
-💠 *𝐓𝐎𝐏 ${len} 𝐃𝐈𝐀𝐌𝐀𝐍𝐓𝐄 💎* 
-𝐓𝐮: *${sortedLim.findIndex(u => u.jid === m.sender) + 1}* 𝐝𝐞 *${sortedLim.length} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*
-${format(sortedLim, 'limite', '💎')}
-
-┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-
-💠 *𝐓𝐎𝐏 ${len} 𝐋𝐎𝐋𝐈𝐂𝐎𝐈𝐍𝐒 🪙*
-𝐓𝐮: *${sortedMoney.findIndex(u => u.jid === m.sender) + 1}* 𝐝𝐞 *${sortedMoney.length} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*
-${format(sortedMoney, 'money', '🪙')}
-
-┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-
-💠 *𝐓𝐎𝐏 ${len} 𝐌𝐈𝐋𝐋𝐎𝐍𝐀𝐑𝐈𝐎𝐒 💵* _(Usuarios con mas dinero en el banco)_
-𝐓𝐮: *${sortedBanc.findIndex(u => u.jid === m.sender) + 1}* 𝐝𝐞 *${sortedBanc.length} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*
-${format(sortedBanc, 'banco', '💵')}
-`.trim()
+    const text = renderTemplate(getRequiredPluginMessage('rpg.leaderboard.caption'), {
+        len,
+        expPosition: sortedExp.findIndex(u => u.jid === m.sender) + 1,
+        expTotal: sortedExp.length,
+        expRanking: format(sortedExp, 'exp', '⚡'),
+        diamondPosition: sortedLim.findIndex(u => u.jid === m.sender) + 1,
+        diamondTotal: sortedLim.length,
+        diamondRanking: format(sortedLim, 'limite', '💎'),
+        moneyPosition: sortedMoney.findIndex(u => u.jid === m.sender) + 1,
+        moneyTotal: sortedMoney.length,
+        moneyRanking: format(sortedMoney, 'money', '🪙'),
+        bankPosition: sortedBanc.findIndex(u => u.jid === m.sender) + 1,
+        bankTotal: sortedBanc.length,
+        bankRanking: format(sortedBanc, 'banco', '💵')
+    }).trim()
 
     const rankingMessage = await m.reply(text, null, {mentions: conn.parseMention(text)})
     cooldowns.set(chatId, {lastUsed: now, rankingMessage})
     }
-})
-
+})

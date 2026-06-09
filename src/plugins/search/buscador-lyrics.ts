@@ -1,7 +1,5 @@
 import {logInfo} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js';
-import {httpJson} from '../../lib/http-client.js';
-import {replyReportableError} from '../../lib/reply-helpers.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 
 interface LyricsResult {
     title?: string;
@@ -21,31 +19,42 @@ interface ApiLyricsResponse {
     data?: LyricsResult;
 }
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['lirik', 'letra'].map((v) => v + ' <Apa>'),
     tags: ['buscadores'],
     command: /^(lirik|lyrics|lyric|letra)$/i,
     register: true,
-    async execute(m, {conn, text, usedPrefix, command}) {
-    const teks = text ? text : m.quoted && m.quoted.text ? m.quoted.text : '';
-    if (!teks) return m.reply(`*⚠️ ¿Que esta buscando? ingresa el nombre del tema para buscar la letra de la canción, ejemplo:* ${usedPrefix + command} ozuna te vas`)
+    async execute(m, {sdk}) {
+    const teks = sdk.text ? sdk.text : m.quoted && m.quoted.text ? m.quoted.text : '';
+    if (!teks) return sdk.reply.message('search.lyrics.missingQuery', {command: sdk.usedPrefix + sdk.command})
     try {
-        const data = await httpJson<FgmodsLyricsResponse>(`https://api.fgmods.xyz/api/other/lyrics?text=${text}&apikey=${info.fgmods.key}`)
+        const data = await sdk.http.json<FgmodsLyricsResponse>(`https://api.fgmods.xyz/api/other/lyrics?text=${encodeURIComponent(teks)}&apikey=${info.fgmods.key}`)
         if (!data.result) throw new Error('Sin resultado de lyrics')
-        const textoLetra = `*🎤 𝙏𝙞𝙩𝙪𝙡𝙤:* ${data.result.title}\n*👤 𝘼𝙪𝙩𝙤𝙧:* ${data.result.artist}\n*🎶 𝙐𝙧𝙡:* ${data.result.url || 'No disponible'}\n\n*📃🎵 𝙇𝙚𝙩𝙧𝙖:*\n${data.result.lyrics}`;
+        const textoLetra = sdk.content.renderMessage('search.lyrics.captionPrimary', {
+            title: data.result.title || sdk.content.message('search.lyrics.unknown'),
+            artist: data.result.artist || sdk.content.message('search.lyrics.unknown'),
+            url: data.result.url || sdk.content.message('search.lyrics.unavailable'),
+            lyrics: data.result.lyrics || sdk.content.message('search.lyrics.lyricsUnavailable')
+        });
         const img = data.result.image
-        conn.sendFile(m.chat, img, 'error,jpg', textoLetra, m);
+        await sdk.sendFile(img, 'error,jpg', textoLetra);
     } catch (e: unknown) {
         try {
-            const data = await httpJson<ApiLyricsResponse>(`${info.apis}/search/letra?query=${text}`);
-            if (data.status !== "200" || !data.data) return conn.reply(m.chat, 'No se encontró la letra de la canción especificada.', m);
+            const data = await sdk.http.json<ApiLyricsResponse>(`${info.apis}/search/letra?query=${encodeURIComponent(teks)}`);
+            if (data.status !== "200" || !data.data) return sdk.reply.message('search.lyrics.notFound');
 
-            const textoLetra = `*🎤 𝙏𝙞𝙩𝙪𝙡𝙤:* ${data.data.title || 'Desconocido'}\n*👤 𝘼𝙪𝙩𝙤𝙧:* ${data.data.artist || 'Desconocido'}\n*🔗 𝘼𝙧𝙩𝙞𝙨𝙩𝙖:* ${data.data.artistUrl || 'No disponible'}\n*🎶 𝙐𝙧𝙡:* ${data.data.url || 'No disponible'}\n\n*📃🎵 𝙇𝙚𝙩𝙧𝙖:*\n${data.data.lyrics || 'Letra no disponible'}`;
+            const textoLetra = sdk.content.renderMessage('search.lyrics.captionFallback', {
+                title: data.data.title || sdk.content.message('search.lyrics.unknown'),
+                artist: data.data.artist || sdk.content.message('search.lyrics.unknown'),
+                artistUrl: data.data.artistUrl || sdk.content.message('search.lyrics.unavailable'),
+                url: data.data.url || sdk.content.message('search.lyrics.unavailable'),
+                lyrics: data.data.lyrics || sdk.content.message('search.lyrics.lyricsUnavailable')
+            });
             const img = data.data.image
-            conn.sendFile(m.chat, img, 'error,jpg', textoLetra, m);
+            await sdk.sendFile(img, 'error,jpg', textoLetra);
 //conn.sendMessage(m.chat, { image: { url: img }, caption: textoLetra }, { quoted: m });
         } catch (e: unknown) {
-            await replyReportableError(m, e)
+            await sdk.reply.reportableError(e)
             logInfo(e)
         }
     }

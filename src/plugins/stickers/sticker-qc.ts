@@ -2,6 +2,7 @@ import {sticker} from '../../lib/sticker.js';
 import {getStickerExif} from '../../services/sticker-settings.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {httpJson} from '../../lib/http-client.js';
+import {getRequiredPluginMessage} from '../../lib/message-template.js';
 
 interface QuoteGenerateResponse {
     result?: {
@@ -21,13 +22,13 @@ export default definePlugin({
         text = args.slice(0).join(" ");
     } else if (m.quoted && m.quoted.text) {
         text = m.quoted.text;
-    } else return m.reply("╰⊱❗️⊱ *𝙇𝙊 𝙐𝙎𝙊́ 𝙈𝘼𝙇* ⊱❗️⊱╮\n\n𝘼𝙂𝙍𝙀𝙂𝙐𝙀́ 𝙐𝙉 𝙏𝙀𝙓𝙏𝙊 𝙋𝘼𝙍𝘼 𝘾𝙍𝙀𝘼𝙍 𝙀𝙇 𝙎𝙏𝙄𝘾𝙆𝙀𝙍")
-    if (!text) return m.reply("╰⊱❗️⊱ *𝙇𝙊 𝙐𝙎𝙊́ 𝙈𝘼𝙇* ⊱❗️⊱╮\n\n𝘼𝙂𝙍𝙀𝙂𝙐𝙀́ 𝙐𝙉 𝙏𝙀𝙓𝙏𝙊 𝙋𝘼𝙍𝘼 𝘾𝙍𝙀𝘼𝙍 𝙀𝙇 𝙎𝙏𝙄𝘾𝙆𝙀𝙍")
+    } else return m.reply(getRequiredPluginMessage('stickers.quote.usage'))
+    if (!text) return m.reply(getRequiredPluginMessage('stickers.quote.usage'))
 //conn.fakeReply(m.chat, `Calma crack estoy procesando 👏\n\n> *Esto puede demorar unos minutos*`, '0@s.whatsapp.net', `No haga spam gil`, 'status@broadcast', null, fake)
     const who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user?.id || m.sender : m.sender;
     const mentionRegex = new RegExp(`@${who.split('@')[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*`, 'g');
     const mishi = text.replace(mentionRegex, '');
-    if (mishi.length > 65) return m.reply('*⚠️ El texto no puede tener mas de 65 caracteres*');
+    if (mishi.length > 65) return m.reply(getRequiredPluginMessage('stickers.quote.tooLong'));
     const pp = await conn.profilePictureUrl(who).catch(() => 'https://telegra.ph/file/24fa902ead26340f3df2c.png')
     const nombre = await conn.getName(who)
     const obj = {

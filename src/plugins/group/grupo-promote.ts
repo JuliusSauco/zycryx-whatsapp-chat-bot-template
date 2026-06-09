@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage} from '../../lib/message-template.js';
 
 export default definePlugin({
     command: ['promote', 'daradmin', 'darpoder'],
@@ -18,8 +19,8 @@ export default definePlugin({
             number = text;
         }
 
-        if (!text && !m.quoted) return conn.reply(m.chat, `*⚠️ ¿A quien le doy admins?* Etiqueta a una persona no soy adivino :)`, m);
-        if (number.length > 13 || (number.length < 11 && number.length > 0)) return conn.reply(m.chat, `*⚠️ Estas drogado ese número ingresado es incorrecto 🤓*, ingresar un número correcto o mejor etiquetas al usuario @tag`, m);
+        if (!text && !m.quoted) return conn.reply(m.chat, getRequiredPluginMessage('group.promote.missing'), m);
+        if (number.length > 13 || (number.length < 11 && number.length > 0)) return conn.reply(m.chat, getRequiredPluginMessage('group.promote.invalidNumber'), m);
 
         let user = '';
         try {
@@ -34,6 +35,6 @@ export default definePlugin({
         }
 
         await conn.groupParticipantsUpdate(m.chat, [user], 'promote');
-        await conn.reply(m.chat, `*[ ✅ ] ÓRDENES RECIBIDAS*`, m);
+        await conn.reply(m.chat, getRequiredPluginMessage('group.promote.success'), m);
     }
 });

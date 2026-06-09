@@ -3,6 +3,7 @@ import {getWallet, setUserLevelRole} from '../../services/wallet.service.js'
 import type {BeforePluginContext} from '../../types/context.js'
 import type {BotMessage} from '../../types/message.js'
 import {pickRandom} from '../../utils/random.js'
+import {getRequiredPluginMessage, getRequiredPluginMessageList, renderTemplate} from '../../lib/message-template.js'
 
 const multiplier = 650
 const CHECK_INTERVAL_MS = 60_000
@@ -35,13 +36,19 @@ export async function before(m: BotMessage, {conn, groupSettings, isGroup}: Befo
         user.level = currentLevel
         user.role = newRole
 
-        const senderMention = `@${m.sender.split('@')[0]}`
-        conn.reply(m.chat, pickRandom([`*「 FELICIDADES LEVEL UP 🆙🥳 」*\n\nFelicidades subiste de nivel sigue asi 👏\n\n*• NIVEL:* ${before} ⟿ ${user.level}\n*• RANGO:* ${user.role}\n\n_*Para ver tu XP en tiempo real coloca el comando #level*_`, `${senderMention} Ohhh pa has alcanzado el siguiente nivel\n*• NIVEL:* ${before} ⟿ ${user.level}\n\n_*Para ver quien es esta el top coloca el comando #lb*_`, `Que pro ${senderMention} has alcanzado un nuevo nivel 🙌\n\n*• Nuevo nivel:* ${user.level}\n*• Nivel anterior:* ${before}\n`]), m, {
+        const senderMention = m.sender.split('@')[0]
+        const message = renderTemplate(pickRandom(getRequiredPluginMessageList('hooks.autoLevelUp.variants')), {
+            user: senderMention,
+            before,
+            level: user.level,
+            role: user.role
+        })
+        conn.reply(m.chat, message, m, {
             contextInfo: {
                 externalAdReply: {
                     mediaType: 1,
                     title: info.wm,
-                    body: ' 💫 𝐒𝐮𝐩𝐞𝐫 𝐁𝐨𝐭 𝐃𝐞 𝐖𝐡𝐚𝐭𝐬𝐚𝐩𝐩 🥳 ',
+                    body: getRequiredPluginMessage('hooks.autoLevelUp.adBody'),
                     thumbnail: m.pp,
                     sourceUrl: info.md
                 }
@@ -51,7 +58,7 @@ export async function before(m: BotMessage, {conn, groupSettings, isGroup}: Befo
 }
 
 export function getRole(level: number) {
-    return roles.find(r => level >= r.level) || {level, name: 'NOVATO(A) V'}
+    return roles.find(r => level >= r.level) || {level, name: getRequiredPluginMessage('hooks.autoLevelUp.defaultRole')}
 }
 
 function shouldCheckLevel(userId: string): boolean {

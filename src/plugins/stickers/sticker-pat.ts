@@ -2,6 +2,7 @@ import {logError} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import {definePlugin} from '../../core/define-plugin.js'
 import {httpBuffer, httpJson} from '../../lib/http-client.js'
+import {getRequiredPluginMessage} from '../../lib/message-template.js'
 
 interface WaifuPicsResponse {
     url?: string;
@@ -21,7 +22,7 @@ export default definePlugin({
         const senderName = await getName(m.sender)
         const mentionedNames = await Promise.all(m.mentionedJid.map(getName))
         const {url} = await httpJson<WaifuPicsResponse>('https://api.waifu.pics/sfw/pat')
-        if (!url) return m.reply('❌ La API no devolvió sticker.')
+        if (!url) return m.reply(getRequiredPluginMessage('stickers.common.apiNoSticker'))
         const texto = `🫂 ${senderName} le dio palmaditas a ${mentionedNames.join(', ')}`
 
         let stiker

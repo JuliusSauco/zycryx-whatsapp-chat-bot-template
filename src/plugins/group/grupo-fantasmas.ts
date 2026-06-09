@@ -4,6 +4,7 @@ import {listGroupMessageCounts} from '../../services/chat.service.js';
 import {getGroupSettings, setGroupBooleanFlag} from '../../services/group-settings.service.js';
 import {cleanJid} from '../../utils/jid.js';
 import {resolveMention} from '../../utils/mention.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -51,7 +52,7 @@ export default definePlugin({
     async execute(m, {conn, text, participants, command, metadata}) {
     try {
         if (!Array.isArray(participants) || !participants.length) {
-            return m.reply('⚠️ No pude obtener la lista de participantes del grupo.');
+            return m.reply(getRequiredPluginMessage('group.ghosts.missingParticipants'));
         }
 
         // 1. Conteo de mensajes del grupo, indexado por JID normalizado.
@@ -94,14 +95,17 @@ export default definePlugin({
 
         switch (command.toLowerCase()) {
             case 'fantasmas': {
-                if (total === 0) return m.reply(`⚠️ Este grupo es activo, ¡no tiene fantasmas! :D`);
-                let teks = `⚠️ REVISIÓN DE INACTIVOS ⚠️\n\n`;
-                teks += `Grupo: ${metadata?.subject || 'Sin nombre'}\n`;
-                teks += `*Miembros del grupo:* ${memberData.length}\n`;
-                teks += `*Miembros inactivos (0-1 msg):* ${total}\n\n`;
-                teks += `[ 👻 LISTA DE FANTASMAS 👻 ]\n`;
-                teks += sider.map(v => `  👉🏻 ${v.tag} (${v.messages} msg)`).join('\n');
-                teks += `\n\n*Nota:* El bot cuenta mensajes desde que se activó en este grupo.`;
+                if (total === 0) return m.reply(getRequiredPluginMessage('group.ghosts.noGhosts'));
+                let teks = renderTemplate(getRequiredPluginMessage('group.ghosts.listHeader'), {
+                    group: metadata?.subject || getRequiredPluginMessage('group.ghosts.unknownGroup'),
+                    members: memberData.length,
+                    inactive: total
+                });
+                teks += sider.map(v => renderTemplate(getRequiredPluginMessage('group.ghosts.listItem'), {
+                    tag: v.tag,
+                    messages: v.messages
+                })).join('\n');
+                teks += getRequiredPluginMessage('group.ghosts.listFooter');
                 await conn.sendMessage(m.chat, {
                     text: teks,
                     contextInfo: {mentionedJid: sider.map(v => v.mentionJid)}
@@ -110,14 +114,14 @@ export default definePlugin({
             }
 
             case 'kickfantasmas': {
-                if (total === 0) return m.reply(`⚠️ Este grupo es activo, ¡no tiene fantasmas! :D`);
-                let kickTeks = `⚠️ ELIMINACIÓN DE INACTIVOS ⚠️\n\n`;
-                kickTeks += `Grupo: ${metadata?.subject || 'Sin nombre'}\n`;
-                kickTeks += `*Miembros del grupo:* ${memberData.length}\n`;
-                kickTeks += `*Miembros inactivos (0-1 msg):* ${total}\n\n`;
-                kickTeks += `[ 👻 FANTASMAS A ELIMINAR 👻 ]\n`;
+                if (total === 0) return m.reply(getRequiredPluginMessage('group.ghosts.noGhosts'));
+                let kickTeks = renderTemplate(getRequiredPluginMessage('group.ghosts.kickHeader'), {
+                    group: metadata?.subject || getRequiredPluginMessage('group.ghosts.unknownGroup'),
+                    members: memberData.length,
+                    inactive: total
+                });
                 kickTeks += sider.map(v => `${v.tag}`).join('\n');
-                kickTeks += `\n\n*El bot eliminará la lista mencionada, empezando en 20 segundos, con 10 segundos entre cada expulsión.*`;
+                kickTeks += getRequiredPluginMessage('group.ghosts.kickFooter');
                 await conn.sendMessage(m.chat, {
                     text: kickTeks,
                     contextInfo: {mentionedJid: sider.map(v => v.mentionJid)}
@@ -138,13 +142,13 @@ export default definePlugin({
                 } finally {
                     await setGroupBooleanFlag(m.chat, 'welcome', originalWelcome);
                 }
-                await m.reply(`✅ Eliminación de fantasmas completada.`);
+                await m.reply(getRequiredPluginMessage('group.ghosts.completed'));
                 break;
             }
         }
     } catch (err: unknown) {
         logError(err);
-        m.reply("❌ Error ejecutando el comando. Por favor, intenta de nuevo.");
+        m.reply(getRequiredPluginMessage('group.ghosts.error'));
     }
     }
 });

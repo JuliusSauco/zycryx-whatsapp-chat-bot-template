@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {getSubbotConfig, setSubbotPrefix} from '../../services/subbot.service.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ['setprefix'],
@@ -15,36 +16,34 @@ export default definePlugin({
         const actuales = Array.isArray(config.prefix) ? config.prefix : [config.prefix];
 
         if (args.length === 0) {
-            const lista = actuales.length > 0 ? actuales.map(p => `\`${p || '(sin prefijo)'}\``).join(", ") : "Sin prefijo";
-            return m.reply(`📌 *Prefijos actuales:* ${lista}
-
-✏️ *Ejemplos de uso:*
-• \`${usedPrefix}setprefix /\` _(solo responde a “/”)_
-• \`${usedPrefix}setprefix 0\` _(sin prefijo)_
-• \`${usedPrefix}setprefix 0,#,!\` _(sin prefijo, # y !)_`);
+            const lista = actuales.length > 0 ? actuales.map(p => `\`${p || getRequiredPluginMessage('owner.prefix.emptyPrefix')}\``).join(", ") : getRequiredPluginMessage('owner.prefix.noPrefix');
+            return m.reply(renderTemplate(getRequiredPluginMessage('owner.prefix.current'), {
+                prefixes: lista,
+                prefix: usedPrefix
+            }));
         }
 
         const entrada = args.join(" ").trim();
         if (entrada.toLowerCase() === "noprefix" || entrada === "0") {
             try {
                 await setSubbotPrefix(cleanId, [""]);
-                return m.reply(`✅ Ahora el bot funciona *sin prefijo*. Puedes escribir comandos directamente como:\n• \`menu\``);
+                return m.reply(getRequiredPluginMessage('owner.prefix.noPrefixSaved'));
             } catch (err: unknown) {
                 logError(err);
-                return m.reply("❌ Error al guardar prefijos, revisa la base de datos.");
+                return m.reply(getRequiredPluginMessage('owner.prefix.saveError'));
             }
         }
 
         const lista = entrada.split(",").map(p => p.trim()).map(p => (p === "0" ? "" : p)).filter((p, i, self) => self.indexOf(p) === i); // evitar duplicados
-        if (lista.length === 0) return m.reply("❌ No se detectaron prefijos válidos.");
-        if (lista.length > 9) return m.reply("⚠️ Máximo 9 prefijos permitidos.");
+        if (lista.length === 0) return m.reply(getRequiredPluginMessage('owner.prefix.invalid'));
+        if (lista.length > 9) return m.reply(getRequiredPluginMessage('owner.prefix.max'));
         try {
             await setSubbotPrefix(cleanId, lista);
-            const nuevoTexto = lista.map(p => `\`${p || '(sin prefijo)'}\``).join(", ");
-            m.reply(`✅ Prefijos actualizados a: ${nuevoTexto}`);
+            const nuevoTexto = lista.map(p => `\`${p || getRequiredPluginMessage('owner.prefix.emptyPrefix')}\``).join(", ");
+            m.reply(renderTemplate(getRequiredPluginMessage('owner.prefix.updated'), {prefixes: nuevoTexto}));
         } catch (err: unknown) {
             logError(err);
-            return m.reply("❌ Error al guardar prefijos, revisa la base de datos, reportarlo a mi creator con el comando: /report");
+            return m.reply(getRequiredPluginMessage('owner.prefix.reportSaveError'));
         }
     },
 });

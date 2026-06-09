@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {addWalletResourcesAndSetFields, getWallet} from '../../services/wallet.service.js';
 import {randomInt} from '../../utils/random.js';
 import {formatDurationHoursMinutes} from '../../utils/time.js';
@@ -13,13 +14,15 @@ export default definePlugin({
     const cooldown = 122_400_000; // 3 días
     const now = Date.now();
     const user = await getWallet(m.sender);
-    if (!user) return m.reply('✳️ El usuario no se encuentra en la base de datos.');
+    if (!user) return m.reply(getRequiredPluginMessage('rpg.shared.missingUser'));
     const lastCofre = Number(user?.lastcofre) || 0;
     const nextTime = lastCofre + cooldown;
     const restante = Math.max(0, nextTime - now);
-    if (restante > 0) return m.reply(`🕛 𝐘𝐚 𝐫𝐞𝐜𝐥𝐚𝐦𝐚𝐬𝐭𝐞 𝐭𝐮 𝐜𝐨𝐟𝐫𝐞 🎁\n𝐕𝐮𝐞𝐥𝐯𝐞 𝐞𝐧 *${formatDurationHoursMinutes(restante)}* 𝐩𝐚𝐫𝐚 𝐫𝐞𝐜𝐥𝐚𝐦𝐚𝐫 𝐧𝐮𝐞𝐯𝐚𝐦𝐞𝐧𝐭𝐞`);
+    if (restante > 0) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.cofre.cooldown'), {
+        time: formatDurationHoursMinutes(restante)
+    }));
 
-    const img = 'https://img.freepik.com/vector-gratis/cofre-monedas-oro-piedras-preciosas-cristales-trofeo_107791-7769.jpg?w=2000';
+    const img = getRequiredPluginMessage('rpg.cofre.image');
     const diamantes = randomInt(30);
     const coins = randomInt(4000);
     const xp = randomInt(5000);
@@ -30,11 +33,11 @@ export default definePlugin({
         fields: {lastcofre: now},
     });
 
-    const texto = `[ 🛒 𝐎𝐁𝐓𝐈𝐄𝐍𝐄𝐒 𝐔𝐍 𝐂𝐎𝐅𝐑𝐄 🎉 ]
-
-* ${diamantes} 𝐃𝐢𝐚𝐦𝐚𝐧𝐭𝐞𝐬 💎
-* ${coins} 𝐂𝐨𝐢𝐧𝐬 🪙
-* ${xp} 𝐄𝐱𝐩 ⚡`;
+    const texto = renderTemplate(getRequiredPluginMessage('rpg.cofre.caption'), {
+        diamonds: diamantes,
+        coins,
+        xp
+    });
 
     await conn.sendMessage(m.chat, {image: {url: img}, caption: texto}, {
         quoted: {
@@ -44,7 +47,7 @@ export default definePlugin({
                 remoteJid: 'status@broadcast'
             },
             message: {
-                conversation: '🎉 Obtiene un regalo 🎁'
+                conversation: getRequiredPluginMessage('rpg.cofre.quoted')
             }
         }
     });

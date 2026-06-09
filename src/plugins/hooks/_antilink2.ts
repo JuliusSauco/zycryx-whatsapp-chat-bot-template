@@ -1,4 +1,5 @@
 import {logError} from '../../lib/logger.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import type {BeforePluginContext} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
 
@@ -26,11 +27,11 @@ export async function before(m: BotMessage, {conn, groupSettings, isAdmin, isBot
     }
 
     if (!isBotAdmin) return await conn.sendMessage(m.chat, {
-        text: `*「 ANTILINK DETECTADO 」*\n\n${userTag}, enviaste un link pero no puedo eliminarte porque no soy admin.`,
+        text: renderTemplate(getRequiredPluginMessage('hooks.antiLink.botNotAdmin'), {user: userTag}),
         mentions: [m.sender]
     }, {quoted: m});
     await conn.sendMessage(m.chat, {
-        text: `*「 ANTILINK DETECTADO 」*\n\n${userTag}, rompiste las reglas del grupo y serás eliminado.`,
+        text: renderTemplate(getRequiredPluginMessage('hooks.antiLink.removedStrict'), {user: userTag}),
         mentions: [m.sender]
     }, {quoted: m});
     try {

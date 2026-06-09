@@ -1,5 +1,5 @@
 import {logError} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {listJoinedGroupIdsByBot} from '../../services/chat.service.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
 
@@ -7,23 +7,23 @@ type GroupParticipantWithPhone = GroupParticipant & {
     phoneNumber?: string;
 };
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['groups', 'grouplist'],
     tags: ['main'],
     command: /^(groups|grouplist|listadegrupo|gruposlista|listagrupos|listadegrupos|grupolista|listagrupo)$/i,
     register: true,
-    async execute(m, {conn}) {
-    const botId = (conn.user?.id || '').split(':')[0].replace(/[^0-9]/g, '');
+    async execute(_m, {sdk}) {
+    const botId = (sdk.conn.user?.id || '').split(':')[0].replace(/[^0-9]/g, '');
     let txt = '';
     try {
         const grupos = await listJoinedGroupIdsByBot(botId);
-        if (grupos.length === 0) return m.reply('❌ Este bot no está unido a ningún grupo.');
+        if (grupos.length === 0) return sdk.reply.message('info.groupList.empty');
 
         for (let i = 0; i < grupos.length; i++) {
             const jid = grupos[i];
-            const metadata = await conn.groupMetadata(jid).catch(() => null);
+            const metadata = await sdk.conn.groupMetadata(jid).catch(() => null);
             if (!metadata) continue;
-            const botNumber = (conn.user?.id || '').split(':')[0].replace(/[^0-9]/g, '');
+            const botNumber = (sdk.conn.user?.id || '').split(':')[0].replace(/[^0-9]/g, '');
 
             const bot = metadata.participants.find((u) => {
                 const participant = u as GroupParticipantWithPhone;
@@ -31,27 +31,27 @@ export default definePlugin({
             }) as GroupParticipantWithPhone | undefined;
             const isBotAdmin = bot?.admin === 'admin' || bot?.admin === 'superadmin';
             const isParticipant = Boolean(bot?.id);
-            const participantStatus = isParticipant ? '✅ *Estoy aquí*' : '❌ *No estoy aquí*';
+            const participantStatus = isParticipant ? sdk.content.message('info.groupList.here') : sdk.content.message('info.groupList.notHere');
 
-            let link = '❌ No soy admin';
+            let link = sdk.content.message('info.groupList.notAdmin');
             if (isBotAdmin) {
-                const code = await conn.groupInviteCode(jid).catch(() => null);
+                const code = await sdk.conn.groupInviteCode(jid).catch(() => null);
                 if (code) link = `https://chat.whatsapp.com/${code}`;
-                else link = '⚠️ Error al generar link';
+                else link = sdk.content.message('info.groupList.linkError');
             }
 
-            txt += `${i + 1}. ${metadata.subject || 'Sin nombre'} | ${participantStatus}
-- *ID:* ${jid}
-- *Admin:* ${isBotAdmin ? 'Sí' : 'No'}
-- *Participantes:* ${metadata.participants.length}
-- *Link:* ${link}
-
-━━━━━━━━━━━━━━━
-
-`;
+            txt += sdk.content.renderMessage('info.groupList.item', {
+                index: i + 1,
+                subject: metadata.subject || sdk.content.message('info.groupList.unknownGroup'),
+                participantStatus,
+                jid,
+                admin: isBotAdmin ? sdk.content.message('info.groupList.yes') : sdk.content.message('info.groupList.no'),
+                participants: metadata.participants.length,
+                link
+            });
         }
 
-        m.reply(`_*\`ESTÁ EN ESTOS GRUPOS:\`*_\n> *• Total grupo:* ${grupos.length}\n\n${txt}`.trim());
+        return sdk.reply.text(sdk.content.renderMessage('info.groupList.response', {total: grupos.length, groups: txt}).trim());
     } catch (err: unknown) {
         logError(err);
     }

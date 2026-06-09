@@ -1,6 +1,7 @@
 import {logError, logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {proto} from '@whiskeysockets/baileys'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
 type CachedMessage = {
     key?: proto.IMessageKey
@@ -16,7 +17,7 @@ export default definePlugin({
     register: true,
     async execute(m, {conn, args}) {
 
-    if (!m.quoted && !m.mentionedJid?.length && !args[0]) return m.reply(`⚠️ Responde al mensaje que quiere eliminar pelotudito.`)
+    if (!m.quoted && !m.mentionedJid?.length && !args[0]) return m.reply(getRequiredPluginMessage('group.delete.missingTarget'))
     try {
         if (m.quoted) {
             let delet = m.quoted.sender;
@@ -30,7 +31,7 @@ export default definePlugin({
         } else if (args[0] && args[0].startsWith('+')) {
             target = args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net';
         } else {
-            return m.reply(`⚠️ Mencionar a alguien o responder a un mensaje.`);
+            return m.reply(getRequiredPluginMessage('group.delete.missingMention'));
         }
 
         let chats = conn.chats?.[m.chat]?.messages || {};
@@ -53,7 +54,10 @@ export default definePlugin({
                 logInfo(err);
             }
         }
-        m.reply(`✅ Se eliminaron ${deletedCount} mensajes de ${target.includes('@s.whatsapp.net')}.`);
+        m.reply(renderTemplate(getRequiredPluginMessage('group.delete.success'), {
+            count: deletedCount,
+            target: target.includes('@s.whatsapp.net'),
+        }));
     } catch (err: unknown) {
         logError(err);
     }

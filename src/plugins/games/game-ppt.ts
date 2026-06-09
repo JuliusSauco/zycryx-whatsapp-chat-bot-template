@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {addWalletResource} from '../../services/wallet.service.js';
 import {formatThousandsDot} from '../../utils/format.js';
 import {pickRandom, randomInt} from '../../utils/random.js';
@@ -34,7 +35,9 @@ export default definePlugin({
     const now = Date.now();
     const userId = m.sender;
     const cooldownRestante = (cooldowns.get(userId) || 0) + cooldown - now;
-    if (cooldownRestante > 0) return conn.fakeReply(m.chat, `*🕓 𝙃𝙚𝙮, 𝙀𝙨𝙥𝙚𝙧𝙖 ${formatDurationCompact(cooldownRestante)} 𝙖𝙣𝙩𝙚𝙨 𝙙𝙚 𝙪𝙨𝙖𝙧 𝙤𝙩𝙧𝙤𝙨 𝙘𝙤𝙢𝙖𝙣𝙙𝙤*`, m.sender, `ᴺᵒ ʰᵃᵍᵃⁿ ˢᵖᵃᵐ`, 'status@broadcast');
+    if (cooldownRestante > 0) return conn.fakeReply(m.chat, renderTemplate(getRequiredPluginMessage('games.ppt.cooldown'), {
+        time: formatDurationCompact(cooldownRestante)
+    }), m.sender, getRequiredPluginMessage('games.shared.cooldownNoSpam'), 'status@broadcast');
 
     const opponent = m.mentionedJid?.[0];
     const input = args[0]?.toLowerCase();
@@ -49,35 +52,47 @@ export default definePlugin({
         let result = "";
         if (resultado === 'gana') {
             await addWalletResource(userId, 'exp', xp);
-            text += `✅ *Ganaste* y obtuviste *${formatThousandsDot(xp)} XP*`;
-            result = '𝙃𝘼 𝙂𝘼𝙉𝘼𝘿𝙊! 🎉';
+            text += renderTemplate(getRequiredPluginMessage('games.ppt.winText'), {xp: formatThousandsDot(xp)});
+            result = getRequiredPluginMessage('games.ppt.winStatus');
         } else if (resultado === 'pierde') {
             await addWalletResource(userId, 'exp', -xp);
-            text += `❌ *Perdiste*. Te quitaron *${formatThousandsDot(xp)} XP*`;
-            result = '𝙃𝘼 𝙋𝙀𝙍𝘿𝙄𝘿𝙊! 🤡';
+            text += renderTemplate(getRequiredPluginMessage('games.ppt.loseText'), {xp: formatThousandsDot(xp)});
+            result = getRequiredPluginMessage('games.ppt.loseStatus');
         } else {
-            result = '𝙀𝙈𝙋𝘼𝙏𝙀 🤝';
-            text += `🤝 *Empate*. No ganaste ni perdiste XP.`;
+            result = getRequiredPluginMessage('games.ppt.tieStatus');
+            text += getRequiredPluginMessage('games.ppt.tieText');
         }
 
-        return m.reply(`\`「 ${result} 」\`\n\n👉 El Bot: ${botJugada}\n👉 Tú: ${input}\n` + text);
+        return m.reply(renderTemplate(getRequiredPluginMessage('games.ppt.soloResult'), {
+            result,
+            botMove: botJugada,
+            playerMove: input,
+            message: text
+        }));
     }
 
     if (opponent) {
-        if (retos.has(opponent)) return m.reply('⚠️ Ese usuario ya tiene un reto pendiente.');
+        if (retos.has(opponent)) return m.reply(getRequiredPluginMessage('games.ppt.pendingChallenge'));
         retos.set(opponent, {
             retador: userId,
             chat: m.chat,
             timeout: setTimeout(() => {
                 retos.delete(opponent);
-                conn.reply(m.chat, `⏳ 𝙏𝙄𝙀𝙈𝙋𝙊 𝘼𝙂𝙊𝙏𝘼𝘿𝙊, 𝙀𝙇 𝙋𝙑𝙋 𝙎𝙀 𝘾𝘼𝙉𝘾𝙀𝙇𝘼 𝙋𝙊𝙍 𝙁𝘼𝙇𝙏𝘼 𝘿𝙀 𝙍𝙀𝙎𝙋𝙐𝙀𝙎𝙏𝘼 𝘿𝙀 ${opponent.split('@')[0]}`, m, {mentions: [opponent]});
+                conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('games.ppt.challengeTimeout'), {
+                    user: opponent.split('@')[0]
+                }), m, {mentions: [opponent]});
             }, 60000)
         });
 
-        return conn.reply(m.chat, `🎮👾 𝙋𝙑𝙋 - 𝙋𝙄𝙀𝘿𝙍𝘼, 𝙋𝘼𝙋𝙀𝙇 𝙊 𝙏𝙄𝙅𝙀𝙍𝘼 👾🎮\n\n@${m.sender.split('@')[0]} 𝘿𝙀𝙎𝘼𝙁𝙄𝘼 𝘼 @${opponent.split('@')[0]}.\n\n> _*Escribe (aceptar) para aceptar*_\n> _*Escribe (rechazar) para rechazar*_`, m, {mentions: [opponent]});
+        return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('games.ppt.challengeInvite'), {
+            challenger: m.sender.split('@')[0],
+            opponent: opponent.split('@')[0]
+        }), m, {mentions: [opponent]});
     }
 
-    m.reply(`𝐏𝐢𝐞𝐝𝐫𝐚 🗿, 𝐏𝐚𝐩𝐞𝐥 📄 𝐨 𝐓𝐢𝐣𝐞𝐫𝐚 ✂️\n\n👾 𝙅𝙪𝙜𝙖𝙧 𝙘𝙤𝙣 𝙚𝙡 𝙗𝙤𝙩:\n• ${usedPrefix + command} piedra\n• ${usedPrefix + command} papel\n• ${usedPrefix + command} tijera\n\n🕹 𝙅𝙪𝙜𝙖𝙧 𝙘𝙤𝙣 𝙪𝙣 𝙪𝙨𝙪𝙖𝙧𝙞𝙤:\n${usedPrefix + command} @0`);
+    m.reply(renderTemplate(getRequiredPluginMessage('games.ppt.help'), {
+        command: usedPrefix + command
+    }));
     },
 
     async before(m, {conn}) {
@@ -91,7 +106,7 @@ export default definePlugin({
         retos.delete(userId);
 
         if (text === 'rechazar') {
-            return conn.reply(chat, `⚠️ @${userId.split('@')[0]} rechazó el reto.`, m, {mentions: [userId, retador]});
+            return conn.reply(chat, renderTemplate(getRequiredPluginMessage('games.ppt.challengeRejected'), {user: userId.split('@')[0]}), m, {mentions: [userId, retador]});
         }
 
         jugadas.set(chat, {
@@ -99,14 +114,17 @@ export default definePlugin({
             eleccion: {},
             timeout: setTimeout(() => {
                 jugadas.delete(chat);
-                conn.reply(chat, `⏰ El duelo expiró por inactividad.`, m);
+                conn.reply(chat, getRequiredPluginMessage('games.ppt.duelExpired'), m);
             }, 60000)
         });
 
-        conn.reply(chat, `✅ Reto aceptado. Las opciones serán enviadas por privado a @${retador.split('@')[0]} y @${userId.split('@')[0]}.`, m, {mentions: [retador, userId]});
+        conn.reply(chat, renderTemplate(getRequiredPluginMessage('games.ppt.challengeAccepted'), {
+            challenger: retador.split('@')[0],
+            opponent: userId.split('@')[0]
+        }), m, {mentions: [retador, userId]});
 
-        await conn.sendMessage(retador, {text: '✊🖐✌️ Escribe *piedra*, *papel* o *tijera* para elegir tu jugada.'});
-        await conn.sendMessage(userId, {text: '✊🖐✌️ Escribe *piedra*, *papel* o *tijera* para elegir tu jugada.'});
+        await conn.sendMessage(retador, {text: getRequiredPluginMessage('games.ppt.privatePrompt')});
+        await conn.sendMessage(userId, {text: getRequiredPluginMessage('games.ppt.privatePrompt')});
         return;
     }
 
@@ -116,7 +134,7 @@ export default definePlugin({
             if (!jugadores.includes(userId)) continue;
 
             eleccion[userId] = text;
-            await conn.sendMessage(userId, {text: '✅ Elección recibida. Vuelve al grupo y espera el resultado.'});
+            await conn.sendMessage(userId, {text: getRequiredPluginMessage('games.ppt.choiceReceived')});
 
             if (Object.keys(eleccion).length < 2) return;
             clearTimeout(timeout);
@@ -128,16 +146,26 @@ export default definePlugin({
             if (!jugada1 || !jugada2) return;
             const resultado = evaluar(jugada1, jugada2);
             const xp = randomInt(500, 2499);
-            let mensaje = `✊🖐✌️ *Piedra, Papel o Tijera*\n\n@${j1.split('@')[0]} eligió: *${jugada1}*\n@${j2.split('@')[0]} eligió: *${jugada2}*\n\n`;
+            let mensaje = renderTemplate(getRequiredPluginMessage('games.ppt.duelHeader'), {
+                player1: j1.split('@')[0],
+                move1: jugada1,
+                player2: j2.split('@')[0],
+                move2: jugada2
+            });
 
             if (resultado === 'empate') {
-                mensaje += '🤝 ¡Empate! Nadie gana ni pierde XP.';
+                mensaje += getRequiredPluginMessage('games.ppt.duelTie');
             } else {
                 const ganador = resultado === 'gana' ? j1 : j2;
                 const perdedor = ganador === j1 ? j2 : j1;
                 await addWalletResource(ganador, 'exp', xp * 2);
                 await addWalletResource(perdedor, 'exp', -xp);
-                mensaje += `🎉 @${ganador.split('@')[0]} gana *${formatThousandsDot(xp * 2)} XP*\n💀 @${perdedor.split('@')[0]} pierde *${formatThousandsDot(xp)} XP*`;
+                mensaje += renderTemplate(getRequiredPluginMessage('games.ppt.duelWin'), {
+                    winner: ganador.split('@')[0],
+                    winnerXp: formatThousandsDot(xp * 2),
+                    loser: perdedor.split('@')[0],
+                    loserXp: formatThousandsDot(xp)
+                });
             }
 
             return conn.sendMessage(chat, {text: mensaje, mentions: [j1, j2]});

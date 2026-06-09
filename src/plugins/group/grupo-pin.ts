@@ -1,5 +1,6 @@
 import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 export default definePlugin({
     help: ['pin'],
     tags: ['group'],
@@ -9,7 +10,11 @@ export default definePlugin({
     group: true,
     register: true,
     async execute(m, {conn, command}) {
-    if (!m.quoted) return m.reply(`⚠️ Responde a un mensaje para ${command === 'pin' ? 'fijarlo' : 'desfijarlo'}.`);
+    if (!m.quoted) return m.reply(renderTemplate(getRequiredPluginMessage('group.pin.missingQuoted'), {
+        action: command === 'pin'
+            ? getRequiredPluginMessage('group.pin.actionPin')
+            : getRequiredPluginMessage('group.pin.actionUnpin'),
+    }));
     try {
         let messageKey = {
             remoteJid: m.chat,

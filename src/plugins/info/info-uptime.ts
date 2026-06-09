@@ -1,13 +1,13 @@
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['uptime'],
     tags: ['main'],
     command: /^uptime$/i,
-    async execute(m) {
+    async execute(_m, {sdk}) {
     const uptime = process.uptime() * 1000 // en milisegundos
     const tiempo = clockString(uptime)
-    m.reply(`⏱️ *Uptime:* ${tiempo}`)
+    await sdk.reply.message('info.uptime.response', {uptime: tiempo})
     }
 })
 

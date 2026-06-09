@@ -5,11 +5,13 @@ import {fileURLToPath} from 'url'
 import {dirname} from 'path'
 import {createRequire} from 'module'
 import {definePlugin} from '../../core/define-plugin.js'
+import {auditSensitiveCommand, limitOutput, sanitizeCommandError, withTimeout} from '../../lib/sensitive-command.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const require = createRequire(__dirname)
 const AsyncFunction = Object.getPrototypeOf(async function () {
 }).constructor as new (...args: string[]) => (...args: unknown[]) => Promise<unknown>
+const OWNER_EVAL_TIMEOUT_MS = 10_000;
 
 const plugin = definePlugin({
     help: ['> ', '=> ', '='],
@@ -27,10 +29,12 @@ const plugin = definePlugin({
         if (!prefixMatch) return
 
         const noPrefix = m.originalText.replace(prefixMatch[0], '').trim()
+        if (!noPrefix) return
         const _text = prefixMatch[0].startsWith('=') ? 'return ' + noPrefix : noPrefix
         const old = (m.exp || 0) * 1
         let _return: unknown
         let _syntax = ''
+        auditSensitiveCommand({action: 'owner-eval', sender: m.sender, chatId: m.chat, command: noPrefix})
 
         try {
             let i = 15
@@ -42,14 +46,14 @@ const plugin = definePlugin({
                 _text
             )
 
-            _return = await exec.call(conn,
+            _return = await withTimeout(Promise.resolve(exec.call(conn,
                 (...args: unknown[]) => {
                     if (--i < 1) return
                     logInfo(format(...args))
-                    return conn.reply(m.chat, format(...args), m)
+                    return conn.reply(m.chat, limitOutput(format(...args)), m)
                 },
                 m, plugin, require, conn, CustomArray, process, args, metadata, f, f.exports, [conn, _2]
-            )
+            )), OWNER_EVAL_TIMEOUT_MS, 'owner eval')
 
         } catch (e: unknown) {
             const err = syntaxerror(_text, 'Execution Function', {
@@ -58,9 +62,9 @@ const plugin = definePlugin({
                 sourceType: 'module'
             })
             if (err) _syntax = '```' + err + '```\n\n'
-            _return = e
+            _return = sanitizeCommandError(e)
         } finally {
-            conn.reply(m.chat, _syntax + format(_return), m)
+            await conn.reply(m.chat, limitOutput(_syntax + format(_return)), m)
             m.exp = old
         }
     }

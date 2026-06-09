@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {setSubbotMode} from '../../services/subbot.service.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ['self'],
@@ -11,13 +12,17 @@ export default definePlugin({
         const id = conn.user?.id;
         if (!id) return;
         const modoNuevo = args[0]?.toLowerCase();
-        if (!["on", "off", "private", "public"].includes(modoNuevo)) return m.reply(`⚙️ Usa: *${usedPrefix + command} on* o *${usedPrefix + command} off*`);
+        if (!["on", "off", "private", "public"].includes(modoNuevo)) return m.reply(renderTemplate(getRequiredPluginMessage('owner.self.usage'), {
+            command: usedPrefix + command,
+        }));
 
         const nuevoModo = (modoNuevo === "on" || modoNuevo === "private") ? "private" : "public";
         try {
             await setSubbotMode(id, nuevoModo);
-            const estado = nuevoModo === "private" ? "🔒 *Privado*" : "🌐 *Público*";
-            m.reply(`✅ Modo cambiado a: ${estado}`);
+            const estado = nuevoModo === "private"
+                ? getRequiredPluginMessage('owner.self.privateStatus')
+                : getRequiredPluginMessage('owner.self.publicStatus');
+            m.reply(renderTemplate(getRequiredPluginMessage('owner.self.success'), {status: estado}));
         } catch (err: unknown) {
             logError(err);
         }

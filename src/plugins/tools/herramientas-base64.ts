@@ -1,20 +1,19 @@
-import {definePlugin} from '../../core/define-plugin.js'
-import {errorMessage, replyFailure, replyUsage} from '../../lib/reply-helpers.js'
+import {defineSdkPlugin, errorMessage} from '../../core/sdk-plugin.js'
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['tobase64'],
     tags: ['tools'],
     command: ['tobase64'],
     register: true,
     limit: 1,
-    async execute(m, {text, usedPrefix, command}) {
-    if (!text) return replyUsage(m, `${usedPrefix + command} texto`);
+    async execute(m, {sdk}) {
+    if (!sdk.text) return sdk.reply.usage(sdk.content.renderMessage('tools.base64.usage', {command: sdk.usedPrefix + sdk.command}));
 
     try {
-        const base64 = Buffer.from(text, 'utf-8').toString('base64');
+        const base64 = Buffer.from(sdk.text, 'utf-8').toString('base64');
         return m.reply(`${base64}`);
     } catch (e: unknown) {
-        return replyFailure(m, `Error al convertir: ${errorMessage(e)}`);
+        return sdk.reply.failure(sdk.content.renderMessage('tools.base64.failure', {error: errorMessage(e)}));
     }
     }
 })

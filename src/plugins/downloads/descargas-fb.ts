@@ -2,6 +2,7 @@ import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fg from 'api-dylux';
 import {httpJson} from '../../lib/http-client.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 
@@ -49,9 +50,14 @@ export default definePlugin({
     register: true,
     limit: 3,
     async execute(m, {conn, args, command, usedPrefix}) {
-    if (!args[0]) return m.reply(`⚠️ 𝙄𝙣𝙜𝙧𝙚𝙨𝙚 𝙪𝙣 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚 𝙁𝙖𝙘𝙚𝙗𝙤𝙤𝙠 𝙥𝙖𝙧𝙖 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙧 𝙚𝙡 𝙑𝙞𝙙𝙚𝙤\n• *𝙀𝙟 :* ${usedPrefix + command} https://www.facebook.com/share/r/1E1RojVvdJ/`)
-    if (!args[0].match(/www.facebook.com|fb.watch/g)) return m.reply(`⚠️ 𝙄𝙣𝙜𝙧𝙚𝙨𝙚 𝙪𝙣 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚 𝙁𝙖𝙘𝙚𝙗𝙤𝙤𝙠 𝙥𝙖𝙧𝙖 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙧 𝙚𝙡 𝙑𝙞𝙙𝙚𝙤\n• *𝙀𝙟 :* ${usedPrefix + command} https://www.facebook.com/share/r/1E1RojVvdJ/`)
-    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} Calmao, ya estás bajando un video 🙄\nEspera a que termine tu descarga actual antes de pedir otra...`, m)
+    const missingUrlMessage = renderTemplate(getRequiredPluginMessage('downloads.facebook.missingUrl'), {
+        command: usedPrefix + command
+    });
+    if (!args[0]) return m.reply(missingUrlMessage)
+    if (!args[0].match(/www.facebook.com|fb.watch/g)) return m.reply(missingUrlMessage)
+    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.facebook.locked'), {
+        user: m.sender.split('@')[0]
+    }), m)
     m.react(`⌛`);
     try {
         const downloadProviders: Array<Provider<FacebookMediaData>> = [{
@@ -61,9 +67,9 @@ export default definePlugin({
             const videoUrl = data.data?.hd || data.data?.sd;
             const imageUrl = data.data?.thumbnail;
             if (videoUrl && videoUrl.endsWith('.mp4')) {
-                return {type: 'video', url: videoUrl, caption: '✅ Aquí está tu video de Facebook'};
+                return {type: 'video', url: videoUrl, caption: getRequiredPluginMessage('downloads.facebook.videoCaption')};
             } else if (imageUrl && (imageUrl.endsWith('.jpg') || imageUrl.endsWith('.png'))) {
-                return {type: 'image', url: imageUrl, caption: '✅ Aquí está la imagen de Facebook'};
+                return {type: 'image', url: imageUrl, caption: getRequiredPluginMessage('downloads.facebook.imageCaption')};
             }
         },
         },
@@ -73,7 +79,7 @@ export default definePlugin({
                 const data = await httpJson<FgmodsFacebookResponse>(`${info.fgmods.url}/downloader/fbdl?url=${args[0]}&apikey=${info.fgmods.key}`);
                 const downloadUrl = data.result?.[0]?.hd || data.result?.[0]?.sd;
                 if (!downloadUrl) throw new Error('Respuesta inválida de Fgmods');
-                return {type: 'video', url: downloadUrl, caption: '✅ Aquí está tu video de Facebook'};
+                return {type: 'video', url: downloadUrl, caption: getRequiredPluginMessage('downloads.facebook.videoCaption')};
             },
             },
             {
@@ -83,7 +89,7 @@ export default definePlugin({
                 const delius = await httpJson<DeliusFacebookResponse>(apiUrl);
                 const downloadUrl = delius.urls?.[0]?.hd || delius.urls?.[0]?.sd;
                 if (!downloadUrl) throw new Error('Respuesta inválida de API principal');
-                return {type: 'video', url: downloadUrl, caption: '✅ Aquí está tu video de Facebook'};
+                return {type: 'video', url: downloadUrl, caption: getRequiredPluginMessage('downloads.facebook.videoCaption')};
             },
             },
             {
@@ -93,7 +99,7 @@ export default definePlugin({
                 const data = await httpJson<DorratzFacebookResponse>(apiUrl);
                 const downloadUrl = data.result?.hd || data.result?.sd;
                 if (!downloadUrl) throw new Error('Respuesta inválida de Dorratz');
-                return {type: 'video', url: downloadUrl, caption: '✅ Aquí está tu video de Facebook'};
+                return {type: 'video', url: downloadUrl, caption: getRequiredPluginMessage('downloads.facebook.videoCaption')};
             },
             },
             {
@@ -104,7 +110,7 @@ export default definePlugin({
                 return {
                     type: 'video',
                     url: urll,
-                    caption: '✅ 𝐀𝐐𝐔𝐈 𝐄𝐒𝐓𝐀 𝐓𝐔 𝐕𝐈𝐃𝐄𝐎 𝐃𝐄 𝐅𝐀𝐂𝐄𝐁𝐎𝐎𝐊\n\n'
+                    caption: getRequiredPluginMessage('downloads.facebook.videoCaptionBold')
                 };
             }
             }];

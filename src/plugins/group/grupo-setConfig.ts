@@ -1,5 +1,6 @@
 import {definePlugin} from '../../core/define-plugin.js'
 import {setGroupTextMessage} from '../../services/group-settings.service.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
 export default definePlugin({
     help: ['setwelcome <texto>', 'setbye <texto>'],
@@ -10,33 +11,34 @@ export default definePlugin({
     register: true,
     async execute(m, {command, text}) {
     if (!text) {
-        const tipo = command === 'setwelcome' ? 'bienvenida' : command === 'setbye' ? 'despedida' : command === 'setpromote' ? 'ascenso' : 'degradación'
+        const tipo = command === 'setwelcome'
+            ? getRequiredPluginMessage('group.setConfig.typeWelcome')
+            : command === 'setbye'
+                ? getRequiredPluginMessage('group.setConfig.typeBye')
+                : command === 'setpromote'
+                    ? getRequiredPluginMessage('group.setConfig.typePromote')
+                    : getRequiredPluginMessage('group.setConfig.typeDemote')
 
-        const variables = ['@user → Menciona al usuario',
-            ...(command !== 'setpromote' && command !== 'setdemote' ? ['@group → Nombre del grupo'] : []),
-            ...(command === 'setwelcome' ? ['@desc → Descripción del grupo'] : []),
-            ...(command === 'setpromote' || command === 'setdemote' ? ['@author → Quien ejecuta la acción'] : [])
+        const variables = [getRequiredPluginMessage('group.setConfig.varUser'),
+            ...(command !== 'setpromote' && command !== 'setdemote' ? [getRequiredPluginMessage('group.setConfig.varGroup')] : []),
+            ...(command === 'setwelcome' ? [getRequiredPluginMessage('group.setConfig.varDesc')] : []),
+            ...(command === 'setpromote' || command === 'setdemote' ? [getRequiredPluginMessage('group.setConfig.varAuthor')] : [])
         ].join('\n• ')
 
-        const opciones = (command === 'setwelcome' || command === 'setbye') ? `*Opciones adicionales:*
-• --foto → Para enviar el mensaje con imagen
-• --nofoto → Para enviar solo texto
-• --groupfoto → Para priorizar la foto del grupo
-• --nogroupfoto → Para priorizar la foto del usuario
-• --hidetag → Para mencionar a todos
-• --nohidetag → Para mencionar solo al usuario` : ''
+        const opciones = (command === 'setwelcome' || command === 'setbye') ? getRequiredPluginMessage('group.setConfig.options') : ''
 
-        const ejemplo = command === 'setwelcome' ? `Hola @user, bienvenido a @group. Lee las reglas: @desc`
-            : command === 'setbye' ? `Chao @user, gracias por estar en @group.`
-                : command === 'setpromote' ? `@user ha sido promovido por @author.`
-                    : `@user ha sido degradado por @author.`
+        const ejemplo = command === 'setwelcome' ? getRequiredPluginMessage('group.setConfig.exampleWelcome')
+            : command === 'setbye' ? getRequiredPluginMessage('group.setConfig.exampleBye')
+                : command === 'setpromote' ? getRequiredPluginMessage('group.setConfig.examplePromote')
+                    : getRequiredPluginMessage('group.setConfig.exampleDemote')
 
-        return m.reply(`*⚙️ Personaliza el mensaje de ${tipo} del grupo:*
-
-*Puedes usar las siguientes variables:*
-• ${variables}\n${opciones}
-*Ejemplo de uso:*
-➤ /${command} ${ejemplo} --foto`)
+        return m.reply(renderTemplate(getRequiredPluginMessage('group.setConfig.usage'), {
+            type: tipo,
+            variables,
+            options: opciones,
+            command,
+            example: ejemplo,
+        }))
     }
 
     const hasFoto = text.includes('--foto')
@@ -63,7 +65,7 @@ export default definePlugin({
             hidetag,
             groupPhoto,
         })
-        return m.reply(`✅ Mensaje de bienvenida guardado${hasFoto ? ' con imagen' : hasNoFoto ? ' sin imagen' : ''}${hasGroupFoto ? ' priorizando foto del grupo' : hasNoGroupFoto ? ' priorizando foto del usuario' : ''}${hasHidetag ? ' con hidetag' : hasNoHidetag ? ' sin hidetag' : ''}.`)
+        return m.reply(renderSavedMessage('group.setConfig.savedWelcome', '✅ Mensaje de bienvenida guardado{photo}{groupPhoto}{hidetag}.', hasFoto, hasNoFoto, hasGroupFoto, hasNoGroupFoto, hasHidetag, hasNoHidetag))
     }
 
     if (command === 'setbye') {
@@ -72,18 +74,26 @@ export default definePlugin({
             hidetag,
             groupPhoto,
         })
-        return m.reply(`✅ Mensaje de despedida guardado${hasFoto ? ' con imagen' : hasNoFoto ? ' sin imagen' : ''}${hasGroupFoto ? ' priorizando foto del grupo' : hasNoGroupFoto ? ' priorizando foto del usuario' : ''}${hasHidetag ? ' con hidetag' : hasNoHidetag ? ' sin hidetag' : ''}.`)
+        return m.reply(renderSavedMessage('group.setConfig.savedBye', '✅ Mensaje de despedida guardado{photo}{groupPhoto}{hidetag}.', hasFoto, hasNoFoto, hasGroupFoto, hasNoGroupFoto, hasHidetag, hasNoHidetag))
     }
 
     if (command === 'setpromote') {
         await setGroupTextMessage(m.chat, 'promote', cleanText)
-        return m.reply("✅ Mensaje de ascenso guardado.")
+        return m.reply(getRequiredPluginMessage('group.setConfig.savedPromote'))
     }
 
     if (command === 'setdemote') {
         await setGroupTextMessage(m.chat, 'demote', cleanText)
-        return m.reply("✅ Mensaje de degradación guardado.")
+        return m.reply(getRequiredPluginMessage('group.setConfig.savedDemote'))
     }
     }
-})
+})
+
+function renderSavedMessage(templatePath: string, fallback: string, hasFoto: boolean, hasNoFoto: boolean, hasGroupFoto: boolean, hasNoGroupFoto: boolean, hasHidetag: boolean, hasNoHidetag: boolean): string {
+    return renderTemplate(getRequiredPluginMessage(templatePath), {
+        photo: hasFoto ? getRequiredPluginMessage('group.setConfig.withImage') : hasNoFoto ? getRequiredPluginMessage('group.setConfig.withoutImage') : '',
+        groupPhoto: hasGroupFoto ? getRequiredPluginMessage('group.setConfig.withGroupPhoto') : hasNoGroupFoto ? getRequiredPluginMessage('group.setConfig.withUserPhoto') : '',
+        hidetag: hasHidetag ? getRequiredPluginMessage('group.setConfig.withHidetag') : hasNoHidetag ? getRequiredPluginMessage('group.setConfig.withoutHidetag') : '',
+    })
+}
 

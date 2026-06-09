@@ -1,6 +1,7 @@
 import {definePlugin} from '../../core/define-plugin.js'
 import {decrementUserWarn, getUserWarnInfo} from '../../services/user.service.js';
 import {replyUserError} from '../../lib/reply-helpers.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ['delwarn @user', 'unwarn @user'],
@@ -19,17 +20,22 @@ export default definePlugin({
             who = m.chat;
         }
 
-        if (!who) return replyUserError(m, `*¿A quién le quito una advertencia?* Etiqueta a una persona con @tag o cita su mensaje.`)
+        if (!who) return replyUserError(m, getRequiredPluginMessage('group.delWarn.missingUser'))
         const user = await getUserWarnInfo(who);
-        if (!user) return replyUserError(m, `No encontré al usuario para quitarle una advertencia.`)
+        if (!user) return replyUserError(m, getRequiredPluginMessage('group.delWarn.unknownUser'))
         let warn = user.warn || 0;
 
         if (warn > 0) {
             await decrementUserWarn(who);
             warn -= 1;
-            await conn.reply(m.chat, `*⚠️ SE QUITÓ UNA ADVERTENCIA ⚠️*\n\nUsuario: @${who.split('@')[0]}\n*• Advertencia:* -1\n*• Total:* ${warn}`, m)
+            await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('group.delWarn.success'), {
+                user: who.split('@')[0],
+                warn,
+            }), m)
         } else {
-            await conn.reply(m.chat, `*⚠️ El usuario @${who.split('@')[0]} no tiene ninguna advertencia.*`, m)
+            await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('group.delWarn.empty'), {
+                user: who.split('@')[0],
+            }), m)
         }
     } catch (err: unknown) {
     }

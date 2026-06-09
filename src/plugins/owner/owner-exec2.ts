@@ -1,13 +1,11 @@
-import cp, {exec as _exec} from 'child_process';
-import {promisify} from 'util';
 import {definePlugin} from '../../core/define-plugin.js';
-
-let exec = promisify(_exec).bind(cp);
-
-type ExecResult = {
-    stdout?: string;
-    stderr?: string;
-};
+import {
+    auditSensitiveCommand,
+    getExecOutput,
+    limitOutput,
+    runSensitiveShellCommand,
+    sanitizeCommandError,
+} from '../../lib/sensitive-command.js';
 
 export default definePlugin({
     help: ['$'],
@@ -17,18 +15,20 @@ export default definePlugin({
     async execute(m, {isROwner}) {
         if (!isROwner) return;
 
-        m.react("💻");
+        await m.react("💻");
 
-        let commandInput = m.originalText?.replace(/^\$+\s?/, '').trim();
-        let o: ExecResult = {};
+        const commandInput = m.originalText?.replace(/^\$+\s?/, '').trim();
+        if (!commandInput) return;
+        auditSensitiveCommand({action: 'shell-exec', sender: m.sender, chatId: m.chat, command: commandInput});
         try {
-            o = await exec(commandInput);
+            const {stdout, stderr} = await runSensitiveShellCommand(commandInput);
+            if (stdout.trim()) await m.reply(limitOutput(stdout));
+            if (stderr.trim()) await m.reply(limitOutput(stderr));
         } catch (e: unknown) {
-            o = e as ExecResult;
-        } finally {
-            let {stdout, stderr} = o;
-            if (stdout?.trim()) m.reply(stdout);
-            if (stderr?.trim()) m.reply(stderr);
+            const {stdout, stderr} = getExecOutput(e);
+            if (stdout.trim()) await m.reply(limitOutput(stdout));
+            if (stderr.trim()) await m.reply(limitOutput(stderr));
+            if (!stdout.trim() && !stderr.trim()) await m.reply(sanitizeCommandError(e));
         }
     }
 });

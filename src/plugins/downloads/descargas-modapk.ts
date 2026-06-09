@@ -2,6 +2,7 @@ import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {QuotedMessage} from '../../types/context.js';
 import {httpJson} from '../../lib/http-client.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 
@@ -46,8 +47,10 @@ export default definePlugin({
     register: true,
     limit: 2,
     async execute(m, {conn, text}) {
-    if (!text) return m.reply(`⚠️ *𝙀𝙨𝙘𝙧𝙞𝙗𝙖 𝙚𝙡 𝙣𝙤𝙢𝙗𝙧𝙚 𝙙𝙚𝙡 𝘼𝙋𝙆*`)
-    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} pendejo, ya estás descargando un APK 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆`, userMessages.get(m.sender) || m)
+    if (!text) return m.reply(getRequiredPluginMessage('downloads.modApk.missingQuery'))
+    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.modApk.locked'), {
+        user: m.sender.split('@')[0]
+    }), userMessages.get(m.sender) || m)
     m.react("⌛");
     try {
         const downloadProviders: Array<Provider<ApkData>> = [
@@ -85,22 +88,21 @@ export default definePlugin({
         ];
 
         const apkData = await runFirstProvider(downloadProviders, 'No se pudo descargar el APK desde ninguna API');
-        const response = `≪ＤＥＳＣＡＲＧＡＤＯ ＡＰＫＳ🚀≫
-
-┏━━━━━━━━━━━━━━━━━━━━━━• 
-┃💫 𝙉𝙊𝙈𝘽𝙍𝙀: ${apkData.name}
-${apkData.developer ? `┃👤 𝘿𝙀𝙎𝘼𝙍𝙍𝙊𝙇𝙇𝙊: ${apkData.developer}` : `┃📦 𝙋𝘼𝘾𝙆𝘼𝙂𝙀: ${apkData.package}`}
-┃🕒 𝙐𝙇𝙏𝙄𝙈𝘼 𝘼𝘾𝙏𝙐𝘼𝙇𝙄𝙕𝘼𝘾𝙄𝙊𝙉: ${apkData.developer ? apkData.publish : apkData.lastUpdate}
-┃💪 𝙋𝙀𝙎𝙊: ${apkData.size}
-┗━━━━━━━━━━━━━━━━━━━━━━━•
-
-> *⏳ ᴱˢᵖᵉʳᵉ ᵘⁿ ᵐᵒᵐᵉⁿᵗᵒ ˢᵘˢ ᵃᵖᵏ ˢᵉ ᵉˢᵗᵃ ᵉⁿᵛᶦᵃⁿᵈᵒ...*`;
+        const developerOrPackage = apkData.developer
+            ? renderTemplate(getRequiredPluginMessage('downloads.modApk.developerLine'), {developer: apkData.developer})
+            : renderTemplate(getRequiredPluginMessage('downloads.modApk.packageLine'), {package: apkData.package});
+        const response = renderTemplate(getRequiredPluginMessage('downloads.modApk.response'), {
+            name: apkData.name,
+            developerOrPackage,
+            updatedAt: apkData.developer ? apkData.publish : apkData.lastUpdate,
+            size: apkData.size
+        });
         const responseMessage = await conn.sendFile(m.chat, apkData.icon, 'apk.jpg', response, m);
         userMessages.set(m.sender, responseMessage);
 
         const apkSize = apkData.size.toLowerCase();
         if (apkSize.includes('gb') || (apkSize.includes('mb') && parseFloat(apkSize) > 999)) {
-            await m.reply('*⚠️ 𝙀𝙡 𝙖𝙥𝙠 𝙚𝙨 𝙢𝙪𝙮 𝙥𝙚𝙨𝙖𝙙𝙤.*');
+            await m.reply(getRequiredPluginMessage('downloads.modApk.tooLarge'));
             return;
         }
 

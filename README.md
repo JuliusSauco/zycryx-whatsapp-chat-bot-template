@@ -31,16 +31,19 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - [📊 Observabilidad](#observabilidad)
 - [🔐 Secretos](#secretos)
 - [🧪 Validacion](#validacion)
+- [🗺️ Roadmap y Analisis](#roadmap-y-analisis)
 - [📌 Estado Actual](#estado-actual)
 
 <a id="caracteristicas"></a>
 ## ✨ Caracteristicas
 
 - Conexion a WhatsApp mediante Baileys.
-- Sistema modular de 175 plugins distribuidos por familia.
+- Sistema modular de plugins distribuidos por familias funcionales.
 - Loader de plugins recursivo con hot reload.
 - Router de comandos con resolucion exacta, regex y custom prefixes.
-- Plugins nuevos mediante `definePlugin`.
+- Plugins nuevos mediante `defineSdkPlugin` y SDK interno para contenido, HTTP, replies, providers y locks.
+- `content.service` como API oficial para mensajes, listas y templates, preparado para i18n.
+- Providers por dominio iniciados en `src/providers`, con YouTube centralizado para busqueda, metadata, descarga y fallbacks.
 - Compatibilidad con hooks legacy que exportan `before`.
 - Hooks `before` con contexto enriquecido para reutilizar metadata, permisos, bot config y settings ya precargados.
 - Guards centralizados para owners, admins, grupo/privado, modo admin, NSFW, ban y recursos.
@@ -59,6 +62,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - Integracion opcional con VirusTotal para analisis de enlaces y archivos.
 - Optimizaciones de latencia para evitar consultas repetidas a settings, subbot config y metadata en hooks y comandos de grupo frecuentes.
 - `src/**/*.ts` sin `any` ni `@ts-ignore`.
+- Suite de pruebas para helpers, router, guards, context builder, servicios, comandos sensibles, providers y compuerta P0.
 
 <a id="tecnologias"></a>
 ## 🧰 Tecnologias
@@ -73,7 +77,8 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 | drizzle-kit | Generacion, migracion y Drizzle Studio. |
 | tsx | Ejecucion TypeScript en desarrollo. |
 | Pino | Logger silencioso usado internamente por Baileys. |
-| Axios / node-fetch | Consumo de APIs externas. |
+| HTTP client centralizado | Consumo de APIs externas desde SDK, providers y librerias internas. |
+| Axios / node-fetch | Compatibilidad interna en scrapers especiales documentados. |
 | FFmpeg | Procesamiento multimedia. |
 | Jimp / node-webpmux / wa-sticker-formatter | Imagenes y stickers. |
 | cross-env | Scripts con variables de entorno. |
@@ -116,6 +121,14 @@ npm run db:migrate
 ```
 
 Las migraciones no se ejecutan automaticamente al iniciar el bot. En deploys y ambientes compartidos ejecuta `npm run db:migrate` como paso previo controlado.
+
+Si necesitas crear manualmente una base desde cero sin reproducir migraciones historicas, usa el script limpio:
+
+```bash
+psql -U <user> -d <database> -f database/schema.sql
+```
+
+Ese archivo contiene el schema actual con `CREATE TABLE` y `CREATE INDEX`. No lo mezcles con `npm run db:migrate` sobre la misma base salvo que marques/baselines las migraciones como aplicadas.
 
 Ejecuta en desarrollo:
 
@@ -222,6 +235,15 @@ BOT_FIXED_OWNER_JIDS=573001112233@s.whatsapp.net,51999888777@s.whatsapp.net
 | `npm run clean` | Elimina `dist` y `tsconfig.tsbuildinfo`. |
 | `npm run build` | Limpia y compila TypeScript a `dist/`. |
 | `npm run typecheck` | Valida tipos sin emitir archivos. |
+| `npm test` | Ejecuta helpers, router, guards, context builder, servicios, seguridad, providers y P0. |
+| `npm run test:helpers` | Pruebas de helpers compartidos. |
+| `npm run test:router` | Pruebas del router de comandos. |
+| `npm run test:guards` | Pruebas de guards y pipeline de permisos. |
+| `npm run test:context` | Pruebas del context builder. |
+| `npm run test:services` | Pruebas de servicios con repositorios mockeados. |
+| `npm run test:security` | Pruebas de comandos sensibles y sanitizacion. |
+| `npm run test:providers` | Pruebas de providers por dominio. |
+| `npm run test:p0` | Compuerta P0 para plugins migrados al SDK. |
 | `npm run db:generate` | Genera migraciones desde `src/db/schema.ts`. |
 | `npm run db:ensure-schema` | Crea el schema configurado si no existe. |
 | `npm run db:migrate` | Ejecuta `db:ensure-schema` y aplica migraciones. |
@@ -252,7 +274,7 @@ zycryx-whatsapp-chat-bot-template/
 │   ├── data/
 │   │   ├── game/
 │   │   └── nsfw/
-│   └── media/
+│   ├── media/
 │       ├── audio/
 │       ├── avatars/
 │       ├── menus/
@@ -290,6 +312,7 @@ zycryx-whatsapp-chat-bot-template/
 │   │   ├── subbots/
 │   │   └── tools/
 │   ├── ports/
+│   ├── providers/
 │   ├── services/
 │   ├── types/
 │   └── utils/
@@ -315,6 +338,7 @@ zycryx-whatsapp-chat-bot-template/
 | `src/lib/` | Integraciones, loader de plugins, subbots, multimedia, logs y scraping. |
 | `src/plugins/` | Comandos y hooks agrupados por familia. |
 | `src/ports/` | Contratos de repositorios. |
+| `src/providers/` | Providers por dominio para aislar APIs externas, fallbacks y respuestas crudas. |
 | `src/services/` | Casos de uso y fachada de dominio. |
 | `src/types/` | Tipos compartidos del runtime. |
 | `src/utils/` | Helpers reutilizables. |
@@ -354,6 +378,8 @@ Componentes principales:
 | `core/context-builder.ts` | Construye permisos, metadata, bot config y settings de grupo. |
 | `core/router.ts` | Resuelve comandos exactos, regex y custom prefixes. |
 | `core/define-plugin.ts` | Factory para plugins nuevos. |
+| `core/sdk-plugin.ts` | Factory recomendada para plugins nuevos y migrados. |
+| `core/plugin-sdk.ts` | SDK interno: `sdk.content`, `sdk.http`, `sdk.reply`, providers y locks. |
 | `core/group-events.ts` | Eventos de participantes del grupo. |
 | `core/group-join-request.ts` | Solicitudes de ingreso y auto-accept. |
 | `core/group-update-events.ts` | Cambios de nombre, descripcion y foto del grupo. |
@@ -367,9 +393,11 @@ Componentes principales:
 | `lib/logger.ts` | Logger con niveles configurables. |
 | `lib/simple.ts` | Normalizacion de mensajes y helpers custom de `conn`. |
 | `services/` | Capa de aplicacion usada por core/plugins. |
+| `services/content.service.ts` | API oficial de mensajes, listas y templates. |
 | `ports/repositories.ts` | Contratos de persistencia. |
 | `adapters/drizzle/` | Repositorios PostgreSQL con Drizzle. |
 | `adapters/backend/` | Adapter pendiente de contrato externo. |
+| `providers/downloads/youtube.provider.ts` | Provider inicial de YouTube: busqueda, descarga, calidad y fallbacks. |
 
 <a id="patrones"></a>
 ## 🧩 Patrones
@@ -507,20 +535,33 @@ WhatsApp message
 <a id="plugins"></a>
 ## 🔌 Plugins
 
-La forma recomendada para nuevos plugins es `definePlugin`:
+La forma recomendada para nuevos plugins es `defineSdkPlugin`:
 
 ```ts
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     command: ['ping', 'p'],
     help: ['ping'],
     tags: ['main'],
-    async execute(m, {conn}) {
-        await conn.reply(m.chat, 'pong', m);
+    async execute(_m, {sdk}) {
+        await sdk.reply.text('pong');
     },
 });
 ```
+
+El SDK expone helpers estables para no importar utilidades sueltas desde cada plugin:
+
+| Helper | Uso |
+|---|---|
+| `sdk.content` | Leer y renderizar mensajes desde `resources/data/messages.json`. |
+| `sdk.reply` | Respuestas comunes, errores de usuario, errores internos, usage y reacciones. |
+| `sdk.http` | HTTP centralizado con timeout y errores normalizados. |
+| `sdk.providers` | Ejecutar fallbacks por proveedor. |
+| `sdk.createUserLocks` | Locks por usuario para procesos largos. |
+| `sdk.sendMessage` / `sdk.sendFile` | Envio quoted al chat actual. |
+
+`definePlugin` sigue soportado para compatibilidad legacy, pero no es el patron recomendado para comandos nuevos.
 
 Tambien se soportan hooks previos:
 
@@ -603,6 +644,18 @@ Para inspeccion:
 npm run db:studio
 ```
 
+### 🧱 Bootstrap Manual Desde Cero
+
+`database/schema.sql` es el script canónico para crear manualmente la estructura final en una base vacia. A diferencia de `src/db/migrations`, no contiene `ALTER ADD COLUMN`, `UPDATE` legacy ni pasos historicos.
+
+Uso recomendado:
+
+```bash
+psql -U <user> -d <database> -f database/schema.sql
+```
+
+Usa este camino cuando quieras provisionar una base limpia manualmente. Usa `npm run db:migrate` cuando quieras que Drizzle controle el historial incremental de migraciones. No ejecutes ambos caminos sobre la misma base sin hacer baseline del historial.
+
 ### 🧬 Migracion Legacy
 
 Si vienes de una base antigua creada antes de Drizzle:
@@ -636,7 +689,7 @@ El servicio `api-token.service.ts` decodifica `token_b64` y mantiene cache en me
 - `resources/data/characters.json`;
 - `resources/data/game/*.json`;
 - `resources/data/nsfw/*.json`;
-- `resources/data/messages.json`, `resources/data/prompts.json` y `resources/data/reactions.json` para manifiestos de prompts, mensajes y reacciones.
+- `resources/data/messages.json`, `resources/data/prompts.json` y `resources/data/reactions.json` para manifiestos de prompts, mensajes, textos visibles de plugins y reacciones.
 
 `resources/text` contiene todos los recursos `.txt` versionados:
 
@@ -713,12 +766,21 @@ Comandos recomendados antes de subir cambios:
 ```bash
 npm run typecheck
 npm run build
+npm test
 ```
 
 Para confirmar que no se reintrodujo deuda de tipado:
 
 ```bash
 rg -n '\bany\b|@ts-ignore' src --glob '*.ts'
+```
+
+Para revisar el estado de migracion al SDK:
+
+```bash
+npm run test:p0
+rg -l "message-template\.js" src/plugins
+rg -l "http-client\.js" src/plugins
 ```
 
 Para ejecutar local desde build:
@@ -735,6 +797,28 @@ O si ya compilaste:
 npm run serve:local
 ```
 
+<a id="roadmap-y-analisis"></a>
+## 🗺️ Roadmap y Analisis
+
+Documentacion tecnica viva:
+
+| Documento | Uso |
+|---|---|
+| `docs/architecture-analysis.md` | Fotografia arquitectonica actual, riesgos, deuda y buenas practicas. |
+| `docs/architecture-roadmap.md` | Roadmap por prioridades P0-P7. |
+| `docs/improvement-roadmap.md` | Backlog interno de mejoras y refactors. |
+| `docs/data-resources.md` | Politica de recursos estaticos, multimedia y datos mutables. |
+| `docs/http-client-exceptions.md` | Excepciones justificadas al HTTP client centralizado. |
+| `docs/owner-security.md` | Seguridad operativa de comandos owner sensibles. |
+
+Resumen actual:
+
+- P0 esta cerrado: SDK interno, `content.service`, migracion base y test arquitectonico.
+- P1 esta en curso: `src/providers/downloads/youtube.provider.ts` ya centraliza YouTube y queda pendiente extraer Spotify, TikTok, Instagram, Facebook, MediaFire y Drive.
+- P2 y P4 estan cerrados: pruebas de core y seguridad operativa owner.
+- P3 queda desestimado hasta tener backend real con contrato versionado.
+- P5, P6 y P7 quedan como mejoras posteriores: estado runtime/escalabilidad, i18n y catalogo documental de comandos con ayuda `--help`.
+
 <a id="estado-actual"></a>
 ## 📌 Estado Actual
 
@@ -746,6 +830,13 @@ npm run serve:local
 - Backend REST/GraphQL preparado como adapter pendiente, no activo por defecto.
 - Loader de plugins recursivo con soporte para carpetas por familia.
 - Plugins organizados en 19 familias.
+- SDK interno disponible para plugins nuevos y migrados.
+- 29 plugins usan `defineSdkPlugin`; el resto mantiene compatibilidad legacy con `definePlugin`.
+- `test:p0` evita que plugins migrados al SDK vuelvan a importar helpers legacy de mensajes o HTTP.
+- `content.service` centraliza mensajes, listas y templates desde `resources/data/messages.json`.
+- `src/providers/downloads/youtube.provider.ts` centraliza busqueda, seleccion de calidad, descarga y fallbacks de YouTube.
+- `descargas-play.ts` y `descargas-play2.ts` consumen el provider de YouTube; `youtube-download.helpers.ts` queda como re-export temporal.
+- `test:providers` valida el bloque inicial de providers.
 - Eventos de grupo separados por modulo: participantes, actualizaciones, solicitudes, recursos, metadata y mensajes auxiliares.
 - Hooks `before` optimizados con contexto compartido para evitar lecturas repetidas de settings, config y metadata.
 - Comandos de grupo frecuentes reutilizan `metadata`, `participants` y `groupSettings` del contexto.
@@ -753,16 +844,31 @@ npm run serve:local
 - Observabilidad configurable con `LOG_LEVEL`.
 - VirusTotal integrado como hook configurable.
 - `src/**/*.ts` sin `any` ni `@ts-ignore`.
-- Build y typecheck pasan.
+- Build, typecheck y suite de pruebas pasan.
+
+## 🧭 Mejoras Pendientes Registradas
+
+| Prioridad | Mejora | Estado |
+|---|---|---|
+| P1 | Completar providers de descargas: Spotify, TikTok, Threads, Instagram, Facebook, MediaFire y Drive. | En curso despues de YouTube. |
+| P1 | Normalizar errores, timeouts y retries de providers. | Pendiente. |
+| P1 | Ampliar `test:providers` con casos sin red para fallback y parseo. | Pendiente. |
+| P1/P0 | Migrar `downloads` al SDK mientras se extraen providers. | Pendiente gradual. |
+| P0 deuda | Migrar familias legacy `messages`, `random`, `nsfw` y `audio` al SDK. | Pendiente. |
+| P3 | Definir backend REST/GraphQL real para `DATA_SOURCE=backend`. | Desestimado hasta tener backend. |
+| P5 | Centralizar cooldowns, pending actions, locks y fachadas de runtime global. | Pendiente. |
+| P6 | Preparar i18n con locales y fallback en `content.service`. | Pendiente. |
+| P7 | Crear `resources/data/commands.json` y ayuda `/<comando> --help`. | Registrado, no iniciado. |
 
 ## ✅ Buenas Practicas Para Nuevos Bots
 
 - Copiar `.env.example` y completar secretos solo en archivos ignorados.
 - Mantener `DATA_SOURCE=local` hasta que el backend tenga contrato estable.
-- Crear nuevos comandos con `definePlugin`.
+- Crear nuevos comandos con `defineSdkPlugin`.
 - Ubicar cada plugin dentro de su familia.
 - Usar servicios existentes antes de crear nuevos accesos a datos.
 - No agregar SQL directo en plugins.
+- No importar `message-template` ni `http-client` directamente en plugins nuevos o migrados.
 - No escribir recursos mutables dentro de `resources/data`.
-- Ejecutar `typecheck`, `build` y busqueda de `any/@ts-ignore` antes de subir.
+- Ejecutar `typecheck`, `build`, `npm test` y busqueda de `any/@ts-ignore` antes de subir.
 - Documentar APIs externas nuevas en `.env.example`.

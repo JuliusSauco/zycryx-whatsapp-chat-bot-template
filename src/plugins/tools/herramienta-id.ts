@@ -1,11 +1,11 @@
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     command: ['mylid'],
     help: ['mylid'],
     tags: ['tools'],
-    async execute(m, {conn}) {
+    async execute(m, {sdk}) {
         const USER_ID = m.user.lid;
-        await conn.fakeReply(m.chat, USER_ID, '0@s.whatsapp.net', `👇 AQUI ESTA TU NUMERO OCULTO "LID" 👇`, 'status@broadcast');
+        await sdk.conn.fakeReply(sdk.chatId, USER_ID, '0@s.whatsapp.net', sdk.content.message('tools.id.quoted'), 'status@broadcast');
     }
 });

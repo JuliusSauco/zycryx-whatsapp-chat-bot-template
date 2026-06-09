@@ -1,27 +1,24 @@
 import {logError} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {ENV} from '../../core/env.js';
-import {httpJson} from '../../lib/http-client.js';
-import {replyFailure, replyUsage} from '../../lib/reply-helpers.js';
 
 interface TranslateResponse {
     translatedText?: string;
 }
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['traducir', 'translate'],
     tags: ['tools'],
     command: /^(translate|traducir|trad)$/i,
     register: true,
-    async execute(m, {args, usedPrefix, command}) {
+    async execute(m, {sdk}) {
+    const args = sdk.args;
     const defaultLang = 'es';
-    if (!args || !args[0]) return replyUsage(m, `${usedPrefix + command} (idioma destino) (texto a traducir)`, `📌 *Ejemplos:*
-• ${usedPrefix + command} es Hello » Español
-• ${usedPrefix + command} en hola » inglés
-• ${usedPrefix + command} fr buenos días » Francés
-• ${usedPrefix + command} pt tudo bem » Portugués
-• ${usedPrefix + command} de cómo estás » Alemán
-• ${usedPrefix + command} it buongiorno » Italiano`);
+    const commandLabel = sdk.usedPrefix + sdk.command;
+    if (!args || !args[0]) return sdk.reply.usage(
+        sdk.content.renderMessage('tools.translate.usage', {command: commandLabel}),
+        sdk.content.renderMessage('tools.translate.examples', {command: commandLabel}),
+    );
 
     let lang = args[0];
     let text = args.slice(1).join(' ');
@@ -33,10 +30,10 @@ export default definePlugin({
 
     if (!text && m.quoted && m.quoted.text) text = m.quoted.text;
 
-    if (!text) return replyUsage(m, `${usedPrefix + command} es Hello`);
+    if (!text) return sdk.reply.usage(sdk.content.renderMessage('tools.translate.usageQuoted', {command: commandLabel}));
 
     try {
-        const json = await httpJson<TranslateResponse>("https://tr.skyultraplus.com/translate", {
+        const json = await sdk.http.json<TranslateResponse>("https://tr.skyultraplus.com/translate", {
             method: "POST",
             body: JSON.stringify({
                 q: text,
@@ -49,12 +46,12 @@ export default definePlugin({
             headers: {"Content-Type": "application/json"}
         });
 
-        if (!json || !json.translatedText) throw '❌ No se pudo traducir.';
+        if (!json || !json.translatedText) throw sdk.content.message('tools.translate.noResult');
 
-        await m.reply(`*Traducción:*\n${json.translatedText}`);
+        await sdk.reply.message('tools.translate.result', {translation: json.translatedText});
     } catch (e: unknown) {
         logError(e);
-        await replyFailure(m, 'Error al traducir. Vuelve a intentarlo.');
+        await sdk.reply.failure(sdk.content.message('tools.translate.failure'));
     }
     }
 });

@@ -5,6 +5,7 @@ import uploadImage from '../../lib/uploadImage.js'
 import {webp2png} from '../../lib/webp2mp4.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {pickRandom} from '../../utils/random.js';
 
 export default definePlugin({
@@ -19,9 +20,9 @@ export default definePlugin({
         let q = m.quoted ? m.quoted : m
         let mime = q.msg?.mimetype || q.mimetype || q.mediaType || ''
         if (/webp|image|video/g.test(mime)) {
-            if (/video/g.test(mime)) if ((q.msg?.seconds || q.seconds || 0) > 18) return m.reply('⚠️ ¿Dónde has visto un sticker de 15 segundos, pendejo? Haz el video más corto, con un máximo de 12 segundos.')
+            if (/video/g.test(mime)) if ((q.msg?.seconds || q.seconds || 0) > 18) return m.reply(getRequiredPluginMessage('stickers.common.stickerVideoTooLong'))
             let img = await q.download?.()
-            if (!img) return m.reply(`*Y la imagen? 🤔 Responde a una imagen para hacer el sticker. Usa:* ${usedPrefix + command}`)
+            if (!img) return m.reply(renderTemplate(getRequiredPluginMessage('stickers.common.missingStickerMedia'), {command: usedPrefix + command}))
             let out: string | string[] | undefined
             try {
                 stiker = await sticker(img, false, f, g)
@@ -40,7 +41,7 @@ export default definePlugin({
             }
         } else if (args[0]) {
             if (isUrl(args[0])) stiker = await sticker(false, args[0], f, g)
-            else return m.reply('URL invalido')
+            else return m.reply(getRequiredPluginMessage('stickers.common.invalidUrl'))
         }
     } catch (e: unknown) {
         logError(e)
@@ -59,7 +60,7 @@ export default definePlugin({
                 }
             }
         })
-        else return m.reply(`*Y la imagen? 🤔 Responde a una imagen para hacer el sticker. Usa:* ${usedPrefix + command}`)
+        else return m.reply(renderTemplate(getRequiredPluginMessage('stickers.common.missingStickerMedia'), {command: usedPrefix + command}))
     }
     }
 })

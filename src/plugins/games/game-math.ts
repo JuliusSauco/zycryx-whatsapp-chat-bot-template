@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {addWalletResource} from '../../services/wallet.service.js';
 import {pickRandom, randomInt} from '../../utils/random.js';
 
@@ -30,15 +31,9 @@ export default definePlugin({
     async execute(m, {conn, args}) {
     const dificultad = (args[0] || '').toLowerCase();
     if (!isDifficultyKey(dificultad)) {
-        return m.reply(`⚠️ Debes elegir una dificultad válida.
-
-Ejemplos:
-/math noob
-/math easy
-/math hard
-
-Dificultades disponibles:
-${Object.keys(dificultades).map(k => `- ${k}`).join('\n')}`);
+        return m.reply(renderTemplate(getRequiredPluginMessage('games.math.invalidDifficulty'), {
+            difficulties: Object.keys(dificultades).map(k => `- ${k}`).join('\n')
+        }));
     }
 
     const nivel = dificultades[dificultad];
@@ -52,17 +47,18 @@ ${Object.keys(dificultades).map(k => `- ${k}`).join('\n')}`);
     setTimeout(() => {
         if (mathGames.has(m.sender)) {
             mathGames.delete(m.sender);
-            conn.reply(m.chat, `⌛ sᴇ ᴀᴄᴀʙᴏ ᴇʟ ᴛɪᴇᴍᴘᴏ ʟᴀ ʀᴇsᴘᴜᴇsᴛᴀ ᴇs: *${result}*`, m);
+            conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('games.math.timeout'), {result}), m);
         }
     }, nivel.tiempo);
-    return m.reply(`╭┄〔 *${info.wm}* 〕┄⊱
-┆𝘾𝙪𝙖𝙡 𝙚𝙨 𝙧𝙚𝙨𝙪𝙡𝙩𝙖𝙙𝙤 𝙙𝙚: *${a} ${op} ${b} = ?*
-┆┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-┆🧭 𝙏𝙞𝙚𝙢𝙥𝙤: * ${nivel.tiempo / 1000} segundos*
-┆┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-┆𝙍𝙚𝙨𝙥𝙤𝙣𝙙𝙚 𝙖 𝙚𝙨𝙩𝙚 𝙢𝙚𝙣𝙨𝙖𝙟𝙚 𝙮 𝙂𝙖𝙣𝙖 
-┆🏆 *${recompensa}: XP*
-╰━━━⊰ 𓃠 ${info.vs} ⊱━━━━დ`);
+    return m.reply(renderTemplate(getRequiredPluginMessage('games.math.question'), {
+        watermark: info.wm,
+        a,
+        operator: op,
+        b,
+        seconds: nivel.tiempo / 1000,
+        reward: recompensa,
+        version: info.vs
+    }));
     },
 
     async before(m) {
@@ -81,15 +77,15 @@ ${Object.keys(dificultades).map(k => `- ${k}`).join('\n')}`);
     if (correcta) {
         mathGames.delete(m.sender);
         await addWalletResource(m.sender, 'exp', exp);
-        return m.reply(`✅ ¡Correcto! Ganaste *${exp} XP*`);
+        return m.reply(renderTemplate(getRequiredPluginMessage('games.math.correct'), {exp}));
     } else {
         data.intentos--;
         if (data.intentos <= 0) {
             mathGames.delete(m.sender);
-            return m.reply(`❌ Fallaste 3 veces. La respuesta correcta era *${result}*.`);
+            return m.reply(renderTemplate(getRequiredPluginMessage('games.math.failed'), {result}));
         } else {
             mathGames.set(m.sender, data);
-            return m.reply(`❌ Incorrecto. Te quedan *${data.intentos}* intento(s).`);
+            return m.reply(renderTemplate(getRequiredPluginMessage('games.math.incorrect'), {attempts: data.intentos}));
         }
     }
     }

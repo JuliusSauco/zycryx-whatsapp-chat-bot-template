@@ -2,6 +2,7 @@ import {logError} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import {definePlugin} from '../../core/define-plugin.js'
 import {httpJson} from '../../lib/http-client.js'
+import {getRequiredPluginMessage} from '../../lib/message-template.js'
 
 interface NekosKissResponse {
     url?: string;
@@ -26,7 +27,7 @@ export default definePlugin({
         let mentionedNames = await Promise.all(m.mentionedJid.map(getName))
         let json = await httpJson<NekosKissResponse>('https://nekos.life/api/kiss')
         let {url} = json
-        if (!url) return m.reply('❌ La API no devolvió sticker.')
+        if (!url) return m.reply(getRequiredPluginMessage('stickers.common.apiNoSticker'))
         let texto = `💋 ${senderName} está besando a ${mentionedNames.join(', ')}`
         try {
             let stickerMessage = await sticker(null, url, texto, info.author)

@@ -5,6 +5,7 @@ import {loadStringArrayResource} from '../../lib/local-json-resource.js'
 import {buildAliasMap, buildAliasRegex} from '../../utils/command-alias.js'
 import {pickRandom} from '../../utils/random.js'
 import {nsfwContent, type NsfwContentItem} from './nsfw-contenido.data.js'
+import {getRequiredPluginMessage} from '../../lib/message-template.js'
 
 
 interface UrlResponse {
@@ -25,17 +26,17 @@ export default definePlugin({
     async execute(m, {conn, command}) {
     try {
         const item = aliasMap[command.toLowerCase()]
-        if (!item) return m.reply('❌ Comando NSFW no reconocido.')
+        if (!item) return m.reply(getRequiredPluginMessage('nsfw.content.unknownCommand'))
 
         if (item.type === 'array') {
-            if (!item.array?.length) return m.reply('❌ Fuente NSFW vacía.')
+            if (!item.array?.length) return m.reply(getRequiredPluginMessage('nsfw.content.emptySource'))
             const url = pickRandom(item.array)
             await conn.sendFile(m.chat, url, 'nsfw.jpg', item.label, m)
             return
         }
 
         if (item.type === 'json') {
-            if (!item.dataFile) return m.reply('❌ Fuente JSON no configurada.')
+            if (!item.dataFile) return m.reply(getRequiredPluginMessage('nsfw.content.missingJsonSource'))
             const data = await loadStringArrayResource(item.dataFile)
             const img = pickRandom(data)
             await conn.sendFile(m.chat, img, 'nsfw.jpg', item.label, m)
@@ -43,15 +44,15 @@ export default definePlugin({
         }
 
         if (item.type === 'waifu') {
-            if (!item.api) return m.reply('❌ API no configurada.')
+            if (!item.api) return m.reply(getRequiredPluginMessage('nsfw.content.missingApi'))
             const {url} = await httpJson<UrlResponse>(`https://api.waifu.pics/nsfw/${item.api}`)
-            if (!url) return m.reply('❌ La API no devolvió imagen.')
+            if (!url) return m.reply(getRequiredPluginMessage('nsfw.content.missingImage'))
             await conn.sendFile(m.chat, url, 'waifu.jpg', item.label, m)
             return
         }
 
         if (item.type === 'api') {
-            if (!item.api) return m.reply('❌ API no configurada.')
+            if (!item.api) return m.reply(getRequiredPluginMessage('nsfw.content.missingApi'))
             const res = await httpRequest(item.api)
             const contentType = res.headers.get('content-type') || ''
             if (contentType.startsWith('image/')) {
@@ -62,14 +63,14 @@ export default definePlugin({
             const json = await res.json() as UrlResponse
             const value = item.field ? json[item.field] : json.url || json.message
             const url = typeof value === 'string' ? value : null
-            if (!url) return m.reply('❌ La API no devolvió una URL válida.')
+            if (!url) return m.reply(getRequiredPluginMessage('nsfw.content.missingUrl'))
             await conn.sendFile(m.chat, url, 'nsfw.jpg', item.label, m)
             return
         }
-        m.reply('❌ Fuente NSFW no soportada.')
+        m.reply(getRequiredPluginMessage('nsfw.content.unsupportedSource'))
     } catch (e: unknown) {
         logError('[NSFW ERROR]', e)
-        m.reply('❌ Error al enviar imagen/video +18.')
+        m.reply(getRequiredPluginMessage('nsfw.content.sendError'))
     }
     }
 })

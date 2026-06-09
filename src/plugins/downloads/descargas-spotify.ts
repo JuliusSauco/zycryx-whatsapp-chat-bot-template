@@ -2,6 +2,7 @@ import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {QuotedMessage} from '../../types/context.js';
 import {httpJson} from '../../lib/http-client.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
 import {replyReportableError} from '../../lib/reply-helpers.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
@@ -37,14 +38,24 @@ export default definePlugin({
     register: true,
     limit: 1,
     async execute(m, {conn, text, usedPrefix, command}) {
-    if (!text) return m.reply(`*🤔 ¿Que esta buscando? ingresa el nombre para descargar sus música de Spotify, Ejemplo:* ${usedPrefix + command} ozuna`)
-    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} pendejo, ya estás descargando una canción 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆`, userMessages.get(m.sender) || m)
+    if (!text) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.spotify.missingQuery'), {
+        command: usedPrefix + command
+    }))
+    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.spotify.locked'), {
+        user: m.sender.split('@')[0]
+    }), userMessages.get(m.sender) || m)
     m.react(`⌛`);
     try {
         const song = await httpJson<SpotifySearchResponse>(`${info.apis}/search/spotify?q=${text}`);
-        if (!song.data || song.data.length === 0) return m.reply('⚠️ No se encontraron resultados para esa búsqueda.')
+        if (!song.data || song.data.length === 0) return m.reply(getRequiredPluginMessage('downloads.spotify.noResults'))
         const track = song.data[0];
-        const spotifyMessage = `*• Título:* ${track.title}\n*• Artista:* ${track.artist}\n*• Álbum:* ${track.album}\n*• Duración:* ${track.duration}\n*• Publicado:* ${track.publish}\n\n> 🚀 *ᴱⁿᵛᶦᵃⁿᵈᵒ ᶜᵃⁿᶜᶦᵒ́ⁿ ᵃᵍᵘᵃʳᵈᵉ ᵘⁿ ᵐᵒᵐᵉⁿᵗᵒ....*`;
+        const spotifyMessage = renderTemplate(getRequiredPluginMessage('downloads.spotify.trackMessage'), {
+            title: track.title,
+            artist: track.artist,
+            album: track.album,
+            duration: track.duration,
+            publish: track.publish
+        });
         const message = await conn.sendMessage(m.chat, {
             text: spotifyMessage,
             contextInfo: {
@@ -55,7 +66,7 @@ export default definePlugin({
                     containsAutoReply: true,
                     renderLargerThumbnail: true,
                     title: track.title,
-                    body: "ᴱⁿᵛᶦᵃⁿᵈᵒ ᶜᵃⁿᶜᶦᵒ́ⁿ ᵃᵍᵘᵃʳᵈᵉ ᵘⁿ ᵐᵒᵐᵉⁿᵗᵒ 🚀",
+                    body: getRequiredPluginMessage('downloads.spotify.adBody'),
                     mediaType: 1,
                     thumbnailUrl: track.image,
                     mediaUrl: track.url,

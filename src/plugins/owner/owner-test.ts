@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {countSubbotsByType, listSubbotConfigs} from '../../services/subbot.service.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ['testsubbots [opcional: 1|2]'],
@@ -10,7 +11,7 @@ export default definePlugin({
     owner: true,
     async execute(m, {conn, args}) {
         const id = conn.user?.id;
-        if (!id) return m.reply("❌ No se pudo identificar este bot.");
+        if (!id) return m.reply(getRequiredPluginMessage('owner.testSubbots.missingBotId'));
 
         try {
             const tipoFiltro = args[0] === '1' ? 'oficial' : args[0] === '2' ? 'subbot' : null;
@@ -21,38 +22,43 @@ export default definePlugin({
 
             if (rows.length === 0) {
                 return m.reply(tipoFiltro
-                    ? `❌ No hay ningún bot del tipo *${tipoFiltro}* en la base de datos.`
-                    : "❌ La tabla subbots está vacía, no hay nada pa’ mostrar.");
+                    ? renderTemplate(getRequiredPluginMessage('owner.testSubbots.emptyByType'), {type: tipoFiltro})
+                    : getRequiredPluginMessage('owner.testSubbots.empty'));
             }
 
-            let mensaje = `📋 *Bots ${tipoFiltro ? ` (${tipoFiltro})` : ''}:*\n`;
+            let mensaje = renderTemplate(getRequiredPluginMessage('owner.testSubbots.header'), {
+                type: tipoFiltro ? renderTemplate(getRequiredPluginMessage('owner.testSubbots.typeSuffix'), {type: tipoFiltro}) : ''
+            });
 
             if (!tipoFiltro && conteo) {
                 const {oficiales, subbots} = conteo;
-                mensaje += `*• Principales:* ${oficiales}\n`;
-                mensaje += `*• Subbots:* ${subbots}\n\n`;
-                mensaje += `\`🤖 CONFIGURACIÓNES :\`\n`;
+                mensaje += renderTemplate(getRequiredPluginMessage('owner.testSubbots.summary'), {
+                    main: oficiales,
+                    subbots
+                });
             }
 
             for (const row of rows) {
-                mensaje += `- ID: ${row.id} (${row.tipo || 'Desconocido'})\n`;
-                mensaje += `- Modo: ${row.mode || 'Public'}\n`;
-                mensaje += `- Nombre: ${row.name || 'por defecto'}\n`;
-                mensaje += `- Prefijos: ${row.prefix ? row.prefix.join(', ') : '[/,.,#]'}\n`;
-                mensaje += `- Owners: ${row.owners?.length ? row.owners.join(', ') : 'Por defecto'}\n`;
-                mensaje += `- Anti-Private: ${row.anti_private ? 'Sí' : 'No'}\n`;
-                mensaje += `- Anti-Call: ${row.anti_call ? 'Sí' : 'No'}\n`;
-                mensaje += `- Privacidad número: ${row.privacy ? 'Sí' : 'No'}\n`;
-                mensaje += `- Prestar bot: ${row.prestar ? 'Sí' : 'No'}\n`;
-                mensaje += `- Logo: ${row.logo_url || 'Ninguno'}\n`;
-                mensaje += `\n─────────────\n\n`;
+                mensaje += renderTemplate(getRequiredPluginMessage('owner.testSubbots.row'), {
+                    id: row.id,
+                    type: row.tipo || getRequiredPluginMessage('owner.testSubbots.unknown'),
+                    mode: row.mode || getRequiredPluginMessage('owner.testSubbots.defaultMode'),
+                    name: row.name || getRequiredPluginMessage('owner.testSubbots.defaultName'),
+                    prefixes: row.prefix ? row.prefix.join(', ') : getRequiredPluginMessage('owner.testSubbots.defaultPrefixes'),
+                    owners: row.owners?.length ? row.owners.join(', ') : getRequiredPluginMessage('owner.testSubbots.defaultOwners'),
+                    antiPrivate: row.anti_private ? getRequiredPluginMessage('owner.testSubbots.yes') : getRequiredPluginMessage('owner.testSubbots.no'),
+                    antiCall: row.anti_call ? getRequiredPluginMessage('owner.testSubbots.yes') : getRequiredPluginMessage('owner.testSubbots.no'),
+                    privacy: row.privacy ? getRequiredPluginMessage('owner.testSubbots.yes') : getRequiredPluginMessage('owner.testSubbots.no'),
+                    lend: row.prestar ? getRequiredPluginMessage('owner.testSubbots.yes') : getRequiredPluginMessage('owner.testSubbots.no'),
+                    logo: row.logo_url || getRequiredPluginMessage('owner.testSubbots.none')
+                });
             }
 
             m.reply(mensaje.trim());
 
         } catch (err: unknown) {
             logError("❌ Error al consultar subbots:", err);
-            m.reply("❌ Error al leer la tabla subbots, reporta esta mierda.");
+            m.reply(getRequiredPluginMessage('owner.testSubbots.error'));
         }
     }
 });

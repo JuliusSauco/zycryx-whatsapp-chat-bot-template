@@ -59,7 +59,7 @@ export const groupSettings = pgTable('group_settings', {
     welcomeRegisteredBy: text('welcome_registered_by'),
     welcomeHidetag: boolean('welcome_hidetag').default(false),
     welcomeGroupPhoto: boolean('welcome_group_photo').default(false),
-    byeConfigId: integer('bye_config_id'),
+    byeConfigId: serial('bye_config_id'),
     byeRegisteredBy: text('bye_registered_by'),
     byeHidetag: boolean('bye_hidetag').default(false),
     byeGroupPhoto: boolean('bye_group_photo').default(false),

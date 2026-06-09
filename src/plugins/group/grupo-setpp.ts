@@ -2,6 +2,7 @@ import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {Jimp, JimpMime} from "jimp";
 import {S_WHATSAPP_NET} from "@whiskeysockets/baileys";
+import {getRequiredPluginMessage} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ["setppgc"],
@@ -14,7 +15,7 @@ export default definePlugin({
     try {
         let groupId = m.chat;
         let quotedMsg = m.quoted ? m.quoted : m;
-        if (!m.quoted) return m.reply(`*⚠️ Responde a una Imagen.*`);
+        if (!m.quoted) return m.reply(getRequiredPluginMessage('group.setPp.missingImage'));
         let media = await quotedMsg.download();
 
         async function processImage(media: Buffer) {

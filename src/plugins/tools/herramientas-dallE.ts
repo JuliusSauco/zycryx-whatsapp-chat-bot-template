@@ -1,8 +1,9 @@
 import {logInfo} from '../../lib/logger.js';
 import * as cheerio from "cheerio"
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {ENV} from '../../core/env.js'
-import {httpJson, httpText} from '../../lib/http-client.js';
+
+type TextFetcher = (url: string, options?: {headers?: Record<string, string>}) => Promise<string>;
 
 interface DorratzImageResponse {
     data?: {
@@ -27,63 +28,63 @@ interface VihangaImagineResponse {
     data?: string;
 }
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ["dalle"],
     tags: ["buscadores"],
     command: ['dall-e', 'dalle', 'ia2', 'cimg', 'openai3', 'a-img', 'aimg', 'imagine'],
     register: true,
     limit: 1,
-    async execute(m, {conn, text, usedPrefix, command}) {
-    if (!text) return m.reply(`*⚠️ 𝐈𝐧𝐠𝐫𝐞𝐬𝐞 𝐮𝐧 𝐭𝐞𝐱𝐭𝐨 𝐩𝐚𝐫𝐚 𝐜𝐫𝐞𝐚𝐫 𝐮𝐧𝐚 𝐢𝐦𝐚𝐠𝐞𝐧 𝐲 𝐚𝐬𝐢 𝐮𝐬𝐚𝐫 𝐥𝐚 𝐟𝐮𝐧𝐜𝐢𝐨𝐧 𝐝𝐞 𝐝𝐚𝐥𝐥-𝐞*\n\n*• 𝐄𝐣𝐞𝐦𝐩𝐥𝐨:*\n*${usedPrefix + command} gatitos llorando*`)
-    m.react('⌛')
+    async execute(_m, {sdk}) {
+    if (!sdk.text) return sdk.reply.message('tools.imageAi.usage', {command: sdk.usedPrefix + sdk.command})
+    await sdk.reply.react('⌛')
     try {
-        const res = await httpJson<DorratzImageResponse>(`https://api.dorratz.com/v3/ai-image?prompt=${text}`)
+        const res = await sdk.http.json<DorratzImageResponse>(`https://api.dorratz.com/v3/ai-image?prompt=${encodeURIComponent(sdk.text)}`)
         if (res.data?.status === "success" && res.data.image_link) {
             const imageUrl = res.data.image_link;
-            await conn.sendFile(m.chat, imageUrl, 'error.jpg', `_💫 Resutados: ${text}_\n\n> *✨ Imagen generada por IA ✨*`, m);
-            m.react('✅');
+            await sdk.sendFile(imageUrl, 'error.jpg', sdk.content.renderMessage('tools.imageAi.generatedCaption', {query: sdk.text}));
+            await sdk.reply.react('✅');
         }
     } catch (e: unknown) {
         try {
-            let answer = await flux(text)
+            let answer = await flux(sdk.text, sdk.http.text)
             if (!answer) throw new Error('Flux no devolvió imagen')
-            await conn.sendFile(m.chat, answer, 'error.jpg', `_💫 Resutados: ${text}_\n\n> *✨ Imagen generada por IA ✨*`, m);
+            await sdk.sendFile(answer, 'error.jpg', sdk.content.renderMessage('tools.imageAi.generatedCaption', {query: sdk.text}));
 //conn.sendMessage(m.chat, { image: { url: answer }, caption: `_💫 Resutados: ${text}_\n\n> *✨ Imagen generada por IA ✨*`, mentions: [m.sender],}, { quoted: m })
-            m.react('✅');
+            await sdk.reply.react('✅');
         } catch (e: unknown) {
             try {
                 if (!ENV.UNSPLASH_ACCESS_KEY) throw new Error('UNSPLASH_ACCESS_KEY no configurado');
-                const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(text)}&client_id=${ENV.UNSPLASH_ACCESS_KEY}`;
-                const response = await httpJson<UnsplashResponse>(url);
+                const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(sdk.text)}&client_id=${ENV.UNSPLASH_ACCESS_KEY}`;
+                const response = await sdk.http.json<UnsplashResponse>(url);
                 const imageUrl = response.results?.[0]?.urls?.regular;
-                if (!imageUrl) return m.react("❌")
-                await conn.sendFile(m.chat, imageUrl, 'error.jpg', `_*Resultado de:* ${text}_`, m);
-                m.react('✅');
+                if (!imageUrl) return sdk.reply.react("❌")
+                await sdk.sendFile(imageUrl, 'error.jpg', sdk.content.renderMessage('tools.imageAi.resultCaption', {query: sdk.text}));
+                await sdk.reply.react('✅');
             } catch (e: unknown) {
                 try {
                     if (!ENV.BETABOTZ_API_KEY) throw new Error('BETABOTZ_API_KEY no configurado');
-                    const url = `https://api.betabotz.eu.org/api/search/bing-img?text=${encodeURIComponent(text)}&apikey=${ENV.BETABOTZ_API_KEY}`;
-                    const response = await httpJson<BetabotzImageResponse>(url);
-                    if (!response.result || response.result.length === 0) return m.react("❌")
+                    const url = `https://api.betabotz.eu.org/api/search/bing-img?text=${encodeURIComponent(sdk.text)}&apikey=${ENV.BETABOTZ_API_KEY}`;
+                    const response = await sdk.http.json<BetabotzImageResponse>(url);
+                    if (!response.result || response.result.length === 0) return sdk.reply.react("❌")
                     const imageUrl = response.result[0];
-                    await conn.sendFile(m.chat, imageUrl, 'error.jpg', `_*Resultado de:* ${text}_`, m);
-                    m.react('✅');
+                    await sdk.sendFile(imageUrl, 'error.jpg', sdk.content.renderMessage('tools.imageAi.resultCaption', {query: sdk.text}));
+                    await sdk.reply.react('✅');
                 } catch (e: unknown) {
                     try {
-                        const json1 = await httpJson<VihangaImagineResponse>(`https://vihangayt.me/tools/imagine?q=${text}`);
+                        const json1 = await sdk.http.json<VihangaImagineResponse>(`https://vihangayt.me/tools/imagine?q=${encodeURIComponent(sdk.text)}`);
                         if (!json1.data) throw new Error('Vihanga no devolvió imagen')
-                        await conn.sendFile(m.chat, json1.data, 'error.jpg', `_*Resultado de:* ${text}_`, m);
+                        await sdk.sendFile(json1.data, 'error.jpg', sdk.content.renderMessage('tools.imageAi.resultCaption', {query: sdk.text}));
                     } catch (e: unknown) {
                         try {
                             if (!ENV.LOLHUMAN_API_KEY) throw new Error('LOLHUMAN_API_KEY no configurado');
-                            const tiores4 = await conn.getFile?.(`https://api.lolhuman.xyz/api/dall-e?apikey=${ENV.LOLHUMAN_API_KEY}&text=${text}`);
+                            const tiores4 = await sdk.conn.getFile?.(`https://api.lolhuman.xyz/api/dall-e?apikey=${ENV.LOLHUMAN_API_KEY}&text=${encodeURIComponent(sdk.text)}`);
                             if (!tiores4?.data) throw new Error('No se pudo obtener la imagen generada');
-                            await conn.sendFile(m.chat, tiores4.data, 'error.jpg', `_*Resultado de:* ${text}_`, m);
-                            m.react('✅')
+                            await sdk.sendFile(tiores4.data, 'error.jpg', sdk.content.renderMessage('tools.imageAi.resultCaption', {query: sdk.text}));
+                            await sdk.reply.react('✅')
                         } catch (error: unknown) {
                             logInfo('[❗] Error, ninguna api funcional.\n' + error);
-                            m.reply(`error ${error}`)
-                            m.react('❌')
+                            await sdk.reply.message('tools.imageAi.error', {error: String(error)})
+                            await sdk.reply.react('❌')
                         }
                     }
                 }
@@ -93,7 +94,7 @@ export default definePlugin({
     }
 });
 
-const flux = async (prompt: string): Promise<string | null> => {
+const flux = async (prompt: string, fetchText: TextFetcher): Promise<string | null> => {
     const url = `https://lusion.regem.in/access/flux.php?prompt=${encodeURIComponent(prompt)}`
     const headers = {
         Accept: "*/*",
@@ -101,7 +102,7 @@ const flux = async (prompt: string): Promise<string | null> => {
             "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, seperti Gecko) Chrome/129.0.0.0 Mobile Safari/537.36",
         Referer: "https://lusion.regem.in/?ref=taaft&utm_source=taaft&utm_medium=referral",
     }
-    const html = await httpText(url, {headers})
+    const html = await fetchText(url, {headers})
     const $ = cheerio.load(html)
     return $("a.btn-navy.btn-sm.mt-2").attr("href") || null
 }

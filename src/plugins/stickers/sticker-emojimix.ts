@@ -4,6 +4,7 @@ import {getStickerExif} from '../../services/sticker-settings.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {ENV} from '../../core/env.js';
 import {httpJson, type HttpRequestOptions} from '../../lib/http-client.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 interface TenorMediaFormat {
     url: string;
@@ -28,9 +29,9 @@ export default definePlugin({
     register: true,
     limit: 1,
     async execute(m, {conn, text, args, usedPrefix, command}) {
-    if (!ENV.TENOR_API_KEY) return m.reply('❌ TENOR_API_KEY no está configurado.');
+    if (!ENV.TENOR_API_KEY) return m.reply(getRequiredPluginMessage('stickers.emojiMix.missingConfig'));
     const {packname: f, author: g} = await getStickerExif(m.sender);
-    if (!args[0]) return m.reply(`⚠️ 𝘿𝙚𝙗𝙚𝙨 𝙙𝙚 𝙪𝙨𝙖𝙧 2 𝙚𝙢𝙤𝙟𝙞𝙨 𝙮 𝙚𝙣 𝙢𝙚𝙙𝙞𝙤 𝙪𝙨𝙖𝙧 𝙚𝙡 *+*\n• 𝙀𝙟𝙚𝙢𝙥𝙡𝙤 :\n*${usedPrefix + command}* 😺+😆`)
+    if (!args[0]) return m.reply(renderTemplate(getRequiredPluginMessage('stickers.emojiMix.usage'), {command: usedPrefix + command}))
 //conn.fakeReply(m.chat, `Calma crack estoy procesando 👏\n\n> *Esto puede demorar unos minutos*`, '0@s.whatsapp.net', `No haga spam gil`, 'status@broadcast', null, fake)
     try {
         let [emoji1, emoji2] = text.split('+')

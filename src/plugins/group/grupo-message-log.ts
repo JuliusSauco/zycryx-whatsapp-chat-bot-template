@@ -1,5 +1,6 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {getGroupSettings, setGroupBooleanFlag} from '../../services/group-settings.service.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ['msglog on/off/estado', 'registromsg on/off/estado'],
@@ -12,20 +13,22 @@ export default definePlugin({
 
         if (['on', 'activar', 'activo', 'enable', 'encender'].includes(action)) {
             await setGroupBooleanFlag(m.chat, 'messageLogging', true);
-            return m.reply('✅ Registro de mensajes activado para este grupo.');
+            return m.reply(getRequiredPluginMessage('group.messageLog.enabled'));
         }
 
         if (['off', 'desactivar', 'inactivo', 'disable', 'apagar'].includes(action)) {
             await setGroupBooleanFlag(m.chat, 'messageLogging', false);
-            return m.reply('✅ Registro de mensajes desactivado para este grupo.');
+            return m.reply(getRequiredPluginMessage('group.messageLog.disabled'));
         }
 
         if (['estado', 'status'].includes(action)) {
             const settings = await getGroupSettings(m.chat);
             const enabled = settings?.messageLogging ?? false;
-            return m.reply(`📋 Registro de mensajes: ${enabled ? 'activado ✅' : 'desactivado ❌'}`);
+            return m.reply(renderTemplate(getRequiredPluginMessage('group.messageLog.status'), {
+                status: enabled ? getRequiredPluginMessage('group.messageLog.statusEnabled') : getRequiredPluginMessage('group.messageLog.statusDisabled')
+            }));
         }
 
-        return m.reply(`⚠️ Uso:\n${usedPrefix + command} on\n${usedPrefix + command} off\n${usedPrefix + command} estado`);
+        return m.reply(renderTemplate(getRequiredPluginMessage('group.messageLog.usage'), {command: usedPrefix + command}));
     },
 });

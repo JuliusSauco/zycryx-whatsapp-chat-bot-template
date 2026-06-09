@@ -1,169 +1,151 @@
 -- ============================================================
--- OLYMPUS COMMUNITY WHATSAPP CHATBOT — Database Schema
+-- Zycryx WhatsApp Chat Bot Template - clean database schema
 -- PostgreSQL 14+
 -- ============================================================
--- Ejecutar con: psql -U <user> -d <database> -f schema.sql
--- O desde el cliente: \i schema.sql
+-- Purpose:
+--   Create the current database structure from zero with CREATE
+--   statements only. This file is for manual bootstrap of a clean
+--   database when you do not want to replay historical migrations.
+--
+-- Usage:
+--   psql -U <user> -d <database> -f database/schema.sql
+--
+-- Optional custom schema:
+--   CREATE SCHEMA IF NOT EXISTS bot_dev;
+--   SET search_path TO bot_dev;
+--
+-- Important:
+--   Do not run the historical Drizzle migrations on top of a database
+--   already initialized with this script unless you baseline/mark those
+--   migrations as applied first.
 -- ============================================================
 
 BEGIN;
 
--- -----------------------------------------------------------
--- 1. USUARIOS
--- Almacena datos de cada usuario que interactúa con el bot.
--- PK: id (JID de WhatsApp, ej: 5491112345678@s.whatsapp.net)
--- -----------------------------------------------------------
+-- ------------------------------------------------------------
+-- Users
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS usuarios (
-    id               TEXT PRIMARY KEY,
-    nombre           TEXT,
-    registered       BOOLEAN   DEFAULT false,
-    num              TEXT,
-    lid              TEXT UNIQUE,
-
-    -- Moderación
-    banned           BOOLEAN   DEFAULT false,
-    razon_ban        TEXT,
-    avisos_ban       INTEGER   DEFAULT 0,
-    warn_pv          BOOLEAN   DEFAULT false,
-    warn             INTEGER   DEFAULT 0,
-    warn_antiporn    INTEGER   DEFAULT 0,
-    warn_estado      INTEGER   DEFAULT 0,
-
-    -- Perfil
-    edad             INTEGER,
-    gender           TEXT,
-    birthday         DATE,
-
-    -- Economía / RPG
-    money            INTEGER   DEFAULT 100,
-    limite           INTEGER   DEFAULT 10,
-    exp              INTEGER   DEFAULT 0,
-    banco            INTEGER   DEFAULT 0,
-    level            INTEGER   DEFAULT 0,
-    role             TEXT      DEFAULT 'novato',
-
-    -- Registro
-    reg_time         TIMESTAMP,
-    serial_number    TEXT,
-
-    -- Stickers personalizados
-    sticker_packname TEXT,
-    sticker_author   TEXT,
-
-    -- Cooldowns (timestamps en ms)
-    ry_time          BIGINT    DEFAULT 0,
-    lastwork         BIGINT    DEFAULT 0,
-    lastmiming       BIGINT    DEFAULT 0,
-    lastclaim        BIGINT    DEFAULT 0,
-    dailystreak      BIGINT    DEFAULT 0,
-    lastcofre        BIGINT    DEFAULT 0,
-    lastrob          BIGINT    DEFAULT 0,
-    lastslut         BIGINT    DEFAULT 0,
-    timevot          BIGINT    DEFAULT 0,
-    wait             BIGINT    DEFAULT 0,
-    crime            BIGINT    DEFAULT 0,
-
-    -- Pareja
-    marry            TEXT,
-    marry_request    TEXT
+    id text PRIMARY KEY,
+    nombre text,
+    registered boolean DEFAULT false,
+    num text,
+    lid text UNIQUE,
+    banned boolean DEFAULT false,
+    razon_ban text,
+    avisos_ban integer DEFAULT 0,
+    warn_pv boolean DEFAULT false,
+    warn integer DEFAULT 0,
+    warn_antiporn integer DEFAULT 0,
+    warn_estado integer DEFAULT 0,
+    edad integer,
+    gender text,
+    birthday date,
+    money integer DEFAULT 100,
+    limite integer DEFAULT 10,
+    exp integer DEFAULT 0,
+    banco integer DEFAULT 0,
+    level integer DEFAULT 0,
+    role text DEFAULT 'novato',
+    reg_time timestamp,
+    serial_number text,
+    sticker_packname text,
+    sticker_author text,
+    ry_time bigint DEFAULT 0,
+    lastwork bigint DEFAULT 0,
+    lastmiming bigint DEFAULT 0,
+    lastclaim bigint DEFAULT 0,
+    dailystreak bigint DEFAULT 0,
+    lastcofre bigint DEFAULT 0,
+    lastrob bigint DEFAULT 0,
+    lastslut bigint DEFAULT 0,
+    timevot bigint DEFAULT 0,
+    wait bigint DEFAULT 0,
+    crime bigint DEFAULT 0,
+    marry text,
+    marry_request text
 );
 
--- -----------------------------------------------------------
--- 2. GROUP_SETTINGS
--- Configuración por grupo de WhatsApp.
--- PK: group_id (JID del grupo, ej: 120363xxx@g.us)
--- -----------------------------------------------------------
+-- ------------------------------------------------------------
+-- Group settings
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS group_settings (
-    group_id      TEXT PRIMARY KEY,
-
-    -- Features toggle
-    welcome       BOOLEAN   DEFAULT true,
-    detect        BOOLEAN   DEFAULT true,
-    antifake      BOOLEAN   DEFAULT false,
-    antilink      BOOLEAN   DEFAULT false,
-    antilink2     BOOLEAN   DEFAULT false,
-    virustotal    BOOLEAN   DEFAULT false,
-    modohorny     BOOLEAN   DEFAULT false,
-    audios        BOOLEAN   DEFAULT false,
-    "antiStatus"  BOOLEAN   DEFAULT false,
-    modoadmin     BOOLEAN   DEFAULT false,
-    photowelcome  BOOLEAN   DEFAULT false,
-    photobye      BOOLEAN   DEFAULT false,
-    autolevelup   BOOLEAN   DEFAULT true,
-    antiporn      BOOLEAN   DEFAULT false,
-
-    -- NSFW horario (formato "HH:MM-HH:MM")
-    nsfw_horario  TEXT,
-
-    -- Mensajes personalizados
-    "sWelcome"    TEXT,
-    "sBye"        TEXT,
-    "sPromote"    TEXT,
-    "sDemote"     TEXT,
-    "sAutorespond" TEXT,
-
-    -- Ban / expiración
-    banned        BOOLEAN   DEFAULT false,
-    expired       BIGINT    DEFAULT 0,
-
-    -- Memoria IA (TTL en segundos, 0 = desactivada)
-    memory_ttl    INTEGER   DEFAULT 86400,
-
-    -- Bot primario del grupo
-    primary_bot   TEXT,
-
-    -- Solicitudes de ingreso al grupo
-    autoaccept_mode TEXT DEFAULT 'off',
-
-    -- Registro de mensajes del grupo
-    message_logging BOOLEAN DEFAULT false
+    group_id text PRIMARY KEY,
+    welcome_config_id serial NOT NULL,
+    welcome boolean DEFAULT true,
+    detect boolean DEFAULT true,
+    antifake boolean DEFAULT false,
+    antilink boolean DEFAULT false,
+    antilink2 boolean DEFAULT false,
+    virustotal boolean DEFAULT false,
+    modohorny boolean DEFAULT false,
+    audios boolean DEFAULT false,
+    antistatus boolean DEFAULT false,
+    modoadmin boolean DEFAULT false,
+    photowelcome boolean DEFAULT true,
+    welcome_registered_by text,
+    welcome_hidetag boolean DEFAULT false,
+    welcome_group_photo boolean DEFAULT false,
+    bye_config_id serial NOT NULL,
+    bye_registered_by text,
+    bye_hidetag boolean DEFAULT false,
+    bye_group_photo boolean DEFAULT false,
+    photobye boolean DEFAULT true,
+    autolevelup boolean DEFAULT true,
+    antiporn boolean DEFAULT false,
+    nsfw_horario text,
+    swelcome text,
+    sbye text,
+    spromote text,
+    sdemote text,
+    sautorespond text,
+    banned boolean DEFAULT false,
+    expired bigint DEFAULT 0,
+    memory_ttl integer DEFAULT 86400,
+    primary_bot text,
+    autoaccept_mode text DEFAULT 'off',
+    message_logging boolean DEFAULT false
 );
 
--- -----------------------------------------------------------
--- 3. CHATS
--- Registro de todos los chats (grupos y privados) donde
--- el bot ha interactuado.
--- -----------------------------------------------------------
+-- ------------------------------------------------------------
+-- Chats
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS chats (
-    id        TEXT PRIMARY KEY,
-    is_group  BOOLEAN DEFAULT true,
-    timestamp BIGINT,
-    is_active BOOLEAN DEFAULT true,
-    bot_id    TEXT,
-    joined    BOOLEAN DEFAULT true
+    id text PRIMARY KEY,
+    is_group boolean DEFAULT true,
+    timestamp bigint,
+    is_active boolean DEFAULT true,
+    bot_id text,
+    joined boolean DEFAULT true
 );
 
--- -----------------------------------------------------------
--- 4. MESSAGES
--- Contador de mensajes por usuario por grupo.
--- Usado para ranking, detección de fantasmas, etc.
--- -----------------------------------------------------------
+-- ------------------------------------------------------------
+-- Message counters
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS messages (
-    user_id       TEXT    NOT NULL,
-    group_id      TEXT    NOT NULL,
-    message_count INTEGER DEFAULT 0,
-    PRIMARY KEY (user_id, group_id)
+    user_id text NOT NULL,
+    group_id text NOT NULL,
+    message_count integer DEFAULT 0,
+    CONSTRAINT messages_user_id_group_id_pk PRIMARY KEY (user_id, group_id)
 );
 
--- -----------------------------------------------------------
--- 4.1 MESSAGE_LOGS
--- Registro opcional de mensajes por grupo.
--- Sólo conserva texto; multimedia se guarda como "Multimedia omitido."
--- -----------------------------------------------------------
+-- ------------------------------------------------------------
+-- Message logs
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS message_logs (
-    id           SERIAL PRIMARY KEY,
-    group_id     TEXT      NOT NULL,
-    user_id      TEXT      NOT NULL,
-    message_id   TEXT      NOT NULL,
-    message_text TEXT      NOT NULL,
-    message_type TEXT      NOT NULL,
-    is_reply     BOOLEAN   DEFAULT false,
-    reply_to_message_id TEXT,
-    is_deleted   BOOLEAN   DEFAULT false,
-    deleted_at   TIMESTAMP,
-    deleted_by   TEXT,
-    deleted_by_lid TEXT,
-    created_at   TIMESTAMP DEFAULT now()
+    id serial PRIMARY KEY,
+    group_id text NOT NULL,
+    user_id text NOT NULL,
+    message_id text NOT NULL,
+    message_text text NOT NULL,
+    message_type text NOT NULL,
+    is_reply boolean DEFAULT false,
+    reply_to_message_id text,
+    is_deleted boolean DEFAULT false,
+    deleted_at timestamp,
+    deleted_by text,
+    deleted_by_lid text,
+    created_at timestamp DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS message_logs_group_created_at_idx
@@ -175,85 +157,92 @@ CREATE INDEX IF NOT EXISTS message_logs_group_message_id_idx
 CREATE INDEX IF NOT EXISTS message_logs_user_idx
     ON message_logs (user_id);
 
--- -----------------------------------------------------------
--- 5. SUBBOTS
--- Configuración de cada instancia del bot (principal + subbots).
--- PK: id (JID del bot sin puerto, ej: 5491112345678)
--- -----------------------------------------------------------
+-- ------------------------------------------------------------
+-- Subbots
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS subbots (
-    id            TEXT PRIMARY KEY,
-    tipo          TEXT      DEFAULT 'null',
-    name          TEXT,
-    logo_url      TEXT,
-    prefix        TEXT[]    DEFAULT ARRAY['/', '.', '#'],
-    mode          TEXT      DEFAULT 'public',
-    owners        TEXT[],
-    anti_private  BOOLEAN   DEFAULT false,
-    anti_call     BOOLEAN   DEFAULT true,
-    privacy       BOOLEAN   DEFAULT false,
-    prestar       BOOLEAN   DEFAULT false
+    id text PRIMARY KEY,
+    tipo text DEFAULT 'null',
+    name text,
+    logo_url text,
+    prefix text[] DEFAULT ARRAY['/', '.', '#']::text[],
+    mode text DEFAULT 'public',
+    owners text[],
+    anti_private boolean DEFAULT false,
+    anti_call boolean DEFAULT true,
+    privacy boolean DEFAULT false,
+    prestar boolean DEFAULT false
 );
 
--- -----------------------------------------------------------
--- 6. CHARACTERS
--- Personajes del sistema gacha/RPG que los usuarios reclaman.
--- -----------------------------------------------------------
+-- ------------------------------------------------------------
+-- Characters
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS characters (
-    id                SERIAL PRIMARY KEY,
-    name              TEXT    NOT NULL,
-    url               TEXT    NOT NULL,
-    tipo              TEXT,
-    anime             TEXT,
-    rareza            TEXT,
-    price             INTEGER NOT NULL,
-    previous_price    INTEGER,
-    claimed_by        TEXT,
-    for_sale          BOOLEAN DEFAULT false,
-    seller            TEXT,
-    votes             INTEGER DEFAULT 0,
-    last_removed_time BIGINT
+    id serial PRIMARY KEY,
+    name text NOT NULL,
+    url text NOT NULL,
+    tipo text,
+    anime text,
+    rareza text,
+    price integer NOT NULL,
+    previous_price integer,
+    claimed_by text,
+    for_sale boolean DEFAULT false,
+    seller text,
+    votes integer DEFAULT 0,
+    last_removed_time bigint
 );
 
--- -----------------------------------------------------------
--- 7. REPORTES
--- Sistema de reportes y sugerencias de usuarios.
--- -----------------------------------------------------------
+-- ------------------------------------------------------------
+-- Reports
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS reportes (
-    id          SERIAL PRIMARY KEY,
-    sender_id   TEXT      NOT NULL,
-    sender_name TEXT,
-    mensaje     TEXT      NOT NULL,
-    fecha       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    enviado     BOOLEAN   DEFAULT false,
-    tipo        TEXT      DEFAULT 'reporte'
+    id serial PRIMARY KEY,
+    sender_id text NOT NULL,
+    sender_name text,
+    mensaje text NOT NULL,
+    fecha timestamp DEFAULT now(),
+    enviado boolean DEFAULT false,
+    tipo text DEFAULT 'reporte'
 );
 
--- -----------------------------------------------------------
--- 8. CHAT_MEMORY
--- Historial de conversación para el autoresponder con IA.
--- -----------------------------------------------------------
+-- ------------------------------------------------------------
+-- Chat memory
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS chat_memory (
-    chat_id    TEXT PRIMARY KEY,
-    history    JSONB,
-    updated_at TIMESTAMP DEFAULT NOW()
+    chat_id text PRIMARY KEY,
+    history jsonb,
+    updated_at timestamp DEFAULT now()
 );
 
--- -----------------------------------------------------------
--- 9. API_TOKENS
--- Tokens de APIs externas (Groq, etc.) en base64.
--- -----------------------------------------------------------
-CREATE TABLE IF NOT EXISTS api_tokens (
-    name      TEXT PRIMARY KEY,
-    token_b64 TEXT NOT NULL
-);
-
--- -----------------------------------------------------------
--- 10. STATS
--- Contador de uso por comando.
--- -----------------------------------------------------------
+-- ------------------------------------------------------------
+-- Stats
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS stats (
-    command TEXT PRIMARY KEY,
-    count   INTEGER DEFAULT 1
+    command text PRIMARY KEY,
+    count integer DEFAULT 1
+);
+
+-- ------------------------------------------------------------
+-- API tokens
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS api_tokens (
+    name text PRIMARY KEY,
+    token_b64 text NOT NULL
+);
+
+-- ------------------------------------------------------------
+-- Dynamic audio responses
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS audio_responses (
+    scope text NOT NULL,
+    phrase text NOT NULL,
+    regex text NOT NULL,
+    audio_urls text[] DEFAULT ARRAY[]::text[] NOT NULL,
+    deleted boolean DEFAULT false,
+    created_at timestamp DEFAULT now(),
+    updated_at timestamp DEFAULT now(),
+    CONSTRAINT audio_responses_scope_phrase_pk PRIMARY KEY (scope, phrase)
 );
 
 COMMIT;

@@ -10,7 +10,7 @@
 - `resources/data/characters.json`: catalogo base de personajes.
 - `resources/data/game/*.json`: bancos de preguntas para juegos.
 - `resources/data/nsfw/*.json`: bancos de URLs para plugins NSFW.
-- `resources/data/messages.json`, `resources/data/prompts.json` y `resources/data/reactions.json`: manifiestos de prompts, mensajes y reacciones multimedia.
+- `resources/data/messages.json`, `resources/data/prompts.json` y `resources/data/reactions.json`: manifiestos de prompts, mensajes, textos visibles de plugins y reacciones multimedia.
 - `resources/text/prompts/*.txt`: presets seguros usados por `setprompt`.
 - `resources/text/prompts/legacy-chatgpt.txt`: prompt legacy conservado como recurso historico; no se usa como preset activo.
 - `resources/text/messages/*.txt`: textos base para bienvenidas, despedidas y frases.
@@ -24,6 +24,7 @@
 
 - Los plugins pueden leer estos archivos como referencia o semilla.
 - Los manifiestos en `resources/data` deben describir rutas, aliases y metadata; los textos largos y binarios deben seguir en `resources/text` o `resources/media`.
+- El acceso nuevo a textos del bot debe pasar por `src/services/content.service.ts` (`getMessage`, `renderMessage`, `getMessageList`). `src/lib/message-template.ts` queda como fachada de compatibilidad para plugins ya migrados.
 - Los cambios del usuario, estados de chats, progreso RPG, configuraciones y tokens deben vivir en Drizzle/DB o en el backend cuando exista.
 - Los archivos temporales deben ir a `tmp/` y limpiarse despues de usarse.
 - Si un recurso empieza a crecer o cambiar en caliente, debe migrarse a tabla/servicio antes de permitir escrituras en `resources/data`.

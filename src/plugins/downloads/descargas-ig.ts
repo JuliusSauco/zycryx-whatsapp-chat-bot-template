@@ -2,6 +2,7 @@ import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {instagramdl} from '@bochilteam/scraper';
 import {httpJson, httpText} from '../../lib/http-client.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 
@@ -33,8 +34,12 @@ export default definePlugin({
     register: true,
     limit: 1,
     async execute(m, {conn, args, command, usedPrefix}) {
-    if (!args[0]) return m.reply(`⚠️ Ingresa el enlace del vídeo de Instagram junto al comando.\n\nEjemplo: *${usedPrefix + command}* https://www.instagram.com/p/C60xXk3J-sb/?igsh=YzljYTk1ODg3Zg==`)
-    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, `Oye @${m.sender.split('@')[0]}, calma, ya estás descargando algo 😒\nEspera a que termine tu solicitud actual antes de hacer otra...`, m)
+    if (!args[0]) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.instagram.missingUrl'), {
+        command: usedPrefix + command
+    }))
+    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.instagram.locked'), {
+        user: m.sender.split('@')[0]
+    }), m)
     await m.react('⌛');
     try {
         const downloadProviders: Array<Provider<InstagramMediaData>> = [
@@ -48,7 +53,7 @@ export default definePlugin({
                 return {
                     url: media.url,
                     type: fileType,
-                    caption: fileType === 'image' ? '_*Aqui tiene tu imagen de Instagram*_' : '*Aqui esta el video de Instagram*',
+                    caption: getInstagramCaption(fileType),
                 }
             },
             },
@@ -62,7 +67,7 @@ export default definePlugin({
                 return {
                     url: result.url,
                     type: fileType,
-                    caption: fileType === 'image' ? '_*Aqui tiene tu imagen de Instagram*_' : '*Aqui esta el video de Instagram*',
+                    caption: getInstagramCaption(fileType),
                 }
             },
             },
@@ -76,7 +81,7 @@ export default definePlugin({
                 return {
                     url: media.url,
                     type: media.type,
-                    caption: media.type === 'image' ? '_*Aqui tiene tu imagen de Instagram*_' : '*Aqui esta el video de Instagram*',
+                    caption: getInstagramCaption(media.type),
                 }
             },
             },
@@ -106,7 +111,13 @@ export default definePlugin({
         userRequests.release(m.sender);
     }
     }
-});
+});
 
 ;
+
+function getInstagramCaption(type: string): string {
+    return type === 'image'
+        ? getRequiredPluginMessage('downloads.instagram.imageCaption')
+        : getRequiredPluginMessage('downloads.instagram.videoCaption');
+}
 

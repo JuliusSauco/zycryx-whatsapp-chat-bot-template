@@ -2,6 +2,7 @@ import {definePlugin} from '../../core/define-plugin.js'
 import {pinterest} from '../../lib/scraper.js';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
 import {httpJson} from '../../lib/http-client.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 interface PinterestResult {
     title: string
@@ -41,7 +42,9 @@ export default definePlugin({
     register: true,
     limit: 1,
     async execute(m, {conn, usedPrefix, command, text}) {
-    if (!text) return m.reply(`*⚠️ Ingresa el término de búsqueda.*\nEj: ${usedPrefix + command} nayeon`)
+    if (!text) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.pinterest.missingQuery'), {
+        command: usedPrefix + command
+    }))
     m.react("⌛");
     try {
         const downloadProviders: Array<Provider<PinterestResult[]>> = [
@@ -52,7 +55,9 @@ export default definePlugin({
                     const pins = (response.result.pins as ScraperPin[]).slice(0, 5);
                     const results = pins.map(pin => ({
                         title: pin.title || text,
-                        description: `🔎 Por: ${pin.uploader?.username || 'Desconocido'}`,
+                        description: renderTemplate(getRequiredPluginMessage('downloads.pinterest.author'), {
+                            author: pin.uploader?.username || getRequiredPluginMessage('downloads.pinterest.unknownAuthor')
+                        }),
                         image: pin.media?.images?.orig?.url || ''
                     })).filter(result => result.image);
                     return results.length ? results : null;
@@ -78,7 +83,10 @@ export default definePlugin({
                     const data = res.slice(0, 5);
                     const results = data.map(result => ({
                         title: result.fullname || text,
-                        description: `*🔸️Autor:* ${result.upload_by || 'Desconocido'}\n*🔸️ Seguidores:* ${result.followers || 'N/A'}`,
+                        description: renderTemplate(getRequiredPluginMessage('downloads.pinterest.authorStats'), {
+                            author: result.upload_by || getRequiredPluginMessage('downloads.pinterest.unknownAuthor'),
+                            followers: result.followers || getRequiredPluginMessage('downloads.pinterest.notAvailable')
+                        }),
                         image: result.image || ''
                     })).filter(result => result.image);
                     return results.length ? results : null;
@@ -91,7 +99,10 @@ export default definePlugin({
                     const data = (res.data || []).slice(0, 5);
                     const results = data.map(result => ({
                         title: result.description || text,
-                        description: `🔎 Autor: ${result.name || 'Desconocido'} (@${result.username || 'N/A'})`,
+                        description: renderTemplate(getRequiredPluginMessage('downloads.pinterest.authorHandle'), {
+                            name: result.name || getRequiredPluginMessage('downloads.pinterest.unknownAuthor'),
+                            username: result.username || getRequiredPluginMessage('downloads.pinterest.notAvailable')
+                        }),
                         image: result.image || ''
                     })).filter(result => result.image);
                     return results.length ? results : null;
@@ -99,12 +110,12 @@ export default definePlugin({
             },
         ];
 
-        const results = await runFirstProvider(downloadProviders, `❌ No se encontraron resultados para "${text}".`);
+        const results = await runFirstProvider(downloadProviders, renderTemplate(getRequiredPluginMessage('downloads.pinterest.noResults'), {query: text}));
         const medias = results.map(result => ({type: "image", data: {url: result.image}}));
-        await conn.sendAlbumMessage(m.chat, medias, `✅ Resultados para: ${text}`, m);
+        await conn.sendAlbumMessage(m.chat, medias, renderTemplate(getRequiredPluginMessage('downloads.pinterest.albumCaption'), {query: text}), m);
         m.react("✅️");
     } catch (e: unknown) {
-        await m.reply(e instanceof Error ? e.message : `❌ No se encontraron resultados para "${text}".`);
+        await m.reply(e instanceof Error ? e.message : renderTemplate(getRequiredPluginMessage('downloads.pinterest.noResults'), {query: text}));
         m.react("❌️");
     }
     }

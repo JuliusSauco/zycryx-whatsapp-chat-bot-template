@@ -69,6 +69,7 @@ export class CommandRouter {
         // 2. Regex match — solo si hay prefijo
         if (hasPrefix && command) {
             for (const [re, plugin] of this.regex) {
+                re.lastIndex = 0;
                 if (re.test(command)) return plugin;
             }
         }
@@ -78,6 +79,7 @@ export class CommandRouter {
             if (typeof matcher === 'function') {
                 if (matcher(rawText)) return plugin;
             } else if (matcher instanceof RegExp) {
+                matcher.lastIndex = 0;
                 if (matcher.test(rawText)) return plugin;
             }
         }

@@ -3,6 +3,7 @@ import {getStickerExif} from '../../services/sticker-settings.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {ENV} from '../../core/env.js';
 import {httpJson} from '../../lib/http-client.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 interface TelegramSticker {
     thumb?: {file_id?: string};
@@ -30,10 +31,10 @@ export default definePlugin({
     limit: 1,
     register: true,
     async execute(m, {conn, args, usedPrefix, command}) {
-    if (!ENV.TELEGRAM_BOT_TOKEN) return m.reply('❌ TELEGRAM_BOT_TOKEN no está configurado.');
+    if (!ENV.TELEGRAM_BOT_TOKEN) return m.reply(getRequiredPluginMessage('stickers.telegram.missingConfig'));
     const {packname: f, author: g} = await getStickerExif(m.sender);
-    if (!args[0]) throw `⚠️ 𝙉𝙂𝙍𝙀𝙎𝙀 𝙀𝙇 𝙀𝙉𝙇𝘼𝘾𝙀 𝘿𝙀 𝙎𝙏𝙄𝘾𝙆𝙀𝙍 𝙏𝙀𝙇𝙀𝙂𝙍𝘼𝙈\n𝙀𝙅𝙀𝙈𝙋𝙇𝙊:\n${usedPrefix + command} https://t.me/addstickers/Porcientoreal`
-    if (!args[0].match(/(https:\/\/t.me\/addstickers\/)/gi)) throw `⚠️ 𝙇𝘼 𝙐𝙍𝙇 𝙀𝙎 𝙄𝙉𝘾𝙊𝙍𝙍𝙀𝘾𝙏𝘼\n𝙏𝙃𝙀 𝙐𝙍𝙇 𝙄𝙎 𝙄𝙉𝘾𝙊𝙍𝙍𝙀𝘾𝙏`
+    if (!args[0]) throw renderTemplate(getRequiredPluginMessage('stickers.telegram.usage'), {command: usedPrefix + command})
+    if (!args[0].match(/(https:\/\/t.me\/addstickers\/)/gi)) throw getRequiredPluginMessage('stickers.telegram.invalidUrl')
     let packName = args[0].replace("https://t.me/addstickers/", "")
     const telegramApi = `https://api.telegram.org/bot${ENV.TELEGRAM_BOT_TOKEN}`;
     const telegramFileApi = `https://api.telegram.org/file/bot${ENV.TELEGRAM_BOT_TOKEN}`;
@@ -42,8 +43,11 @@ export default definePlugin({
         headers: {"User-Agent": "GoogleBot"}
     })
     const stickers = json.result?.stickers || [];
-    if (!stickers.length) return m.reply('❌ No se encontraron stickers en ese pack.');
-    m.reply(`✔️ *𝙎𝙏𝙄𝘾𝙆𝙀𝙍 𝙏𝙊𝙏𝘼𝙇𝙀𝙎:* ${stickers.length}\n*𝙀𝙉𝙑𝙄𝘼𝘿𝙊 𝙀𝙇:* ${stickers.length * 1.5} Segundos`.trim())
+    if (!stickers.length) return m.reply(getRequiredPluginMessage('stickers.telegram.emptyPack'));
+    m.reply(renderTemplate(getRequiredPluginMessage('stickers.telegram.summary'), {
+        count: String(stickers.length),
+        seconds: String(stickers.length * 1.5),
+    }))
     for (let i = 0; i < stickers.length; i++) {
         let fileId = stickers[i].thumb?.file_id || stickers[i].thumbnail?.file_id;
         if (!fileId) continue;
@@ -55,9 +59,9 @@ export default definePlugin({
                 'forwardingScore': 200,
                 'isForwarded': false,
                 externalAdReply: {
-                    showAdAttribution: false,
-                    title: info.wm,
-                    body: `🍫 PACK DE STICKERS`,
+                        showAdAttribution: false,
+                        title: info.wm,
+                        body: getRequiredPluginMessage('stickers.telegram.packBody'),
                     mediaType: 2,
                     sourceUrl: info.nna,
                     thumbnail: m.pp
@@ -66,7 +70,7 @@ export default definePlugin({
         })
         await delay(3000)
     }
-    throw `⚠️ ERROR QUE PASO? NOSE TU SABES? INFORMARLE A MI CREATOR PARA QUE LOS ARREGLE EN VAGO ESE JJJJ`
+    throw getRequiredPluginMessage('stickers.telegram.unexpectedError')
     }
 })
 

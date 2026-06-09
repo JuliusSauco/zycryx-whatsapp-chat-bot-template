@@ -12,9 +12,8 @@ import uploadFile, {
 } from '../../lib/uploadFile.js';
 import uploadImage from '../../lib/uploadImage.js';
 import FormData from "form-data";
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {ENV} from '../../core/env.js';
-import {httpJson, type HttpRequestOptions} from '../../lib/http-client.js';
 
 type UploadService = (media: Buffer) => Promise<string | string[]>;
 
@@ -29,42 +28,20 @@ interface SkyUploadResponse {
 const isUploadServiceKey = (option: string, services: Record<string, UploadService>): option is keyof typeof services => option in services;
 const normalizeLink = (link: string | string[]) => Array.isArray(link) ? link.join('\n') : link;
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['tourl <opcional servicio>'],
     tags: ['convertidor'],
     command: /^(upload|tourl)$/i,
     register: true,
-    async execute(m, {args, usedPrefix, command}) {
+    async execute(m, {sdk}) {
     const q = m.quoted ? m.quoted : m;
     const mime = (q.msg || q).mimetype || "";
 
-    if (!mime) throw `*\`⚠️ ¿𝐘 𝐋𝐀 𝐈𝐌𝐀𝐆𝐄𝐍/𝐕𝐈𝐃𝐄𝐎?\`*
-
-*• Ejemplo de Uso de ${usedPrefix + command}:*
-
-➔ Responde a una imagen, sticker o video corto con el comando: *${usedPrefix + command}*
-
-Subirá automáticamente el archivo a servidores como *qu.ax*, *catbox*, *cdn-skyultraplus*, etc.
-
-🌐 *\`¿Quieres elegir un servidor específico?\`*
-> Puedes usar:
-
-➔ *${usedPrefix + command} quax*  
-➔ *${usedPrefix + command} catbox*  
-➔ *${usedPrefix + command} sky*
-➔ *${usedPrefix + command} uguu*  
-➔ *${usedPrefix + command} restfulapi*  
-➔ *${usedPrefix + command} gofile*  
-➔ *${usedPrefix + command} telegraph*  
-
-📝 *Notas:*
-- *El archivo debe ser una imagen, sticker o video corto.*  
-- *Enlaces de qu.ax y catbox no expiran.*
-- *El CDN de SkyUltraPlus no tiene caducidad y es más rápido (pagando) obtener mas información aqui:* https://cdn.skyultraplus.com`;
+    if (!mime) throw sdk.content.renderMessage('converters.toUrl.missingMedia', {command: sdk.usedPrefix + sdk.command});
 
     const media = await q.download();
-    if (!media) throw "❌ No se pudo descargar el archivo.";
-    const option = (args[0] || "").toLowerCase();
+    if (!media) throw sdk.content.message('converters.toUrl.downloadError');
+    const option = (sdk.args[0] || "").toLowerCase();
     const services: Record<string, UploadService> = {quax, restfulapi: RESTfulAPI, catbox, uguu, filechan, pixeldrain, gofile, krakenfiles, telegraph};
     try {
         if (option === "sky") {
@@ -78,31 +55,33 @@ Subirá automáticamente el archivo a servidores como *qu.ax*, *catbox*, *cdn-sk
                 contentType: mime,
             });
 
-            const json = await httpJson<SkyUploadResponse>("https://cdn.skyultraplus.com/upload.php", {
+            const json = await sdk.http.json<SkyUploadResponse>("https://cdn.skyultraplus.com/upload.php", {
                 method: "POST",
                 headers: {
                     ...form.getHeaders(),
                     "X-API-KEY": ENV.SKYULTRA_API_KEY,
                 },
-                body: form as unknown as HttpRequestOptions['body'],
+                body: form as never,
             });
             if (!json.ok) throw `error: ${JSON.stringify(json)}`;
             const link = json.file?.url || json.url;
             if (!link) throw new Error('SkyUltra no devolvió URL')
-            return m.reply(link);
+            return sdk.reply.text(link);
         }
 
         if (option && isUploadServiceKey(option, services)) {
             const link = await services[option](media);
-            return m.reply(normalizeLink(link));
+            return sdk.reply.text(normalizeLink(link));
         }
 
         const isTele = /image\/(png|jpe?g|gif)|video\/mp4/.test(mime);
         const link = await (isTele ? uploadImage : uploadFile)(media);
-        return m.reply(link);
+        return sdk.reply.text(link);
     } catch (e: unknown) {
         logError(e);
-        throw '❌ Error al subir el archivo. Intenta con otra opción:\n' + Object.keys(services).concat(["skyultra"]).map((v) => `➔ ${usedPrefix}${command} ${v}`).join('\n');
+        throw sdk.content.renderMessage('converters.toUrl.uploadError', {
+            services: Object.keys(services).concat(["sky"]).map((value) => `➔ ${sdk.usedPrefix}${sdk.command} ${value}`).join('\n'),
+        });
     }
     }
 });

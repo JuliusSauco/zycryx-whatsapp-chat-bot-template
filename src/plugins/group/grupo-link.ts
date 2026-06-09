@@ -1,5 +1,6 @@
 import {definePlugin} from '../../core/define-plugin.js'
 import {replyFailure} from '../../lib/reply-helpers.js'
+import {getRequiredPluginMessage} from '../../lib/message-template.js'
 export default definePlugin({
     help: ['linkgroup'],
     tags: ['group'],
@@ -10,7 +11,7 @@ export default definePlugin({
     async execute(m, {conn}) {
     const group = m.chat;
     const code = await conn.groupInviteCode(group).catch(() => null)
-    if (!code) return replyFailure(m, 'No se pudo obtener el enlace del grupo.')
+    if (!code) return replyFailure(m, getRequiredPluginMessage('group.link.failure'))
     return m.reply('https://chat.whatsapp.com/' + code)
     }
 });

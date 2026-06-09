@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {addWalletResourcesAndSetFields, getWallet, transferWalletResource} from '../../services/wallet.service.js';
 import {randomInt} from '../../utils/random.js';
 import {formatDurationClockWords} from '../../utils/time.js';
@@ -13,10 +14,12 @@ export default definePlugin({
     async execute(m, {conn}) {
     const now = Date.now();
     const robber = await getWallet(m.sender);
-    if (!robber) return m.reply('❌ En usuarios no aparece en mi base de datos');
+    if (!robber) return m.reply(getRequiredPluginMessage('rpg.rob.missingUser'));
     const cooldown = 3600000;
     const timeLeft = (robber.lastrob ?? 0) + cooldown - now;
-    if (timeLeft > 0) return m.reply(`🚓 La policía está vigilando, vuelve en: *${formatDurationClockWords(timeLeft)}*`);
+    if (timeLeft > 0) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.rob.cooldown'), {
+        time: formatDurationClockWords(timeLeft)
+    }));
 
     let who;
     if (m.isGroup) {
@@ -25,17 +28,23 @@ export default definePlugin({
         who = m.chat;
     }
 
-    if (!who) return conn.reply(m.chat, `⚠️ *Etiqueta a un usuario para robarle XP*`, m);
-    if (who === m.sender) return m.reply(`❌ No puedes robarte a ti mismo.`);
+    if (!who) return conn.reply(m.chat, getRequiredPluginMessage('rpg.rob.missingTarget'), m);
+    if (who === m.sender) return m.reply(getRequiredPluginMessage('rpg.rob.selfTarget'));
     const victim = await getWallet(who);
-    if (!victim) return m.reply(`❌ El usuarios no se encuentra en mi base de datos.`);
+    if (!victim) return m.reply(getRequiredPluginMessage('rpg.rob.missingVictim'));
 
     const cantidad = randomInt(ro);
-    if ((victim.exp ?? 0) < cantidad) return conn.reply(m.chat, `@${who.split('@')[0]} tiene menos de ${ro} XP.\n> No robes a un pobre v:`, m, {mentions: [who]});
+    if ((victim.exp ?? 0) < cantidad) return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rob.poorVictim'), {
+        user: who.split('@')[0],
+        minimum: ro
+    }), m, {mentions: [who]});
     const transferred = await transferWalletResource({from: who, to: m.sender, resource: 'exp', amount: cantidad});
-    if (!transferred) return m.reply('❌ No se pudo completar el robo.');
+    if (!transferred) return m.reply(getRequiredPluginMessage('rpg.rob.transferFailed'));
     await addWalletResourcesAndSetFields({userId: m.sender, resources: {}, fields: {lastrob: now}});
-    return conn.reply(m.chat, `*Robaste ${cantidad} XP a @${who.split('@')[0]}*`, m, {mentions: [who]});
+    return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rob.success'), {
+        amount: cantidad,
+        user: who.split('@')[0]
+    }), m, {mentions: [who]});
     }
 });
 

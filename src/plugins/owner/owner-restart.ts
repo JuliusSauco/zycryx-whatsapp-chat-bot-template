@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage, getRequiredPluginMessageList} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ['restart'],
@@ -9,14 +10,14 @@ export default definePlugin({
         //if (!process.send) throw 'Dont: node main.js\nDo: node index.js'
         if (conn.user?.id) {
             async function loading() {
-                var hawemod = ["10%", "30%", "50%", "80%", "100%"]
-                let {key} = await conn.sendMessage(m.chat, {text: `*Reiniciando...*`}, {quoted: m})
+                var hawemod = getRequiredPluginMessageList('owner.restart.steps')
+                let {key} = await conn.sendMessage(m.chat, {text: getRequiredPluginMessage('owner.restart.loading')}, {quoted: m})
                 for (let i = 0; i < hawemod.length; i++) {
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     await conn.sendMessage(m.chat, {text: hawemod[i], edit: key}, {quoted: m})
                 }
                 await conn.sendMessage(m.chat, {
-                    text: `🚀 Reiniciando Bot...\nPor favor espere un momento`,
+                    text: getRequiredPluginMessage('owner.restart.final'),
                     edit: key
                 }, {quoted: m});
                 //process.send("reset")
@@ -25,7 +26,7 @@ export default definePlugin({
 
             await loading()
         } else {
-            throw 'eh'
+            throw getRequiredPluginMessage('owner.restart.missingConnection')
         }
     }
 });

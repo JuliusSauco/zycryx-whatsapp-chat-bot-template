@@ -2,6 +2,7 @@ import {definePlugin} from '../../core/define-plugin.js'
 //Código elaborado por: https://github.com/elrebelde21
 
 import {listCharacterClaimOwners} from '../../services/character.service.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
 export default definePlugin({
     help: ['rw-personajes'],
@@ -24,14 +25,20 @@ export default definePlugin({
             .sort(([, countA], [, countB]) => countB - countA)
             .slice(0, 10);
 
-        let textt = `📊 *\`Ranking de Personajes\`* 📊\n- Personajes reclamados: ${claimedCharacters.length}\n\n`;
-        textt += '*🏆 Top de usuarios con más personajes reclamados:*\n';
+        let textt = renderTemplate(getRequiredPluginMessage('rpg.rw.rankingHeader'), {
+            claimedCount: claimedCharacters.length
+        });
+        textt += getRequiredPluginMessage('rpg.rw.rankingTopHeader');
         topUsers.forEach(([user, count], index) => {
-            textt += `\n${index + 1}- @${user.split('@')[0]} ${count} personajes`;
+            textt += renderTemplate(getRequiredPluginMessage('rpg.rw.rankingLine'), {
+                position: index + 1,
+                user: user.split('@')[0],
+                count
+            });
         });
 
         await conn.sendMessage(m.chat, {
-            text: textt + `\n\n> _*¡Sigue usando el bot para reclamar más personajes!*_`,
+            text: textt + getRequiredPluginMessage('rpg.rw.rankingFooter'),
             contextInfo: {mentionedJid: topUsers.map(([user]) => user)}
         }, {quoted: m});
     } catch (e: unknown) {

@@ -2,6 +2,7 @@ import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {proto} from '@whiskeysockets/baileys'
 import {httpJson} from '../../lib/http-client.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 import {createUserRequestLocks} from '../../lib/user-request-locks.js'
 
 interface UserRequest {
@@ -33,11 +34,15 @@ export default definePlugin({
     register: true,
     limit: 1,
     async execute(m, {conn, args, usedPrefix, command}) {
-    if (!args[0]) return m.reply(`*⚠️ ¿Qué estás buscando? Ingresa el link de algún video de Threads!!*\n*• Ejemplo:*\n${usedPrefix + command} https://www.threads.net/@adri_leclerc_/post/C_dSNIOOlpy?xmt=AQGzxbmyveDB91QgFo_KQWzqL6PT2yCy2eg8BkhPTO-6Kw`)
+    if (!args[0]) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.threads.missingUrl'), {
+        command: usedPrefix + command
+    }))
 
     const activeRequest = userRequests.get(m.sender)
-    if (activeRequest) return await conn.reply(m.chat, `⏳ Hey @${m.sender.split('@')[0]} pendejo, ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra`, activeRequest.message || m)
-    const {key} = await conn.sendMessage(m.chat, {text: `⌛ Descargando contenido de Threads...`}, {quoted: m});
+    if (activeRequest) return await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.threads.locked'), {
+        user: m.sender.split('@')[0]
+    }), activeRequest.message || m)
+    const {key} = await conn.sendMessage(m.chat, {text: getRequiredPluginMessage('downloads.threads.downloading')}, {quoted: m});
     userRequests.acquire(m.sender, {active: true, message: {key, chat: m.chat, fromMe: true}});
     m.react(`⌛`)
     try {
@@ -46,13 +51,13 @@ export default definePlugin({
         if (!downloadUrl) throw new Error('No media found')
         const fileType = downloadUrl.includes('.webp') || downloadUrl.includes('.jpg') || downloadUrl.includes('.png') ? 'image' : 'video';
         if (fileType === 'image') {
-            await conn.sendFile(m.chat, downloadUrl, 'threads_image.jpg', '_*Aquí tienes la imagen de Threads*_', m);
+            await conn.sendFile(m.chat, downloadUrl, 'threads_image.jpg', getRequiredPluginMessage('downloads.threads.imageCaption'), m);
             m.react('✅');
         } else if (fileType === 'video') {
-            await conn.sendFile(m.chat, downloadUrl, 'threads_video.mp4', '_*Aquí tienes el video de Threads*_', m);
+            await conn.sendFile(m.chat, downloadUrl, 'threads_video.mp4', getRequiredPluginMessage('downloads.threads.videoCaption'), m);
             m.react('✅');
         }
-        await conn.sendMessage(m.chat, {text: `✅ 𝘾𝙤𝙢𝙥𝙡𝙚𝙩𝙖𝙙𝙤\n▰▰▰▰▰▰▰▰▰`, edit: key})
+        await conn.sendMessage(m.chat, {text: getRequiredPluginMessage('downloads.threads.completed'), edit: key})
     } catch (e: unknown) {
         try {
             const data2 = await httpJson<ThreadsFallbackResponse>(`${info.apis}/download/threads?url=${args[0]}`);
@@ -61,18 +66,18 @@ export default definePlugin({
                 const fileType = data2.data[0]?.type;
                 if (!downloadUrl) throw new Error('No media found')
                 if (fileType === 'image') {
-                    await conn.sendFile(m.chat, downloadUrl, 'threads_image.jpg', '_*Aquí tienes la imagen de Threads*_', m);
+                    await conn.sendFile(m.chat, downloadUrl, 'threads_image.jpg', getRequiredPluginMessage('downloads.threads.imageCaption'), m);
                     m.react('✅');
                 } else if (fileType === 'video') {
-                    await conn.sendFile(m.chat, downloadUrl, 'threads_video.mp4', '_*Aquí tienes el video de Threads*_', m);
+                    await conn.sendFile(m.chat, downloadUrl, 'threads_video.mp4', getRequiredPluginMessage('downloads.threads.videoCaption'), m);
                     m.react('✅');
                 }
             }
-            await conn.sendMessage(m.chat, {text: `✅ 𝘾𝙤𝙢𝙥𝙡𝙚𝙩𝙖𝙙𝙤\n▰▰▰▰▰▰▰▰▰`, edit: key})
+            await conn.sendMessage(m.chat, {text: getRequiredPluginMessage('downloads.threads.completed'), edit: key})
         } catch (e: unknown) {
             m.react(`❌`)
             await conn.sendMessage(m.chat, {
-                text: `\`\`\`⚠️ OCURRIO UN ERROR ⚠️\`\`\`\n\n> *Reporta el siguiente error a mi creador con el comando:* #report\n\n>>> ${e} <<<<`,
+                text: renderTemplate(getRequiredPluginMessage('downloads.threads.error'), {error: String(e)}),
                 edit: key
             })
             logInfo(e)

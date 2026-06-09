@@ -1,6 +1,7 @@
 import {definePlugin} from '../../core/define-plugin.js'
 import {listWallets} from '../../services/wallet.service.js';
 import type {UserWallet} from '../../ports/repositories.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ['topstreak [página]'],
@@ -19,13 +20,16 @@ export default definePlugin({
         .sort((a, b) => b.dailystreak - a.dailystreak);
     const totalActivos = users.length;
 
-    if (!users.length) return m.reply(`⚠️ No hay usuarios activos en racha.\n\n¡Recuerda reclamar tu recompensa diaria usando /claim para aparecer aquí!`);
+    if (!users.length) return m.reply(getRequiredPluginMessage('rpg.streakTop.noActive'));
 
     const paginated = users.slice(offset, offset + pageSize);
 
-    if (!paginated.length) return m.reply(`⚠️ No hay usuarios en esta página.\n\n¡Recuerda reclamar tu recompensa diaria usando /claim para aparecer aquí!`);
+    if (!paginated.length) return m.reply(getRequiredPluginMessage('rpg.streakTop.noPage'));
 
-    let ranking = `🏆 *TOP RACHAS DIARIAS* (Página ${page})\n📊 Usuario(s) activo(s) en racha: *${totalActivos}*\n\n`;
+    let ranking = renderTemplate(getRequiredPluginMessage('rpg.streakTop.header'), {
+        page,
+        totalActive: totalActivos
+    });
 
     for (let i = 0; i < paginated.length; i++) {
         const user = paginated[i];
@@ -37,21 +41,27 @@ export default definePlugin({
         let premio = '';
 
         if (streak >= 100) {
-            premio = '🏆'; //pro
+            premio = getRequiredPluginMessage('rpg.streakTop.prizeHundred');
         } else if (streak >= 50) {
-            premio = '🥇';
+            premio = getRequiredPluginMessage('rpg.streakTop.prizeFifty');
         } else if (streak >= 30) {
-            premio = '🏅';
+            premio = getRequiredPluginMessage('rpg.streakTop.prizeThirty');
         } else if (streak % 7 === 0) {
-            premio = '⭐';
+            premio = getRequiredPluginMessage('rpg.streakTop.prizeWeekly');
         }
 
-        const corona = (puesto === 1) ? '(👑)' : '';
+        const corona = (puesto === 1) ? getRequiredPluginMessage('rpg.streakTop.crown') : '';
 
-        ranking += `${puesto}. *${nombre}* ${corona}\n    🔥 Racha: ${streak} día(s) ${premio}\n\n`;
+        ranking += renderTemplate(getRequiredPluginMessage('rpg.streakTop.line'), {
+            position: puesto,
+            name: nombre,
+            crown: corona,
+            streak,
+            prize: premio
+        });
     }
 
-    ranking += `\n✨ _Sigue reclamando tu recompensa diaria usando /claim para aparecer en el ranking y ganar bonos épicos._ ✨`;
+    ranking += getRequiredPluginMessage('rpg.streakTop.footer');
 
     m.reply(ranking.trim());
     }

@@ -6,6 +6,7 @@ import {downloadContentFromMessage} from '@whiskeysockets/baileys';
 import {httpRequest} from '../../lib/http-client.js';
 import {deleteAudioEntry, findAudioEntryInScopes, getAudioConfig, upsertAudioEntry} from '../../services/audio-response.service.js';
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 const CUSTOM_AUDIO_DIR = path.join(process.cwd(), 'resources', 'media', 'audio', 'custom');
 const CUSTOM_AUDIO_PUBLIC_DIR = './resources/media/audio/custom';
@@ -52,20 +53,22 @@ export default definePlugin({
     const [fraseRaw, ...resto] = text.split('-');
     const frases = fraseRaw.split(',').map((f) => f.trim().toLowerCase()).filter(Boolean);
 
-    if (!frases.length) return m.reply(`✳️ Usa:\n${command === 'addaudios' ? '.addaudios hola,hello - audio' : '.delaudios hola'}`);
+    if (!frases.length) return m.reply(renderTemplate(getRequiredPluginMessage('audio.custom.usage'), {
+        usage: command === 'addaudios' ? getRequiredPluginMessage('audio.custom.addUsage') : getRequiredPluginMessage('audio.custom.deleteUsage')
+    }));
 
-    if (!isOwner && isGroup && !isAdmin) return m.reply('🚫 Solo admins pueden usar este comando en este grupo');
+    if (!isOwner && isGroup && !isAdmin) return m.reply(getRequiredPluginMessage('audio.custom.adminOnly'));
 
     if (command === 'delaudios') {
         const frase = frases[0];
-        if (scope === 'global' && !isOwner) return m.reply('🚫 Solo los owners pueden eliminar audios globales.');
+        if (scope === 'global' && !isOwner) return m.reply(getRequiredPluginMessage('audio.custom.ownerDeleteOnly'));
 
         const searchableScopes = isOwner ? Object.keys(await getAudioConfig()) : [scope];
         const found = await findAudioEntryInScopes(searchableScopes, frase);
-        if (!found) return m.reply(`❌ No existe un audio guardado con la frase: *${frase}*`);
+        if (!found) return m.reply(renderTemplate(getRequiredPluginMessage('audio.custom.notFound'), {phrase: frase}));
 
         await deleteAudioEntry(found.scope, frase, found.entry.regex);
-        return m.reply(`🗑️ Audio *${frase}* eliminado correctamente del scope: ${found.scope}`);
+        return m.reply(renderTemplate(getRequiredPluginMessage('audio.custom.deleted'), {phrase: frase, scope: found.scope}));
     }
 
     const url = resto.join('-')?.trim() || null;
@@ -82,7 +85,7 @@ export default definePlugin({
             });
         } catch (e: unknown) {
             logError('[❌] Error al descargar audio desde URL:', e);
-            return m.reply('❌ No se pudo descargar el audio desde la URL.');
+            return m.reply(getRequiredPluginMessage('audio.custom.downloadError'));
         }
     } else if (m.quoted?.message?.audioMessage) {
         try {
@@ -97,13 +100,13 @@ export default definePlugin({
             });
         } catch (e: unknown) {
             logError('[❌] Error al procesar audio citado:', e);
-            return m.reply('❌ No se pudo procesar el audio, por favor respondar a un audios nota de voz.');
+            return m.reply(getRequiredPluginMessage('audio.custom.processError'));
         }
     } else {
-        return m.reply('❌ Responde a un audio o usa una URL válida.');
+        return m.reply(getRequiredPluginMessage('audio.custom.missingAudio'));
     }
 
-    if (!audioPath) return m.reply('❌ No se pudo guardar el audio.');
+    if (!audioPath) return m.reply(getRequiredPluginMessage('audio.custom.saveError'));
 
     for (const frase of frases) {
         const regex = `(${frase})`;
@@ -127,6 +130,9 @@ export default definePlugin({
         }
     }
 
-    return m.reply(`✅ Audio guardado:\n📌 Frases: ${frases.join(', ')}\n📁 Archivo: ${audioPath}`);
+    return m.reply(renderTemplate(getRequiredPluginMessage('audio.custom.saved'), {
+        phrases: frases.join(', '),
+        file: audioPath
+    }));
     }
 });

@@ -1,5 +1,6 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {setSubbotName} from '../../services/subbot.service.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ["setbotname <name>"],
@@ -11,8 +12,8 @@ export default definePlugin({
         const id = conn.user?.id;
         if (!id) return;
         const name = args.join(" ").trim();
-        if (!name) return m.reply("❌ Escribe un nombre para el bot.\n\nEjemplo:\n/setbotname LoliBot 😎");
+        if (!name) return m.reply(getRequiredPluginMessage('owner.setBotName.missing'));
         await setSubbotName(id, name);
-        m.reply(`✅ Nombre del bot actualizado a:\n*${name}*`);
+        m.reply(renderTemplate(getRequiredPluginMessage('owner.setBotName.success'), {name}));
     },
 });

@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage} from '../../lib/message-template.js';
 
 export default definePlugin({
     command: ['kick', 'expulsar'],
@@ -9,7 +10,7 @@ export default definePlugin({
     botAdmin: true,
     register: true,
     async execute(m, {conn}) {
-        const kickte = `A quien eliminó? etiquetas a una persona con @tag pendejo`;
+        const kickte = getRequiredPluginMessage('group.kick.missingUser');
         if (!m.mentionedJid[0] && !m.quoted) return m.reply(kickte, m.chat, {mentions: conn.parseMention(kickte)});
         const user = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted?.sender;
         if (!user) return m.reply(kickte, m.chat, {mentions: await conn.parseMention(kickte)});

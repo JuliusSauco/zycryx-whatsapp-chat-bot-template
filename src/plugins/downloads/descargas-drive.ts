@@ -2,6 +2,7 @@ import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {QuotedMessage} from '../../types/context.js';
 import {httpJson} from '../../lib/http-client.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
 import {replyReportableError} from '../../lib/reply-helpers.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
@@ -33,15 +34,19 @@ export default definePlugin({
     register: true,
     limit: 3,
     async execute(m, {conn, args, usedPrefix, command}) {
-    if (!args[0]) return m.reply(`⚠️ Ingrese una Url de Drive\n• Ejemplo: ${usedPrefix + command} https://drive.google.com/file/d/1-8BSwPSAycKYMqveGm_JTu2c_wIDkJIt/view?usp=drivesdk`)
+    if (!args[0]) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.drive.missingUrl'), {
+        command: usedPrefix + command
+    }))
 
     if (!userRequests.acquire(m.sender)) {
-        conn.reply(m.chat, `⏳ *Hey @${m.sender.split('@')[0]} Espera...* Ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra...`, userCaptions.get(m.sender) || m)
+        conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.drive.locked'), {
+            user: m.sender.split('@')[0]
+        }), userCaptions.get(m.sender) || m)
         return;
     }
     m.react("📥");
     try {
-        const waitMessageSent = await conn.reply(m.chat, `*⌛ 𝐂𝐚𝐥𝐦𝐚 ✋ 𝐂𝐥𝐚𝐜𝐤, 𝐘𝐚 𝐞𝐬𝐭𝐨𝐲 𝐄𝐧𝐯𝐢𝐚𝐝𝐨 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 🚀*\n*𝐒𝐢 𝐧𝐨 𝐥𝐞 𝐥𝐥𝐞𝐠𝐚 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 𝐞𝐬 𝐝𝐞𝐛𝐢𝐝𝐨 𝐚 𝐪𝐮𝐞 𝐞𝐬 𝐦𝐮𝐲 𝐩𝐞𝐬𝐚𝐝𝐨*`, m)
+        const waitMessageSent = await conn.reply(m.chat, getRequiredPluginMessage('downloads.drive.progress'), m)
         userCaptions.set(m.sender, waitMessageSent);
         const downloadProviders: Array<Provider<DriveFileData>> = [
             {

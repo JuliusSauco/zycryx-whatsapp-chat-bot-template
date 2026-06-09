@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {setStickerExif} from '../../services/sticker-settings.service.js';
 
 export default definePlugin({
@@ -7,17 +8,20 @@ export default definePlugin({
     command: ['exif'],
     register: true,
     async execute(m, {args, usedPrefix, command}) {
-    if (!args[0]) return m.reply(`*⚠️ Uso:* ${usedPrefix}${command} packname | author\n*Ejemplo:* ${usedPrefix}${command} LoliBot | elrebelde21`)
+    if (!args[0]) return m.reply(renderTemplate(getRequiredPluginMessage('stickers.exif.usage'), {command: usedPrefix + command}))
 
     let text = args.join(' ').split('|');
     let packname = text[0].trim();
     let author = text[1] ? text[1].trim() : '';
 
-    if (!packname) return m.reply('⚠️ Debes ingresar al menos un *packname*.');
-    if (packname.length > 600) return m.reply('⚠️ El *packname* es demasiado largo (máximo 600 caracteres).');
-    if (author && author.length > 650) return m.reply('⚠️ El *author* es demasiado largo (máximo 650 caracteres).');
+    if (!packname) return m.reply(getRequiredPluginMessage('stickers.exif.missingPackname'));
+    if (packname.length > 600) return m.reply(getRequiredPluginMessage('stickers.exif.packnameTooLong'));
+    if (author && author.length > 650) return m.reply(getRequiredPluginMessage('stickers.exif.authorTooLong'));
 
     await setStickerExif(m.sender, packname, author || null);
-    await m.reply(`✅ Perfecto, hemos actualizado el *EXIF* de tus stickers. Ahora cada sticker que crees tendrá:\n\n◉ *Packname:* ${packname}\n◉ *Author:* ${author || 'Ninguno'}\n\n> ¡A crear stickers personalizados! 😎`)
+    await m.reply(renderTemplate(getRequiredPluginMessage('stickers.exif.success'), {
+        packname,
+        author: author || getRequiredPluginMessage('stickers.exif.none'),
+    }))
     }
 });

@@ -1,6 +1,7 @@
 import {getSubbotConfig} from '../../services/subbot.service.js'
 import {definePlugin} from '../../core/define-plugin.js'
 import type {SubbotConfig} from '../../types/config.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
 type SubbotConnection = (typeof globalThis.conns)[number]
 
@@ -32,7 +33,7 @@ export default definePlugin({
         const mainId = getMainBotId()
         const activeSubbots = getActiveSubbots(globalThis.conns || [], mainId)
 
-        if (!activeSubbots.length) return m.reply("❌ No hay subbots conectados en este momento.")
+        if (!activeSubbots.length) return m.reply(getRequiredPluginMessage('subbots.list.empty'))
 
         const configs = await loadSubbotConfigs(activeSubbots.map((bot) => bot.configId))
         const lines = activeSubbots.map((bot) => {
@@ -40,7 +41,10 @@ export default definePlugin({
             return formatSubbotLine(bot, config)
         })
 
-        return m.reply(`🤖 *SubBots activos: ${activeSubbots.length}*\n\n${lines.join('\n\n')}`)
+        return m.reply(renderTemplate(getRequiredPluginMessage('subbots.list.response'), {
+            count: activeSubbots.length,
+            lines: lines.join('\n\n')
+        }))
     }
 })
 
@@ -85,25 +89,25 @@ async function loadSubbotConfigs(configIds: string[]): Promise<Map<string, Subbo
 }
 
 function formatSubbotLine(bot: ActiveSubbot, config: SubbotConfig): string {
-    const mode = config.mode === 'private' ? 'Private' : 'Public'
+    const mode = config.mode === 'private' ? getRequiredPluginMessage('subbots.list.modePrivate') : getRequiredPluginMessage('subbots.list.modePublic')
     const prefixes = Array.isArray(config.prefix) ? config.prefix : [config.prefix]
     const prefixText = prefixes.map((prefix) => `\`${prefix}\``).join(', ')
     const mainPrefix = prefixes[0] === '' ? '' : prefixes[0]
     const menuText = mainPrefix ? `${mainPrefix}menu` : 'menu'
-    const uptime = bot.socket.uptime ? formatearMs(Date.now() - bot.socket.uptime) : 'Desconocido'
+    const uptime = bot.socket.uptime ? formatearMs(Date.now() - bot.socket.uptime) : getRequiredPluginMessage('subbots.list.unknown')
     const showNumber = !config.privacy
     const showLendOption = Boolean(config.prestar && !config.privacy)
     const title = showNumber
         ? `wa.me/${bot.cleanId}?text=${encodeURIComponent(menuText)} (${bot.name})`
         : `(${bot.name})`
 
-    return [
-        `• ${title}`,
-        `   ⏱️ Tiempo activo: *${uptime}*`,
-        `   ⚙️ Modo: *${mode}*`,
-        `   🛠️ Prefix: ${prefixText}`,
-        showLendOption ? `   🟢 *Prestar bot*: #join <enlace>` : null,
-    ].filter((line): line is string => Boolean(line)).join('\n')
+    return renderTemplate(getRequiredPluginMessage('subbots.list.line'), {
+        title,
+        uptime,
+        mode,
+        prefixes: prefixText,
+        lendLine: showLendOption ? getRequiredPluginMessage('subbots.list.lendLine') : ''
+    })
 }
 
 function normalizeSerializedId(id: string): string {

@@ -1,15 +1,16 @@
 import {definePlugin} from '../../core/define-plugin.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 export default definePlugin({
     help: ['group open/close', 'grupo abrir/cerrar', 'grupo aprobar +number'],
     tags: ['group'],
     command: /^(group|grupo)$/i,
     async execute(m, {conn, args, usedPrefix, command, isOwner}) {
     let groupId = m.isGroup ? m.chat : null;
-    if (!m.isGroup && !isOwner) return m.reply('⚠️ Solo el owner puede usar este comando en privado.');
+    if (!m.isGroup && !isOwner) return m.reply(getRequiredPluginMessage('group.config.ownerPrivateOnly'));
     let identifier, action, target;
 
     if (!m.isGroup && !m.isAdmin && isOwner) {
-        if (args.length < 2) return m.reply('⚠️ Formato incorrecto. Usa: !grupo [id/enlace] [ID/URL] - [acción] [+número si aplica]')
+        if (args.length < 2) return m.reply(getRequiredPluginMessage('group.config.invalidPrivateFormat'))
 
         if (args[0].startsWith('id')) {
             identifier = args[1];
@@ -26,12 +27,12 @@ export default definePlugin({
                 target = args[2]?.replace('+', '') + '@s.whatsapp.net';
             }
             const inviteCode = identifier.match(/(?:https:\/\/)?(?:www\.)?(?:chat\.|wa\.)?whatsapp\.com\/(?:invite\/|joinchat\/)?([0-9A-Za-z]{22,24})/i)?.[1];
-            if (!inviteCode) return m.reply('⚠️ Enlace inválido. Usa un enlace de WhatsApp válido.')
+            if (!inviteCode) return m.reply(getRequiredPluginMessage('group.config.invalidInvite'))
             try {
                 const inviteInfo = await conn.groupGetInviteInfo(inviteCode);
                 groupId = inviteInfo.id;
             } catch (e: unknown) {
-                return m.reply('⚠️ No se pudo obtener información del grupo. Verifica el enlace o que el bot tenga acceso.')
+                return m.reply(getRequiredPluginMessage('group.config.inviteInfoError'))
             }
         } else if (args[0] === 'enlace') {
             identifier = args[1];
@@ -43,72 +44,74 @@ export default definePlugin({
                 target = args[3]?.replace('+', '') + '@s.whatsapp.net';
             }
             if (!identifier.match(/chat\.whatsapp\.com/)) {
-                return m.reply('⚠️ Debes proporcionar un enlace válido.')
+                return m.reply(getRequiredPluginMessage('group.config.missingValidLink'))
             }
             const inviteCode = identifier.match(/(?:https:\/\/)?(?:www\.)?(?:chat\.|wa\.)?whatsapp\.com\/(?:invite\/|joinchat\/)?([0-9A-Za-z]{22,24})/i)?.[1];
-            if (!inviteCode) return m.reply('⚠️ Enlace inválido. Usa un enlace de WhatsApp válido.')
+            if (!inviteCode) return m.reply(getRequiredPluginMessage('group.config.invalidInvite'))
             try {
                 const inviteInfo = await conn.groupGetInviteInfo(inviteCode);
                 groupId = inviteInfo.id;
             } catch (e: unknown) {
-                return m.reply('⚠️ No se pudo obtener información del grupo. Verifica el enlace o que el bot tenga acceso.')
+                return m.reply(getRequiredPluginMessage('group.config.inviteInfoError'))
             }
         } else {
-            return m.reply('⚠️ Usa "id" o "enlace" como primer argumento, o pasa directamente un enlace válido.')
+            return m.reply(getRequiredPluginMessage('group.config.invalidIdentifier'))
         }
     } else if (m.isGroup) {
         action = args[0]?.toLowerCase();
         target = args[1]?.replace(/@/, '') + '@s.whatsapp.net';
     }
 
-    if (!groupId) return m.reply('⚠️ Debes estar en un grupo o especificar un ID/enlace en privado.');
-    if (!action) return m.reply('⚠️ Debes especificar una acción (abrir, cerrar, daradmin, etc.).')
+    if (!groupId) return m.reply(getRequiredPluginMessage('group.config.missingGroup'));
+    if (!action) return m.reply(getRequiredPluginMessage('group.config.missingAction'))
 
     switch (action) {
         case 'abrir':
         case 'open':
         case 'abierto':
             await conn.groupSettingUpdate(groupId, 'not_announcement');
-            m.reply(`🟢 ¡GRUPO ABIERTO! Todos pueden escribir ahora.`);
+            m.reply(getRequiredPluginMessage('group.config.opened'));
             break;
 
         case 'cerrar':
         case 'close':
         case 'cerrado':
             await conn.groupSettingUpdate(groupId, 'announcement');
-            m.reply(`⚠️ ¡GRUPO CERRADO! Solo admins pueden escribir.`);
+            m.reply(getRequiredPluginMessage('group.config.closed'));
             break;
 
         case 'addadmin':
         case 'promote':
         case 'daradmin':
-            if (!target) return m.reply('⚠️ Especifica un número (ejemplo: - daradmin +51987654321) o menciona en grupo.')
+            if (!target) return m.reply(getRequiredPluginMessage('group.config.missingPromoteTarget'))
             await conn.groupParticipantsUpdate(groupId, [target], 'promote');
-            m.reply(`✅ @${target.split('@')[0]} ahora es admin.`);
+            m.reply(renderTemplate(getRequiredPluginMessage('group.config.promoted'), {user: target.split('@')[0]}));
             break;
 
         case 'removeadmin':
         case 'demote':
         case 'quitaradmin':
-            if (!target) return m.reply('⚠️ Especifica un número (ejemplo: - quitaradmin +51987654321) o menciona en grupo.')
+            if (!target) return m.reply(getRequiredPluginMessage('group.config.missingDemoteTarget'))
             await conn.groupParticipantsUpdate(groupId, [target], 'demote');
-            m.reply(`✅ @${target.split('@')[0]} ya no es admin.`);
+            m.reply(renderTemplate(getRequiredPluginMessage('group.config.demoted'), {user: target.split('@')[0]}));
             break;
 
         case 'kick':
         case 'eliminar':
-            if (!target) return m.reply('⚠️ Especifica un número (ejemplo: - eliminar +51987654321) o menciona en grupo.')
+            if (!target) return m.reply(getRequiredPluginMessage('group.config.missingKickTarget'))
             await conn.groupParticipantsUpdate(groupId, [target], 'remove');
-            m.reply(`🗑️ @${target.split('@')[0]} ha sido eliminado del grupo.`);
+            m.reply(renderTemplate(getRequiredPluginMessage('group.config.kicked'), {user: target.split('@')[0]}));
             break;
 
         case 'aprobar':
-            if (!target) return m.reply('⚠️ Especifica un número (ejemplo: - aprobar +51987654321).')
+            if (!target) return m.reply(getRequiredPluginMessage('group.config.missingApproveTarget'))
             await conn.groupRequestParticipantsUpdate(groupId, [target], 'approve');
-            m.reply(`✅ @${target.split('@')[0]} ha sido aprobado en el grupo.`);
+            m.reply(renderTemplate(getRequiredPluginMessage('group.config.approved'), {user: target.split('@')[0]}));
             break;
         default:
-            return m.reply(`*⚠️ COMANDO INVÁLIDO*\n\n*En grupo:*\n${usedPrefix + command} abrir\n${usedPrefix + command} cerrar\n${usedPrefix + command} daradmin @usuario\n${usedPrefix + command} quitaradmin @usuario\n${usedPrefix + command} eliminar @usuario\n\n*En privado (owner):*\n${usedPrefix + command} id [ID] - abrir\n${usedPrefix + command} enlace [URL] - cerrar\n${usedPrefix + command} [URL] - cerrar\n${usedPrefix + command} id [ID] - daradmin +número`)
+            return m.reply(renderTemplate(getRequiredPluginMessage('group.config.invalidCommand'), {
+                command: usedPrefix + command,
+            }))
     }
     }
 });

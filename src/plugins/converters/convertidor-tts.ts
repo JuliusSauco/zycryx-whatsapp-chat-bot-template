@@ -3,8 +3,7 @@ import path from "path"
 import {fileURLToPath} from "url"
 import {spawn} from "child_process"
 import gTTS from "node-gtts"
-import {definePlugin} from '../../core/define-plugin.js'
-import {errorMessage, replyFailure, replyUsage, replyUserError} from '../../lib/reply-helpers.js'
+import {defineSdkPlugin, errorMessage} from '../../core/sdk-plugin.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -14,38 +13,43 @@ if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, {recursive: true})
 type VoiceEffect = "anonymous" | "robot" | "grave" | "aguda" | "niño" | "demonio";
 const voces: VoiceEffect[] = ["anonymous", "robot", "grave", "aguda", "niño", "demonio"]
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ["tts <voz|idioma> <texto>"],
     tags: ["convertidor"],
     command: /^g?tts$/i,
     register: true,
-    async execute(m, {conn, args, usedPrefix, command}) {
-    if (!args.length && !m.quoted?.text) return replyUsage(m, `${usedPrefix + command} <voz|idioma> <texto>`, `*Voces:* anonymous, robot, grave, aguda, niño\n*Idiomas:* es, en, pt, fr, etc.\n\nEjemplo:\n${usedPrefix + command} anonymous Hola\n${usedPrefix + command} es hello`)
-    m.react("🎙️")
-    conn.sendPresenceUpdate('recording', m.chat)
-    const first = args[0].toLowerCase()
+    async execute(m, {sdk}) {
+    const commandLabel = sdk.usedPrefix + sdk.command;
+    if (!sdk.args.length && !m.quoted?.text) return sdk.reply.usage(
+        sdk.content.renderMessage('converters.tts.usage', {command: commandLabel}),
+        sdk.content.renderMessage('converters.tts.examples', {command: commandLabel}),
+    )
+    await sdk.reply.react("🎙️")
+    await sdk.conn.sendPresenceUpdate('recording', sdk.chatId)
+    const first = sdk.args[0]?.toLowerCase() || ""
     let effect: VoiceEffect | null = null, lang = "es", text = ""
 
     if (isVoiceEffect(first)) {
         effect = first
-        text = args.slice(1).join(" ")
+        text = sdk.args.slice(1).join(" ")
     } else if (/^[a-z]{2}$/.test(first)) {
         lang = first
-        text = args.slice(1).join(" ")
+        text = sdk.args.slice(1).join(" ")
     } else {
-        text = args.join(" ")
+        text = sdk.args.join(" ")
     }
 
-    if (!text) return replyUserError(m, "Escribe un texto para convertir a voz.")
+    if (!text) text = m.quoted?.text || "";
+    if (!text) return sdk.reply.userError(sdk.content.message('converters.tts.missingText'))
     try {
         const wav = await synthTTS(text, lang)
         const ogg = await applyEffect(wav, effect)
         const buffer = fs.readFileSync(ogg)
-        await conn.sendMessage(m.chat, {audio: buffer, mimetype: "audio/ogg; codecs=opus", ptt: true}, {quoted: m})
+        await sdk.sendMessage({audio: buffer, mimetype: "audio/ogg; codecs=opus", ptt: true})
         fs.unlinkSync(wav);
         fs.unlinkSync(ogg)
     } catch (e: unknown) {
-        return replyFailure(m, "Error: " + errorMessage(e))
+        return sdk.reply.failure(sdk.content.renderMessage('converters.tts.error', {error: errorMessage(e)}))
     }
     }
 })

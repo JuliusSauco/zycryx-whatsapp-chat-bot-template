@@ -1,5 +1,6 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {setGroupBanned} from '../../services/group-settings.service.js';
+import {getRequiredPluginMessage} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ['banchat'],
@@ -8,6 +9,6 @@ export default definePlugin({
     owner: true,
     async execute(m) {
         await setGroupBanned(m.chat, true);
-        m.reply("✅ Este grupo ha sido *baneado*. El bot ya no responderá aquí.");
+        m.reply(getRequiredPluginMessage('owner.banChat.success'));
     },
 });

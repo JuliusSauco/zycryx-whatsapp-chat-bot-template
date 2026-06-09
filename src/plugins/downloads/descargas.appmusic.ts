@@ -3,6 +3,7 @@ import {definePlugin} from '../../core/define-plugin.js'
 import * as cheerio from 'cheerio';
 import type {proto} from '@whiskeysockets/baileys';
 import {httpJson, httpText} from '../../lib/http-client.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 
 interface SongData {
@@ -55,9 +56,13 @@ export default definePlugin({
     register: true,
     limit: 1,
     async execute(m, {conn, text, usedPrefix, command}) {
-    if (!text) return m.reply(`Ejemplo de uso: ${usedPrefix + command} https://music.apple.com/us/album/glimpse-of-us/1625328890?i=1625328892`);
+    if (!text) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.appleMusic.missingUrl'), {
+        command: usedPrefix + command
+    }));
     if (!userRequests.acquire(m.sender)) {
-        conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]} pendejo, ya estás descargando una canción 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆`, userMessages.get(m.sender) || m)
+        conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.appleMusic.locked'), {
+            user: m.sender.split('@')[0]
+        }), userMessages.get(m.sender) || m)
         return;
     }
     m.react("⌛");
@@ -161,7 +166,15 @@ export default definePlugin({
         }
 
         if (!songData) throw new Error('No se pudo descargar la canción desde ninguna API');
-        const texto = `*• Titulo:* ${songData.name}\n*• Artistas:* ${songData.artists}\n*• Duración:* ${songData.duration}${songData.url ? `\n*• URL:* ${songData.url}` : ''}`;
+        const urlLine = songData.url
+            ? renderTemplate(getRequiredPluginMessage('downloads.appleMusic.urlLine'), {url: songData.url})
+            : '';
+        const texto = renderTemplate(getRequiredPluginMessage('downloads.appleMusic.trackMessage'), {
+            title: songData.name,
+            artists: songData.artists,
+            duration: songData.duration,
+            urlLine
+        });
         const coverMessage = await conn.sendFile(m.chat, songData.image, 'cover.jpg', texto, m);
         userMessages.set(m.sender, coverMessage);
         await conn.sendMessage(m.chat, {
@@ -172,7 +185,7 @@ export default definePlugin({
         m.react("✅");
     } catch (e: unknown) {
         logError("Error final:", e);
-        m.reply("Ocurrió un error al intentar obtener el enlace de descarga.");
+        m.reply(getRequiredPluginMessage('downloads.appleMusic.error'));
         m.react("❌");
     } finally {
         userRequests.release(m.sender);

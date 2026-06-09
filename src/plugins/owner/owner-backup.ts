@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import fs from 'fs'
 import {definePlugin} from '../../core/define-plugin.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
 export default definePlugin({
     help: ['backup'],
@@ -20,9 +21,9 @@ export default definePlugin({
             const isMainBot = jid === global.conn?.user?.id
             const sessionPath = isMainBot ? './BotSession/creds.json' : `./jadibot/${idClean}/creds.json`
 
-            if (!fs.existsSync(sessionPath)) return await m.reply(`❌ No se encontró el archivo *creds.json* en:\n${sessionPath}`)
+            if (!fs.existsSync(sessionPath)) return await m.reply(renderTemplate(getRequiredPluginMessage('owner.backup.missingCreds'), {path: sessionPath}))
             const creds = fs.readFileSync(sessionPath)
-            await m.reply(`_📂 *Respaldo de sesión de ${idClean}* (${date})_`)
+            await m.reply(renderTemplate(getRequiredPluginMessage('owner.backup.heading'), {id: idClean, date}))
             await conn.sendMessage(m.sender, {
                 document: creds,
                 mimetype: 'application/json',
@@ -31,7 +32,7 @@ export default definePlugin({
         } catch (e: unknown) {
             logError(e)
             await m.react('❌')
-            await m.reply('❌ Error al generar el respaldo de la sesión.')
+            await m.reply(getRequiredPluginMessage('owner.backup.error'))
         }
     }
 })

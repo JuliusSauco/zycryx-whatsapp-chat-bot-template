@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {addWalletResourceAndSetWait, getWallet} from '../../services/wallet.service.js';
 import {randomInt} from '../../utils/random.js';
 import {formatDurationCompact} from '../../utils/time.js';
@@ -12,17 +13,23 @@ export default definePlugin({
     const cooldown = 30_000;
     const now = Date.now();
     const user = await getWallet(m.sender);
-    if (!user) return conn.reply(m.chat, '✳️ El usuario no se encuentra en la base de datos.', m);
+    if (!user) return conn.reply(m.chat, getRequiredPluginMessage('games.shared.missingUser'), m);
     const lastWait = Number(user?.wait) || 0;
     const remaining = lastWait + cooldown - now;
 
-    if (remaining > 0) return conn.fakeReply(m.chat, `*🕓 Calma crack 🤚, Espera ${formatDurationCompact(remaining)} antes de volver a usar el comando*`, m.sender, `ᴺᵒ ʰᵃᵍᵃⁿ ˢᵖᵃᵐ`, 'status@broadcast');
-    if (args.length < 2) return conn.reply(m.chat, `⚠️ Formato incorrecto. Usa: ${usedPrefix + command} <color> <cantidad>\n\nEjemplo: ${usedPrefix + command} black 100`, m);
+    if (remaining > 0) return conn.fakeReply(m.chat, renderTemplate(getRequiredPluginMessage('games.shared.cooldown'), {
+        time: formatDurationCompact(remaining)
+    }), m.sender, getRequiredPluginMessage('games.shared.cooldownNoSpam'), 'status@broadcast');
+    if (args.length < 2) return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('games.roulette.usage'), {
+        command: usedPrefix + command
+    }), m);
     const color = args[0].toLowerCase();
     const betAmount = parseInt(args[1]);
-    if (!['red', 'black', 'green'].includes(color)) return conn.reply(m.chat, '🎯 Color no válido. Usa: "red", "black" o "green".', m);
-    if (isNaN(betAmount) || betAmount <= 0) return conn.reply(m.chat, '❌ La cantidad debe ser un número positivo.', m);
-    if (user.exp < betAmount) return conn.reply(m.chat, `❌ No tienes suficiente XP para apostar. Tienes *${formatExp(user.exp)} XP*`, m);
+    if (!['red', 'black', 'green'].includes(color)) return conn.reply(m.chat, getRequiredPluginMessage('games.roulette.invalidColor'), m);
+    if (isNaN(betAmount) || betAmount <= 0) return conn.reply(m.chat, getRequiredPluginMessage('games.roulette.invalidAmount'), m);
+    if (user.exp < betAmount) return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('games.roulette.notEnoughExp'), {
+        exp: formatExp(user.exp)
+    }), m);
 
     const resultColor = getRandomColor();
     const isWin = resultColor === color;
@@ -33,7 +40,13 @@ export default definePlugin({
     }
 
     await addWalletResourceAndSetWait(m.sender, 'exp', -betAmount + winAmount, now);
-    return conn.reply(m.chat, `😱 La ruleta cayó en *${resultColor}*\n${isWin ? `🎉 ¡Ganaste *${formatExp(winAmount)} XP*!` : `💀 Perdiste *${formatExp(betAmount)} XP*`}`, m);
+    const message = isWin
+        ? renderTemplate(getRequiredPluginMessage('games.roulette.win'), {amount: formatExp(winAmount)})
+        : renderTemplate(getRequiredPluginMessage('games.roulette.lose'), {amount: formatExp(betAmount)});
+    return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('games.roulette.result'), {
+        color: resultColor,
+        message
+    }), m);
     }
 });
 

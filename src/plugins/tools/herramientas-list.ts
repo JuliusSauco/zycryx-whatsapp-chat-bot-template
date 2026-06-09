@@ -1,110 +1,125 @@
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {listBannedGroups} from '../../services/group-settings.service.js';
 import {listBannedUsers, listMarriedUsers, listWarnedUsers} from '../../services/user.service.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ["listablock", "listaban", "listaadv", "chatsbaneados", "listaparejas"],
     tags: ["owner"],
     command: /^listablock|listaban|listaadv|chatsbaneados|listaparejas$/i,
-    async execute(m, {conn, command}) {
+    async execute(_m, {sdk}) {
     let txt = "";
 
-    if (command === "listablock") {
+    if (sdk.command === "listablock") {
         try {
-            const blocklist = await conn.fetchBlocklist() || [];
-            txt += `📛 *LISTA DE BLOQUEADOS*\n\n*Total:* ${blocklist.length}\n\n╭━━━[ *${info.vs} 𓃠* ]━━━⬣\n`;
+            const blocklist = await sdk.conn.fetchBlocklist() || [];
+            txt += sdk.content.renderMessage('tools.list.block.header', {
+                total: String(blocklist.length),
+                version: info.vs,
+            });
             if (blocklist.length) {
                 for (let jid of blocklist) {
                     if (!jid) continue;
-                    txt += `┃🚫 @${jid.split("@")[0]}\n`;
+                    txt += sdk.content.renderMessage('tools.list.block.row', {user: jid.split("@")[0]});
                 }
             } else {
-                txt += "┃✅ No hay usuarios bloqueados actualmente.\n";
+                txt += sdk.content.message('tools.list.block.empty');
             }
-            txt += `╰━━━━━━━⬣\n\n*Por favor no llame para evitar ser Bloqueado, Gracias.*`
+            txt += sdk.content.message('tools.list.block.footer')
         } catch (e: unknown) {
-            txt += "❌ Error al obtener la lista de bloqueados.\n";
+            txt += sdk.content.message('tools.list.block.error');
         }
-        return conn.reply(m.chat, txt, m, {mentions: await conn.parseMention(txt)});
+        return sdk.reply.text(txt, null, {mentions: await sdk.conn.parseMention(txt)});
     }
 
-    if (command === "chatsbaneados") {
+    if (sdk.command === "chatsbaneados") {
         try {
             const chats = await listBannedGroups();
-            txt += `╭•·––| 💬 𝘾𝙃𝘼𝙏𝙎 𝘽𝘼𝙉𝙀𝘼𝘿𝙊𝙎* |––·•
-│ *Total:* ${chats.length}\n│\n`;
+            txt += sdk.content.renderMessage('tools.list.bannedChats.header', {total: String(chats.length)});
             if (chats.length) {
                 for (const chat of chats) {
-                    txt += `│🚫 ${chat}\n`;
+                    txt += sdk.content.renderMessage('tools.list.bannedChats.row', {chat});
                 }
             } else {
-                txt += "│✅ No hay chats baneados actualmente.\n";
+                txt += sdk.content.message('tools.list.bannedChats.empty');
             }
-            txt += "╰•·–––––––––––––––––––·•\n";
+            txt += sdk.content.message('tools.list.bannedChats.footer');
         } catch (e: unknown) {
-            txt += "❌ Error al obtener la lista de chats baneados.\n";
+            txt += sdk.content.message('tools.list.bannedChats.error');
         }
-        return conn.reply(m.chat, txt, m);
+        return sdk.reply.text(txt);
     }
 
-    if (command === "listaban") {
+    if (sdk.command === "listaban") {
         try {
             const users = await listBannedUsers();
-            txt += `╭•·––| 👥 𝐔𝐒𝐔𝐀𝐑𝐈𝐎𝐒 𝐁𝐀𝐍𝐄𝐀𝐃𝐎𝐒 |––·•\n│ *Total:* ${users.length}\n│\n`;
+            txt += sdk.content.renderMessage('tools.list.bannedUsers.header', {total: String(users.length)});
             if (users.length) {
                 for (const user of users) {
-                    let razon = user.razon_ban ? `\n│📌 *Razón:* ${user.razon_ban}` : "";
-                    txt += `├🚫 @${user.id.split("@")[0]}${razon}\n`;
+                    let razon = user.razon_ban
+                        ? sdk.content.renderMessage('tools.list.bannedUsers.reason', {reason: user.razon_ban})
+                        : "";
+                    txt += sdk.content.renderMessage('tools.list.bannedUsers.row', {
+                        user: user.id.split("@")[0],
+                        reason: razon,
+                    });
                 }
             } else {
-                txt += "│✅ No hay usuarios baneados actualmente.\n";
+                txt += sdk.content.message('tools.list.bannedUsers.empty');
             }
-            txt += "╰•·–––––––––––––––––––·•\n";
+            txt += sdk.content.message('tools.list.bannedUsers.footer');
         } catch (e: unknown) {
-            txt += "❌ Error al obtener la lista de baneados.\n";
+            txt += sdk.content.message('tools.list.bannedUsers.error');
         }
-        return conn.reply(m.chat, txt, m, {mentions: await conn.parseMention(txt)});
+        return sdk.reply.text(txt, null, {mentions: await sdk.conn.parseMention(txt)});
     }
 
-    if (command === "listaparejas") {
+    if (sdk.command === "listaparejas") {
         try {
             const users = await listMarriedUsers();
-            txt += `╭•·––| 💞 *LISTA DE PAREJAS* |––·•\n│\n*│Total:* ${users.length}\n│\n`;
+            txt += sdk.content.renderMessage('tools.list.married.header', {total: String(users.length)});
             if (users.length) {
                 let i = 1;
                 for (const user of users) {
                     if (!user.marry || user.marry === "null") continue;
-                    txt += `│ *${i}.* @${user.id.split("@")[0]} 💞 @${user.marry.split("@")[0]}\n`;
+                    txt += sdk.content.renderMessage('tools.list.married.row', {
+                        index: String(i),
+                        user: user.id.split("@")[0],
+                        partner: user.marry.split("@")[0],
+                    });
                     i++;
                 }
             } else {
-                txt += "│✅ No hay parejas registradas actualmente.\n";
+                txt += sdk.content.message('tools.list.married.empty');
             }
-            txt += "╰•·–––––––––––––––––––·•\n";
+            txt += sdk.content.message('tools.list.married.footer');
         } catch (e: unknown) {
-            txt += "❌ Error al obtener la lista de parejas.\n";
+            txt += sdk.content.message('tools.list.married.error');
         }
-        return conn.reply(m.chat, txt, m, {mentions: await conn.parseMention(txt)});
+        return sdk.reply.text(txt, null, {mentions: await sdk.conn.parseMention(txt)});
     }
 
-    if (command === "listaadv") {
+    if (sdk.command === "listaadv") {
         try {
             const users = await listWarnedUsers();
-            txt += `╭•·––| ⚠️ *USUARIOS ADVERTIDOS / WARNED* |––·•\n│\n*│Total:* ${users.length}\n│\n`;
+            txt += sdk.content.renderMessage('tools.list.warned.header', {total: String(users.length)});
             if (users.length) {
                 let i = 1;
                 for (const user of users) {
-                    txt += `│ *${i}.* @${user.id.split("@")[0]} *(Warn: ${user.warn}/4)*\n`;
+                    txt += sdk.content.renderMessage('tools.list.warned.row', {
+                        index: String(i),
+                        user: user.id.split("@")[0],
+                        warn: String(user.warn),
+                    });
                     i++;
                 }
             } else {
-                txt += "│✅ No hay usuarios advertidos actualmente.\n";
+                txt += sdk.content.message('tools.list.warned.empty');
             }
-            txt += "╰•·–––––––––––––––––––·•\n";
+            txt += sdk.content.message('tools.list.warned.footer');
         } catch (e: unknown) {
-            txt += "❌ Error al obtener la lista de advertidos.\n";
+            txt += sdk.content.message('tools.list.warned.error');
         }
-        return conn.reply(m.chat, txt, m, {mentions: await conn.parseMention(txt)});
+        return sdk.reply.text(txt, null, {mentions: await sdk.conn.parseMention(txt)});
     }
     }
 });

@@ -2,6 +2,7 @@ import {logInfo} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import fg from 'api-dylux'
 import {httpJson} from '../../lib/http-client.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 interface InstagramStalkResponse {
     data?: {
@@ -25,42 +26,46 @@ export default definePlugin({
     register: true,
     limit: 1,
     async execute(m, {conn, args, usedPrefix, command}) {
-    if (!args[0]) return m.reply(`⚠️ Ingrese el Username de Instagram\n\n*• Ejemplo:* ${usedPrefix + command} GataDios`)
+    if (!args[0]) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.instagramStalk.missingUsername'), {
+        command: usedPrefix + command
+    }))
     m.react("⌛");
     try {
         const apiUrl = `${info.apis}/tools/igstalk?username=${encodeURIComponent(args[0])}`;
         const delius = await httpJson<InstagramStalkResponse>(apiUrl);
         if (!delius || !delius.data) return m.react("❌");
         const profile = delius.data;
-        const txt = `👤 *Perfil de Instagram*:
-🔹 *Nombre de usuario*: ${profile.username}
-🔹 *Nombre completo*: ${profile.full_name}
-🔹 *Biografía*: ${profile.biography}
-🔹 *Verificado*: ${profile.verified ? 'Sí' : 'No'}
-🔹 *Cuenta privada*: ${profile.private ? 'Sí' : 'No'}
-🔹 *Seguidores*: ${profile.followers}
-🔹 *Seguidos*: ${profile.following}
-🔹 *Publicaciones*: ${profile.posts}
-🔹 *URL*: ${profile.url}`;
+        const txt = renderTemplate(getRequiredPluginMessage('downloads.instagramStalk.profile'), {
+            username: profile.username,
+            fullName: profile.full_name,
+            bio: profile.biography,
+            verified: profile.verified ? getRequiredPluginMessage('downloads.instagramStalk.yes') : getRequiredPluginMessage('downloads.instagramStalk.no'),
+            private: profile.private ? getRequiredPluginMessage('downloads.instagramStalk.yes') : getRequiredPluginMessage('downloads.instagramStalk.no'),
+            followers: profile.followers,
+            following: profile.following,
+            posts: profile.posts,
+            url: profile.url
+        });
 
         await conn.sendFile(m.chat, profile.profile_picture, 'insta_profile.jpg', txt, m);
         m.react("✅");
     } catch (e2) {
         try {
             let res = await fg.igStalk(args[0])
-            let te = `👤 *Perfil de Instagram*:
-*• Nombre:* ${res.name} 
-*• Username:* ${res.username}
-*• Seguidores:* ${res.followersH}
-*• Siguiendo:* ${res.followingH}
-*• Bio:* ${res.description}
-*• Posts:* ${res.postsH}
-*• Link* : https://instagram.com/${res.username.replace(/^@/, '')}`
+            let te = renderTemplate(getRequiredPluginMessage('downloads.instagramStalk.fallbackProfile'), {
+                name: res.name,
+                username: res.username,
+                followers: res.followersH,
+                following: res.followingH,
+                bio: res.description,
+                posts: res.postsH,
+                usernameClean: res.username.replace(/^@/, '')
+            })
             await conn.sendFile(m.chat, res.profilePic, 'igstalk.png', te, m)
             m.react("⌛");
         } catch (e: unknown) {
             await m.react(`❌`)
-            m.reply(`\`\`\`⚠️ OCURRIO UN ERROR ⚠️\`\`\`\n\n> *Reporta el siguiente error a mi creador con el comando:*#report\n\n>>> ${e} <<<< `)
+            m.reply(renderTemplate(getRequiredPluginMessage('downloads.instagramStalk.error'), {error: String(e)}))
             logInfo(e)
         }
     }

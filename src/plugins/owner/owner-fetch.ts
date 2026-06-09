@@ -1,6 +1,7 @@
 import {format} from 'util'
 import {definePlugin} from '../../core/define-plugin.js'
 import {httpRequest} from '../../lib/http-client.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
 export default definePlugin({
     help: ['fetch'].map(v => v + ' *<url>*'),
@@ -10,7 +11,7 @@ export default definePlugin({
     register: true,
     async execute(m, {conn, text, usedPrefix, command}) {
         if (m.fromMe) return
-        if (!/^https?:\/\//.test(text)) return m.reply(`Ejemplo:\n${usedPrefix + command} https://skyultraplus.com`)
+        if (!/^https?:\/\//.test(text)) return m.reply(renderTemplate(getRequiredPluginMessage('owner.fetch.usage'), {command: usedPrefix + command}))
         m.react("💻")
         let url = text
         let res = await httpRequest(url)

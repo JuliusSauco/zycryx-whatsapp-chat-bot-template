@@ -4,6 +4,10 @@ import {pickRandom, randomChance, randomInt} from '../src/utils/random.js';
 import {createUserRequestLocks} from '../src/lib/user-request-locks.js';
 import {runFirstProvider} from '../src/lib/provider-fallback.js';
 import {installLegacyArrayRandom} from '../src/lib/legacy-array-random.js';
+import {getMessage, getMessageList, renderMessage, renderTemplate} from '../src/services/content.service.js';
+import {createPluginSdk} from '../src/core/plugin-sdk.js';
+import type {PluginContext} from '../src/types/context.js';
+import type {BotMessage} from '../src/types/message.js';
 
 function testRandomHelpers(): void {
     const values = ['a', 'b', 'c'] as const;
@@ -82,10 +86,73 @@ function testLegacyArrayRandom(): void {
     assert.ok([1, 2, 3].includes(value));
 }
 
+function testContentService(): void {
+    assert.equal(renderTemplate('Hola {name}', {name: 'Julius'}), 'Hola Julius');
+    assert.equal(renderTemplate('Hola {name}', {}), 'Hola {name}');
+    assert.equal(getMessage('tools.screenshot.caption'), '✅');
+    assert.ok(getMessageList('fun.games.personalityOptions.percentages').length > 0);
+    assert.equal(
+        renderMessage('tools.base64.usage', {command: '/tobase64'}),
+        '/tobase64 texto',
+    );
+}
+
+async function testPluginSdk(): Promise<void> {
+    const replies: string[] = [];
+    const sent: unknown[] = [];
+    const m = {
+        chat: 'chat-1',
+        sender: 'user-1@s.whatsapp.net',
+        reply: async (text: string) => {
+            replies.push(text);
+            return {} as never;
+        },
+        react: async (emoji: string) => {
+            replies.push(`react:${emoji}`);
+        },
+    } as unknown as BotMessage;
+    const ctx = {
+        conn: {
+            sendMessage: async (_jid: string, content: unknown) => {
+                sent.push(content);
+                return {} as never;
+            },
+            sendFile: async () => ({} as never),
+        },
+        text: '',
+        args: [],
+        usedPrefix: '/',
+        command: 'tobase64',
+        participants: [],
+        metadata: {participants: []},
+        isOwner: false,
+        isROwner: false,
+        isAdmin: false,
+        isBotAdmin: false,
+        isGroup: false,
+        chatId: 'chat-1',
+        sender: 'user-1@s.whatsapp.net',
+        groupSettings: {},
+    } as unknown as PluginContext;
+
+    const sdk = createPluginSdk(m, ctx);
+    await sdk.reply.message('tools.base64.usage', {command: '/tobase64'});
+    assert.equal(replies[0], '/tobase64 texto');
+
+    const locks = sdk.createUserLocks();
+    assert.equal(locks.acquire('user-1'), true);
+    assert.equal(locks.acquire('user-1'), false);
+
+    await sdk.sendMessage({text: 'hola'});
+    assert.deepEqual(sent[0], {text: 'hola'});
+}
+
 testRandomHelpers();
 testCommandAliases();
 testUserRequestLocks();
 await testProviderFallback();
 testLegacyArrayRandom();
+testContentService();
+await testPluginSdk();
 
 console.log('helpers.test.ts OK');

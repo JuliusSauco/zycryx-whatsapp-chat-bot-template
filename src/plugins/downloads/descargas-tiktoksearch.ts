@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {httpJson} from '../../lib/http-client.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 import {randomInt} from '../../utils/random.js';
 
@@ -21,17 +22,19 @@ export default definePlugin({
     register: true,
     limit: 4,
     async execute(m, {conn, usedPrefix, command, text}) {
-    if (!text) throw `*⚠️ Ingresa el nombre del video que buscas*\nEjemplo: ${usedPrefix + command} emilia_mernes`
-    if (!userRequests.acquire(m.sender)) return m.reply(`⏳ *Espera...* Ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra.`)
+    if (!text) throw renderTemplate(getRequiredPluginMessage('downloads.tiktokSearch.missingQuery'), {
+        command: usedPrefix + command
+    })
+    if (!userRequests.acquire(m.sender)) return m.reply(getRequiredPluginMessage('downloads.tiktokSearch.locked'))
     m.react("⏳")
     try {
         const response = await httpJson<TikTokSearchResponse>(`${info.apis}/search/tiktoksearch?query=${text}`);
-        if (!response || !response.meta || !Array.isArray(response.meta) || response.meta.length === 0) return m.reply(`❌ No se encontraron resultados para "${text}".`);
+        if (!response || !response.meta || !Array.isArray(response.meta) || response.meta.length === 0) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.tiktokSearch.noResults'), {query: text}));
         let searchResults = response.meta;
         shuffleArray(searchResults);
         let selectedResults = searchResults.slice(0, 5);
         const medias = selectedResults.map(result => ({type: "video", data: {url: result.hd}}));
-        await conn.sendAlbumMessage(m.chat, medias, `✅ Resultados para: ${text}`, m);
+        await conn.sendAlbumMessage(m.chat, medias, renderTemplate(getRequiredPluginMessage('downloads.tiktokSearch.albumCaption'), {query: text}), m);
         m.react("✅️");
     } catch (error: unknown) {
         m.react("❌️")

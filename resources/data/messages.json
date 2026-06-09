@@ -12,10 +12,1645 @@
   },
   "textCommands": {
     "ins": {
-      "commands": ["ins", "insult", "insulto", "insultar"],
+      "commands": [
+        "ins",
+        "insult",
+        "insulto",
+        "insultar"
+      ],
       "file": "resources/text/messages/msg-text-ins.txt",
       "separator": "|",
       "emptyMessage": "⚠️ No hay frases en `resources/text/messages/msg-text-ins.txt`. Sepáralas con el carácter |."
+    }
+  },
+  "pluginMessages": {
+    "downloads": {
+      "gitclone": {
+        "missingUrl": "*⚠️ 𝙄𝙣𝙜𝙧𝙚𝙨𝙚 𝙪𝙣 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚 𝙂𝙞𝙩𝙝𝙪𝙗*\n• *𝙀𝙟 :* {command} https://github.com/elrebelde21/LoliBot-MD",
+        "invalidUrl": "⚠️ 𝙚𝙨𝙤 𝙣𝙤 𝙚𝙨 𝙪𝙣 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚 𝙜𝙞𝙩𝙝𝙪𝙗 𝙗𝙤𝙡𝙪𝙙𝙤 🤡",
+        "locked": "⏳ *Hey @{user} Espera...* Ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra...",
+        "progress": "*⌛ 𝐂𝐚𝐥𝐦𝐚 ✋ 𝐂𝐥𝐚𝐜𝐤, 𝐘𝐚 𝐞𝐬𝐭𝐨𝐲 𝐄𝐧𝐯𝐢𝐚𝐝𝐨 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 🚀*\n*𝐒𝐢 𝐧𝐨 𝐥𝐞 𝐥𝐥𝐞𝐠𝐚 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 𝐞𝐬 𝐝𝐞𝐛𝐢𝐝𝐨 𝐚 𝐪𝐮𝐞 𝐞𝐥 𝐑𝐞𝐩𝐨𝐬𝐢𝐭𝐨𝐫𝐢𝐨 𝐞𝐬 𝐦𝐮𝐲 𝐩𝐞𝐬𝐚𝐝𝐨*",
+        "adBody": " 💫 𝐒𝐮𝐩𝐞𝐫 𝐁𝐨𝐭 𝐃𝐞 𝐖𝐡𝐚𝐭𝐬𝐚𝐩𝐩 🥳 "
+      },
+      "mediafire": {
+        "missingUrl": "⚠️ 𝙄𝙣𝙜𝙧𝙚𝙨𝙚 𝙪𝙣 𝙀𝙣𝙡𝙖𝙘𝙚 𝙫𝙖𝙡𝙞𝙙𝙤 𝙙𝙚𝙡 𝙢𝙚𝙙𝙞𝙖𝙛𝙞𝙧𝙚 𝙀𝙟:*\n{command} https://www.mediafire.com/file/sd9hl31vhhzf76v/EvolutionV1.1-beta_%2528Recomendado%2529.apk/file",
+        "locked": "⚠️ Hey @{user} pendejo, ya estás descargando algo 🙄\nEspera a que termine tu solicitud actual antes de hacer otra...",
+        "caption": "┏━━『 𝐌𝐄𝐃𝐈𝐀𝐅𝐈𝐑𝐄 』━━•\n┃❥ 𝐍𝐨𝐦𝐛𝐫𝐞 : {filename}\n┃❥ 𝐏𝐞𝐬𝐨 : {filesize}\n┃❥ 𝐓𝐢𝐩𝐨 : {mimetype}\n╰━━━⊰ 𓃠 {version} ⊱━━━━•\n> ⏳ ᴱˢᵖᵉʳᵉ ᵘⁿ ᵐᵒᵐᵉⁿᵗᵒ ᵉⁿ ˡᵒˢ ᵠᵘᵉ ᵉⁿᵛᶦᵒˢ ˢᵘˢ ᵃʳᶜʰᶦᵛᵒˢ"
+      },
+      "play": {
+        "missingQuery": "*🤔Que está buscando? 🤔*\n*Ingrese el nombre de la canción*\n\n*Ejemplo:*\n{command} emilia 420",
+        "locked": "⏳ Hey @{user} espera pendejo, ya estás descargando algo 🙄\nEspera a que termine tu solicitud actual antes de hacer otra...",
+        "noResults": "❌ No se encontraron resultados.",
+        "progress": "{title}\n*⇄ㅤ     ◁   ㅤ  ❚❚ㅤ     ▷ㅤ     ↻*\n\n*⏰ Duración:* {duration}\n*👉🏻Aguarde un momento en lo que envío su {downloadType}*",
+        "adBody": "LoliBot",
+        "videoCaption": "🔰 Aquí está tu video \n🔥 Título: {title}",
+        "documentVideoCaption": "🔰Título: {title}"
+      },
+      "facebook": {
+        "missingUrl": "⚠️ 𝙄𝙣𝙜𝙧𝙚𝙨𝙚 𝙪𝙣 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚 𝙁𝙖𝙘𝙚𝙗𝙤𝙤𝙠 𝙥𝙖𝙧𝙖 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙧 𝙚𝙡 𝙑𝙞𝙙𝙚𝙤\n• *𝙀𝙟 :* {command} https://www.facebook.com/share/r/1E1RojVvdJ/",
+        "locked": "⚠️ Hey @{user} Calmao, ya estás bajando un video 🙄\nEspera a que termine tu descarga actual antes de pedir otra...",
+        "videoCaption": "✅ Aquí está tu video de Facebook",
+        "imageCaption": "✅ Aquí está la imagen de Facebook",
+        "videoCaptionBold": "✅ 𝐀𝐐𝐔𝐈 𝐄𝐒𝐓𝐀 𝐓𝐔 𝐕𝐈𝐃𝐄𝐎 𝐃𝐄 𝐅𝐀𝐂𝐄𝐁𝐎𝐎𝐊\n\n"
+      },
+      "instagram": {
+        "missingUrl": "⚠️ Ingresa el enlace del vídeo de Instagram junto al comando.\n\nEjemplo: *{command}* https://www.instagram.com/p/C60xXk3J-sb/?igsh=YzljYTk1ODg3Zg==",
+        "locked": "Oye @{user}, calma, ya estás descargando algo 😒\nEspera a que termine tu solicitud actual antes de hacer otra...",
+        "imageCaption": "_*Aqui tiene tu imagen de Instagram*_",
+        "videoCaption": "*Aqui esta el video de Instagram*"
+      },
+      "tiktok": {
+        "missingUrl": "⚠️ *Que tiktok buscar? 🤔*\n\n⚡ *Ingrese un enlace de tiktok para descarga el video*\n*Ej:* {command} https://vm.tiktok.com/ZM6T4X1RY/",
+        "invalidUrl": "❌ Error",
+        "locked": "Oye @{user}, calma bro, ya estás descargando algo 😒\n> Espera a que termine tu solicitud actual antes de hacer otra...",
+        "downloading": "⌛ Descargando video de TikTok...",
+        "caption": "*🔰 Aqui esta tu video de tiktok*",
+        "completed": "✅ 𝘾𝙤𝙢𝙥𝙡𝙚𝙩𝙖𝙙𝙤\n▰▰▰▰▰▰▰▰▰"
+      },
+      "spotify": {
+        "missingQuery": "*🤔 ¿Que esta buscando? ingresa el nombre para descargar sus música de Spotify, Ejemplo:* {command} ozuna",
+        "locked": "⚠️ Hey @{user} pendejo, ya estás descargando una canción 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆",
+        "noResults": "⚠️ No se encontraron resultados para esa búsqueda.",
+        "trackMessage": "*• Título:* {title}\n*• Artista:* {artist}\n*• Álbum:* {album}\n*• Duración:* {duration}\n*• Publicado:* {publish}\n\n> 🚀 *ᴱⁿᵛᶦᵃⁿᵈᵒ ᶜᵃⁿᶜᶦᵒ́ⁿ ᵃᵍᵘᵃʳᵈᵉ ᵘⁿ ᵐᵒᵐᵉⁿᵗᵒ....*",
+        "adBody": "ᴱⁿᵛᶦᵃⁿᵈᵒ ᶜᵃⁿᶜᶦᵒ́ⁿ ᵃᵍᵘᵃʳᵈᵉ ᵘⁿ ᵐᵒᵐᵉⁿᵗᵒ 🚀"
+      },
+      "playlist": {
+        "missingQuery": "*¿Qué está buscando?* Ingrese el nombre del tema\n*• Ejemplo*\n*{command}* bad bunny",
+        "noResults": "❌ No se encontraron resultados.",
+        "header": "*• Resultados de:*  {query}\n\n",
+        "item": "🎵 *Título:* {title}\n📆 *Publicado hace:* {ago}\n👀 *Vistas:* {views}\n⌛ *Duración:* {duration}\n🔗 *Enlace:* {url}\n\n⊱ ────── {.⋅ ♫ ⋅.} ───── ⊰\n\n"
+      },
+      "drive": {
+        "missingUrl": "⚠️ Ingrese una Url de Drive\n• Ejemplo: {command} https://drive.google.com/file/d/1-8BSwPSAycKYMqveGm_JTu2c_wIDkJIt/view?usp=drivesdk",
+        "locked": "⏳ *Hey @{user} Espera...* Ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra...",
+        "progress": "*⌛ 𝐂𝐚𝐥𝐦𝐚 ✋ 𝐂𝐥𝐚𝐜𝐤, 𝐘𝐚 𝐞𝐬𝐭𝐨𝐲 𝐄𝐧𝐯𝐢𝐚𝐝𝐨 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 🚀*\n*𝐒𝐢 𝐧𝐨 𝐥𝐞 𝐥𝐥𝐞𝐠𝐚 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 𝐞𝐬 𝐝𝐞𝐛𝐢𝐝𝐨 𝐚 𝐪𝐮𝐞 𝐞𝐬 𝐦𝐮𝐲 𝐩𝐞𝐬𝐚𝐝𝐨*"
+      },
+      "pinterest": {
+        "missingQuery": "*⚠️ Ingresa el término de búsqueda.*\nEj: {command} nayeon",
+        "author": "🔎 Por: {author}",
+        "unknownAuthor": "Desconocido",
+        "notAvailable": "N/A",
+        "authorStats": "*🔸️Autor:* {author}\n*🔸️ Seguidores:* {followers}",
+        "authorHandle": "🔎 Autor: {name} (@{username})",
+        "noResults": "❌ No se encontraron resultados para \"{query}\".",
+        "albumCaption": "✅ Resultados para: {query}"
+      },
+      "image": {
+        "missingQuery": "𝗤𝘂𝗲 𝗯𝘂𝘀𝗰𝗮𝗿? 🤔️ 𝙪𝘀𝙖𝙧 𝙙𝙚 𝙡𝙖 𝙨𝙞𝙜𝙪𝙞𝙚𝙣𝙩𝙚 𝙢𝙖𝙣𝙚𝙧𝙖\n• 𝗘𝗷𝗲𝗺𝗽𝗹𝗼\n*{command} Loli*",
+        "forbidden": "🙄 No voy a buscar tu pendejadas....",
+        "caption": "_🔎 𝙍𝙚𝙨𝙪𝙡𝙩𝙖𝙙𝙤𝙨 𝙙𝙚: {query}_"
+      },
+      "tiktokSearch": {
+        "missingQuery": "*⚠️ Ingresa el nombre del video que buscas*\nEjemplo: {command} emilia_mernes",
+        "locked": "⏳ *Espera...* Ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra.",
+        "noResults": "❌ No se encontraron resultados para \"{query}\".",
+        "albumCaption": "✅ Resultados para: {query}"
+      },
+      "instagramStalk": {
+        "missingUsername": "⚠️ Ingrese el Username de Instagram\n\n*• Ejemplo:* {command} GataDios",
+        "profile": "👤 *Perfil de Instagram*:\n🔹 *Nombre de usuario*: {username}\n🔹 *Nombre completo*: {fullName}\n🔹 *Biografía*: {bio}\n🔹 *Verificado*: {verified}\n🔹 *Cuenta privada*: {private}\n🔹 *Seguidores*: {followers}\n🔹 *Seguidos*: {following}\n🔹 *Publicaciones*: {posts}\n🔹 *URL*: {url}",
+        "fallbackProfile": "👤 *Perfil de Instagram*:\n*• Nombre:* {name} \n*• Username:* {username}\n*• Seguidores:* {followers}\n*• Siguiendo:* {following}\n*• Bio:* {bio}\n*• Posts:* {posts}\n*• Link* : https://instagram.com/{usernameClean}",
+        "yes": "Sí",
+        "no": "No",
+        "error": "```⚠️ OCURRIO UN ERROR ⚠️```\n\n> *Reporta el siguiente error a mi creador con el comando:*#report\n\n>>> {error} <<<< "
+      },
+      "tiktokStalk": {
+        "missingUsername": "✳️ Ingrese el Username de un usuario de TikTok",
+        "profile": "👤 *Perfil de TikTok*:\n*• Nombre de usuario*: {username}\n*• Nickname*: {nickname}\n*• Verificado*: {verified}\n*• Seguidores*: {followers}\n*• Seguidos*: {following}\n*• Likes Totales*: {likes}\n*• Videos*: {videos}\n*• Firma*: {signature}\n*• URL*: \n{url}",
+        "fallbackProfile": "👤 *Perfil de TikTok*:\n*• Nombre:* {name}\n*• Username:* {username}\n*• Seguidores:* {followers}\n*• Siguiendo:* {following}\n*• Desc:* {description}\n*• Link* : https://tiktok.com/{username}",
+        "yes": "Sí",
+        "no": "No",
+        "error": "```⚠️ OCURRIO UN ERROR ⚠️```\n\n> *Reporta el siguiente error a mi creador con el comando:*#report\n\n>>> {error} <<<< "
+      },
+      "modApk": {
+        "missingQuery": "⚠️ *𝙀𝙨𝙘𝙧𝙞𝙗𝙖 𝙚𝙡 𝙣𝙤𝙢𝙗𝙧𝙚 𝙙𝙚𝙡 𝘼𝙋𝙆*",
+        "locked": "⚠️ Hey @{user} pendejo, ya estás descargando un APK 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆",
+        "developerLine": "┃👤 𝘿𝙀𝙎𝘼𝙍𝙍𝙊𝙇𝙇𝙊: {developer}",
+        "packageLine": "┃📦 𝙋𝘼𝘾𝙆𝘼𝙂𝙀: {package}",
+        "response": "≪ＤＥＳＣＡＲＧＡＤＯ ＡＰＫＳ🚀≫\n\n┏━━━━━━━━━━━━━━━━━━━━━━• \n┃💫 𝙉𝙊𝙈𝘽𝙍𝙀: {name}\n{developerOrPackage}\n┃🕒 𝙐𝙇𝙏𝙄𝙈𝘼 𝘼𝘾𝙏𝙐𝘼𝙇𝙄𝙕𝘼𝘾𝙄𝙊𝙉: {updatedAt}\n┃💪 𝙋𝙀𝙎𝙊: {size}\n┗━━━━━━━━━━━━━━━━━━━━━━━•\n\n> *⏳ ᴱˢᵖᵉʳᵉ ᵘⁿ ᵐᵒᵐᵉⁿᵗᵒ ˢᵘˢ ᵃᵖᵏ ˢᵉ ᵉˢᵗᵃ ᵉⁿᵛᶦᵃⁿᵈᵒ...*",
+        "tooLarge": "*⚠️ 𝙀𝙡 𝙖𝙥𝙠 𝙚𝙨 𝙢𝙪𝙮 𝙥𝙚𝙨𝙖𝙙𝙤.*"
+      },
+      "threads": {
+        "missingUrl": "*⚠️ ¿Qué estás buscando? Ingresa el link de algún video de Threads!!*\n*• Ejemplo:*\n{command} https://www.threads.net/@adri_leclerc_/post/C_dSNIOOlpy?xmt=AQGzxbmyveDB91QgFo_KQWzqL6PT2yCy2eg8BkhPTO-6Kw",
+        "locked": "⏳ Hey @{user} pendejo, ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra",
+        "downloading": "⌛ Descargando contenido de Threads...",
+        "imageCaption": "_*Aquí tienes la imagen de Threads*_",
+        "videoCaption": "_*Aquí tienes el video de Threads*_",
+        "completed": "✅ 𝘾𝙤𝙢𝙥𝙡𝙚𝙩𝙖𝙙𝙤\n▰▰▰▰▰▰▰▰▰",
+        "error": "```⚠️ OCURRIO UN ERROR ⚠️```\n\n> *Reporta el siguiente error a mi creador con el comando:* #report\n\n>>> {error} <<<<"
+      },
+      "appleMusic": {
+        "missingUrl": "Ejemplo de uso: {command} https://music.apple.com/us/album/glimpse-of-us/1625328890?i=1625328892",
+        "locked": "⚠️ Hey @{user} pendejo, ya estás descargando una canción 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆",
+        "trackMessage": "*• Titulo:* {title}\n*• Artistas:* {artists}\n*• Duración:* {duration}{urlLine}",
+        "urlLine": "\n*• URL:* {url}",
+        "error": "Ocurrió un error al intentar obtener el enlace de descarga."
+      },
+      "play2": {
+        "missingUrl": "*𝙌𝙪𝙚 𝙚𝙨𝙩𝙖 𝙗𝙪𝙨𝙘𝙖𝙙𝙤🤔 𝙄𝙣𝙜𝙧𝙚𝙨𝙚 𝙚𝙡 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚 𝙔𝙤𝙪𝙏𝙪𝙗𝙚 𝙥𝙖𝙧𝙖 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙧 𝙚𝙡 𝙖𝙪𝙙𝙞𝙤*",
+        "locked": "⏳ *Espera...* Ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra.",
+        "videoCaption": "🔰 Aquí está tu video \n🔥 Título: {title}",
+        "videoCaptionCompact": "🔰 Aquí está tu video\n🔥 Título: {title}",
+        "videoCaptionQuality": "🔰 Aquí está tu video \n🔥 Título: {title} ({quality}p)",
+        "watermarkCaption": "_{watermark}_"
+      }
+    },
+    "hooks": {
+      "antiPrivate": {
+        "blocked": "Hola, está prohibido usar los comandos en privado...\n\n*`🔰 SI QUIERES HACERTE UN SUB BOT, USA LOS SIGUIENTES COMANDOS:`*\n/serbot\n/code\n\n> _*Para usar mis funciones, únete al grupo oficial 👇*_\n{groupLink}"
+      },
+      "antiLink": {
+        "botNotAdmin": "*「 ANTILINK DETECTADO 」*\n\n{user}, enviaste un link pero no puedo eliminarte porque no soy admin.",
+        "removed": "*「 ANTILINK DETECTADO 」*\n\n{user}, rompiste las reglas del grupo y serás eliminado...",
+        "removedStrict": "*「 ANTILINK DETECTADO 」*\n\n{user}, rompiste las reglas del grupo y serás eliminado."
+      },
+      "virusTotal": {
+        "maliciousNoAdmin": "🚨 *Contenido malicioso detectado*\n\nVirusTotal marcó {threatLabel} como malicioso.\n\n⚠️ No puedo eliminar el mensaje ni expulsar a su autor porque no soy administrador del grupo.\n🛡️ Dame admin para poder proteger el grupo automáticamente.",
+        "maliciousActionReport": "🚨 *Contenido malicioso detectado*\n\nVirusTotal marcó {threatLabel} como malicioso.\n\n{deleteStatus}\n{removeStatus}",
+        "messageDeleted": "🗑️ Mensaje eliminado del grupo.",
+        "messageDeleteFailed": "⚠️ No se pudo eliminar el mensaje.",
+        "authorRemoved": "🚪 Autor expulsado: {user}",
+        "authorRemoveFailed": "⚠️ No se pudo expulsar al autor: {user}",
+        "urlScanError": "*🔗🛡️ Analisis de enlace en VirusTotal*\n\nNo pude revisar este enlace en VirusTotal.\nDetalle: {detail}",
+        "declaredFileTooLarge": "*🛡️🔎 Analisis de VirusTotal*\n\nArchivo: {filename}\nTamano: {size}\n\nNo se envio porque supera el limite configurado de {maxSize}.",
+        "downloadedFileTooLarge": "*🛡️🔎 Analisis de VirusTotal*\n\nNo se envio porque el archivo pesa {size} y supera el limite configurado de {maxSize}.",
+        "fileScanError": "*🛡️🔎 Analisis de VirusTotal*\n\nNo pude revisar este archivo en VirusTotal.\nDetalle: {detail}"
+      },
+      "autoLevelUp": {
+        "variants": [
+          "*「 FELICIDADES LEVEL UP 🆙🥳 」*\n\nFelicidades subiste de nivel sigue asi 👏\n\n*• NIVEL:* {before} ⟿ {level}\n*• RANGO:* {role}\n\n_*Para ver tu XP en tiempo real coloca el comando #level*_",
+          "@{user} Ohhh pa has alcanzado el siguiente nivel\n*• NIVEL:* {before} ⟿ {level}\n\n_*Para ver quien es esta el top coloca el comando #lb*_",
+          "Que pro @{user} has alcanzado un nuevo nivel 🙌\n\n*• Nuevo nivel:* {level}\n*• Nivel anterior:* {before}\n"
+        ],
+        "adBody": " 💫 𝐒𝐮𝐩𝐞𝐫 𝐁𝐨𝐭 𝐃𝐞 𝐖𝐡𝐚𝐭𝐬𝐚𝐩𝐩 🥳 ",
+        "defaultRole": "NOVATO(A) V"
+      }
+    },
+    "games": {
+      "shared": {
+        "missingUser": "✳️ El usuario no se encuentra en la base de datos.",
+        "cooldown": "*🕓 Calma crack 🤚, Espera {time} antes de volver a usar el comando*",
+        "cooldownNoSpam": "ᴺᵒ ʰᵃᵍᵃⁿ ˢᵖᵃᵐ"
+      },
+      "coinFlip": {
+        "invalidBet": "❌ Ingresa una cantidad válida para apostar.",
+        "notEnoughExp": "❌ No tienes suficiente experiencia (exp) para esta apuesta. Solo tienes {exp} XP.",
+        "cooldown": "*🕓 Calma crack 🤚, Espera {time} antes de volver usar en comando*",
+        "result": "{icon} La moneda cayó en *{outcome}* y {message}",
+        "win": "ganaste *{amount}* XP.",
+        "lose": "perdiste *{amount}* XP."
+      },
+      "roulette": {
+        "usage": "⚠️ Formato incorrecto. Usa: {command} <color> <cantidad>\n\nEjemplo: {command} black 100",
+        "invalidColor": "🎯 Color no válido. Usa: \"red\", \"black\" o \"green\".",
+        "invalidAmount": "❌ La cantidad debe ser un número positivo.",
+        "notEnoughExp": "❌ No tienes suficiente XP para apostar. Tienes *{exp} XP*",
+        "result": "😱 La ruleta cayó en *{color}*\n{message}",
+        "win": "🎉 ¡Ganaste *{amount} XP*!",
+        "lose": "💀 Perdiste *{amount} XP*"
+      },
+      "slot": {
+        "cooldown": "🕓 Calma crack, espera *{time}* antes de volver a jugar.",
+        "usage": "⚠️ Usa correctamente: /slot <xp|money|limite> <cantidad>\nEjemplo: /slot xp 500",
+        "minBet": "❌ Mínimo 10 para apostar.",
+        "notEnough": "❌ No tienes suficiente {resource} para apostar. Tienes *{balance}*",
+        "triple": "🎉 ¡Triple! Ganaste *{amount} {resource}*",
+        "double": "😏 Dos iguales. Recuperaste *{amount} {resource}*",
+        "lose": "💀 Mala suerte. Perdiste *{amount} {resource}*",
+        "board": "🎰 | *SLOTS* | 🎰\n────────────\n{rows}\n────────────"
+      },
+      "math": {
+        "invalidDifficulty": "⚠️ Debes elegir una dificultad válida.\n\nEjemplos:\n/math noob\n/math easy\n/math hard\n\nDificultades disponibles:\n{difficulties}",
+        "timeout": "⌛ sᴇ ᴀᴄᴀʙᴏ ᴇʟ ᴛɪᴇᴍᴘᴏ ʟᴀ ʀᴇsᴘᴜᴇsᴛᴀ ᴇs: *{result}*",
+        "question": "╭┄〔 *{watermark}* 〕┄⊱\n┆𝘾𝙪𝙖𝙡 𝙚𝙨 𝙧𝙚𝙨𝙪𝙡𝙩𝙖𝙙𝙤 𝙙𝙚: *{a} {operator} {b} = ?*\n┆┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n┆🧭 𝙏𝙞𝙚𝙢𝙥𝙤: * {seconds} segundos*\n┆┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n┆𝙍𝙚𝙨𝙥𝙤𝙣𝙙𝙚 𝙖 𝙚𝙨𝙩𝙚 𝙢𝙚𝙣𝙨𝙖𝙟𝙚 𝙮 𝙂𝙖𝙣𝙖 \n┆🏆 *{reward}: XP*\n╰━━━⊰ 𓃠 {version} ⊱━━━━დ",
+        "correct": "✅ ¡Correcto! Ganaste *{exp} XP*",
+        "failed": "❌ Fallaste 3 veces. La respuesta correcta era *{result}*.",
+        "incorrect": "❌ Incorrecto. Te quedan *{attempts}* intento(s)."
+      },
+      "ppt": {
+        "cooldown": "*🕓 𝙃𝙚𝙮, 𝙀𝙨𝙥𝙚𝙧𝙖 {time} 𝙖𝙣𝙩𝙚𝙨 𝙙𝙚 𝙪𝙨𝙖𝙧 𝙤𝙩𝙧𝙤𝙨 𝙘𝙤𝙢𝙖𝙣𝙙𝙤*",
+        "winStatus": "𝙃𝘼 𝙂𝘼𝙉𝘼𝘿𝙊! 🎉",
+        "loseStatus": "𝙃𝘼 𝙋𝙀𝙍𝘿𝙄𝘿𝙊! 🤡",
+        "tieStatus": "𝙀𝙈𝙋𝘼𝙏𝙀 🤝",
+        "winText": "✅ *Ganaste* y obtuviste *{xp} XP*",
+        "loseText": "❌ *Perdiste*. Te quitaron *{xp} XP*",
+        "tieText": "🤝 *Empate*. No ganaste ni perdiste XP.",
+        "soloResult": "`「 {result} 」`\n\n👉 El Bot: {botMove}\n👉 Tú: {playerMove}\n{message}",
+        "pendingChallenge": "⚠️ Ese usuario ya tiene un reto pendiente.",
+        "challengeTimeout": "⏳ 𝙏𝙄𝙀𝙈𝙋𝙊 𝘼𝙂𝙊𝙏𝘼𝘿𝙊, 𝙀𝙇 𝙋𝙑𝙋 𝙎𝙀 𝘾𝘼𝙉𝘾𝙀𝙇𝘼 𝙋𝙊𝙍 𝙁𝘼𝙇𝙏𝘼 𝘿𝙀 𝙍𝙀𝙎𝙋𝙐𝙀𝙎𝙏𝘼 𝘿𝙀 {user}",
+        "challengeInvite": "🎮👾 𝙋𝙑𝙋 - 𝙋𝙄𝙀𝘿𝙍𝘼, 𝙋𝘼𝙋𝙀𝙇 𝙊 𝙏𝙄𝙅𝙀𝙍𝘼 👾🎮\n\n@{challenger} 𝘿𝙀𝙎𝘼𝙁𝙄𝘼 𝘼 @{opponent}.\n\n> _*Escribe (aceptar) para aceptar*_\n> _*Escribe (rechazar) para rechazar*_",
+        "help": "𝐏𝐢𝐞𝐝𝐫𝐚 🗿, 𝐏𝐚𝐩𝐞𝐥 📄 𝐨 𝐓𝐢𝐣𝐞𝐫𝐚 ✂️\n\n👾 𝙅𝙪𝙜𝙖𝙧 𝙘𝙤𝙣 𝙚𝙡 𝙗𝙤𝙩:\n• {command} piedra\n• {command} papel\n• {command} tijera\n\n🕹 𝙅𝙪𝙜𝙖𝙧 𝙘𝙤𝙣 𝙪𝙣 𝙪𝙨𝙪𝙖𝙧𝙞𝙤:\n{command} @0",
+        "challengeRejected": "⚠️ @{user} rechazó el reto.",
+        "duelExpired": "⏰ El duelo expiró por inactividad.",
+        "challengeAccepted": "✅ Reto aceptado. Las opciones serán enviadas por privado a @{challenger} y @{opponent}.",
+        "privatePrompt": "✊🖐✌️ Escribe *piedra*, *papel* o *tijera* para elegir tu jugada.",
+        "choiceReceived": "✅ Elección recibida. Vuelve al grupo y espera el resultado.",
+        "duelHeader": "✊🖐✌️ *Piedra, Papel o Tijera*\n\n@{player1} eligió: *{move1}*\n@{player2} eligió: *{move2}*\n\n",
+        "duelTie": "🤝 ¡Empate! Nadie gana ni pierde XP.",
+        "duelWin": "🎉 @{winner} gana *{winnerXp} XP*\n💀 @{loser} pierde *{loserXp} XP*"
+      },
+      "ttt": {
+        "noRooms": "⚠️ No hay salas activas actualmente.",
+        "roomsHeader": "🎮 *Salas activas:*",
+        "roomItem": "\n\n{index}- *{room}*\nIngresa con: /ttt {room}",
+        "notInRoom": "⚠️ No estás en ninguna sala activa.",
+        "roomDeleted": "❌ La sala fue eliminada por @{user}.",
+        "alreadyInRoom": "⚠️ Ya estás en esta sala.",
+        "waitingCustom": "🏃 Esperando oponente para *{room}*.\nUsa: /ttt {room}",
+        "roomFull": "⚠️ Esta sala ya tiene 2 jugadores.",
+        "waitingDefault": "🏃 Esperando oponente...\nUsa: /ttt para unirte.",
+        "alreadyInAnyRoom": "⚠️ Ya estás en una sala.",
+        "occupiedCell": "❌ Esa casilla ya está ocupada.",
+        "state": "💖 𝙅𝙪𝙚𝙜𝙤 𝙩𝙖𝙩𝙚𝙩𝙞\n🫂 𝙅𝙪𝙜𝙖𝙙𝙤𝙧𝙚𝙨:\n*┈┈┈┈┈┈┈┈┈*\n{symbol1} = @{player1}\n{symbol2} = @{player2}\n*┈┈┈┈┈┈┈┈┈*{board}\n*┈┈┈┈┈┈┈┈┈*\n{footer}",
+        "waitingPlayer": "esperando",
+        "turnFooter": "𝙏𝙪𝙧𝙣𝙤 𝙙𝙚:\n@{turn}",
+        "tie": "🤝 ¡Empate! Buen juego.",
+        "winner": "🎉 @{winner} *ganarte* y recibe *{xp} XP!"
+      }
+    },
+    "rpg": {
+      "shared": {
+        "missingUser": "✳️ El usuario no se encuentra en la base de datos.",
+        "missingUserInDb": "⚠️ No apareces en mi base de datos.",
+        "unknown": "Desconocido",
+        "unknownFemale": "Desconocida",
+        "unnamed": "sin nombre"
+      },
+      "balance": {
+        "response": "*•───⧼⧼⧼ 𝙱𝙰𝙻𝙰𝙽𝙲𝙴 ⧽⧽⧽───•*\n\n@{user} Tiene:\n\n*• 𝐃𝐢𝐚𝐦𝐚𝐧𝐭𝐞:* _{diamonds} 💎_\n*• 𝐄𝐱𝐩:* _{exp} ⬆️_\n*• 𝐋𝐨𝐥𝐢𝐂𝐨𝐢𝐧𝐬:* _{money} 🪙_\n> Afuera del Banco \n\n*•───⧼⧼⧼ 𝙱𝙰𝙽𝙲𝙾 ⧽⧽⧽───•*\n\n*🏦 𝐃𝐢𝐧𝐞𝐫𝐨 :* _{bank} 💎_\n> Adentro del Banco 🏦 \n\n•───────────────•\n\n> *𝐍𝐎𝐓𝐀 :* \n> 𝐩𝐮𝐞𝐝𝐞𝐬 𝐜𝐨𝐦𝐩𝐫𝐚𝐫 💎 𝐝𝐢𝐚𝐦𝐚𝐧𝐭𝐞 𝐮𝐬𝐚𝐧𝐝𝐨 𝐥𝐨𝐬 𝐜𝐨𝐦𝐚𝐧𝐝𝐨𝐬\n> *• {prefix}buy <cantidad>*\n> *• {prefix}buyall*"
+      },
+      "daily": {
+        "alreadyClaimed": "⚠️ Ya reclamaste tu recompensa diaria, vuelve en *{time}* para reclamar de nuevo 🎁.",
+        "bonus": "\n\n🎉 *¡BONUS por 7 días de racha!* 🎉\n> +{bonusExp} XP extra\n> +{bonusLimit} Diamantes 💎\n> +{bonusMoney} LoliCoins 🪙\n\n",
+        "reward": "*🔸 𝐇𝐀𝐒 𝐑𝐄𝐂𝐈𝐁𝐈𝐃𝐎:* Tu recompensa diaria de: *{currentExp} XP* (Día  {streak})\n{bonusText}> _*Mañana no te olviden de seguir reclamado tu recompensa ganaras: {nextExpShort} ({nextExp}) XP*_\n",
+        "quoted": "🎁 Obtener un regalo 🎁"
+      },
+      "mine": {
+        "cooldown": "⏳ 𝐄𝐬𝐩𝐞𝐫𝐚 *{time}* 𝐩𝐚𝐫𝐚 𝐯𝐨𝐥𝐯𝐞𝐫 𝐚 𝐦𝐢𝐧𝐚𝐫",
+        "variants": [
+          "Que pro 😎 has minado",
+          "🌟✨ Genial!! Obtienes",
+          "WOW!! eres un(a) gran Minero(a) ⛏️ Obtienes",
+          "Has Minado!!",
+          "😲 Lograste Minar la cantidad de",
+          "Tus Ingresos subiran gracias a que minaste",
+          "⛏️⛏️⛏️⛏️⛏️ Minando",
+          "🤩 SII!!! AHORA TIENES",
+          "La minaria esta de tu lado, por ello obtienes",
+          "😻 La suerte de Minar",
+          "♻️ Tu Mision se ha cumplido, lograste minar",
+          "⛏️ La Mineria te ha beneficiado con",
+          "🛣️ Has encontrado un Lugar y por minar dicho lugar Obtienes",
+          "👾 Gracias a que has minado tus ingresos suman",
+          "Felicidades!! Ahora tienes",
+          "⛏️⛏️⛏️ Obtienes"
+        ],
+        "result": "{message} *{xp} XP*"
+      },
+      "cofre": {
+        "cooldown": "🕛 𝐘𝐚 𝐫𝐞𝐜𝐥𝐚𝐦𝐚𝐬𝐭𝐞 𝐭𝐮 𝐜𝐨𝐟𝐫𝐞 🎁\n𝐕𝐮𝐞𝐥𝐯𝐞 𝐞𝐧 *{time}* 𝐩𝐚𝐫𝐚 𝐫𝐞𝐜𝐥𝐚𝐦𝐚𝐫 𝐧𝐮𝐞𝐯𝐚𝐦𝐞𝐧𝐭𝐞",
+        "image": "https://img.freepik.com/vector-gratis/cofre-monedas-oro-piedras-preciosas-cristales-trofeo_107791-7769.jpg?w=2000",
+        "caption": "[ 🛒 𝐎𝐁𝐓𝐈𝐄𝐍𝐄𝐒 𝐔𝐍 𝐂𝐎𝐅𝐑𝐄 🎉 ]\n\n* {diamonds} 𝐃𝐢𝐚𝐦𝐚𝐧𝐭𝐞𝐬 💎\n* {coins} 𝐂𝐨𝐢𝐧𝐬 🪙\n* {xp} 𝐄𝐱𝐩 ⚡",
+        "quoted": "🎉 Obtiene un regalo 🎁"
+      },
+      "shop": {
+        "notEnoughExp": "⚠️ Lo siento, no tienes suficientes *XP* para comprar *{count}* Diamantes 💎",
+        "receipt": "╔═❖ *ＮＯＴＡ ＤＥ ＰＡＧＯ*\n║‣ *Has comprado:* {count} 💎\n║‣ *Gastado:* {cost} XP\n╚═══════════════"
+      },
+      "bank": {
+        "missingDepositAmount": "[ ⚠️ ] *Ingresa la cantidad para agregar a tu cuenta bancaria*",
+        "emptyWallet": "*Estás pobre, no tienes diamantes*",
+        "depositAll": "*[ 🏦 ] Has agregado {amount} diamantes al Banco.*",
+        "invalidDepositAmount": "[ ⚠️ ] *Falta un número válido de diamantes 💎*",
+        "minimumAmount": "❌ El mínimo es 1 diamante.",
+        "notEnoughWallet": "*Che, no sabes cuánto tienes en tu cartera? Usa el comando:* #bal",
+        "deposit": "*[ 🏦 ] Has ingresado {amount} diamantes al Banco*",
+        "missingWithdrawAmount": "[ ⚠️ ] *Ingresa la cantidad a retirar*",
+        "emptyBank": "Hey fantasma 👻, no tienes nada en el banco 🥲",
+        "withdrawAll": "*[ 🏦 ] Retiraste {amount} diamantes 💎 del Banco.*",
+        "invalidWithdrawAmount": "La cantidad debe ser un número válido.",
+        "notEnoughBank": "*Che, no sabes cuánto tienes en tu cuenta? Usa el comando:* #bal",
+        "withdraw": "*[ 🏦 ] Has retirado {amount} diamantes del Banco*"
+      },
+      "crime": {
+        "missingUser": "❌ En usuarios no aparece en mi base de datos",
+        "cooldown": "『🚓︎』𝙇𝘼 𝙋𝙊𝙇𝙄𝘾𝙄𝘼 𝙀𝙎𝙏𝘼 𝙑𝙄𝙂𝙄𝙇𝘼𝙉𝘿𝙊, 𝙑𝙐𝙀𝙇𝙑𝙀 𝙀𝙉 : {time}",
+        "successXp": "《💰》{message} {xp} XP",
+        "failureXp": "《🚓》{message} {xp} XP",
+        "successResources": "《💰》{message}\n\n{diamonds} 💎 DIAMANTE\n{money} 🪙 LOLICOINS",
+        "failureResources": "《🚓》{message}\n\n{diamonds} 💎 DIAMANTE\n{money} 🪙 LOLICOINS",
+        "stoleFromUser": "《💰》Le has robado a @{user} una cantidad de {xp} XP",
+        "successMessages": [
+          "Robaste un Banco 🏦 y Obtuviste",
+          "Negociaste con el jefe de la mafia y Obtuviste:",
+          "Casi te atrapa la policía, pero lograste robar una cantidad valiosa de 💰. ¡Ten cuidado la próxima vez! Obtuviste:",
+          "Los mafiosos te han pagado:",
+          "Le has robado al Administrador del Grupo:",
+          "Le robaste a tu presidente una suma de:",
+          "Le robaste a un famoso un valor de:",
+          "Entraste sigilosamente en el museo y robaste una obra de arte valiosa:",
+          "Infiltraste una joyería y obtuviste un botín impresionante:",
+          "Te convertiste en el ladrón más buscado del país, obtuviste:",
+          "Robaste un camión lleno de productos valiosos y obtuviste:",
+          "Asaltaste un tren y conseguiste:",
+          "Robaste un avión cargado de mercancía y obtuviste:",
+          "Te hiciste pasar por un millonario para robar una joya única, obtuviste:",
+          "Entraste a la casa de un coleccionista de arte y robaste una pieza invaluable, obtuviste:",
+          "Secuestraste a un empresario y conseguiste un rescate importante:",
+          "Amenazaste a un político y obtuviste una gran suma de dinero:",
+          "Sobornaste a un oficial de policía para obtener información valiosa, conseguiste:"
+        ],
+        "failureMessages": [
+          "LA POLICIA TE VIO 🙀👮‍♂️ PERDISTE",
+          "Fuiste a robar un banco 🏦 y tu ayudante te vendió a la policía, perdiste:",
+          "No pudiste escapar de la Policía 🚔🤡, perdiste:",
+          "Intentaste robar un casino pero te descubrieron, perdiste:",
+          "Te atraparon tratando de robar una tienda, perdiste:",
+          "La alarma sonó cuando intentabas robar un almacén, perdiste:",
+          "El dueño del lugar te atrapó in fraganti, perdiste:",
+          "Intentaste hackear una cuenta bancaria pero te rastrearon, perdiste:",
+          "Fuiste descubierto tratando de sobornar a un oficial, perdiste:",
+          "Tu plan para chantajear a un empresario salió mal, perdiste:"
+        ]
+      },
+      "rob": {
+        "missingUser": "❌ En usuarios no aparece en mi base de datos",
+        "cooldown": "🚓 La policía está vigilando, vuelve en: *{time}*",
+        "missingTarget": "⚠️ *Etiqueta a un usuario para robarle XP*",
+        "selfTarget": "❌ No puedes robarte a ti mismo.",
+        "missingVictim": "❌ El usuarios no se encuentra en mi base de datos.",
+        "poorVictim": "@{user} tiene menos de {minimum} XP.\n> No robes a un pobre v:",
+        "transferFailed": "❌ No se pudo completar el robo.",
+        "success": "*Robaste {amount} XP a @{user}*"
+      },
+      "work": {
+        "cooldown": "*⏳ Debes descansar {time} antes de volver a trabajar*",
+        "result": "🛠 {message} *{xp} XP*",
+        "variants": [
+          "Eres un maestro alquimista, destilando misteriosas pociones en busca de secretos perdidos. obtiene: ",
+          "Violarte al que dijo que los bots se crean con termux obtienes:",
+          "Te conviertes en un intrépido cazador de tesoros, explorando lugares olvidados en busca de riquezas escondidas. obtiene:",
+          "cuidarte el grupos del lolibot ganar",
+          "Ayudas a moderar el grupo de GataBot por",
+          "Ayudas a moderar el grupo de LoliBot por",
+          "Ayudas a moderar el grupo de The-Shadow-Brokers-Bot por",
+          "Trabaja para una empresa militar privada, ganando",
+          "Organiza un evento de cata de vinos y obtiene",
+          "Diriges un negocio de transmutación de metales, convirtiendo lo común en valiosos tesoros. obtiene:",
+          "Exploras antiguas ruinas y encuentras una reliquia valiosa que te otorga conocimientos ancestrales. obtiene:",
+          "Trabajas como mercenario en una guerra épica, enfrentándote a desafíos con tu habilidad y coraje. obtiene:",
+          "Eres un investigador de lo paranormal, descubriendo los secretos ocultos del mundo espiritual. obtiene:",
+          "Entrenas dragones para carreras, formando vínculos con estas majestuosas criaturas aladas. obtiene:",
+          "Te conviertes en el mejor herrero de la ciudad, forjando armas legendarias y artefactos poderosos. obtiene:",
+          "Descubres un bosque encantado lleno de criaturas mágicas, estableciendo una conexión única con la naturaleza. obtiene:",
+          "Eres un domador de bestias feroces, controlando a las criaturas más salvajes con tu dominio animal. obtiene:",
+          "Viajas en el tiempo y resuelves problemas históricos, influyendo en el destino de civilizaciones pasadas. obtiene:",
+          "Eres un asesor real, aportando sabiduría y consejo a gobernantes y líderes. obtiene:",
+          "Desarrollas tecnología futurista, impulsando la innovación y cambiando el rumbo del mundo. obtiene:",
+          "Eres un maestro en el arte de la persuasión, convenciendo a otros con tu elocuencia y astucia.",
+          "Piloteas un mecha gigante en batallas épicas, defendiendo la tierra con tu destreza en la máquina de guerra. obtiene:",
+          "Diriges una granja de dragones, cuidando de estas majestuosas criaturas y criando dragones únicos. obtiene:",
+          "Eres un espía internacional, infiltrándote en organizaciones secretas y desenmascarando complots oscuros. obtiene:",
+          "Exploras el espacio y haces descubrimientos asombrosos que te otorgan una visión única del universo. obtiene:",
+          "Eres un mago de renombre, realizando trucos impresionantes y conjurando hechizos mágicos. obtiene:",
+          "Eres un científico loco, creando inventos extravagantes y experimentos inusuales. obtiene:",
+          "Defiendes el reino contra un ejército invasor, liderando ejércitos y demostrando tu valentía en la batalla. obtiene:",
+          "Eres un navegante audaz, explorando mares desconocidos y descubriendo islas llenas de tesoros. obtiene:",
+          "Eres un maestro en el arte del sigilo, moviéndote en las sombras y realizando misiones secretas. obtiene:",
+          "Eres un chef renombrado, creando platillos deliciosos que deleitan a los paladares de todo el mundo. obtiene:",
+          "Investigas crímenes complejos como un detective hábil, resolviendo misterios intrigantes. obtiene:",
+          "Eres un diplomático hábil, negociando tratados y alianzas para mantener la paz entre naciones. obtiene:",
+          "Eres un chamán poderoso, canalizando energías espirituales para curar y proteger. obtiene:",
+          "Desarrollas aplicaciones mágicas para dispositivos encantados, mejorando la vida de las personas con tus invenciones. obtiene:",
+          "Eres un campeón en torneos de lucha, demostrando tu destreza en el combate mano a mano. obtiene:",
+          "Eres un arquitecto visionario, diseñando ciudades futuristas y estructuras impresionantes. obtiene:",
+          "Eres un psíquico con habilidades sobrenaturales, explorando las mentes y prediciendo el futuro. obtiene:",
+          "Eres un famoso director de cine, creando historias épicas que cautivan a las audiencias. obtiene:",
+          "Eres un astrónomo y descubres un nuevo planeta, ampliando nuestro conocimiento del cosmos. obtiene:",
+          "Eres un experto en supervivencia, enfrentando los peligros del mundo con ingenio y valentía. obtiene:",
+          "Eres un músico talentoso que toca en conciertos masivos, llenando el aire con melodías cautivadoras.",
+          "Eres un explorador submarino, sumergiéndote en las profundidades para descubrir tesoros olvidados. obtiene:",
+          "Eres un diseñador de moda reconocido, creando tendencias y vistiendo a las personas con tu estilo único.",
+          "Eres un líder revolucionario, luchando por un mundo mejor y guiando a las masas hacia la libertad. obtiene:",
+          "Eres un médico que descubre una cura para una enfermedad mortal, salvando innumerables vidas. obtiene:",
+          "Eres un hacker informático, navegando por el ciberespacio y desvelando secretos digitales. obtiene:",
+          "Eres un jardinero botánico que encuentra una planta rara, desentrañando sus propiedades únicas. obtiene:",
+          "Eres un cazador de mitos, explorando leyendas y descubriendo la verdad detrás de los cuentos. obtiene:",
+          "Eres un arqueólogo que desentierra una ciudad antigua, revelando los secretos de civilizaciones pasadas. obtiene:",
+          "Eres un líder espiritual respetado, guiando a otros hacia la iluminación y la paz interior. obtiene:",
+          "Eres un jugador profesional, compitiendo en torneos de élite y demostrando tu habilidad en los juegos. obtiene:"
+        ]
+      },
+      "slut": {
+        "cooldown": "*💦 Debes descansar {time} antes de volver a prostituirte...*",
+        "result": "*{message}*\n\nGanaste: *{xp} XP*",
+        "variants": [
+          "Te vendiste por un combo del McDonald's",
+          "Le diste una buena mamada a un admin del grupo",
+          "Le hiciste un baile sensual al admin y te pagó",
+          "Tu OnlyFans explotó por 10 minutos",
+          "Tu cliente era un furry y te pagó el doble",
+          "Te disfrazaste de maid y funcionó",
+          "El viejo verde del grupo te dio propina",
+          "Ofreciste abrazos por monedas, pero te malinterpretaron",
+          "Trabajaste en una esquina pixelada de San Andreas",
+          "Te pagaron por quedarte calladito... y lo hiciste muy bien",
+          "Fuiste a la zona roja del grupo y volviste con billete",
+          "Tu cosplay de Nezuko encendió el ambiente",
+          "Hiciste roleplay con el bot y te pagaron por no romper personaje",
+          "Te disfrazaste de emoji y alguien pagó por usarte",
+          "Un sugar daddy te ofreció XP a cambio de cariñitos virtuales",
+          "Participaste en un 'verdad o reto' y te pasaste de atrevid@",
+          "Tu avatar provocó donaciones en un grupo de solteros",
+          "Te alquilaste como fondo de pantalla personalizado",
+          "Vendiste besos digitales y fue un éxito",
+          "Tu waifu interior salió a facturar",
+          "Tu foto de perfil enamoró a un moderador",
+          "Aceptaste una cita con alguien que solo habla en stickers",
+          "Te disfrazaste de bot NSFW y nadie notó la diferencia",
+          "Hiciste un dúo de TikTok caliente y lo monetizaste",
+          "Un VTuber te contrató como su asistente picante",
+          "Tu pack de stickers se volvió viral y pediste comisión",
+          "Te pagaron por enviar audios diciendo ‘papi’",
+          "Te disfrazaste de Siri y alguien te pidió comandos indecentes",
+          "Te ofreciste para dar tutoriales privados en el grupo",
+          "Fuiste la estrella de una noche en la taberna del RPG",
+          "Le vendiste ‘fotos de pies’ en formato ASCII",
+          "Cobraste por dejar que te usaran de NPC caliente",
+          "Participaste en un evento hot en un servidor de Minecraft",
+          "Le hiciste un peter al admins del grupo",
+          "Te grabaste susurrando comandos y alguien lo compró",
+          "Creaste un OnlyBots y fuiste trending",
+          "Te hiciste pasar por moderador sexy y cobraste multas",
+          "Tu nombre salió en un fanfic y alguien te recompensó",
+          "Organizaste un evento de ‘nalgadas virtuales’ con entrada paga",
+          "Le bailaste a un bot de economía y te soltó todo su saldo"
+        ]
+      },
+      "transfer": {
+        "invalidUsers": "❌ Usuarios no válidos.",
+        "cancelled": "*CANCELADO*",
+        "invalidResource": "❌ Recurso inválido.",
+        "notEnough": "⚠️ *𝙉𝙊 𝙏𝙄𝙀𝙉𝙀 𝙎𝙐𝙁𝙄𝘾𝙄𝙀𝙉𝙏𝙀 {resource}*",
+        "success": "✅ *TRANSFERENCIA HECHA:*\n\n*{amount} {resource} para* @{user}",
+        "alreadyPending": "𝙀𝙨𝙩𝙖𝙨 𝙝𝙖𝙘𝙞𝙚𝙣𝙙𝙤 𝙪𝙣𝙖 𝙩𝙧𝙖𝙣𝙨𝙛𝙚𝙧𝙚𝙣𝙘𝙞𝙖",
+        "usage": "`⧼⧼⧼ 💱 𝙏𝙍𝘼𝙉𝙎𝙁𝙀𝙍𝙀𝙉𝘾𝙄𝘼 💱 ⧽⧽⧽`\n\n> *{command} tipo cantidad @tag*\n\n`❏ 𝙀𝙅𝙀𝙈𝙋𝙇𝙊 :`\n* *{command} exp 30 @0*\n\n┏•「 *✅ 𝙍𝙀𝘾𝙐𝙍𝙎𝙊𝙎 𝘿𝙄𝙎𝙋𝙊𝙉𝙄𝘽𝙇𝙀𝙎* 」\n┃\n┃ 💎 𝘿𝙞𝙖𝙢𝙖𝙣𝙩𝙚𝙨 = limite\n┃ 🪙 𝙇𝙤𝙡𝙞𝘾𝙤𝙞𝙣𝙨 = money \n┃ ⚡ 𝙀𝙭𝙥𝙚𝙧𝙞𝙚𝙣𝙘𝙞𝙖 = exp \n┗•",
+        "missingTarget": "⚠️ *𝙀𝙏𝙄𝙌𝙐𝙀𝙏𝙀 𝘼𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊*",
+        "targetNotFound": "⚠️ *𝙀𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊 {user} 𝙉𝙊 𝙎𝙀 𝙀𝙉𝘾𝙐𝙀𝙉𝙏𝙍𝘼 𝙀𝙉 𝙈𝙄 db*",
+        "confirm": "`ESTÁS A PUNTO DE HACER ESTA TRANSFERENCIA`\n\n> 💹 *{amount} {resource} para* *@{user}*\n\n`¿DESEAS CONTINUAR?`\n> Tienes 60 segundos.\n\n> Escribe: (si) para aceptar\n> Escribe: (no) para cancelar",
+        "timeout": "*SU TIEMPO SE HA TERMINADO*"
+      },
+      "adminAdd": {
+        "missingTarget": "⚠️ Etiqueta a una persona con el @tag",
+        "lidNotFound": "❌ No se encontró al usuario con ese LID en la base de datos.",
+        "invalidAmount": "⚠️ Ingresa una cantidad válida",
+        "userNotFound": "❌ Ese usuario no está registrado en la base de datos.",
+        "diamondsAdded": "*≡ 💎 DIAMANTES AGREGADOS:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲᥣ:* {amount}\n┗━━━━━━━━━━━━",
+        "diamondsRemoved": "*≡ 💎 DIAMANTES QUITADOS:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* {amount}\n┗━━━━━━━━━━━━",
+        "expAdded": "*≡ ✨ EXP AGREGADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲᥣ:* {amount}\n┗━━━━━━━━━━━━",
+        "expRemoved": "*≡ ✨ EXP QUITADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* {amount}\n┗━━━━━━━━━━━━",
+        "error": "❌ Error al modificar datos."
+      },
+      "registration": {
+        "invalidGenderSelection": "⚠️ Responde con 1, 2, 3, hombre, mujer u otro para seleccionar tu género",
+        "birthdayStep": "🎂 *Registro Paso 3: Fecha de cumpleaños (Opcional)*\n\nPuedes enviar tu fecha de cumpleaños en formato DD/MM/YYYY (ejemplo: 30/10/2000)\n\n> O escribe \"omitir\" si no quieres decirlo",
+        "invalidBirthdayShort": "❌ Formato inválido. Ej: 27/5/2009",
+        "invalidGenderRestart": "⚠️ Género inválido. Reinicia el registro.",
+        "completed": "[ ✅ REGISTRO COMPLETADO ]\n\n◉ *Nombre:* {name}\n◉ *Edad:* {age} años\n◉ *Género:* {gender}{birthdayLine}\n◉ *Hora:* {time}\n◉ *Fecha:* {date}{countryLine}\n◉ *Número:* wa.me/{phone}\n◉ *Número de serie:*\n⤷ {serial}\n\n🎁 *Recompensa:*\n⤷ 2 diamantes 💎\n⤷ 400 Coins 🪙\n⤷ 150 exp\n\n*◉ Para ver los comandos del bot usar:*\n{prefix}menu\n\n◉ *Total de usuarios registrados:* {totalRegistered}",
+        "completedTitle": "𝐑𝐄𝐆𝐈𝐒𝐓𝐑𝐎 𝐂𝐎𝐌𝐏𝐋𝐄𝐓𝐀𝐃𝐎",
+        "completedBody": "LoliBot",
+        "alreadyRegistered": "*Ya estás registrado 🤨*",
+        "alreadyInProgress": "⚠️ Ya tienes un registro en curso. Completa el registro respondiendo el paso anterior.",
+        "usage": "*⚠️ ¿No sabes cómo usar este comando?* Usa de la siguiente manera:\n\n*{command} nombre.edad*\n*• Ejemplo:* {command} {name}.16",
+        "missingName": "*¿Y el nombre?*",
+        "missingAge": "*La edad no puede estar vacía, agrega tu edad*",
+        "nameTooLong": "*¿Qué?, ¿tan largo va a ser tu nombre?*",
+        "tooOld": "👴🏻 ¡Estás muy viejo para esto!",
+        "tooYoung": "🚼 ¿Los bebés saben escribir? ✍️😳",
+        "genderStep": "🧑 Registro Paso 2: ¿Cuál es tu género?\n\n1. Hombre ♂️\n2. Mujer ♀️\n3. Otro 🧬\n\n*Responde con el número*",
+        "serialQuoted": "⬇️ ᴇsᴛᴇ ᴇs sᴜs ɴᴜᴍᴇʀᴏ ᴅᴇʟ sᴇʀɪᴇ ⬇️",
+        "unregMissingSerial": "✳️ *Ingrese número de serie*\nVerifique su número de serie con el comando...\n\n*{prefix}nserie*",
+        "unregInvalidSerial": "⚠️ *Número de serie incorrecto*",
+        "unregSuccess": "😢 Ya no estas registrado",
+        "unregQuoted": "ᴿᵉᵍᶦˢᵗʳᵒ ᵉˡᶦᵐᶦⁿᵃᵈᵒ",
+        "setGenderUsage": "✳️ *Usa:*\n{prefix}setgenero <hombre|mujer|otro>\n📌 Ej: *{prefix}setgenero hombre*",
+        "setGenderSuccess": "✅ *Género guardado:* {gender}",
+        "setBirthdayUsage": "✳️ *Usa:*\n{prefix}setbirthday <fecha>\n📌 Ej: *{prefix}setbirthday 30/10/2000*",
+        "setBirthdayDeleted": "✅ *Cumpleaños eliminado correctamente.*",
+        "setBirthdaySuccess": "✅ *Cumpleaños guardado:* {birthday}",
+        "invalidBirthday": "❌ Formato inválido. Ej: 25/7/2009",
+        "birthdayLine": "\n◉ *Cumpleaños:* {birthday}",
+        "countryLine": "\n◉ *País:* {country}"
+      },
+      "profile": {
+        "noRelationship": "❌ *No estás en ninguna relación, solter@ 🤑.*",
+        "relationship": "💍 *Está en una relación con:* {spouseName}",
+        "caption": "*「 PERFIL 」*\n\n👤 *Nombre:* {name}\n☎️ *Número:* {phone}\n🌐 *Link:* wa.me/{waNumber}\n🌍 *Nacionalidad:* {nationality}{ageLine}{genderLine}{birthdayLine}\n💎 *Límite:* {limit}\n⚙️ *Nivel:* {level}\n◯ *Registrado:* {registered}\n\n{relationship}\n\n*•━━━━⪻ 𝙿𝙴𝚁𝙵𝙸𝙻 ⪼━━━━•*",
+        "registeredYes": "Sí",
+        "registeredNo": "No",
+        "ageLine": "\n🎈 *Edad:* {age}",
+        "genderLine": "\n⚧️ *Género:* {gender}",
+        "birthdayLine": "\n🎂 *Cumpleaños:* {birthday}"
+      },
+      "leaderboard": {
+        "cooldown": "⚠️ Hey @{user} Hay ya se mostró el ranking pendejo 🙄, Solo se muestra cada 3 minutos para evitar spam, Desplázate hacia arriba para verlo completo.👆",
+        "line": "{position}. @{user} *{compactValue}* ({value}) {icon}",
+        "caption": "`🏆 𝚃𝙰𝙱𝙻𝙰 𝙳𝙴 𝙲𝙻𝙰𝚂𝙸𝙲𝙰𝙲𝙸𝙾𝙽`\n\n💠 *𝐓𝐎𝐏 {len} 𝐗𝐏 🎯* \n𝐓𝐮: *{expPosition}* 𝐝𝐞 *{expTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{expRanking}\n\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n\n💠 *𝐓𝐎𝐏 {len} 𝐃𝐈𝐀𝐌𝐀𝐍𝐓𝐄 💎* \n𝐓𝐮: *{diamondPosition}* 𝐝𝐞 *{diamondTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{diamondRanking}\n\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n\n💠 *𝐓𝐎𝐏 {len} 𝐋𝐎𝐋𝐈𝐂𝐎𝐈𝐍𝐒 🪙*\n𝐓𝐮: *{moneyPosition}* 𝐝𝐞 *{moneyTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{moneyRanking}\n\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n\n💠 *𝐓𝐎𝐏 {len} 𝐌𝐈𝐋𝐋𝐎𝐍𝐀𝐑𝐈𝐎𝐒 💵* _(Usuarios con mas dinero en el banco)_\n𝐓𝐮: *{bankPosition}* 𝐝𝐞 *{bankTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{bankRanking}"
+      },
+      "level": {
+        "stats": "『 *TUS ESTADISTICAS 🆙* 』\n\nTus estadisticas en tiempo real 🕐\n\n├─ ❏ *NOMBRE:*  {name}\n├─ ❏ *XP 🆙:* {xpProgress}/{xpRequired}\n├─ ❏ *NIVEL:* {level}\n└─ ❏ *RANGO:* {role}\n\n> Te falta *{missingXp}* De *XP* para subir de nivel",
+        "up": "*[ 𝐋𝐄𝐕𝐄𝐋 𝐔𝐏 ]*\n        \n*• 𝐍𝐢𝐯𝐞𝐥 𝐚𝐧𝐭𝐞𝐫𝐢𝐨𝐫:* {before}\n*• 𝐍𝐢𝐯𝐞𝐥 𝐚𝐜𝐭𝐮𝐚𝐥:* {after}\n*• 𝐑𝐚𝐧𝐠𝐨:* {role}\n\n> _*Cuanto más interactúes con los bots, mayor será tu nivel*_",
+        "quoted": "*TUS ESTADISTICAS 🆙*"
+      },
+      "streakTop": {
+        "noActive": "⚠️ No hay usuarios activos en racha.\n\n¡Recuerda reclamar tu recompensa diaria usando /claim para aparecer aquí!",
+        "noPage": "⚠️ No hay usuarios en esta página.\n\n¡Recuerda reclamar tu recompensa diaria usando /claim para aparecer aquí!",
+        "header": "🏆 *TOP RACHAS DIARIAS* (Página {page})\n📊 Usuario(s) activo(s) en racha: *{totalActive}*\n\n",
+        "line": "{position}. *{name}* {crown}\n    🔥 Racha: {streak} día(s) {prize}\n\n",
+        "footer": "\n✨ _Sigue reclamando tu recompensa diaria usando /claim para aparecer en el ranking y ganar bonos épicos._ ✨",
+        "prizeHundred": "🏆",
+        "prizeFifty": "🥇",
+        "prizeThirty": "🏅",
+        "prizeWeekly": "⭐",
+        "crown": "(👑)"
+      },
+      "marriage": {
+        "accepted": "✅ ¡Felicidades! 🥳\n@{requester} y @{recipient} ahora están casados",
+        "rejected": "⚠️ Has rechazado la solicitud de matrimonio de @{requester}",
+        "alreadyMarriedSame": "⚠️ Ya estás casado con @{spouse}. No necesitas casarte de nuevo con la misma persona 🤨",
+        "alreadyMarried": "⚠️ Ya estás casado con @{spouse} ({spouseName}).\n¿Acaso le vas a ser infiel? 🤨",
+        "missingMention": "⚠️ Etiqueta a la persona con la que te quieres casar usando @tag",
+        "selfMarriage": "⚠️ No puedes casarte contigo mismo",
+        "targetMissing": "⚠️ El usuario al que intentas casar no está en mi base de datos.",
+        "targetMarried": "⚠️ El usuario ya está casado con alguien más",
+        "proposal": "💍 *@{requester}* se está declarando!! 😳\n@{recipient} responde:\n\n❤️ Escribe *Aceptar*\n💔 Escribe *Rechazar*",
+        "expired": "⚠️ El tiempo para aceptar o rechazar ha expirado.",
+        "divorceMissingTarget": "⚠️ Debes etiquetar a la persona con la que deseas divorciarte.",
+        "divorceNotMarried": "⚠️ No estás casado con esta persona para poder divorciarte.",
+        "divorceSuccess": "@{user} ({userName}) se divorció de @{target} ({targetName}) ahora están separados 🫣"
+      },
+      "rw": {
+        "rarities": [
+          "Común",
+          "Raro",
+          "Épico",
+          "Legendario"
+        ],
+        "defaultType": "no comun",
+        "defaultAnime": "Anime",
+        "notFound": "⚠️ Error: Personaje no encontrado.",
+        "alreadyBought": "⚠️ Este personaje ya ha sido comprado por @{owner}",
+        "selfBuy": "⚠️ No puedes comprar tu propio personaje.",
+        "notEnoughExp": "⚠️ No tienes suficientes exp para comprar este personaje.",
+        "bought": "🎉 ¡Has comprado a {name} por {price} exp!",
+        "sellerNotice": "🎉 ¡Tu personaje {name} ha sido comprado por @{buyer}!\n💰 {exp} exp han sido transferidos a tu cuenta (después de la comisión).",
+        "claimedFree": "🎁 ¡Reclamaste a {name} totalmente GRATIS!",
+        "processBuyError": "⚠️ Error al procesar la compra. Intenta de nuevo.",
+        "cooldown": "🤚 Pa, espera {time} para volver a usar este comando",
+        "statusForSale": "💸 Estado: @{owner} está vendiendo este personaje.",
+        "statusBought": "🔒 Estado: Comprado por @{owner}",
+        "statusFree": "🆓 Estado: Libre",
+        "priceFree": "🎁 ¡Puedes reclamarlo totalmente GRATIS!",
+        "priceWithPrevious": "~💰 Precio Anterior: {previousPrice} exp~\n💰 Precio Actual: {price} exp",
+        "price": "💰 Precio: {price} exp",
+        "caption": "💥 Nombre: {name}\n📺 Anime: {anime}\n⚧️ Tipo: {type}\n⭐ Rareza: {rarity}\n{status}\n{priceMessage}\n\n> Responde con \"c\" a este mensaje para {action}",
+        "actionClaimFree": "reclamarlo gratis",
+        "actionBuy": "comprarlo",
+        "adTitle": "✨️ Character Details ✨️",
+        "voteMissingName": "⚠️ Por favor, especifica el nombre del personaje.",
+        "voteCooldown": "Bueno pa 🤚 para con emoción esperar {time} para volver usar este comando",
+        "voteNotFound": "⚠️ No se encontró el personaje \"{name}\".",
+        "voteSuccess": "✨️ Votaste por el personaje *{name}*, su nuevo precio es *{price}* (+{increment})",
+        "saleNotEnoughExp": "⚠️ No tienes suficiente exp para comprar este personaje.",
+        "saleAccepted": "✅ @{buyer} ha comprado *{name}* de @{seller} por {price} exp.",
+        "saleRejected": "⚠️ Has rechazado la oferta de compra para *{name}*.",
+        "noCharacters": "⚠️ No tienes personajes registrados. Reclama uno primero.",
+        "characterListHeader": "Lista de tus personajes:\n",
+        "characterListLine": "{position}. {name} - {price} exp\n",
+        "saleUsage": "*⚠️ Pendejo no sabes como usar estos? Usa de la siguiente manera:*\n\n• Puedes vender un personaje a un usuario con:\n{command} <nombre del personaje> <precio> @tag\n\n• O puedes poner tu personaje en el mercado:\nEj: {command} goku 9500\n\n{characterList}",
+        "invalidPrice": "⚠️ Por favor, especifica un precio válido para tu personaje.",
+        "missingCharacterName": "⚠️ No se encontró el nombre del personaje. Verifica e intenta nuevamente.",
+        "sellNotFound": "⚠️ No se encontró el personaje que intentas vender.",
+        "alreadyForSale": "⚠️ Este personaje ya está en venta. Usa el comando `.rf-retirar` para retirarlo antes de volver a publicarlo.",
+        "publishCooldown": "⚠️ Debes esperar {minutes} minutos antes de volver a publicar a *{name}*.",
+        "minPrice": "⚠️ El precio mínimo permitido para {name} es {price} exp.",
+        "maxPrice": "⚠️ El precio máximo permitido para {name} es {price} exp.",
+        "pendingBuyer": "⚠️ El comprador ya tiene una solicitud pendiente. Por favor, espera.",
+        "offerExpired": "⏰ @{buyer} no respondió a la oferta de *{name}*. La solicitud fue cancelada.",
+        "directOffer": "📜 Hey @{buyer}, el usuario @{seller} quiere venderte *{name}* por {price} exp.\n\nResponde con:\n- *Aceptar* para comprar.\n- *Rechazar* para cancelar.",
+        "marketPublished": "✅ Has puesto a la venta *{name}* en el mercado por {price} exp.",
+        "saleError": "⚠️ Error al procesar la venta. Intenta de nuevo.",
+        "withdrawMissingName": "⚠️ Por favor, especifica el nombre del personaje a retirar.",
+        "withdrawNotFound": "❌ No se encontró ningún personaje con el nombre: *{name}*.",
+        "withdrawNotSeller": "❌ No puedes retirar este personaje porque no eres el vendedor.",
+        "withdrawNotForSale": "❌ El personaje *{name}* no está actualmente a la venta.",
+        "withdrawSuccess": "✅ Has retirado el personaje *{name}* del mercado.",
+        "withdrawError": "⚠️ Error al retirar el personaje. Intenta de nuevo.",
+        "giftUsage": "⚠️ Formato incorrecto. Usa: /give @tag nombre_del_personaje",
+        "giftMissingName": "⚠️ Por favor, especifica el nombre del personaje.",
+        "giftSelf": "No puedes regalarte un personaje a ti mismo 😆.",
+        "giftNotFound": "No se encontró el personaje \"{name}\".",
+        "giftNotOwner": "No eres el propietario de *{name}*. Solo el propietario puede regalarlo.",
+        "giftSuccess": "🎉 ¡Has regalado a *{name}* a @{recipient}!",
+        "rankingHeader": "📊 *`Ranking de Personajes`* 📊\n- Personajes reclamados: {claimedCount}\n\n",
+        "rankingTopHeader": "*🏆 Top de usuarios con más personajes reclamados:*\n",
+        "rankingLine": "\n{position}- @{user} {count} personajes",
+        "rankingFooter": "\n\n> _*¡Sigue usando el bot para reclamar más personajes!*_",
+        "haremEmpty": "*{target}* no tienes ningún personaje en tu harem.",
+        "haremSelf": "tú",
+        "haremHeader": "*`🛍 Inventario de Compras`*\n\n*• Usuario:* @{user}\n*• Personajes comprados:* {count}\n\n*`○ Lista de Personajes:`*\n",
+        "haremLine": "{position}. *{name}* ({price})\n",
+        "haremFooter": "\n> *• Página:* {page} de {totalPages}",
+        "haremError": "⚠️ Error al mostrar el inventario. Intenta de nuevo."
+      }
+    },
+    "group": {
+      "link": {
+        "failure": "No se pudo obtener el enlace del grupo."
+      },
+      "resetLink": {
+        "success": "*_Se restableció con éxito el link del grupo._*\n*• Link Nuevo:* {link}"
+      },
+      "setName": {
+        "missing": "⚠️ Ingresar el texto para el grupo",
+        "error": "error"
+      },
+      "promote": {
+        "missing": "*⚠️ ¿A quien le doy admins?* Etiqueta a una persona no soy adivino :)",
+        "invalidNumber": "*⚠️ Estas drogado ese número ingresado es incorrecto 🤓*, ingresar un número correcto o mejor etiquetas al usuario @tag",
+        "success": "*[ ✅ ] ÓRDENES RECIBIDAS*"
+      },
+      "demote": {
+        "missing": "*⚠️ ¿A quien le quitó admins?* etiquetas a una persona no soy adivinó :)",
+        "invalidNumber": "*Esta drogado o que ese número ingresado es incorrecto 🤓*, ingresa el número correctamente o mejor etiquetas al usuario.",
+        "missingUser": "⚠️ No se pudo resolver el usuario.",
+        "success": "*[ ✅ ] ÓRDENES RECIBIDAS*"
+      },
+      "warn": {
+        "missingUser": "*¿A quién le doy una advertencia?* Etiqueta a la persona con @tag o cita su mensaje.",
+        "unknownUser": "*⚠️ ¿Quién carajo es ese?* No aparece en mi base de datos.",
+        "defaultReason": "No especificada",
+        "notice": "*⚠️ ADVERTENCIA ⚠️*\n\n@{user} fuiste advertido por el admin: {admin}\n*• Tiene:* {warn}/{maxwarn} advertencias\n*• Razón:* {reason}",
+        "kickNotice": "⚠️ El usuario @{user} superó las *{maxwarn}* advertencias y será eliminado del grupo..."
+      },
+      "listWarn": {
+        "header": "*📋 LISTA DE ADVERTENCIAS 📋*\n\nGrupo: {group}\nTotal de usuarios con advertencias: {total}\n\n",
+        "empty": "*¡No hay usuarios con advertencias en este grupo! 😊*",
+        "listTitle": "*Usuarios advertidos:*\n",
+        "item": "➥ @{user} - Advertencias: {warn}/{maxwarn}\n",
+        "unknownGroup": "Sin nombre"
+      },
+      "delWarn": {
+        "missingUser": "*¿A quién le quito una advertencia?* Etiqueta a una persona con @tag o cita su mensaje.",
+        "unknownUser": "No encontré al usuario para quitarle una advertencia.",
+        "success": "*⚠️ SE QUITÓ UNA ADVERTENCIA ⚠️*\n\nUsuario: @{user}\n*• Advertencia:* -1\n*• Total:* {warn}",
+        "empty": "*⚠️ El usuario @{user} no tiene ninguna advertencia.*"
+      },
+      "setConfig": {
+        "typeWelcome": "bienvenida",
+        "typeBye": "despedida",
+        "typePromote": "ascenso",
+        "typeDemote": "degradación",
+        "usage": "*⚙️ Personaliza el mensaje de {type} del grupo:*\n\n*Puedes usar las siguientes variables:*\n• {variables}\n{options}\n*Ejemplo de uso:*\n➤ /{command} {example} --foto",
+        "varUser": "@user → Menciona al usuario",
+        "varGroup": "@group → Nombre del grupo",
+        "varDesc": "@desc → Descripción del grupo",
+        "varAuthor": "@author → Quien ejecuta la acción",
+        "options": "*Opciones adicionales:*\n• --foto → Para enviar el mensaje con imagen\n• --nofoto → Para enviar solo texto\n• --groupfoto → Para priorizar la foto del grupo\n• --nogroupfoto → Para priorizar la foto del usuario\n• --hidetag → Para mencionar a todos\n• --nohidetag → Para mencionar solo al usuario",
+        "exampleWelcome": "Hola @user, bienvenido a @group. Lee las reglas: @desc",
+        "exampleBye": "Chao @user, gracias por estar en @group.",
+        "examplePromote": "@user ha sido promovido por @author.",
+        "exampleDemote": "@user ha sido degradado por @author.",
+        "savedWelcome": "✅ Mensaje de bienvenida guardado{photo}{groupPhoto}{hidetag}.",
+        "savedBye": "✅ Mensaje de despedida guardado{photo}{groupPhoto}{hidetag}.",
+        "savedPromote": "✅ Mensaje de ascenso guardado.",
+        "savedDemote": "✅ Mensaje de degradación guardado.",
+        "withImage": " con imagen",
+        "withoutImage": " sin imagen",
+        "withGroupPhoto": " priorizando foto del grupo",
+        "withUserPhoto": " priorizando foto del usuario",
+        "withHidetag": " con hidetag",
+        "withoutHidetag": " sin hidetag"
+      },
+      "staff": {
+        "missingText": "😾 Y el texto?",
+        "emptyAdmins": "⚠️ No hay administradores en este grupo.",
+        "message": "•══✪〘 *ＳＴＡＦＦ* 〙✪══•\n\n> *𝐒𝐞 𝐧𝐞𝐜𝐞𝐬𝐢𝐭𝐚 𝐥𝐚 𝐩𝐫𝐞𝐬𝐞𝐧𝐜𝐢𝐚 𝐝𝐞 𝐮𝐧 𝐚𝐝𝐦𝐢𝐧𝐬* \n\n*• Mensaje:* {message}\n\n👑 *Administradores ({total}):*\n{admins}\n\n> [ ⚠️ ️] *ᵁˢᵃʳ ᵉˢᵗᵉ ᶜᵒᵐᵃⁿᵈᵒ ˢᵒˡᵒ ᶜᵘᵃⁿᵈᵒ ˢᵉ ᵗʳᵃᵗᵉ ᵈᵉ ᵘⁿᵃ ᵉᵐᵉʳᵍᵉⁿᶜᶦᵃ*",
+        "item": "➥ @{user}"
+      },
+      "tagAll": {
+        "header": "*⺀ ＡＣＴＩＶＥ ＧＲＵＰＯ 🗣️⺀*\n\n",
+        "messageLine": "❏ *Mensaje:* {message}\n",
+        "totalLine": "*👥 Miembros del grupo:* {total}\n",
+        "tagsTitle": "❏ *Etiquetas:*\n",
+        "item": "➥ @{user}",
+        "activityHeader": "*📊 Actividad del grupo 📊*\n\n",
+        "activitySummary": "□ Grupo: {group}\n□ Total de miembros: {total}\n□ Miembros activos: {active}\n□ Miembros inactivos: {inactive}\n\n*□ Lista de miembros:*\n",
+        "activityItem": "➥ @{user} - Mensajes: {messages}\n",
+        "unknownGroup": "Sin nombre"
+      },
+      "kick": {
+        "missingUser": "A quien eliminó? etiquetas a una persona con @tag pendejo"
+      },
+      "hidetag": {
+        "missingText": "𝙔 𝙀𝙇 𝙏𝙀𝙓𝙏𝙊?",
+        "audioFileName": "Hidetag.mp3",
+        "documentFileName": "archivo"
+      },
+      "pin": {
+        "missingQuoted": "⚠️ Responde a un mensaje para {action}.",
+        "actionPin": "fijarlo",
+        "actionUnpin": "desfijarlo"
+      },
+      "setHorario": {
+        "invalidFormat": "Formato correcto: /sethorario 23:00-06:00",
+        "success": "⏰ Horario NSFW establecido a *{range}*"
+      },
+      "setPp": {
+        "missingImage": "*⚠️ Responde a una Imagen.*"
+      },
+      "delete": {
+        "missingTarget": "⚠️ Responde al mensaje que quiere eliminar pelotudito.",
+        "missingMention": "⚠️ Mencionar a alguien o responder a un mensaje.",
+        "success": "✅ Se eliminaron {count} mensajes de {target}."
+      },
+      "kickNum": {
+        "missingPrefix": "*⚠️ Ingresa el prefijo del país, Ejemplo:* {command} +52",
+        "invalidPrefix": "*⚠️ El prefijo debe ser un número válido, Ejemplo:* {command} +52",
+        "empty": "*📵 No hay ningún número con prefijo +{prefix} en este grupo.*",
+        "list": "*📋 Números encontrados con prefijo +{prefix}:*\n\n{numbers}",
+        "botNotAdmin": "*⚠️ El bot no es administrador, no puedo eliminar usuarios.*",
+        "start": "*⚠️ Iniciando eliminación de números con prefijo +{prefix}...*\n> _Se eliminará uno cada 10 segundos_",
+        "alreadyGone": "@{user} ya fue eliminado o abandonó el grupo.",
+        "removeError": "⚠️ No se pudo eliminar a @{user}",
+        "done": "*✅ Proceso de eliminación terminado.*"
+      },
+      "config": {
+        "ownerPrivateOnly": "⚠️ Solo el owner puede usar este comando en privado.",
+        "invalidPrivateFormat": "⚠️ Formato incorrecto. Usa: !grupo [id/enlace] [ID/URL] - [acción] [+número si aplica]",
+        "invalidInvite": "⚠️ Enlace inválido. Usa un enlace de WhatsApp válido.",
+        "inviteInfoError": "⚠️ No se pudo obtener información del grupo. Verifica el enlace o que el bot tenga acceso.",
+        "missingValidLink": "⚠️ Debes proporcionar un enlace válido.",
+        "invalidIdentifier": "⚠️ Usa \"id\" o \"enlace\" como primer argumento, o pasa directamente un enlace válido.",
+        "missingGroup": "⚠️ Debes estar en un grupo o especificar un ID/enlace en privado.",
+        "missingAction": "⚠️ Debes especificar una acción (abrir, cerrar, daradmin, etc.).",
+        "opened": "🟢 ¡GRUPO ABIERTO! Todos pueden escribir ahora.",
+        "closed": "⚠️ ¡GRUPO CERRADO! Solo admins pueden escribir.",
+        "missingPromoteTarget": "⚠️ Especifica un número (ejemplo: - daradmin +51987654321) o menciona en grupo.",
+        "promoted": "✅ @{user} ahora es admin.",
+        "missingDemoteTarget": "⚠️ Especifica un número (ejemplo: - quitaradmin +51987654321) o menciona en grupo.",
+        "demoted": "✅ @{user} ya no es admin.",
+        "missingKickTarget": "⚠️ Especifica un número (ejemplo: - eliminar +51987654321) o menciona en grupo.",
+        "kicked": "🗑️ @{user} ha sido eliminado del grupo.",
+        "missingApproveTarget": "⚠️ Especifica un número (ejemplo: - aprobar +51987654321).",
+        "approved": "✅ @{user} ha sido aprobado en el grupo.",
+        "invalidCommand": "*⚠️ COMANDO INVÁLIDO*\n\n*En grupo:*\n{command} abrir\n{command} cerrar\n{command} daradmin @usuario\n{command} quitaradmin @usuario\n{command} eliminar @usuario\n\n*En privado (owner):*\n{command} id [ID] - abrir\n{command} enlace [URL] - cerrar\n{command} [URL] - cerrar\n{command} id [ID] - daradmin +número"
+      },
+      "groupInfo": {
+        "fallbackPicture": "https://telegra.ph/file/39fb047cdf23c790e0146.jpg",
+        "unknownUser": "Usuarios",
+        "unknownOwner": "Desconocido",
+        "botOff": "Apagado 📴",
+        "botOnline": "Online ✅",
+        "enabled": "✅",
+        "disabled": "❌",
+        "bannedYes": "🚫 Sí",
+        "bannedNo": "✅ No",
+        "nsfwSchedule": "🕒 ({schedule})",
+        "adminItem": "➥ @{user}",
+        "response": "『 ＩＮＦＯ ＤＥ ＧＲＵＰＯ 』\n\n*• ID :* \n{groupId}\n\n*• Nombre :* \n{groupName}\n\n*• Miembros :*\n{memberCount}\n\n*• Creador del grupo :*\n@{owner}\n\n*• Admins :*\n{admins}\n\n*• 𝙲𝙾𝙽𝙵𝙸𝙶𝚄𝚁𝙰𝙲𝙸𝙾𝙽 𝙳𝙴𝙻 𝙶𝚁𝚄𝙿𝙾 :*\n• Bot : {botStatus} \n• Bienvenida: {welcome}\n• AntiLink: {antilink}\n• VirusTotal: {virusTotal}\n• AntiFake: {antifake}\n• Detect: {detect}\n• Modo horny: {modohorny}\n• NSFW horario permitido: {nsfwSchedule}\n• Registro mensajes: {messageLogging}\n• Grupo baneado: {banned}"
+      },
+      "ghosts": {
+        "missingParticipants": "⚠️ No pude obtener la lista de participantes del grupo.",
+        "noGhosts": "⚠️ Este grupo es activo, ¡no tiene fantasmas! :D",
+        "unknownGroup": "Sin nombre",
+        "listHeader": "⚠️ REVISIÓN DE INACTIVOS ⚠️\n\nGrupo: {group}\n*Miembros del grupo:* {members}\n*Miembros inactivos (0-1 msg):* {inactive}\n\n[ 👻 LISTA DE FANTASMAS 👻 ]\n",
+        "listItem": "  👉🏻 {tag} ({messages} msg)",
+        "listFooter": "\n\n*Nota:* El bot cuenta mensajes desde que se activó en este grupo.",
+        "kickHeader": "⚠️ ELIMINACIÓN DE INACTIVOS ⚠️\n\nGrupo: {group}\n*Miembros del grupo:* {members}\n*Miembros inactivos (0-1 msg):* {inactive}\n\n[ 👻 FANTASMAS A ELIMINAR 👻 ]\n",
+        "kickFooter": "\n\n*El bot eliminará la lista mencionada, empezando en 20 segundos, con 10 segundos entre cada expulsión.*",
+        "completed": "✅ Eliminación de fantasmas completada.",
+        "error": "❌ Error ejecutando el comando. Por favor, intenta de nuevo."
+      },
+      "messageLog": {
+        "enabled": "✅ Registro de mensajes activado para este grupo.",
+        "disabled": "✅ Registro de mensajes desactivado para este grupo.",
+        "status": "📋 Registro de mensajes: {status}",
+        "statusEnabled": "activado ✅",
+        "statusDisabled": "desactivado ❌",
+        "usage": "⚠️ Uso:\n{command} on\n{command} off\n{command} estado"
+      },
+      "prompt": {
+        "usage": "📌 *Uso del comando {command} de esta forma:*\n{presets}\n{command} tu texto - ✍️ prompt personalizado\n{command} delete|borrar - 🧹 borrar prompt y memoria",
+        "presetLine": "{command} {key} - {label}",
+        "memoryCleared": "🧠 Memoria del chat borrada correctamente. El bot empezará desde cero.",
+        "ownerOnly": "⛔ Solo el *OWNER* puede poner más de 24 horas.",
+        "ttlUsage": "⏱️ *Uso:* {command} 10m | 2h | 1d | 0\nUnidades válidas: s (seg), m (min), h (horas), d (días)\nEjemplos:\n{command} 30m      → memoria se borra tras 30 minutos\n{command} 2h       → 2 horas\n{command} 0        → se borra en cada mensaje\n",
+        "memoryDisabled": "🧠 Memoria desactivada. El bot responderá sin historial.",
+        "invalidTtl": "❌ Formato inválido. Usa: 10m, 2h, 1d",
+        "ttlUpdated": "✅ Tiempo de memoria actualizado a *{value}* ({seconds} segundos).",
+        "saved": "✅ *Configuración exitosa.*\n\n*Has establecido un nuevo prompt para este chat.*\n💬 A partir de ahora, el bot usará las indicaciones que hayas establecido.\n\n> *Recuerda etiquetar \"@tag\" o responder a un mensaje del bot para que te responda.*\n\n{label}",
+        "deleted": "🗑️ *Prompt borrado con éxito.*"
+      }
+    },
+    "owner": {
+      "self": {
+        "usage": "⚙️ Usa: *{command} on* o *{command} off*",
+        "privateStatus": "🔒 *Privado*",
+        "publicStatus": "🌐 *Público*",
+        "success": "✅ Modo cambiado a: {status}"
+      },
+      "restart": {
+        "loading": "*Reiniciando...*",
+        "steps": [
+          "10%",
+          "30%",
+          "50%",
+          "80%",
+          "100%"
+        ],
+        "final": "🚀 Reiniciando Bot...\nPor favor espere un momento",
+        "missingConnection": "eh"
+      },
+      "leave": {
+        "notice": "*𝐄𝐥 𝐁𝐨𝐭 𝐚𝐛𝐚𝐧𝐝𝐨𝐧𝐚 𝐞𝐥 𝐠𝐫𝐮𝐩𝐨, 𝐜𝐡𝐚𝐮 👋*"
+      },
+      "setBotName": {
+        "missing": "❌ Escribe un nombre para el bot.\n\nEjemplo:\n/setbotname LoliBot 😎",
+        "success": "✅ Nombre del bot actualizado a:\n*{name}*"
+      },
+      "setLogo": {
+        "invalidUrl": "❌ Proporcione una URL válida de imagen.\n\nEjemplo:\n/setlogo https://i.imgur.com/logo.jpg",
+        "success": "✅ Foto/logo del bot actualizada correctamente."
+      },
+      "banChat": {
+        "success": "✅ Este grupo ha sido *baneado*. El bot ya no responderá aquí."
+      },
+      "unbanChat": {
+        "success": "✅ Este grupo ha sido *desbaneado*. El bot volverá a responder aquí."
+      },
+      "owners": {
+        "missingTarget": "❌ Debes etiquetar a alguien o escribir un número válido.\nEjemplo: {command} +522257888 o {command} @{sender}",
+        "alreadyOwner": "⚠️ @{user} ya es owner.",
+        "added": "✅ Agregado como owner: @{user}",
+        "notOwner": "⚠️ @{user} no es owner.",
+        "removed": "✅ Removido como owner: @{user}"
+      },
+      "banUser": {
+        "missingTarget": "🤓 Etiqueta al usuario boludito",
+        "unknownUser": "❌ Ese usuario no está registrado en la base de datos.",
+        "audio": "./resources/media/audio/seed/baneado.mp3",
+        "adTitle": "⚠️ ᴱˡ ᵘˢᵘᵃʳᶦᵒ(ᵃ) ᶠᵘᵉ ᵇᵃⁿᵉᵃᵈᵒ(ᵃ) 🙀 ⁿᵒ ᵖᵒᵈʳᵃ ᵘˢᵃʳ ᵃ",
+        "audioFileName": "error.mp3",
+        "banFallback": "🚫 El usuario @{user} ha sido *baneado* y no podrá usar el bot.{reason}",
+        "reason": "\n\n📌 *Razón:* {reason}",
+        "unbanned": "✅ El usuario @{user} ha sido *desbaneado* y puede volver a usar el bot.",
+        "error": "❌ Ocurrió un error al ejecutar el comando."
+      },
+      "update": {
+        "alreadyUpdated": "⚠️ 𝙔𝘼 𝙀𝙎𝙏𝘼 𝘼𝘾𝙏𝙐𝘼𝙇𝙄𝙕𝘼𝘿𝙊 𝘼 𝙇𝘼 𝙑𝙀𝙍𝙎𝙄𝙊́𝙉 𝙍𝙀𝘾𝙄𝙀𝙉𝙏𝙀.",
+        "updateHeader": "*[ UPDATE ]*\n\n{output}",
+        "conflict": "⚠️ Error\n> *Se han encontrado cambios locales en los archivos del bot que entran en conficto con las nuevas actualizaciones del repositorio. para actualizar, reinstalar el bot o realizar las actualizaciones manualmente.*\n\n*`ARCHIVO EN CONFLICTO :`*\n\n{files}.*",
+        "conflictItem": "*→ {file}*",
+        "unknownError": "⚠️ ERROR NOSE QUE PASO?, Editarte desde puto servidor idiota 🙄"
+      },
+      "testSubbots": {
+        "missingBotId": "❌ No se pudo identificar este bot.",
+        "emptyByType": "❌ No hay ningún bot del tipo *{type}* en la base de datos.",
+        "empty": "❌ La tabla subbots está vacía, no hay nada pa’ mostrar.",
+        "header": "📋 *Bots {type}:*\n",
+        "typeSuffix": " ({type})",
+        "summary": "*• Principales:* {main}\n*• Subbots:* {subbots}\n\n`🤖 CONFIGURACIÓNES :`\n",
+        "row": "- ID: {id} ({type})\n- Modo: {mode}\n- Nombre: {name}\n- Prefijos: {prefixes}\n- Owners: {owners}\n- Anti-Private: {antiPrivate}\n- Anti-Call: {antiCall}\n- Privacidad número: {privacy}\n- Prestar bot: {lend}\n- Logo: {logo}\n\n─────────────\n\n",
+        "unknown": "Desconocido",
+        "defaultMode": "Public",
+        "defaultName": "por defecto",
+        "defaultPrefixes": "[/,.,#]",
+        "defaultOwners": "Por defecto",
+        "yes": "Sí",
+        "no": "No",
+        "none": "Ninguno",
+        "error": "❌ Error al leer la tabla subbots, reporta esta mierda."
+      },
+      "prefix": {
+        "emptyPrefix": "(sin prefijo)",
+        "noPrefix": "Sin prefijo",
+        "current": "📌 *Prefijos actuales:* {prefixes}\n\n✏️ *Ejemplos de uso:*\n• `{prefix}setprefix /` _(solo responde a “/”)_\n• `{prefix}setprefix 0` _(sin prefijo)_\n• `{prefix}setprefix 0,#!` _(sin prefijo, # y !)_",
+        "noPrefixSaved": "✅ Ahora el bot funciona *sin prefijo*. Puedes escribir comandos directamente como:\n• `menu`",
+        "saveError": "❌ Error al guardar prefijos, revisa la base de datos.",
+        "invalid": "❌ No se detectaron prefijos válidos.",
+        "max": "⚠️ Máximo 9 prefijos permitidos.",
+        "updated": "✅ Prefijos actualizados a: {prefixes}",
+        "reportSaveError": "❌ Error al guardar prefijos, revisa la base de datos, reportarlo a mi creator con el comando: /report"
+      },
+      "join": {
+        "missingBotId": "❌ No se pudo identificar este bot.",
+        "notEnoughDiamonds": "❌ No tienes suficientes diamantes. Necesitas *{cost} diamantes* para unir el bot al grupo.",
+        "joining": "😎 Espere 3 segundos, me uniré al grupo\n\n> Se han descontado *{cost} diamantes* de tu cuenta.",
+        "joinFailed": "❌ No pude unirme al grupo. Verifica el enlace e inténtalo de nuevo.",
+        "joined": "*El Bot se ha unido al grupo ✅* por *{time} {unit}{plural}*"
+      },
+      "getPlugin": {
+        "missingQuery": "*¿Qué buscar?*\nEjemplo:\n{command} sticker",
+        "notFoundSuggestions": "'{query}' no encontrado.\n\nSugerencias:\n{suggestions}",
+        "notFound": "'{query}' no encontrado."
+      },
+      "fetch": {
+        "usage": "Ejemplo:\n{command} https://skyultraplus.com"
+      },
+      "db": {
+        "infoHeader": "📊 *`ESTADÍSTICAS DE BASE DE DATOS`*",
+        "users": "> 👤 Usuarios: *{count}*",
+        "registered": "> ✅ Registrados: *{count}*",
+        "chats": "> 💬 Chats totales: *{count}*",
+        "totalSize": "> 💾 Tamaño total DB: *{size}*",
+        "tableHeader": "\n📁 *`TAMAÑO POR TABLA:`*",
+        "tableRow": "• *{table}*: {rows} filas — {size}",
+        "zeroBytes": "0 bytes",
+        "queryError": "❌ Error al consultar la base de datos.",
+        "optimized": "✅ *Optimización completada.*\n📉 Se ejecutó *VACUUM FULL*\n⏱️ Duración: *{seconds} segundos*",
+        "optimizeError": "❌ No se pudo optimizar.",
+        "usage": "❓ Usa uno de estos subcomandos:\n\n• /db info — ver estadísticas\n• /db optimizar — VACUUM FULL"
+      },
+      "backup": {
+        "missingCreds": "❌ No se encontró el archivo *creds.json* en:\n{path}",
+        "heading": "_📂 *Respaldo de sesión de {id}* ({date})_",
+        "error": "❌ Error al generar el respaldo de la sesión."
+      },
+      "autoAdmin": {
+        "alreadyAdmin": "Ya eres admin del grupo mi creador 🫡"
+      }
+    },
+    "info": {
+      "donate": {
+        "response": "*`[💖 ＤＯＮＡＣＩＯＮ 💖 ]`*\n\n✨ ¡Hola {name}! ✨\n\n¡𝘎𝘳𝘢𝘤𝘪𝘢𝘴 𝘱𝘰𝘳 𝘶𝘴𝘢𝘳 *{watermark}*, 𝘵𝘶 𝘣𝘰𝘵 𝘨𝘳𝘢𝘵𝘶𝘪𝘵𝘰 𝘧𝘢𝘷𝘰𝘳𝘪𝘵𝘰! 🌟 𝘛𝘶 𝘢𝘱𝘰𝘺𝘰 𝘦𝘴 𝘧𝘶𝘯𝘥𝘢𝘮𝘦𝘯𝘵𝘢𝘭 𝘱𝘢𝘳𝘢 𝘮𝘢𝘯𝘵𝘦𝘯𝘦𝘳 𝘦𝘴𝘵𝘦 𝘱𝘳𝘰𝘺𝘦𝘤𝘵𝘰 𝘦𝘯 𝘮𝘢𝘳𝘤𝘩𝘢 𝘺 𝘴𝘪𝘦𝘮𝘱𝘳𝘦 𝘢𝘤𝘵𝘶𝘢𝘭𝘪𝘻𝘢𝘥𝘰. 𝘚𝘪 𝘲𝘶𝘪𝘦𝘳𝘦𝘴 𝘤𝘰𝘯𝘵𝘳𝘪𝘣𝘶𝘪𝘳 𝘺 𝘴𝘦𝘳 𝘱𝘢𝘳𝘵𝘦 𝘥𝘦 𝘦𝘴𝘵𝘢 𝘢𝘷𝘦𝘯𝘵𝘶𝘳𝘢, 𝘱𝘶𝘦𝘥𝘦𝘴 𝘩𝘢𝘤𝘦𝘳𝘭𝘰 𝘢 𝘵𝘳𝘢𝘷𝘦́𝘴 𝘥𝘦 𝘗𝘢𝘺𝘗𝘢𝘭 𝘰 𝘔𝘦𝘳𝘤𝘢𝘥𝘰 𝘗𝘢𝘨𝘰. 🙏\n\n─────────────────────\n\n*💸 𝘗𝘢𝘺𝘗𝘢𝘭:*\nhttps://paypal.me/OficialGD\n*💸 𝘔𝘦𝘳𝘤𝘢𝘥𝘰 𝘗𝘢𝘨𝘰:*\n*• 𝘈𝘭𝘪𝘢𝘴:* elrebelde21\n*• 𝘊𝘝𝘜:* 0000003100059201491917\n\n─────────────────────\n\n🎁 *𝘖𝘵𝘳𝘢𝘴 𝘧𝘰𝘳𝘮𝘢𝘴 𝘥𝘦 𝘢𝘱𝘰𝘺𝘢𝘳:*\n> 𝘚𝘪 𝘱𝘳𝘦𝘧𝘪𝘦𝘳𝘦𝘴 𝘢𝘺𝘶𝘥𝘢𝘳 𝘥𝘦 𝘰𝘵𝘳𝘢 𝘮𝘢𝘯𝘦𝘳𝘢, 𝘱𝘶𝘦𝘥𝘦𝘴 𝘥𝘰𝘯𝘢𝘳 𝘶𝘯 𝘯𝘶́𝘮𝘦𝘳𝘰 𝘱𝘢𝘳𝘢 𝘤𝘰𝘯𝘷𝘦𝘳𝘵𝘪𝘳𝘭𝘰 𝘦𝘯 𝘣𝘰𝘵, 𝘰 𝘤𝘰𝘯𝘵𝘢𝘤𝘵𝘢𝘳 𝘥𝘪𝘳𝘦𝘤𝘵𝘢𝘮𝘦𝘯𝘵𝘦 𝘤𝘰𝘯 𝘮𝘪 𝘤𝘳𝘦𝘢𝘥𝘰𝘳. ¡𝘛𝘢𝘮𝘣𝘪𝘦́𝘯 𝘱𝘶𝘦𝘥𝘦𝘴 𝘴𝘦𝘨𝘶𝘪𝘳𝘯𝘰𝘴 𝘺 𝘢𝘱𝘰𝘺𝘢𝘳𝘯𝘰𝘴 𝘦𝘯 𝘯𝘶𝘦𝘴𝘵𝘳𝘢𝘴 𝘳𝘦𝘥𝘦𝘴 𝘴𝘰𝘤𝘪𝘢𝘭𝘦𝘴! 👇\n\n🔔 *𝘠𝘰𝘶𝘛𝘶𝘣𝘦 - 𝘚𝘶𝘴𝘤𝘳𝘪́𝘣𝘦𝘵𝘦*\n{youtube}\n\n🌟 *𝘎𝘪𝘵𝘏𝘶𝘣 - 𝘋𝘢𝘭𝘦 𝘶𝘯𝘢 𝘦𝘴𝘵𝘳𝘦𝘭𝘭𝘢 ⭐*\n{repositoryUrl}\n\n🔗 *𝘌𝘯𝘭𝘢𝘤𝘦𝘴 𝘖𝘧𝘪𝘤𝘪𝘢𝘭𝘦𝘴 𝘦𝘯 𝘶𝘯 𝘜́𝘯𝘪𝘤𝘰 𝘓𝘶𝘨𝘢𝘳:*\nhttps://atom.bio/lolibot\n\n👍 *𝘍𝘢𝘤𝘦𝘣𝘰𝘰𝘬:*\n{facebook}\n\n💕 *IG:*\n{instagram}\n\n> ɢʀᴀᴄɪᴀs 💕"
+      },
+      "installBot": {
+        "response": "*◄┢┅͜͡✇⟬↯ື ►ஜ۩💥۩ஜ◄ ↯ື⟭✇͜͡┅┧►*\n\n💕 𝙑𝙄𝘿𝙀𝙊 𝘿𝙀 𝙄𝙉𝙎𝙏𝘼𝙇𝘼𝘾𝙄𝙊𝙉\nhttps://youtu.be/z2kHwbu8e8s?si=2z3Fur9U4ccN7EwA\n\n*✨ Canal de Actualizaciones y novedades sobre el bot*\n{channel}\n\n*📲💛 Si tienes dudas o necesitas ayuda en el proceso de la instalación puede escribirme por facebook:*\n{facebook}\n\n> ❗ *_Solo para temas de instalación_*\n\n───────•••───────\n\n`✨ 𝙂𝙄𝙏𝙃𝙐𝘽 > 𝙍𝙀𝙋𝙊𝙎𝙄𝙏𝙊𝙍𝙄𝙊`\n> *_Visita mí repositorio 😸 para más información, si te agrada el Bot apoya me con una ⭐️ ¡Gracias!_*\n{repositoryUrl}\n\n> ───────•••───────\n\n`✨ 𝙍𝙀𝙌𝙐𝙄𝙎𝙄𝙏𝙊𝙎 𝙋𝘼𝙍𝘼 𝙇𝘼 𝙄𝙉𝙎𝙏𝘼𝙇𝘼𝘾𝙄𝙊𝙉 (aclave de nuestros hosting) 😎`\n\n> ❌️ _~1 GB de almacenamiento~_\n> ❌️ _~Aplicación Termux (actualizada)~_\n> ✅ _Un WhatsApp secundarios_\n> ✅ _Un número virtual (si es ofc mejor)_\n> ❌️ ~_2 dispositivos o una PC para escanear_~\n> ✅ _Ahora con 1 dispositivos con el codigo de 8 digitos ya pueden ser bot_\n\n> ───────•••───────\n\n`📌 INSTALAR - SKYULTRAPLUS HOST`\nhttps://youtu.be/z2kHwbu8e8s?si=2z3Fur9U4ccN7EwA\n\n💻 *Página:*\nhttps://skyultraplus.com\n\n✨ *Dashboard \"new\" para cliente:*\npaymenter.skyultraplus.com\n\n🟢 *Dash \"anterior\" usuarios free:*\ndash.skyultraplus.com\n\n⚙️ *Panel:*\nhttps://panel.skyultraplus.com\n\n💥 *Comunidad de WhatsApp:*\nhttps://chat.whatsapp.com/E6iWpvGuJ8zJNPbN3zOr0D?mode=ac_t\n\n*🟣 Discord:*\nhttps://discord.gg/zvKgtc2RBc\n\n🧡 Canal de WhatsApp:*\nhttps://whatsapp.com/channel/0029VakUvreFHWpyWUr4Jr0g\n\n🗣📲 Contacto:*\n• wa.me/15167096032\n• https://instagram.com/gata_dios\n• {facebook}\n\n> ───────•••───────\n\n`✨ 𝙍𝙀𝙌𝙐𝙄𝙎𝙄𝙏𝙊𝙎 𝙋𝘼𝙍𝘼 𝙇𝘼 𝙄𝙉𝙎𝙏𝘼𝙇𝘼𝘾𝙄𝙊𝙉 (Por termux) ✨`\n\n> ✅ _1 GB de almacenamiento_\n> ✅ _Aplicación Termux (actualizada)_\n> ✅ _Un WhatsApp secundarios_\n> ✅ _Un número virtual (si es ofc mejor)_\n> ❌️ ~_2 dispositivos o una PC para escanear_~\n> ✅ _Ahora con 1 dispositivos con el codigo de 8 digitos ya pueden ser bot_\n\n> ───────•••───────\n\n`📌 𝙄𝙉𝙎𝙏𝘼𝙇𝘼𝙍 - 𝙏𝙀𝙍𝙈𝙐𝙓`\n\n* ```termux-setup-storage```\n\n* ```apt update && apt upgrade -y && pkg install -y git nodejs ffmpeg imagemagick yarn```\n\n* ```git clone https://github.com/elrebelde21/LoliBot-MD && cd LoliBot-MD```\n\n* ```bash install.sh```\n\n* ```ls```\n\n* ```npm start```\n\n> *◄┢┅͜͡✇⟬↯ື ►ஜ۩💥۩ஜ◄ ↯ື⟭✇͜͡┅┧►*"
+      },
+      "ping": {
+        "response": "🏓 *Pong!*\n⚙️ Proceso: *{processMs}ms*{latencyText}",
+        "latency": "\n📥 Recepción: *{receiveLatency}ms*"
+      },
+      "uptime": {
+        "response": "⏱️ *Uptime:* {uptime}"
+      },
+      "runtime": {
+        "response": "🫶 {repositoryUrl}\n\n*⏳ 𝙏𝙄𝙀𝙈𝙋𝙊 𝘼𝘾𝙏𝙄𝙑𝙊:*\n\t{runtime}\n",
+        "duration": "{days} Dias\t {hours} Horas {minutes} Minutos {seconds} Segundos"
+      },
+      "botInfo": {
+        "adTitle": "INFO - BOT",
+        "response": "*≡ INFOBOT*\n\n*INFORMACIÓN*\n*▣ Grupos total:* {totalGroups}\n*▣ Grupos unidos:* {joinedGroups}\n*▣ Grupo salidos:* {leftGroups}\n*▣ Chats privado:* {privateChats}\n*▣ Chats totales:* {totalChats}\n*▣ Sub-Bots conectado:* {subbotsCount}\n*▣ Total plugins:* {totalPlugins}\n*▣ Mode:* {mode}\n*▣ Prefix:* {prefixes}\n*▣ Velocidad:* {latency} ms\n*▣ Actividad:* {uptime}\n\n*▣ Comandos ejecutados:* {commandUsageShort} / {commandUsage}\n*▣ Grupos registrados:* {registeredGroupsShort} / {registeredGroups}\n*▣ Usuarios registrados:* {registeredUsersShort} de {totalUsersShort} users totales\n\n*≡ S E R V E R*\n▣ *Servidor:* {hostname}\n▣ *Plataforma:* {platform}\n▣ *RAM usada:* {ramUsage}\n▣ *Uso de CPU:* {cpuUsage}\n▣ *Uptime:* {serverUptime}"
+      },
+      "report": {
+        "missing": "⚠️ Escriba {subject}\n\n*𝐄𝐣:* {exampleCommand} {exampleText}",
+        "minLength": "✨ *𝑴𝒊́𝒏𝒊𝒎𝒐 10 𝒄𝒂𝒓𝒂𝒄𝒕𝒆𝒓𝒆𝒔 𝒑𝒂𝒓𝒂 𝒉𝒂𝒄𝒆𝒓 𝒆𝒍 𝒓𝒆𝒑𝒐𝒓𝒕𝒆...*",
+        "maxLength": "⚠️ *𝑴𝒂́𝒙𝒊𝒎𝒐 1000 𝑪𝒂𝒓𝒂𝒄𝒕𝒆𝒓𝒆𝒔 𝒑𝒂𝒓𝒂 𝒉𝒂𝒄𝒆𝒓 𝒆𝒍 𝒓𝒆𝒑𝒐𝒓𝒕𝒆.*",
+        "suggestionSent": "✅ ¡Gracias! Tu sugerencia ha sido enviada a nuestro equipo de moderación y será tomada en cuenta.",
+        "reportSent": "✅ Tu reporte ha sido enviado a nuestro equipo de moderación y será revisado pronto."
+      },
+      "groups": {
+        "response": "*✅ BIENVENIDO A LOS GRUPOS OFICIALES*\n\n  1) *{group1}*\n  \n  2) *{group2}*\n\n➤ Grupo del Colaboracion LoliBot & GataBot-MD\n *{group3}*\n\n➤ Grupo soporte para responder a tu dudas/sugerencia/etc\n{supportGroup}\n \n➤ Infomarte sobre las nuevas actualizaciones/novedades/test sobre LoliBot aqui:\n*{channel1}*\n\n ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n\n⇶⃤꙰𝑬𝒏𝒍𝒂𝒄𝒆 𝒍𝒐𝒍𝒊𝒃𝒐𝒕ꦿ⃟⃢\n*{group4}*\n\nᥫ᭡༶A༶T༶M༶ᰔᩚ\n*{group5}*\n\n๋࣭ 𝑇ℎ𝑒 𝑊𝑜𝑟𝑙𝑑 (｡•̀ᴗ-)✧💛\nhttps://chat.whatsapp.com/Csf3E6f2teh2wy3LXfbYRS?mode=ems_copy_c"
+      },
+      "status": {
+        "variants": [
+          "*┌───⊷ *ミ🤖 Estado del Bot 🤖彡*\n┆ *=> Bot activo ✅*\n┆┈┈┈┈┈┈┈┈┈┈┈┈┈\n┆ *=> Bot uso público ✅️*\n┆┈┈┈┈┈┈┈┈┈┈┈\n┆=> 𝘼𝙘𝙩𝙞𝙫𝙤 𝙙𝙪𝙧𝙖𝙣𝙩𝙚\n┆=> {uptime} ✅\n╰──────────────────",
+          "*Online {uptime} ✅*",
+          "*Saturado 🥵*",
+          "Estoy activo desde: {uptime}",
+          "Estamos activo papu 🤙"
+        ],
+        "quoted": "Uptime: {uptime}"
+      },
+      "groupList": {
+        "empty": "❌ Este bot no está unido a ningún grupo.",
+        "here": "✅ *Estoy aquí*",
+        "notHere": "❌ *No estoy aquí*",
+        "notAdmin": "❌ No soy admin",
+        "linkError": "⚠️ Error al generar link",
+        "unknownGroup": "Sin nombre",
+        "yes": "Sí",
+        "no": "No",
+        "item": "{index}. {subject} | {participantStatus}\n- *ID:* {jid}\n- *Admin:* {admin}\n- *Participantes:* {participants}\n- *Link:* {link}\n\n━━━━━━━━━━━━━━━\n\n",
+        "response": "_*`ESTÁ EN ESTOS GRUPOS:`*_\n> *• Total grupo:* {total}\n\n{groups}"
+      }
+    },
+    "search": {
+      "lyrics": {
+        "missingQuery": "*⚠️ ¿Que esta buscando? ingresa el nombre del tema para buscar la letra de la canción, ejemplo:* {command} ozuna te vas",
+        "notFound": "No se encontró la letra de la canción especificada.",
+        "unavailable": "No disponible",
+        "unknown": "Desconocido",
+        "lyricsUnavailable": "Letra no disponible",
+        "captionPrimary": "*🎤 𝙏𝙞𝙩𝙪𝙡𝙤:* {title}\n*👤 𝘼𝙪𝙩𝙤𝙧:* {artist}\n*🎶 𝙐𝙧𝙡:* {url}\n\n*📃🎵 𝙇𝙚𝙩𝙧𝙖:*\n{lyrics}",
+        "captionFallback": "*🎤 𝙏𝙞𝙩𝙪𝙡𝙤:* {title}\n*👤 𝘼𝙪𝙩𝙤𝙧:* {artist}\n*🔗 𝘼𝙧𝙩𝙞𝙨𝙩𝙖:* {artistUrl}\n*🎶 𝙐𝙧𝙡:* {url}\n\n*📃🎵 𝙇𝙚𝙩𝙧𝙖:*\n{lyrics}"
+      },
+      "google": {
+        "missingQuery": "⚠️ 𝙌𝙪𝙚 𝙚𝙨𝙩𝙖 𝙗𝙪𝙨𝙘𝙖𝙣𝙙𝙤 🤔 𝙀𝙨𝙘𝙧𝙞𝙗𝙖 𝙡𝙤 𝙦𝙪𝙚 𝙦𝙪𝙞𝙚𝙧𝙖 𝙗𝙪𝙨𝙘𝙖𝙧\n• 𝙀𝙟: {command} loli",
+        "primaryHeader": "`🔍 𝘙𝘌𝘚𝘜𝘓𝘛𝘈𝘋𝘖𝘚 𝘋𝘌:` {query}\n\n",
+        "primaryItem": "*{title}*\n_{url}_\n_{description}_\n\n─────────────────\n\n",
+        "fallbackHeader": "🔍 *Resultados de:* {query}\n\n",
+        "fallbackItem": "📌 *{title}*\n🔗 _{url}_\n📖 _{description}_\n\n─────────────────\n\n"
+      }
+    },
+    "subbots": {
+      "stop": {
+        "onlySubbot": "⚠️ Este comando solo puede ser usado desde una instancia de *SubBot*.",
+        "goodbye": "Adios te voy a extrañar :(",
+        "success": "✅ *Sesión del SubBot finalizada correctamente.*\nPuedes volver a conectarte usando `/jadibot` o `/serbot`.",
+        "error": "❌ Ocurrió un error al cerrar la sesión del SubBot."
+      },
+      "primary": {
+        "cleared": "✅ El bot primario ha sido eliminado de este grupo. Ahora cualquier subbot puede responder.",
+        "selected": "✅ El bot @{bot} ha sido establecido como *BOT PRINCIPAL* de este grupo.",
+        "selfSelected": "✅ Te has establecido como el bot principal de este grupo."
+      },
+      "privacy": {
+        "usage": "Usa:\n{command} 1 (activar)\n{command} 0 (desactivar)",
+        "privacyOn": "✅ *Privacidad activada.*\n> Tu número no se mostrará en la lista de bots.",
+        "privacyOff": "✅ *Privacidad desactivada.*\n> Tu número se mostrará en la lista de bots.",
+        "lendOn": "✅ *Prestar bot activado.*\n> Los usuarios pueden usar el bot para unirlo a grupos.",
+        "lendOff": "✅ *Prestar bot desactivado.*\n> Los usuarios no podrán unir el bot a grupos."
+      },
+      "list": {
+        "empty": "❌ No hay subbots conectados en este momento.",
+        "response": "🤖 *SubBots activos: {count}*\n\n{lines}",
+        "modePrivate": "Private",
+        "modePublic": "Public",
+        "unknown": "Desconocido",
+        "line": "• {title}\n   ⏱️ Tiempo activo: *{uptime}*\n   ⚙️ Modo: *{mode}*\n   🛠️ Prefix: {prefixes}{lendLine}",
+        "lendLine": "\n   🟢 *Prestar bot*: #join <enlace>"
+      }
+    },
+    "config": {
+      "toggle": {
+        "autoAcceptOnSilent": "✅ Autoacepta en silencio",
+        "autoAcceptOnAdmins": "✅ Autoacepta y avisa a admins",
+        "autoAcceptOnAll": "✅ Autoacepta y avisa al grupo",
+        "autoAcceptOffAdmins": "❌ No autoacepta, avisa a admins",
+        "autoAcceptOffAll": "❌ No autoacepta, avisa al grupo",
+        "autoAcceptOff": "❌ No hace nada",
+        "missingBotId": "❌ No se pudo identificar este bot.",
+        "enabledIcon": "✅",
+        "disabledIcon": "❌",
+        "notGroupIcon": "⚠️",
+        "menu": "*『 ⧼⧼⧼ ＣＯＮＦＩＧＵＲＡＣＩＯ́Ｎ ⧽⧽⧽ 』*\n\n> *Seleccione una opción de la lista*\n> *Para empezar a Configurar*\n\n● *Avisos de la Configuracion:*\n✅ ⇢ *Función Activada*\n❌ ⇢ *Función Desactivada*\n⚠️ ⇢ *Este Chat no es un Grupo*\n\n*『 FUNCIONES PARA ADMINS 』*\n\n🎉 BIENVENIDA {welcome}\n• Mensaje de bienvenida\n• {command} welcome\n\n📢 HIDETAG BIENVENIDA {welcomeHidetag}\n• Mencionar a todos en la bienvenida\n• {command} welcomehidetag\n\n📢 HIDETAG DESPEDIDA {byeHidetag}\n• Mencionar a todos en la despedida\n• {command} byehidetag\n\n📣 DETECTAR AVISOS {detect}\n• Avisar cambios en el grupo\n• {command} detect\n\n🔗 ANTILINK {antilink}\n• Detectar enlaces de grupo\n• {command} antilink\n\n🌐 ANTILINK2 {antilink2}\n• Detectar cualquier link\n• {command} antilink2\n\n🛡️ VIRUSTOTAL {virusTotal}\n• Analizar archivos y enlaces enviados al grupo\n• {command} virustotal\n\n🕵️ ANTIFAKE {antifake}\n• Bloquear números de otros países\n• {command} antifake\n\n🔞 NSFW {modohorny}\n• Contenido +18 en stickers/gifs\n• {command} modohorny\n\n🔒 MODO SOLO ADMIN {modoadmin}\n• Solo admins pueden usar comandos\n• {command} modoadmin\n\n🛂 AUTOACEPTAR {autoAccept}\n• Gestionar solicitudes de ingreso al grupo\n• {prefix}enable autoaceptar\n• {prefix}enable autoaceptar --hidetagadmin\n• {prefix}enable autoaceptar --hidetag\n• {prefix}disable autoaceptar\n• {prefix}disable autoaceptar --hidetagadmin\n• {prefix}disable autoaceptar --hidetag\n\n📝 REGISTRO MENSAJES {messageLogging}\n• Guardar mensajes de texto del grupo\n• {command} registromsg\n\n\n*『 FUNCIONES PARA OWNER 』*\n\n🚫 ANTIPRIVADO {antiPrivate}\n• Bloquear uso en privado\n• {command} antiprivate\n\n📵 ANTILLAMADAS {antiCall}\n• Bloquear llamadas\n• {command} anticall",
+        "groupOnly": "⚠️ Este comando solo se puede usar dentro de un grupo.",
+        "adminOnly": "⚠️ Solo los admins puede usar este comando.",
+        "ownerOrSubbotOnly": "❌ Solo el owner o subbots pueden cambiar esto.",
+        "autoAcceptConfigured": "🛂 La opción *autoaceptar* quedó configurada como:\n{status}",
+        "targetAll": "todo el bot",
+        "targetUser": "este usuario",
+        "targetChat": "este chat",
+        "enabledLabel": "activada",
+        "disabledLabel": "desactivada",
+        "updated": "🗂️ La opción *{type}* para {target} fue *{status}* correctamente."
+      }
+    },
+    "audio": {
+      "custom": {
+        "usage": "✳️ Usa:\n{usage}",
+        "addUsage": ".addaudios hola,hello - audio",
+        "deleteUsage": ".delaudios hola",
+        "adminOnly": "🚫 Solo admins pueden usar este comando en este grupo",
+        "ownerDeleteOnly": "🚫 Solo los owners pueden eliminar audios globales.",
+        "notFound": "❌ No existe un audio guardado con la frase: *{phrase}*",
+        "deleted": "🗑️ Audio *{phrase}* eliminado correctamente del scope: {scope}",
+        "downloadError": "❌ No se pudo descargar el audio desde la URL.",
+        "processError": "❌ No se pudo procesar el audio, por favor respondar a un audios nota de voz.",
+        "missingAudio": "❌ Responde a un audio o usa una URL válida.",
+        "saveError": "❌ No se pudo guardar el audio.",
+        "saved": "✅ Audio guardado:\n📌 Frases: {phrases}\n📁 Archivo: {file}"
+      }
+    },
+    "nsfw": {
+      "content": {
+        "unknownCommand": "❌ Comando NSFW no reconocido.",
+        "emptySource": "❌ Fuente NSFW vacía.",
+        "missingJsonSource": "❌ Fuente JSON no configurada.",
+        "missingApi": "❌ API no configurada.",
+        "missingImage": "❌ La API no devolvió imagen.",
+        "missingUrl": "❌ La API no devolvió una URL válida.",
+        "unsupportedSource": "❌ Fuente NSFW no soportada.",
+        "sendError": "❌ Error al enviar imagen/video +18."
+      }
+    },
+    "menus": {
+      "main": {
+        "cooldown": "⚠️ Hey {user}, ahí está el menú 🙄\n> Solo se enviará cada 3 minutos para evitar spam. Desplázate hacia arriba para verlo completo. 👆",
+        "fallbackUser": "@usuario",
+        "fallbackName": "sin name",
+        "infoCommands": [
+          {
+            "emoji": "⏱️",
+            "command": "uptime",
+            "description": "Muestra cuánto tiempo lleva activo el bot."
+          },
+          {
+            "emoji": "📡",
+            "command": "speedtest",
+            "description": "Mide velocidad y latencia del entorno del bot."
+          },
+          {
+            "emoji": "🧾",
+            "command": "sc",
+            "description": "Muestra información del código fuente o runtime."
+          },
+          {
+            "emoji": "🤖",
+            "command": "infobot",
+            "description": "Muestra datos generales sobre el bot."
+          },
+          {
+            "emoji": "💖",
+            "command": "donar",
+            "description": "Muestra formas de apoyar el mantenimiento del bot."
+          },
+          {
+            "emoji": "📝",
+            "command": "reporte <mensaje>",
+            "description": "Envía un reporte o sugerencia al equipo."
+          }
+        ],
+        "menuAccess": [
+          {
+            "emoji": "🔊",
+            "command": "menu2",
+            "description": "Audios y frases que responden sin prefijo."
+          },
+          {
+            "emoji": "🎞️",
+            "command": "menu3",
+            "description": "GIFs de reacción organizados por categoría."
+          },
+          {
+            "emoji": "👥",
+            "command": "menugrupo",
+            "description": "Comandos generales disponibles dentro de grupos.",
+            "restricted": "grupo"
+          },
+          {
+            "emoji": "🛡️",
+            "command": "menuadmin",
+            "description": "Moderación y configuración del grupo.",
+            "restricted": "admins"
+          },
+          {
+            "emoji": "👑",
+            "command": "menuowner",
+            "description": "Mantenimiento global y comandos privados del bot.",
+            "restricted": "owners"
+          },
+          {
+            "emoji": "🔧",
+            "command": "menutools",
+            "description": "Herramientas, convertidores e inspección."
+          },
+          {
+            "emoji": "🎮",
+            "command": "menujuegos",
+            "description": "Juegos, retos y dinámicas sociales."
+          },
+          {
+            "emoji": "💎",
+            "command": "menurpg",
+            "description": "Economía, registro, niveles y gacha."
+          },
+          {
+            "emoji": "🚀",
+            "command": "menudescargas",
+            "description": "Descargas de música, video, redes y archivos."
+          },
+          {
+            "emoji": "🔍",
+            "command": "menubuscar",
+            "description": "Buscadores, letras, imágenes e IA."
+          },
+          {
+            "emoji": "🧧",
+            "command": "menusticker",
+            "description": "Creación, edición y descarga de stickers."
+          },
+          {
+            "emoji": "🪄",
+            "command": "menurandom",
+            "description": "Anime, memes e imágenes aleatorias SFW."
+          },
+          {
+            "emoji": "🔞",
+            "command": "menunsfw",
+            "description": "Contenido adulto si el grupo lo tiene habilitado.",
+            "restricted": "NSFW"
+          },
+          {
+            "emoji": "✨",
+            "command": "menusubbot",
+            "description": "Sesiones y personalización de subbots."
+          }
+        ],
+        "menu": "「 {watermark} 」\n\nHola 👋🏻 *{name}*\n\n*• Fecha:* {date}\n*• Hora:* {time} (🇦🇷)\n*• Usuarios:* {totalUsers}\n*• Registrados:* {registeredUsers}\n*• Tiempo activo:* {uptime}\n*• Tu limite:* {limit}\n{botLine}\n\n`<COMANDOS DE INFORMACION/>`\n{infoCommands}\n\n`<MENUS DISPONIBLES/>`\n{menuAccess}\n\n> Usa el comando del menú que necesites para ver descripción y modo de uso de cada comando.",
+        "accessItem": "{emoji} *{prefix}{command}* — {description}{restricted}",
+        "restricted": " ({value})",
+        "officialBot": "*• Bot Ofc:* wa.me/{bot}",
+        "subBot": "*• Soy un sub bot del:* wa.me/{bot}"
+      }
+    },
+    "converters": {
+      "toImage": {
+        "notSticker": "*⚠️ 𝐑𝐞𝐬𝐩𝐨𝐧𝐝𝐞 𝐚 𝐮𝐧 𝐬𝐭𝐢𝐜𝐤𝐞𝐫 𝐪𝐮𝐞 𝐝𝐞𝐬𝐞𝐞 𝐜𝐨𝐧𝐯𝐞𝐫𝐭𝐢𝐫 𝐞𝐧 𝐢𝐦𝐚𝐠𝐞𝐧 𝐜𝐨𝐧 𝐞𝐥 𝐬𝐢𝐠𝐮𝐢𝐞𝐧𝐭𝐞 𝐜𝐨𝐦𝐚𝐧𝐝𝐨:* {command}",
+        "processing": "Euu flaco 🥴\n\n> *Convirtiendo tu Sticker a Imagen 🔄*"
+      },
+      "toMp3": {
+        "missingMedia": "*⚠️ ¿𝐘 𝐞𝐥 𝐯𝐢𝐝𝐞𝐨? 𝐑𝐞𝐬𝐩𝐨𝐧𝐝𝐞 𝐚 𝐮𝐧 𝐯𝐢𝐝𝐞𝐨 𝐨 𝐧𝐨𝐭𝐚 𝐝𝐞 𝐯𝐨𝐳 𝐩𝐚𝐫𝐚 𝐜𝐨𝐧𝐯𝐞𝐫𝐭𝐢𝐫 𝐚 𝐌𝐏𝟑*",
+        "downloadError": "*⚠️ 𝐎𝐂𝐔𝐑𝐑𝐈𝐎́ 𝐔𝐍 𝐄𝐑𝐑𝐎𝐑 𝐍𝐎𝐒𝐄 𝐐𝐔𝐄 𝐏𝐀𝐒𝐎? 𝐓𝐔 𝐒𝐀𝐁𝐄𝐒?* :)",
+        "processing": "Calmaoooo estoy procesando 😎\n\n> *Convirtiendo de MP4 a MP3 🔄*",
+        "conversionError": "*⚠️ 𝐓𝐑𝐄𝐌𝐄𝐍𝐃𝐎 ¿𝐍𝐨 𝐬𝐚𝐛𝐞𝐬 𝐮𝐬𝐚𝐫 𝐞𝐥 𝐜𝐨𝐦𝐚𝐧𝐝𝐨? 𝐫𝐞𝐬𝐩𝐨𝐧𝐝𝐞𝐫 𝐚 𝐮𝐧 𝐯𝐢𝐝𝐞𝐨 𝐨 𝐧𝐨𝐭𝐚 𝐝𝐞 𝐯𝐨𝐳 𝐛𝐨𝐛𝐨*"
+      },
+      "tts": {
+        "usage": "{command} <voz|idioma> <texto>",
+        "examples": "*Voces:* anonymous, robot, grave, aguda, niño\n*Idiomas:* es, en, pt, fr, etc.\n\nEjemplo:\n{command} anonymous Hola\n{command} es hello",
+        "missingText": "Escribe un texto para convertir a voz.",
+        "error": "Error: {error}"
+      },
+      "toUrl": {
+        "missingMedia": "*`⚠️ ¿𝐘 𝐋𝐀 𝐈𝐌𝐀𝐆𝐄𝐍/𝐕𝐈𝐃𝐄𝐎?`*\n\n*• Ejemplo de Uso de {command}:*\n\n➔ Responde a una imagen, sticker o video corto con el comando: *{command}*\n\nSubirá automáticamente el archivo a servidores como *qu.ax*, *catbox*, *cdn-skyultraplus*, etc.\n\n🌐 *`¿Quieres elegir un servidor específico?`*\n> Puedes usar:\n\n➔ *{command} quax*\n➔ *{command} catbox*\n➔ *{command} sky*\n➔ *{command} uguu*\n➔ *{command} restfulapi*\n➔ *{command} gofile*\n➔ *{command} telegraph*\n\n📝 *Notas:*\n- *El archivo debe ser una imagen, sticker o video corto.*\n- *Enlaces de qu.ax y catbox no expiran.*\n- *El CDN de SkyUltraPlus no tiene caducidad y es más rápido (pagando) obtener mas información aqui:* https://cdn.skyultraplus.com",
+        "downloadError": "❌ No se pudo descargar el archivo.",
+        "uploadError": "❌ Error al subir el archivo. Intenta con otra opción:\n{services}"
+      }
+    },
+    "messages": {
+      "gifReactions": {
+        "missingReaction": "❌ Reacción no configurada.",
+        "ffmpegHint": "⚠️ Para enviarlo como “mensaje” (inline), convierte los GIFs a MP4 y guárdalos en `{folder}`.\n\nEjemplo ffmpeg:\nffmpeg -i input.gif -vf \"fps=15,scale=320:-2:flags=lanczos\" -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart -crf 30 -preset veryfast output.mp4"
+      },
+      "gifDp": {
+        "needOneMore": "🙋 *{sender}*, para formar el trío necesitas *1 persona más*.\nYa tienes a *{target}* — etiqueta a alguien más para completar.",
+        "ffmpegHint": "⚠️ Para enviarlo como “mensaje” (inline), convierte los GIFs a MP4 y guárdalos en `resources/media/reaction-gifs/dp`.\n\nEjemplo ffmpeg:\nffmpeg -i input.gif -vf \"fps=15,scale=320:-2:flags=lanczos\" -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart -crf 30 -preset veryfast output.mp4",
+        "alone": "🥲 *{sender}* quiso hacer un trío... pero está solito 😏",
+        "trio": "🔥💦 *{sender}* está teniendo un trío con *{targets}* 🍑🔥"
+      }
+    },
+    "random": {
+      "anime": {
+        "unknownCommand": "❌ Comando no reconocido.",
+        "memeCaption": "😂🤣🤣",
+        "missingJsonSource": "❌ Fuente JSON no configurada.",
+        "missingApi": "❌ API no configurada.",
+        "missingImage": "❌ La API no devolvió imagen.",
+        "missingVideos": "❌ No hay videos configurados.",
+        "missingImages": "❌ No hay imágenes configuradas.",
+        "sendError": "❌ Error al enviar imagen."
+      }
+    },
+    "tools": {
+      "maker": {
+        "txtUsage": "⚠️ 𝙌𝙐𝙀 𝙀𝙎𝘾𝙍𝙄𝘽𝙄𝙊? 𝙐𝙎𝘼𝙍 𝙀𝙎𝙏𝙀 𝘾𝙊𝙈𝘼𝙉𝘿𝙊 𝘿𝙀 𝙇𝘼 𝙎𝙄𝙂𝙐𝙄𝙀𝙉𝙏𝙀 𝙁𝙊𝙍𝙈𝘼\n\n𝙀𝙅𝙀𝙈𝙋𝙇𝙊: *{command}* Hola LoliBot",
+        "txtCaption": "✍🏻 𝙀𝙎𝙏𝘼 𝙇𝙄𝙎𝙏𝙊!!\n{watermark}",
+        "carbonUsage": "⚠️ Ingresar en texto\nEj: *{command}* case \"hola\":\nm.reply(\"que onda\")\nbreak"
+      },
+      "whatMusic": {
+        "missingConfig": "❌ ACRCloud no está configurado. Define ACR_ACCESS_KEY y ACR_ACCESS_SECRET.",
+        "tooLong": "⚠️ ᴇʟ ᴀʀᴄʜɪᴠᴏ ǫᴜᴇ ᴄᴀʀɢᴀ ᴇs ᴅᴇᴍᴀsɪᴀᴅᴏ ɢʀᴀɴᴅᴇ, ʟᴇ sᴜɢᴇʀɪᴍᴏs ǫᴜᴇ ᴄᴏʀᴛᴇ ᴇʟ ᴀʀᴄʜɪᴠᴏ ɢʀᴀɴᴅᴇ ᴀ ᴜɴ ᴀʀᴄʜɪᴠᴏ ᴍᴀ́s ᴘᴇǫᴜᴇɴ̃ᴏ, 10-20 sᴇɢᴜɴᴅᴏs ʟᴏs ᴅᴀᴛᴏs ᴅᴇ ᴀᴜᴅɪᴏ sᴏɴ sᴜғɪᴄɪᴇɴᴛᴇs ᴘᴀʀᴀ ɪᴅᴇɴᴛɪғɪᴄᴀʀ",
+        "notFound": "No encontrado",
+        "result": "*`RESULTADOS DE LA BÚSQUEDA`*\n\n• 📌 𝐓𝐢𝐭𝐮𝐥𝐨: {title}\n• 👨‍🎤 𝐀𝐫𝐭𝐢𝐬𝐭𝐚: {artists}\n• 💾 𝐀𝐥𝐛𝐮𝐦: {album}\n• 🌐 𝐆𝐞𝐧𝐞𝐫𝐨: {genres}\n• 📆 𝐅𝐞𝐜𝐡𝐚 𝐝𝐞 𝐥𝐚𝐧𝐳𝐚𝐦𝐢𝐞𝐧𝐭𝐨: {releaseDate}",
+        "missingAudio": "*⚠️ 𝐑𝐞𝐬𝐩𝐨𝐧𝐝𝐞 𝐚 𝐮𝐧 𝐚𝐮𝐝𝐢𝐨*"
+      },
+      "translate": {
+        "result": "*Traducción:*\n{translation}",
+        "failure": "Error al traducir. Vuelve a intentarlo.",
+        "noResult": "❌ No se pudo traducir.",
+        "usage": "{command} (idioma destino) (texto a traducir)",
+        "examples": "📌 *Ejemplos:*\n• {command} es Hello » Español\n• {command} en hola » inglés\n• {command} fr buenos días » Francés\n• {command} pt tudo bem » Portugués\n• {command} de cómo estás » Alemán\n• {command} it buongiorno » Italiano",
+        "usageQuoted": "{command} es Hello"
+      },
+      "superInspect": {
+        "missingLink": "*⚠️ Ingrese un enlace de un grupo/comunidad/canal de WhatsApp para obtener información.*",
+        "groupNotFound": "Grupo no encontrado",
+        "groupAdTitle": "🔰 Inspector de Grupos",
+        "invalidChannel": "*Verifique que sea un enlace de canal de WhatsApp.*",
+        "channelNotFound": "*No se encontró información del canal.* Verifique que el enlace sea correcto.",
+        "channelAdTitle": "📢 Inspector de Canales"
+      },
+      "screenshot": {
+        "caption": "✅",
+        "usage": "{command} https://skyultraplus.com"
+      },
+      "hd": {
+        "caption": "✅ *Aquí está tu imagen en HD*",
+        "missingImage": "*Responde a una imagen para mejorarla en HD.*",
+        "downloadFailed": "No se pudo descargar la imagen.",
+        "missingConfig": "NEOXR_API_KEY no está configurado.",
+        "enhanceFailed": "No se pudo mejorar la imagen.",
+        "error": "Error: {error}"
+      },
+      "imageAi": {
+        "usage": "*⚠️ 𝐈𝐧𝐠𝐫𝐞𝐬𝐞 𝐮𝐧 𝐭𝐞𝐱𝐭𝐨 𝐩𝐚𝐫𝐚 𝐜𝐫𝐞𝐚𝐫 𝐮𝐧𝐚 𝐢𝐦𝐚𝐠𝐞𝐧 𝐲 𝐚𝐬𝐢 𝐮𝐬𝐚𝐫 𝐥𝐚 𝐟𝐮𝐧𝐜𝐢𝐨𝐧 𝐝𝐞 𝐝𝐚𝐥𝐥-𝐞*\n\n*• 𝐄𝐣𝐞𝐦𝐩𝐥𝐨:*\n*{command} gatitos llorando*",
+        "generatedCaption": "_💫 Resutados: {query}_\n\n> *✨ Imagen generada por IA ✨*",
+        "resultCaption": "_*Resultado de:* {query}_",
+        "error": "error {error}"
+      },
+      "ai": {
+        "usage": "*Hola cómo esta 😊, El que te puedo ayudar?*, ingrese una petición o orden para usar la función de chagpt\n*Ejemplo:*\n{command} Recomienda un top 10 de películas de acción",
+        "noResponse": "❌ No se pudo generar una respuesta.",
+        "saveMemoryError": "❌ No se pudo guardar memoria:",
+        "deepseekError": "❌ Error al consultar DeepSeek API.",
+        "blackboxError": "❌ Error de blackbox.ai: {error}",
+        "copilotTitle": "[ IA COPILOT ]",
+        "copilotBody": "LoliBot"
+      },
+      "id": {
+        "quoted": "👇 AQUI ESTA TU NUMERO OCULTO \"LID\" 👇"
+      },
+      "base64": {
+        "usage": "{command} texto",
+        "failure": "Error al convertir: {error}"
+      },
+      "list": {
+        "block": {
+          "header": "📛 *LISTA DE BLOQUEADOS*\n\n*Total:* {total}\n\n╭━━━[ *{version} 𓃠* ]━━━⬣\n",
+          "row": "┃🚫 @{user}\n",
+          "empty": "┃✅ No hay usuarios bloqueados actualmente.\n",
+          "footer": "╰━━━━━━━⬣\n\n*Por favor no llame para evitar ser Bloqueado, Gracias.*",
+          "error": "❌ Error al obtener la lista de bloqueados.\n"
+        },
+        "bannedChats": {
+          "header": "╭•·––| 💬 𝘾𝙃𝘼𝙏𝙎 𝘽𝘼𝙉𝙀𝘼𝘿𝙊𝙎* |––·•\n│ *Total:* {total}\n│\n",
+          "row": "│🚫 {chat}\n",
+          "empty": "│✅ No hay chats baneados actualmente.\n",
+          "footer": "╰•·–––––––––––––––––––·•\n",
+          "error": "❌ Error al obtener la lista de chats baneados.\n"
+        },
+        "bannedUsers": {
+          "header": "╭•·––| 👥 𝐔𝐒𝐔𝐀𝐑𝐈𝐎𝐒 𝐁𝐀𝐍𝐄𝐀𝐃𝐎𝐒 |––·•\n│ *Total:* {total}\n│\n",
+          "row": "├🚫 @{user}{reason}\n",
+          "reason": "\n│📌 *Razón:* {reason}",
+          "empty": "│✅ No hay usuarios baneados actualmente.\n",
+          "footer": "╰•·–––––––––––––––––––·•\n",
+          "error": "❌ Error al obtener la lista de baneados.\n"
+        },
+        "married": {
+          "header": "╭•·––| 💞 *LISTA DE PAREJAS* |––·•\n│\n*│Total:* {total}\n│\n",
+          "row": "│ *{index}.* @{user} 💞 @{partner}\n",
+          "empty": "│✅ No hay parejas registradas actualmente.\n",
+          "footer": "╰•·–––––––––––––––––––·•\n",
+          "error": "❌ Error al obtener la lista de parejas.\n"
+        },
+        "warned": {
+          "header": "╭•·––| ⚠️ *USUARIOS ADVERTIDOS / WARNED* |––·•\n│\n*│Total:* {total}\n│\n",
+          "row": "│ *{index}.* @{user} *(Warn: {warn}/4)*\n",
+          "empty": "│✅ No hay usuarios advertidos actualmente.\n",
+          "footer": "╰•·–––––––––––––––––––·•\n",
+          "error": "❌ Error al obtener la lista de advertidos.\n"
+        }
+      }
+    },
+    "stickers": {
+      "common": {
+        "apiNoSticker": "❌ La API no devolvió sticker.",
+        "invalidUrl": "URL invalido",
+        "missingStickerMedia": "*Y la imagen? 🤔 Responde a una imagen para hacer el sticker. Usa:* {command}",
+        "stickerVideoTooLong": "⚠️ ¿Dónde has visto un sticker de 15 segundos, pendejo? Haz el video más corto, con un máximo de 12 segundos.",
+        "actionError": "❌ Ocurrió un error con *{command}*."
+      },
+      "telegram": {
+        "missingConfig": "❌ TELEGRAM_BOT_TOKEN no está configurado.",
+        "usage": "⚠️ 𝙉𝙂𝙍𝙀𝙎𝙀 𝙀𝙇 𝙀𝙉𝙇𝘼𝘾𝙀 𝘿𝙀 𝙎𝙏𝙄𝘾𝙆𝙀𝙍 𝙏𝙀𝙇𝙀𝙂𝙍𝘼𝙈\n𝙀𝙅𝙀𝙈𝙋𝙇𝙊:\n{command} https://t.me/addstickers/Porcientoreal",
+        "invalidUrl": "⚠️ 𝙇𝘼 𝙐𝙍𝙇 𝙀𝙎 𝙄𝙉𝘾𝙊𝙍𝙍𝙀𝘾𝙏𝘼\n𝙏𝙃𝙀 𝙐𝙍𝙇 𝙄𝙎 𝙄𝙉𝘾𝙊𝙍𝙍𝙀𝘾𝙏",
+        "emptyPack": "❌ No se encontraron stickers en ese pack.",
+        "summary": "✔️ *𝙎𝙏𝙄𝘾𝙆𝙀𝙍 𝙏𝙊𝙏𝘼𝙇𝙀𝙎:* {count}\n*𝙀𝙉𝙑𝙄𝘼𝘿𝙊 𝙀𝙇:* {seconds} Segundos",
+        "packBody": "🍫 PACK DE STICKERS",
+        "unexpectedError": "⚠️ ERROR QUE PASO? NOSE TU SABES? INFORMARLE A MI CREATOR PARA QUE LOS ARREGLE EN VAGO ESE JJJJ"
+      },
+      "quote": {
+        "usage": "╰⊱❗️⊱ *𝙇𝙊 𝙐𝙎𝙊́ 𝙈𝘼𝙇* ⊱❗️⊱╮\n\n𝘼𝙂𝙍𝙀𝙂𝙐𝙀́ 𝙐𝙉 𝙏𝙀𝙓𝙏𝙊 𝙋𝘼𝙍𝘼 𝘾𝙍𝙀𝘼𝙍 𝙀𝙇 𝙎𝙏𝙄𝘾𝙆𝙀𝙍",
+        "tooLong": "*⚠️ El texto no puede tener mas de 65 caracteres*"
+      },
+      "pack": {
+        "usage": "⚠️ Escribe algo para buscar sticker packs.\nEjemplo: *{command} gatos*",
+        "notFound": "❌ No se encontró ningún pack para: *{query}*",
+        "sending": "🎯 *Resultados para:* {query}\n🧷 *Stickers a enviar:* {count}\n> ⏳ Enviando... espera un momento...",
+        "noneSent": "❌ No se pudo enviar ningún sticker.",
+        "searchError": "❌ Error buscando stickers."
+      },
+      "exif": {
+        "usage": "*⚠️ Uso:* {command} packname | author\n*Ejemplo:* {command} LoliBot | elrebelde21",
+        "missingPackname": "⚠️ Debes ingresar al menos un *packname*.",
+        "packnameTooLong": "⚠️ El *packname* es demasiado largo (máximo 600 caracteres).",
+        "authorTooLong": "⚠️ El *author* es demasiado largo (máximo 650 caracteres).",
+        "success": "✅ Perfecto, hemos actualizado el *EXIF* de tus stickers. Ahora cada sticker que crees tendrá:\n\n◉ *Packname:* {packname}\n◉ *Author:* {author}\n\n> ¡A crear stickers personalizados! 😎",
+        "none": "Ninguno"
+      },
+      "emojiMix": {
+        "missingConfig": "❌ TENOR_API_KEY no está configurado.",
+        "usage": "⚠️ 𝘿𝙚𝙗𝙚𝙨 𝙙𝙚 𝙪𝙨𝙖𝙧 2 𝙚𝙢𝙤𝙟𝙞𝙨 𝙮 𝙚𝙣 𝙢𝙚𝙙𝙞𝙤 𝙪𝙨𝙖𝙧 𝙚𝙡 *+*\n• 𝙀𝙟𝙚𝙢𝙥𝙡𝙤 :\n*{command}* 😺+😆"
+      },
+      "text": {
+        "usage": "⚠️ 𝙀𝙨𝙘𝙧𝙞𝙗𝙖 𝙥𝙖𝙧𝙖 𝙦𝙪𝙚 𝙚𝙡 𝙩𝙚𝙭𝙩𝙤 𝙨𝙚 𝙘𝙤𝙣𝙫𝙞𝙚𝙧𝙩𝙖 𝙚𝙡 𝙨𝙩𝙞𝙘𝙠𝙚𝙧\n𝙀𝙟𝙚𝙢𝙥𝙡𝙤\n*{command}* Nuevo Sticker",
+        "processing": "Calma crack estoy haciendo tu texto a sticker 👏\n\n> *Esto puede demorar unos minutos*",
+        "quoted": "No haga spam gil",
+        "tooLong40": "⚠️ El texto no puede tener más de 40 caracteres.\n\n✍️ Intenta con algo más corto.",
+        "tooLong250": "⚠️ El texto no puede tener más de 250 caracteres.\n\n✍️ Intenta con algo más corto.",
+        "tooLong300": "⚠️ El texto no puede tener más de 300 caracteres.\n\n✍️ Intenta con algo más corto.",
+        "apiDown": "Ufff la puta api se cayo 😒 pura mamada vuelve intentarlo mas tarde"
+      }
+    },
+    "fun": {
+      "guess": {
+        "prompts": {
+          "acertijo": "Genera un acertijo con su respuesta en formato JSON: {\"question\": \"<pregunta>\", \"response\": \"<respuesta>\"}.",
+          "pelicula": "Genera un juego de adivinar película con emojis como pista, formato JSON: {\"question\": \"<pregunta>\", \"response\": \"<respuesta>\"}.",
+          "trivia": "Genera una trivia en formato JSON: {\"question\": \"<pregunta>\\n\\nA) ...\\nB) ...\\nC) ...\", \"response\": \"<letra correcta>\"}."
+        },
+        "active": "⚠️ Ya hay un juego activo en este chat.",
+        "generationFailed": "❌ No se pudo generar la pregunta.",
+        "question": "{question}\n\n*• Tiempo:* {seconds}s\n*• Bono:* +{points} XP",
+        "timeout": "⏳ Se acabó el tiempo.\n*Respuesta:* {answer}",
+        "correct": "✅ *¡Correcto!*\nGanaste +{points} XP",
+        "failed": "❌ Fallaste 3 veces. La respuesta era: *{answer}*",
+        "incorrect": "❌ Incorrecto. Te quedan *{attempts}* intento(s)."
+      },
+      "random": {
+        "piropo": {
+          "prompt": "Cuéntame un piropo, solo di el piropo no agregue mas texto.",
+          "title": "💞 PIROPO",
+          "result": "*╭╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼*\n➢ {result}\n*╰╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼*"
+        },
+        "chiste": {
+          "prompt": "Cuéntame un chiste, puede ser de cualquier tipo de humor, no repita los chiste haz chiste como jaimito, yayo, solo di el chiste no agregue mas texto y haz chiste nuevo 2024 no repitan los mismo chiste pasado xD.",
+          "title": "😹 CHISTE",
+          "result": "*┏━━━━━━━━━━━━┓*\n😹 {result} 😹\n*┗━━━━━━━━━━━━┛*"
+        },
+        "reto": {
+          "prompt": "Dame un reto interesante para hacer, solo di el reto no agregue mas texto y no repitan los reto, que sea diferentes y divertido.",
+          "title": "😏 HE COJISTE RETO",
+          "result": "[ 𝙍𝙀𝙏𝙊 😏 ]\n\n\"{result}\""
+        },
+        "verdad": {
+          "prompt": "Dame una pregunta de verdad intrigante",
+          "title": "🤔 ELIGIRTE VERDAD",
+          "result": "[ 𝙑𝙀𝙍𝘿𝘼𝘿 🤔 ]\n\n“{result}”"
+        },
+        "adBody": "𝐒𝐮𝐩𝐞𝐫 𝐁𝐨𝐭 𝐃𝐞 𝐖𝐡𝐚𝐭𝐬𝐀𝐩𝐩"
+      },
+      "phrases": {
+        "title": "*Asmaul Husna*",
+        "intro": "Desde Abu Hurairah radhiallahu anhu, Rasulullah SAW dijo: \"Tengo noventa y nueve nombres, cien menos 1. Quien los memorice entrará en el Paraíso, y él es un acorde que ama el acorde.\"\nSignificado: \"De hecho, yo tengo noventa y nueve nombres, también conocido como cien menos uno. Quien los cuente, entrará en el cielo; Él es Witr y ama a Witr\".",
+        "usage": "Ejemplo:\n{command} 1",
+        "range": "mínimo 1 y máximo 99!",
+        "detail": "🔢 *Número:* {index}\n{arabic}\n \n{latin}\n\n{translationId}\n\n{translationEn}"
+      },
+      "games": {
+        "missingMention": "🤔 𝙋𝙚𝙣𝙙𝙚𝙟𝙤 𝙚𝙩𝙞𝙦𝙪𝙚𝙩𝙖𝙨 𝙖𝙡 𝙡𝙖 𝙥𝙚𝙧𝙨𝙤𝙣𝙖 𝙘𝙤𝙣 𝙚𝙡 @Tag",
+        "friendshipPair": "*🔰 Vamos a hacer algunas amistades 🔰*\n\n*Oye {first} hablale al privado a {second} para que jueguen y se haga una amistad 🙆*\n\n*Las mejores amistades empiezan con un juego 😉*",
+        "couplePair": "*{first}, 𝙔𝙖 𝙚𝙨 𝙝𝙤𝙧𝙖 𝙙𝙚 𝙦𝙪𝙚 𝙩𝙚 💍 𝘾𝙖𝙨𝙚𝙨 𝙘𝙤𝙣 {second}, 𝙇𝙞𝙣𝙙𝙖 𝙋𝙖𝙧𝙚𝙟𝙖 😉💓*",
+        "actionMissingText": "*Ingrese el @ o el nombre de la persona que quieras saber si te puedes {action}*",
+        "actionMissingTarget": "*Etiqueta o responde a la persona que quieras saber si te puedes {action}*",
+        "actionResult": "🤤👅🥵 *𝐀𝐂𝐀𝐁𝐀𝐒 𝐃𝐄 𝐅𝐎𝐋𝐋𝐀𝐑𝐓𝐄𝐋@!*🥵👅🤤\n\n*𝙏𝙚 𝙖𝙘𝙖𝙗𝙖𝙨 𝙙𝙚 𝙛𝙤𝙡𝙡𝙖𝙧 𝙖 𝙡𝙖 𝙥𝙚𝙧𝙧𝙖 𝙙𝙚* *{targetText}* ⁩ *𝙖 𝟰 𝙥𝙖𝙩𝙖𝙨 𝙢𝙞𝙚𝙣𝙩𝙧𝙖𝙨 𝙩𝙚 𝙜𝙚𝙢𝙞𝙖 𝙘𝙤𝙢𝙤 𝙪𝙣𝙖 𝙢𝙖𝙡𝙙𝙞𝙩𝙖 𝙯𝙤𝙧𝙧𝙖 \"𝐀𝐚𝐚𝐡.., 𝐀𝐚𝐚𝐡𝐡, 𝐬𝐢𝐠𝐮𝐞, 𝐧𝐨 𝐩𝐚𝐫𝐞𝐬, 𝐧𝐨 𝐩𝐚𝐫𝐞𝐬..\" 𝙮 𝙡𝙖 𝙝𝙖𝙨 𝙙𝙚𝙟𝙖𝙙𝙤 𝙩𝙖𝙣 𝙧𝙚𝙫𝙚𝙣𝙩𝙖𝙙𝙖 𝙦𝙪𝙚 𝙣𝙤 𝙥𝙪𝙚𝙙𝙚 𝙨𝙤𝙨𝙩𝙚𝙣𝙚𝙧 𝙣𝙞 𝙨𝙪 𝙥𝙧𝙤𝙥𝙞𝙤 𝙘𝙪𝙚𝙧𝙥𝙤 𝙡𝙖 𝙢𝙖𝙡𝙙𝙞𝙩𝙖 𝙯𝙤𝙧𝙧𝙖!*\n\n*{targetText}*\n🤤🥵 *¡𝐘𝐀 𝐓𝐄 𝐇𝐀𝐍 𝐅𝐎𝐋𝐋𝐀𝐃𝐎!* 🥵🤤",
+        "personalityMissingName": "Ingrese un nombre?",
+        "personalityResult": "┏━━°❀❬ *PERSONALIDAD}* ❭❀°━━┓\n*┃*\n*┃• Nombre* : {name}\n*┃• Buena Moral* : {goodMoral}\n*┃• Mala Moral* : {badMoral}\n*┃• Tipo de persona* : {personType}\n*┃• Siempre* : {always}\n*┃• Inteligencia* : {intelligence}\n*┃• Morosidad* : {debt}\n*┃• Coraje* : {courage}\n*┃• Miedo* : {fear}\n*┃• Fama* : {fame}\n*┃• Género* : {gender}\n┗━━━━━━━━━━━━━━━━",
+        "shipMissingNames": "⚠️ 𝐄𝐬𝐜𝐫𝐢𝐛𝐚 𝐞𝐥 𝐧𝐨𝐦𝐛𝐫𝐞 𝐝𝐞 𝐝𝐨𝐬 𝐩𝐞𝐫𝐬𝐨𝐧𝐚𝐬 𝐩𝐚𝐫𝐚 𝐜𝐚𝐥𝐜𝐮𝐥𝐚𝐫 𝐬𝐮𝐬 𝐚𝐦𝐨𝐫",
+        "shipMissingSecond": "⚠️ 𝐅𝐚𝐥𝐭𝐚 𝐞𝐥 𝐧𝐨𝐦𝐛𝐫𝐞 𝐝𝐞 𝐥𝐚 𝐬𝐞𝐠𝐮𝐧𝐝𝐚 𝐩𝐞𝐫𝐬𝐨𝐧𝐚",
+        "shipResult": "_❤️ *{first}* tu oportunidad de enamorarte de *{second}* es de *{percent}%* 👩🏻‍❤️‍👨🏻_",
+        "loveMeterResult": " *❤️❤️ MEDIDOR DE AMOR ❤️❤️* \n*El amor de {target} por ti es de* *{percent}%* *de un 100%*\n*Deberias pedirle que sea tu  novia/o ?*",
+        "doxxeoStart": "*😱 ¡¡𝙀𝙢𝙥𝙚𝙯𝙖𝙣𝙙𝙤 𝙙𝙤𝙭𝙭𝙚𝙤!! 😱*",
+        "doxxeoProgress": "*{boost}%*",
+        "doxxeoResult": "*✅ 𝐏𝐞𝐫𝐬𝐨𝐧𝐚 𝐡𝐚𝐜𝐤𝐞𝐚𝐝𝐚 𝐜𝐨𝐧 𝐞𝐱𝐢𝐭𝐨𝐬 🤣*\n\n*𝐓𝐢𝐞𝐦𝐩𝐨: {speed} 𝐒𝐞𝐠𝐮𝐧𝐝𝐨𝐬!*\n\n*𝐑𝐞𝐬𝐮𝐥𝐭𝐚𝐝𝐨𝐬:*\n*Nombre:* {name}\n*Ip:* 192.28.213.234\n*N:* 43 7462\n*W:* 12.4893\n*SS NUMBER:* 6979191519182016\n*IPV6:* fe80::5dcd::ef69::fb22::d9888%12 \n*UPNP:* Enabled\n*DMZ:* 10.112.42.15\n*MAC:* 5A:78:3E:7E:00\n*ISP:* TORNADO SLK PRODUCTION\n*DNS:* 8.8.8.8\n*ALT DNS:* 1.1.1.1.1  \n*DNS SUFFIX:* TORNADO WI-FI\n*WAN:* 100.23.10.90\n*WAN TYPE:* private nat\n*GATEWAY:* 192.168.0.1\n*SUBNET MASK:* 255.255.0.255\n*UDP OPEN PORTS:* 8080.80\n*TCP OPEN PORTS:* 443\n*ROUTER VENDEDOR:* ERICCSON\n*DEVICE VENDEDOR:* WIN32-X\n*CONNECTION TYPE:* TORNADO SLK PRODUCTION\n*ICMPHOPS:* 192.168.0.1 192.168.1.1 100.73.43.4\nhost-132.12.32.167.ucom.com\nhost-132.12.111.ucom.com\n36.134.67.189 216.239.78.11\nSof02s32inf14.1e100.net\n*HTTP:* 192.168.3.1:433-->92.28.211.234:80\n*Http:* 192.168.625-->92.28.211.455:80\n*Http:* 192.168.817-->92.28.211.8:971\n*Upd:* 192.168452-->92.28.211:7265288\n*Tcp:* 192.168.682-->92.28.211:62227.7\n*Tcp:* 192.168.725-->92.28.211:67wu2\n*Tcp:* 192.168.629-->92.28.211.167:8615\n*EXTERNAL MAC:* 6U:77:89:ER:O4\n*MODEM JUMPS:* 58",
+        "gayCaption": "@{user} Es 🏳️‍🌈 {score}% Gay\n\n{label}",
+        "freeTopUsage": "𝙔 𝙚𝙡 𝙩𝙚𝙭𝙩𝙤? 🤔\n📍 Ejemplo: {prefix}top nedro",
+        "freeTopResult": "*{emoji} Top 10 {topic} {emoji}*\n    \n{rows}",
+        "gayLabels": {
+          "low": "Usted es hetero 🤪🤙",
+          "mediumLow": "Mas o menos 🤔",
+          "medium": "Tengo mi dudas 😑",
+          "mediumHigh": "Tengo razon? 😏",
+          "half": "Eres o no? 🧐",
+          "high": "Usted es gay 🥸"
+        },
+        "percentages": {
+          "gay2": "_*{target}* *ES* *{percent}%* *GAY*_ 🏳️‍🌈",
+          "lesbiana": "_*{target}* *ES* *{percent}%* *{command}*_ 🏳️‍🌈",
+          "pajero": "_*{target}* *ES* *{percent}%* *{command}*_ 😏💦",
+          "pajera": "_*{target}* *ES* *{percent}%* *{command}*_ 😏💦",
+          "puto": "_*{target}* *ES* *{percent}%* *{command},* *MÁS INFORMACIÓN A SU PRIVADO 🔥🥵 XD*_",
+          "puta": "_*{target}* *ES* *{percent}%* *{command},* *MÁS INFORMACIÓN A SU PRIVADO 🔥🥵 XD*_",
+          "manco": "_*{target}* *ES* *{percent}%* *{command} 💩*_",
+          "manca": "_*{target}* *ES* *{percent}%* *{command} 💩*_",
+          "rata": "_*{target}* *ES* *{percent}%* *{command} 🐁 COME QUESO 🧀*_",
+          "prostituto": "_*{target}* *ES* *{percent}%* *{command} 🫦👅, QUIEN QUIERE DE SUS SERVICIOS? XD*_",
+          "prostituta": "_*{target}* *ES* *{percent}%* *{command} 🫦👅, QUIEN QUIERE DE SUS SERVICIOS? XD*_"
+        },
+        "personalityOptions": {
+          "percentages": [
+            "6%",
+            "12%",
+            "20%",
+            "27%",
+            "35%",
+            "41%",
+            "49%",
+            "54%",
+            "60%",
+            "66%",
+            "73%",
+            "78%",
+            "84%",
+            "92%",
+            "93%",
+            "94%",
+            "96%",
+            "98,3%",
+            "99,7%",
+            "99,9%",
+            "1%",
+            "2,9%",
+            "0%",
+            "0,4%"
+          ],
+          "personTypes": [
+            "De buen corazón",
+            "Arrogante",
+            "Tacaño",
+            "Generoso",
+            "Humilde",
+            "Tímido",
+            "Cobarde",
+            "Entrometido",
+            "Cristal",
+            "No binarie XD",
+            "Pendejo"
+          ],
+          "always": [
+            "Pesado",
+            "De malas",
+            "Distraido",
+            "De molestoso",
+            "Chismoso",
+            "Pasa jalandosela",
+            "De compras",
+            "Viendo anime",
+            "Chatea en WhatsApp porque esta soltero",
+            "Acostado bueno para nada",
+            "De mujeriego",
+            "En el celular"
+          ],
+          "genders": [
+            "Hombre",
+            "Mujer",
+            "Homosexual",
+            "Bisexual",
+            "Pansexual",
+            "Feminista",
+            "Heterosexual",
+            "Macho alfa",
+            "Mujerzona",
+            "Marimacha",
+            "Palosexual",
+            "PlayStationSexual",
+            "Sr. Manuela",
+            "Pollosexual"
+          ]
+        },
+        "top": {
+          "titles": {
+            "topgays": "*🌈TOP 10 GAYS/LESBIANAS DEL GRUPO🌈*",
+            "topotakus": "*🌸 TOP 10 OTAKUS DEL GRUPO 🌸*",
+            "topintegrantes": "*_💎TOP 10 L@S MEJORES INTEGRANTES👑_*",
+            "toplagrasa": "*_Uwu TOP 10 LA GRASA Uwu_*",
+            "toppanafrescos": "*_👊TOP 10 PANAFRESCOS👊_*",
+            "topshiposters": "*_😱TOP 10 SHIPOSTERS DEL GRUPO😱_*",
+            "toppajeros": "*_😏TOP L@S MAS PAJEROS/AS DEL GRUPO💦_*",
+            "toplindos": "*_😳TOP L@S MAS LIND@S Y SEXIS DEL GRUPO😳_*",
+            "topputos": "*_😏TOP L@S MAS PUT@S DEL GRUPO SON🔥_*",
+            "topfamosos": "*_🌟TOP PERSONAS FAMOSAS EN EL GRUPO🌟_*",
+            "topsostero": "*_🏋️ TOP 10 SOSTEROS DEL GRUPO 🏋️_*"
+          },
+          "row": "*_{index}.- {label}_* {suffix}",
+          "customRow": "*_{index}.- {label}_*",
+          "customRows": [
+            "Bv {user} Bv",
+            ":v {user} :v",
+            ":D {user} :D",
+            "Owo {user} Owo",
+            "U.u {user} U.u",
+            ">:v {user} >:v",
+            ":'v {user} :'v",
+            "._. {user} ._._",
+            ":V {user} :V",
+            "XD {user} XD"
+          ],
+          "couplesMessages": [
+            "Que hermosa pareja 💖, me invitan a su Boda 🛐",
+            "🌹 Ustedes se merecen lo mejor del mundo 💞",
+            "Tan enamorados 😍, para cuando la familia 🥰",
+            "💗 Decreto que ustedes son la pareja del Año 💗",
+            "Genial! 💝, están de Luna de miel 🥵✨❤️‍🔥"
+          ],
+          "couplesEmpty": "*_😍 No hay suficientes integrantes para formar parejas 😍_*",
+          "couplesRow": "*_{index}.- {first} 💘 {second}_*\n{message}",
+          "couplesTitle": "*_😍 Las {count} maravillosas parejas del grupo 😍_*\n    \n{rows}"
+        }
+      }
     }
   }
 }

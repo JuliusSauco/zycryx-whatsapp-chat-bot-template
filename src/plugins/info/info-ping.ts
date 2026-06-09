@@ -1,19 +1,22 @@
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 
 interface TimestampLike {
     toNumber?: () => number;
 }
 
-export default definePlugin({
+export default defineSdkPlugin({
     command: ['ping', 'p'],
     help: ['ping'],
     tags: ['main'],
-    async execute(m, {conn}) {
+    async execute(m, {sdk}) {
         const start = performance.now();
         const receiveLatency = getMessageLatencyMs(m.messageTimestamp);
         const processMs = Math.round(performance.now() - start);
-        const latencyText = receiveLatency === null ? '' : `\n📥 Recepción: *${receiveLatency}ms*`;
-        await conn.sendMessage(m.chat, {text: `🏓 *Pong!*\n⚙️ Proceso: *${processMs}ms*${latencyText}`}, {quoted: m});
+        const latencyText = receiveLatency === null
+            ? ''
+            : sdk.content.renderMessage('info.ping.latency', {receiveLatency});
+        const response = sdk.content.renderMessage('info.ping.response', {processMs, latencyText});
+        await sdk.sendMessage({text: response});
     }
 });
 

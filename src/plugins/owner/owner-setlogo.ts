@@ -1,5 +1,6 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {setSubbotLogoUrl} from '../../services/subbot.service.js';
+import {getRequiredPluginMessage} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ["setlogo <url>"],
@@ -11,8 +12,8 @@ export default definePlugin({
         const id = conn.user?.id;
         if (!id) return;
         const url = args[0];
-        if (!url || !url.startsWith("http")) return m.reply("❌ Proporcione una URL válida de imagen.\n\nEjemplo:\n/setlogo https://i.imgur.com/logo.jpg");
+        if (!url || !url.startsWith("http")) return m.reply(getRequiredPluginMessage('owner.setLogo.invalidUrl'));
         await setSubbotLogoUrl(id, url);
-        m.reply("✅ Foto/logo del bot actualizada correctamente.");
+        m.reply(getRequiredPluginMessage('owner.setLogo.success'));
     },
 });

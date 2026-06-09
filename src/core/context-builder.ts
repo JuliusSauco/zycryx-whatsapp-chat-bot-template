@@ -177,7 +177,7 @@ async function getCachedGroupMetadata(conn: ExtendedConn, chatId: string): Promi
     const baileysCached = conn?.groupCache?.get?.(chatId) as GroupMetadata | undefined;
     if (baileysCached?.participants?.length) {
         groupMetaCache.set(chatId, baileysCached);
-        setTimeout(() => groupMetaCache.delete(chatId), GROUP_META_CACHE_TTL);
+        setTimeout(() => groupMetaCache.delete(chatId), GROUP_META_CACHE_TTL).unref?.();
         return baileysCached;
     }
 
@@ -185,7 +185,7 @@ async function getCachedGroupMetadata(conn: ExtendedConn, chatId: string): Promi
         const metadata = await conn.groupMetadata(chatId);
         groupMetaCache.set(chatId, metadata);
         conn?.groupCache?.set?.(chatId, metadata);
-        setTimeout(() => groupMetaCache.delete(chatId), GROUP_META_CACHE_TTL);
+        setTimeout(() => groupMetaCache.delete(chatId), GROUP_META_CACHE_TTL).unref?.();
         return metadata;
     } catch {
         return {participants: []} as unknown as GroupMetadata;

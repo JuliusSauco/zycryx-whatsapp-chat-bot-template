@@ -4,6 +4,7 @@ import {getAvailableMp4s, pickRandomFile} from './gif-media.js';
 import path from 'path';
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js';
 import {loadCachedJsonResource} from '../../lib/local-json-resource.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 interface ReactionResource {
     help: string;
@@ -26,7 +27,7 @@ export default definePlugin({
     async execute(m, {conn, participants, command}) {
     try {
         const reaction = aliasMap[command.toLowerCase()];
-        if (!reaction) return m.reply('❌ Reacción no configurada.');
+        if (!reaction) return m.reply(getRequiredPluginMessage('messages.gifReactions.missingReaction'));
 
         const rawMentions: string[] = Array.isArray(m.mentionedJid) ? [...m.mentionedJid] : [];
         if (m.quoted?.sender) rawMentions.push(m.quoted.sender);
@@ -87,10 +88,7 @@ function formatReactionCaption(template: string, senderTag: string, targetTags: 
 }
 
 function buildFfmpegHint(folder: string): string {
-    return `⚠️ Para enviarlo como “mensaje” (inline), convierte los GIFs a MP4 y guárdalos en \`${folder}\`.
-
-Ejemplo ffmpeg:
-ffmpeg -i input.gif -vf "fps=15,scale=320:-2:flags=lanczos" -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart -crf 30 -preset veryfast output.mp4`;
+    return renderTemplate(getRequiredPluginMessage('messages.gifReactions.ffmpegHint'), {folder});
 }
 
 function escapeRegExp(value: string): string {

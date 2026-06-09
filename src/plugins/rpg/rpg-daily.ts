@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {addWalletResourcesAndSetFields, getWallet} from '../../services/wallet.service.js';
 import {formatShortThousands, formatThousandsDot} from '../../utils/format.js';
 import {formatDurationHoursMinutesShort} from '../../utils/time.js';
@@ -17,13 +18,15 @@ export default definePlugin({
     async execute(m, {conn}) {
         const now = Date.now();
         const user = await getWallet(m.sender);
-        if (!user) return m.reply('✳️ El usuario no se encuentra en la base de datos.');
+        if (!user) return m.reply(getRequiredPluginMessage('rpg.shared.missingUser'));
         const lastClaim = Number(user.lastclaim) || 0;
         const streak = Number(user.dailystreak) || 0;
         const nextClaimTime = lastClaim + 86400000;
         const restante = Math.max(0, nextClaimTime - now);
 
-        if (now - lastClaim < 86400000) return m.reply(`⚠️ Ya reclamaste tu recompensa diaria, vuelve en *${formatDurationHoursMinutesShort(restante)}* para reclamar de nuevo 🎁.`);
+        if (now - lastClaim < 86400000) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.daily.alreadyClaimed'), {
+            time: formatDurationHoursMinutesShort(restante)
+        }));
 
         const newStreak = (now - lastClaim < 172800000) ? streak + 1 : 1;
         const currentExp = free + (newStreak - 1) * expIncrease;
@@ -37,7 +40,11 @@ export default definePlugin({
                 fields: {lastclaim: now, dailystreak: newStreak},
             });
 
-            bonusText = `\n\n🎉 *¡BONUS por 7 días de racha!* 🎉\n> +${formatThousandsDot(bonusExp)} XP extra\n> +${bonusLimit} Diamantes 💎\n> +${formatThousandsDot(bonusMoney)} LoliCoins 🪙\n\n`;
+            bonusText = renderTemplate(getRequiredPluginMessage('rpg.daily.bonus'), {
+                bonusExp: formatThousandsDot(bonusExp),
+                bonusLimit,
+                bonusMoney: formatThousandsDot(bonusMoney)
+            });
         } else {
             await addWalletResourcesAndSetFields({
                 userId: m.sender,
@@ -46,6 +53,12 @@ export default definePlugin({
             });
         }
 
-        await conn.fakeReply(m.chat, `*🔸 𝐇𝐀𝐒 𝐑𝐄𝐂𝐈𝐁𝐈𝐃𝐎:* Tu recompensa diaria de: *${formatThousandsDot(currentExp)} XP* (Día  ${newStreak})\n` + bonusText + `> _*Mañana no te olviden de seguir reclamado tu recompensa ganaras: ${formatShortThousands(nextExp)} (${formatThousandsDot(nextExp)}) XP*_\n`, '13135550002@s.whatsapp.net', `🎁 Obtener un regalo 🎁`, 'status@broadcast');
+        await conn.fakeReply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.daily.reward'), {
+            currentExp: formatThousandsDot(currentExp),
+            streak: newStreak,
+            bonusText,
+            nextExpShort: formatShortThousands(nextExp),
+            nextExp: formatThousandsDot(nextExp)
+        }), '13135550002@s.whatsapp.net', getRequiredPluginMessage('rpg.daily.quoted'), 'status@broadcast');
     }
 });

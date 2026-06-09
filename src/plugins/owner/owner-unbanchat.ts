@@ -1,5 +1,6 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {setGroupBanned} from '../../services/group-settings.service.js';
+import {getRequiredPluginMessage} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ['unbanchat'],
@@ -9,6 +10,6 @@ export default definePlugin({
     async execute(m) {
         await setGroupBanned(m.chat, false);
 
-        m.reply("✅ Este grupo ha sido *desbaneado*. El bot volverá a responder aquí.");
+        m.reply(getRequiredPluginMessage('owner.unbanChat.success'));
     },
 });

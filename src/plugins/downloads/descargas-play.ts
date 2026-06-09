@@ -4,6 +4,7 @@ import yts from 'yt-search';
 import type {QuotedMessage} from '../../types/context.js';
 import type {YouTubeSearchVideo} from 'yt-search';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {
     buildAudioApis,
     buildVideoApis,
@@ -13,7 +14,7 @@ import {
     secondString,
     selectQuality,
     youtubeRegexID,
-} from './youtube-download.helpers.js';
+} from '../../providers/downloads/youtube.provider.js';
 
 const LimitAud = 725 * 1024 * 1024; // 725MB
 const LimitVid = 425 * 1024 * 1024; // 425MB
@@ -27,13 +28,17 @@ export default definePlugin({
     command: ['play', 'play2', 'play3', 'play4', 'audio', 'video', 'playdoc', 'playdoc2', 'musica'],
     register: true,
     async execute(m, {conn, command, args, text, usedPrefix}) {
-    if (!text) return m.reply(`*🤔Que está buscando? 🤔*\n*Ingrese el nombre de la canción*\n\n*Ejemplo:*\n${usedPrefix + command} emilia 420`);
+    if (!text) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.play.missingQuery'), {
+        command: usedPrefix + command
+    }));
     const tipoDescarga = command === 'play' || command === 'musica' ? 'audio' : command === 'play2' ? 'video' : command === 'play3' ? 'audio (documento)' : command === 'play4' ? 'video (documento)' : '';
-    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, `⏳ Hey @${m.sender.split('@')[0]} espera pendejo, ya estás descargando algo 🙄\nEspera a que termine tu solicitud actual antes de hacer otra...`, userCaptions.get(m.sender) || m);
+    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.play.locked'), {
+        user: m.sender.split('@')[0]
+    }), userCaptions.get(m.sender) || m);
     try {
         let videoIdToFind = text.match(youtubeRegexID) || null;
         const yt_play = await searchYouTube(args.join(' '));
-        if (!yt_play[0]) return m.reply('❌ No se encontraron resultados.')
+        if (!yt_play[0]) return m.reply(getRequiredPluginMessage('downloads.play.noResults'))
         const ytResult = await yts(videoIdToFind === null ? text : 'https://youtu.be/' + videoIdToFind[1]);
         let ytplay2: YouTubeSearchVideo | undefined;
         if (videoIdToFind) {
@@ -42,11 +47,11 @@ export default definePlugin({
         }
         ytplay2 = ytplay2 || ytResult.all?.[0] || ytResult.videos?.[0];
         const PlayText = await conn.sendMessage(m.chat, {
-            text: `${yt_play[0].title}
-*⇄ㅤ     ◁   ㅤ  ❚❚ㅤ     ▷ㅤ     ↻*
-
-*⏰ Duración:* ${secondString(yt_play[0].duration?.seconds)}
-*👉🏻Aguarde un momento en lo que envío su ${tipoDescarga}*`,
+            text: renderTemplate(getRequiredPluginMessage('downloads.play.progress'), {
+                title: yt_play[0].title,
+                duration: secondString(yt_play[0].duration?.seconds),
+                downloadType: tipoDescarga
+            }),
             contextInfo: {
                 forwardingScore: 9999999,
                 isForwarded: true,
@@ -55,7 +60,7 @@ export default definePlugin({
                     showAdAttribution: false,
                     renderLargerThumbnail: false,
                     title: yt_play[0].title,
-                    body: "LoliBot",
+                    body: getRequiredPluginMessage('downloads.play.adBody'),
                     containsAutoReply: true,
                     mediaType: 1,
                     thumbnailUrl: yt_play[0].thumbnail,
@@ -105,7 +110,9 @@ export default definePlugin({
                 const fileSize = await getFileSize(mediaData);
                 const messageOptions = {
                     fileName: `${yt_play[0].title}.mp4`,
-                    caption: `🔰 Aquí está tu video \n🔥 Título: ${yt_play[0].title}`,
+                    caption: renderTemplate(getRequiredPluginMessage('downloads.play.videoCaption'), {
+                        title: yt_play[0].title
+                    }),
                     mimetype: 'video/mp4'
                 };
                 if (fileSize > LimitVid) {
@@ -141,7 +148,9 @@ export default definePlugin({
                 await conn.sendMessage(m.chat, {
                     document: isDirect ? mediaData : {url: mediaData},
                     fileName: `${yt_play[0].title}.mp4`,
-                    caption: `🔰Título: ${yt_play[0].title}`,
+                    caption: renderTemplate(getRequiredPluginMessage('downloads.play.documentVideoCaption'), {
+                        title: yt_play[0].title
+                    }),
                     thumbnail: yt_play[0].thumbnail,
                     mimetype: 'video/mp4'
                 }, {quoted: m})

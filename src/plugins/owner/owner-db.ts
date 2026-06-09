@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {getDatabaseInfo, vacuumDatabase} from '../../services/database.service.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ['db info', 'db optimizar', 'db borrar', 'db crear'],
@@ -16,19 +17,23 @@ export default definePlugin({
                     const info = await getDatabaseInfo();
 
                     const text = [
-                        `📊 *\`ESTADÍSTICAS DE BASE DE DATOS\`*`,
-                        `> 👤 Usuarios: *${info.usuarios}*`,
-                        `> ✅ Registrados: *${info.registrados}*`,
-                        `> 💬 Chats totales: *${info.chats}*`,
-                        `> 💾 Tamaño total DB: *${info.totalSize ?? '0 bytes'}*`,
-                        `\n📁 *\`TAMAÑO POR TABLA:\`*`,
-                        ...info.tablas.map(r => `• *${r.tabla}*: ${r.filas} filas — ${r.tamano}`)
+                        getRequiredPluginMessage('owner.db.infoHeader'),
+                        renderTemplate(getRequiredPluginMessage('owner.db.users'), {count: info.usuarios}),
+                        renderTemplate(getRequiredPluginMessage('owner.db.registered'), {count: info.registrados}),
+                        renderTemplate(getRequiredPluginMessage('owner.db.chats'), {count: info.chats}),
+                        renderTemplate(getRequiredPluginMessage('owner.db.totalSize'), {size: info.totalSize ?? getRequiredPluginMessage('owner.db.zeroBytes')}),
+                        getRequiredPluginMessage('owner.db.tableHeader'),
+                        ...info.tablas.map(r => renderTemplate(getRequiredPluginMessage('owner.db.tableRow'), {
+                            table: r.tabla,
+                            rows: r.filas,
+                            size: r.tamano
+                        }))
                     ].join('\n');
 
                     await m.reply(text);
                 } catch (e: unknown) {
                     logError('[❌] /db info error:', e);
-                    await m.reply('❌ Error al consultar la base de datos.');
+                    await m.reply(getRequiredPluginMessage('owner.db.queryError'));
                 }
                 break;
             }
@@ -38,19 +43,16 @@ export default definePlugin({
                     const inicio = Date.now();
                     await vacuumDatabase();
                     const tiempo = ((Date.now() - inicio) / 1000).toFixed(2);
-                    await m.reply(`✅ *Optimización completada.*\n📉 Se ejecutó *VACUUM FULL*\n⏱️ Duración: *${tiempo} segundos*`);
+                    await m.reply(renderTemplate(getRequiredPluginMessage('owner.db.optimized'), {seconds: tiempo}));
                 } catch (e: unknown) {
                     logError('[❌] Error en optimizar:', e);
-                    await m.reply('❌ No se pudo optimizar.');
+                    await m.reply(getRequiredPluginMessage('owner.db.optimizeError'));
                 }
                 break;
             }
 
             default:
-                await m.reply(`❓ Usa uno de estos subcomandos:
-
-• /db info — ver estadísticas
-• /db optimizar — VACUUM FULL`);
+                await m.reply(getRequiredPluginMessage('owner.db.usage'));
         }
     }
 });

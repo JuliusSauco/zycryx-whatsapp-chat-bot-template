@@ -2,6 +2,7 @@ import {logError} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import {definePlugin} from '../../core/define-plugin.js'
 import {httpBuffer, httpJson} from '../../lib/http-client.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
 interface ActionConfig {
     e: string;
@@ -64,7 +65,7 @@ export default definePlugin({
         const tipo = act.nsfw ? 'nsfw' : 'sfw'
         const endpoint = act.main
         const {url} = await httpJson<WaifuPicsResponse>(`https://api.waifu.pics/${tipo}/${endpoint}`)
-        if (!url) return m.reply('❌ La API no devolvió sticker.')
+        if (!url) return m.reply(getRequiredPluginMessage('stickers.common.apiNoSticker'))
 
         let stiker
         try {
@@ -98,7 +99,7 @@ export default definePlugin({
         }, {quoted: m})
     } catch (e: unknown) {
         logError(`[❌ ERROR ${command}]`, e)
-        await conn.reply(m.chat, `❌ Ocurrió un error con *${command}*.`, m)
+        await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('stickers.common.actionError'), {command}), m)
     }
     }
 })

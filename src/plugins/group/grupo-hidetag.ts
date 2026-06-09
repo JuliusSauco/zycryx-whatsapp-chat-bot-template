@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import type {MessageContent} from '../../types/context.js'
+import {getRequiredPluginMessage} from '../../lib/message-template.js'
 
 export default definePlugin({
     help: ['hidetag'],
@@ -10,7 +11,7 @@ export default definePlugin({
     group: true,
     register: true,
     async execute(m, {conn, text, participants, usedPrefix, command}) {
-    if (!m.quoted && !text) return m.reply(`𝙔 𝙀𝙇 𝙏𝙀𝙓𝙏𝙊?`)
+    if (!m.quoted && !text) return m.reply(getRequiredPluginMessage('group.hidetag.missingText'))
     let users = participants.map(u => conn.decodeJid(u.id))
     if (m.quoted && m.quoted.message) {
         const type = Object.keys(m.quoted.message)[0]
@@ -28,13 +29,13 @@ export default definePlugin({
                 } else if (type === 'audioMessage') {
                     msg.audio = mediax
                     msg.ptt = true
-                    msg.fileName = 'Hidetag.mp3'
+                    msg.fileName = getRequiredPluginMessage('group.hidetag.audioFileName')
                     msg.mimetype = 'audio/mp4'
                 } else if (type === 'stickerMessage') {
                     msg.sticker = mediax
                 } else if (type === 'documentMessage') {
                     msg.document = mediax
-                    msg.fileName = 'archivo'
+                    msg.fileName = getRequiredPluginMessage('group.hidetag.documentFileName')
                     msg.mimetype = m.quoted.mimetype || 'application/octet-stream'
                 }
                 await conn.sendMessage(m.chat, msg, {quoted: undefined})

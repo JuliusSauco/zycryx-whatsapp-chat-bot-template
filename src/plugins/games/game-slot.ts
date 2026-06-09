@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {addWalletResourceAndSetWait, getWallet, isWalletResource} from '../../services/wallet.service.js';
 import {formatThousandsDot} from '../../utils/format.js';
 import {delay, pickRandom} from '../../utils/random.js';
@@ -18,21 +19,26 @@ export default definePlugin({
     const now = Date.now();
 
     const user = await getWallet(m.sender);
-    if (!user) return m.reply('✳️ El usuario no se encuentra en la base de datos.');
+    if (!user) return m.reply(getRequiredPluginMessage('games.shared.missingUser'));
 
     const last = Number(user?.wait) || 0;
     const remaining = last + cooldown - now;
-    if (remaining > 0) return conn.reply(m.chat, `🕓 Calma crack, espera *${formatDurationCompact(remaining)}* antes de volver a jugar.`, m);
+    if (remaining > 0) return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('games.slot.cooldown'), {
+        time: formatDurationCompact(remaining)
+    }), m);
 
     const tipoArg = (args[0] || '').toLowerCase();
     const tipo = tipoArg === 'xp' ? 'exp' : tipoArg;
     const cantidad = parseInt(args[1]);
 
-    if (!['exp', 'money', 'limite'].includes(tipo) || !isWalletResource(tipo)) return m.reply(`⚠️ Usa correctamente: /slot <xp|money|limite> <cantidad>\nEjemplo: /slot xp 500`);
-    if (!cantidad || isNaN(cantidad) || cantidad < 10) return m.reply(`❌ Mínimo 10 para apostar.`);
+    if (!['exp', 'money', 'limite'].includes(tipo) || !isWalletResource(tipo)) return m.reply(getRequiredPluginMessage('games.slot.usage'));
+    if (!cantidad || isNaN(cantidad) || cantidad < 10) return m.reply(getRequiredPluginMessage('games.slot.minBet'));
 
     const saldo = user[tipo];
-    if (saldo < cantidad) return m.reply(`❌ No tienes suficiente ${tipo.toUpperCase()} para apostar. Tienes *${formatThousandsDot(saldo)}*`);
+    if (saldo < cantidad) return m.reply(renderTemplate(getRequiredPluginMessage('games.slot.notEnough'), {
+        resource: tipo.toUpperCase(),
+        balance: formatThousandsDot(saldo)
+    }));
 
     const emojis: SlotSymbol[] = ['💎', '⚡', '🪙', '🧿', '💣', '🔮'];
     let final: SlotMatrix | null = null;
@@ -59,13 +65,22 @@ export default definePlugin({
 
     if (resultado === 'triple') {
         ganancia = cantidad * 3;
-        textoFinal = `🎉 ¡Triple! Ganaste *${formatThousandsDot(ganancia)} ${tipoBonito(tipo)}*`;
+        textoFinal = renderTemplate(getRequiredPluginMessage('games.slot.triple'), {
+            amount: formatThousandsDot(ganancia),
+            resource: tipoBonito(tipo)
+        });
     } else if (resultado === 'doble') {
         ganancia = cantidad;
-        textoFinal = `😏 Dos iguales. Recuperaste *${formatThousandsDot(ganancia)} ${tipoBonito(tipo)}*`;
+        textoFinal = renderTemplate(getRequiredPluginMessage('games.slot.double'), {
+            amount: formatThousandsDot(ganancia),
+            resource: tipoBonito(tipo)
+        });
     } else {
         ganancia = -cantidad;
-        textoFinal = `💀 Mala suerte. Perdiste *${formatThousandsDot(cantidad)} ${tipoBonito(tipo)}*`;
+        textoFinal = renderTemplate(getRequiredPluginMessage('games.slot.lose'), {
+            amount: formatThousandsDot(cantidad),
+            resource: tipoBonito(tipo)
+        });
     }
 
     await addWalletResourceAndSetWait(m.sender, tipo, ganancia, now);
@@ -75,7 +90,9 @@ export default definePlugin({
 });
 
 function render(matriz: SlotMatrix) {
-    return `🎰 | *SLOTS* | 🎰\n────────────\n${matriz.map(row => row.join(' | ')).join('\n')}\n────────────`;
+    return renderTemplate(getRequiredPluginMessage('games.slot.board'), {
+        rows: matriz.map(row => row.join(' | ')).join('\n')
+    });
 }
 
 function renderRandom(emojis: SlotSymbol[]): SlotMatrix {

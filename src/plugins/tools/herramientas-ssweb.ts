@@ -1,22 +1,20 @@
-import {definePlugin} from '../../core/define-plugin.js'
-import {httpBuffer} from '../../lib/http-client.js'
-import {replyUsage} from '../../lib/reply-helpers.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['ss', 'ssweb'].map((v) => v + ' *<url>*'),
     tags: ['tools'],
     command: /^ss(web)?f?$/i,
     register: true,
     limit: 1,
-    async execute(m, {conn, usedPrefix, command, args}) {
-    if (!args[0]) return replyUsage(m, `${usedPrefix + command} https://skyultraplus.com`)
-    await m.react('⌛')
+    async execute(_m, {sdk}) {
+    if (!sdk.args[0]) return sdk.reply.usage(sdk.content.renderMessage('tools.screenshot.usage', {command: sdk.usedPrefix + sdk.command}))
+    await sdk.reply.react('⌛')
     try {
-        let ss = await httpBuffer(`https://api.dorratz.com/ssweb?url=${args[0]}`)
-        conn.sendFile(m.chat, ss, 'error.png', '✅', m)
-        await m.react('✅')
+        let ss = await sdk.http.buffer(`https://api.dorratz.com/ssweb?url=${sdk.args[0]}`)
+        await sdk.sendFile(ss, 'error.png', sdk.content.message('tools.screenshot.caption'))
+        await sdk.reply.react('✅')
     } catch (e: unknown) {
-        await m.react('❌')
+        await sdk.reply.react('❌')
     }
     }
 })

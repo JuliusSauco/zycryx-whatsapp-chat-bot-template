@@ -10,6 +10,7 @@ import {
     scanUrlWithVirusTotal,
 } from '../../lib/virustotal.js';
 import {logError} from '../../lib/logger.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import type {BeforePluginContext, ExtendedConn} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
 import type {VirusTotalStats} from '../../lib/virustotal.js';
@@ -155,14 +156,9 @@ async function handleMaliciousContent(conn: ExtendedConn, m: BotMessage, stats: 
 
     if (!m.isBotAdmin) {
         await conn.sendMessage(m.chat, {
-            text: [
-                '🚨 *Contenido malicioso detectado*',
-                '',
-                `VirusTotal marcó ${threatLabel} como malicioso.`,
-                '',
-                '⚠️ No puedo eliminar el mensaje ni expulsar a su autor porque no soy administrador del grupo.',
-                '🛡️ Dame admin para poder proteger el grupo automáticamente.',
-            ].join('\n'),
+            text: renderTemplate(getRequiredPluginMessage('hooks.virusTotal.maliciousNoAdmin'), {
+                threatLabel
+            }),
             mentions: m.sender ? [m.sender] : [],
         }, {quoted: m});
         return;
@@ -188,14 +184,15 @@ async function handleMaliciousContent(conn: ExtendedConn, m: BotMessage, stats: 
     }
 
     await conn.sendMessage(m.chat, {
-        text: [
-            '🚨 *Contenido malicioso detectado*',
-            '',
-            `VirusTotal marcó ${threatLabel} como malicioso.`,
-            '',
-            deleted ? '🗑️ Mensaje eliminado del grupo.' : '⚠️ No se pudo eliminar el mensaje.',
-            removed ? `🚪 Autor expulsado: ${targetMention}` : `⚠️ No se pudo expulsar al autor: ${targetMention}`,
-        ].join('\n'),
+        text: renderTemplate(getRequiredPluginMessage('hooks.virusTotal.maliciousActionReport'), {
+            threatLabel,
+            deleteStatus: deleted
+                ? getRequiredPluginMessage('hooks.virusTotal.messageDeleted')
+                : getRequiredPluginMessage('hooks.virusTotal.messageDeleteFailed'),
+            removeStatus: removed
+                ? renderTemplate(getRequiredPluginMessage('hooks.virusTotal.authorRemoved'), {user: targetMention})
+                : renderTemplate(getRequiredPluginMessage('hooks.virusTotal.authorRemoveFailed'), {user: targetMention})
+        }),
         mentions: m.sender ? [m.sender] : [],
     });
 }
@@ -227,7 +224,7 @@ async function scanUrlsInText(conn: ExtendedConn, m: BotMessage, text: string): 
             logError('[VirusTotal URL]', detail);
             await conn.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
             await conn.sendMessage(m.chat, {
-                text: `*🔗🛡️ Analisis de enlace en VirusTotal*\n\nNo pude revisar este enlace en VirusTotal.\nDetalle: ${detail}`,
+                text: renderTemplate(getRequiredPluginMessage('hooks.virusTotal.urlScanError'), {detail}),
             }, {quoted: m});
         }
     }
@@ -249,7 +246,11 @@ export async function before(m: BotMessage, {conn, groupSettings}: BeforePluginC
     if (declaredSize && declaredSize > maxBytes) {
         const filename = buildFileName(media.payload);
         await conn.sendMessage(m.chat, {
-            text: `*🛡️🔎 Analisis de VirusTotal*\n\nArchivo: ${filename}\nTamano: ${formatBytes(declaredSize)}\n\nNo se envio porque supera el limite configurado de ${formatBytes(maxBytes)}.`,
+            text: renderTemplate(getRequiredPluginMessage('hooks.virusTotal.declaredFileTooLarge'), {
+                filename,
+                size: formatBytes(declaredSize),
+                maxSize: formatBytes(maxBytes)
+            }),
         }, {quoted: m});
         return;
     }
@@ -261,7 +262,10 @@ export async function before(m: BotMessage, {conn, groupSettings}: BeforePluginC
 
         if (buffer.length > maxBytes) {
             await conn.sendMessage(m.chat, {
-                text: `*🛡️🔎 Analisis de VirusTotal*\n\nNo se envio porque el archivo pesa ${formatBytes(buffer.length)} y supera el limite configurado de ${formatBytes(maxBytes)}.`,
+                text: renderTemplate(getRequiredPluginMessage('hooks.virusTotal.downloadedFileTooLarge'), {
+                    size: formatBytes(buffer.length),
+                    maxSize: formatBytes(maxBytes)
+                }),
             }, {quoted: m});
             await conn.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
             return;
@@ -282,7 +286,7 @@ export async function before(m: BotMessage, {conn, groupSettings}: BeforePluginC
         logError('[VirusTotal]', detail);
         await conn.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
         await conn.sendMessage(m.chat, {
-            text: `*🛡️🔎 Analisis de VirusTotal*\n\nNo pude revisar este archivo en VirusTotal.\nDetalle: ${detail}`,
+            text: renderTemplate(getRequiredPluginMessage('hooks.virusTotal.fileScanError'), {detail}),
         }, {quoted: m});
     }
 }

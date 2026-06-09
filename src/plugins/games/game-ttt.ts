@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {addWalletResource} from '../../services/wallet.service.js';
 import type {ExtendedConn} from '../../types/context.js';
 import {randomInt} from '../../utils/random.js';
@@ -48,17 +49,18 @@ async function enviarEstado(conn: ExtendedConn, sala: SalaTTT, textoExtra = '') 
     const [j1, j2] = sala.jugadores;
     const simboloJ1 = symbols[0];
     const simboloJ2 = symbols[1];
+    const footer = textoExtra || renderTemplate(getRequiredPluginMessage('games.ttt.turnFooter'), {
+        turn: sala.turno.split('@')[0]
+    });
 
-    const msg = `💖 𝙅𝙪𝙚𝙜𝙤 𝙩𝙖𝙩𝙚𝙩𝙞
-🫂 𝙅𝙪𝙜𝙖𝙙𝙤𝙧𝙚𝙨:
-*┈┈┈┈┈┈┈┈┈*
-${simboloJ1} = @${j1?.split('@')[0]}
-${simboloJ2} = @${j2?.split('@')[0] || 'esperando'}
-*┈┈┈┈┈┈┈┈┈*${renderTablero(sala.tablero)}
-*┈┈┈┈┈┈┈┈┈*
-${textoExtra ? `
-${textoExtra}` : `𝙏𝙪𝙧𝙣𝙤 𝙙𝙚:
-@${sala.turno.split('@')[0]}`}`;
+    const msg = renderTemplate(getRequiredPluginMessage('games.ttt.state'), {
+        symbol1: simboloJ1,
+        player1: j1?.split('@')[0],
+        symbol2: simboloJ2,
+        player2: j2?.split('@')[0] || getRequiredPluginMessage('games.ttt.waitingPlayer'),
+        board: renderTablero(sala.tablero),
+        footer
+    });
 
     await conn.sendMessage(sala.chat, {text: msg, mentions: sala.jugadores});
 }
@@ -72,25 +74,30 @@ export default definePlugin({
     const customNombre = args[0]?.toLowerCase();
 
     if (command === 'tttlist') {
-        if (salasTTT.size === 0) return m.reply('⚠️ No hay salas activas actualmente.');
-        let text = '🎮 *Salas activas:*';
+        if (salasTTT.size === 0) return m.reply(getRequiredPluginMessage('games.ttt.noRooms'));
+        let text = getRequiredPluginMessage('games.ttt.roomsHeader');
         let count = 1;
         for (const [nombre] of salasTTT) {
-            text += `\n\n${count++}- *${nombre}*\nIngresa con: /ttt ${nombre}`;
+            text += renderTemplate(getRequiredPluginMessage('games.ttt.roomItem'), {
+                index: count++,
+                room: nombre
+            });
         }
         return m.reply(text.trim());
     }
 
     if (command === 'delttt' || command === 'deltt' || command === 'deltictactoe') {
         const salaDel = [...salasTTT.values()].find(s => s.jugadores.includes(m.sender));
-        if (!salaDel) return m.reply('⚠️ No estás en ninguna sala activa.');
+        if (!salaDel) return m.reply(getRequiredPluginMessage('games.ttt.notInRoom'));
         salasTTT.delete(salaDel.nombre);
-        return conn.reply(salaDel.chat, `❌ La sala fue eliminada por @${m.sender.split('@')[0]}.`, m, {mentions: [m.sender]});
+        return conn.reply(salaDel.chat, renderTemplate(getRequiredPluginMessage('games.ttt.roomDeleted'), {
+            user: m.sender.split('@')[0]
+        }), m, {mentions: [m.sender]});
     }
 
     if (customNombre) {
         let sala = salasTTT.get(customNombre);
-        if (sala && sala.jugadores.includes(m.sender)) return m.reply('⚠️ Ya estás en esta sala.');
+        if (sala && sala.jugadores.includes(m.sender)) return m.reply(getRequiredPluginMessage('games.ttt.alreadyInRoom'));
 
         if (!sala) {
             salasTTT.set(customNombre, {
@@ -100,10 +107,12 @@ export default definePlugin({
                 tablero: [...numerosEmoji],
                 turno: m.sender
             });
-            return m.reply(`🏃 Esperando oponente para *${customNombre}*.\nUsa: /ttt ${customNombre}`);
+            return m.reply(renderTemplate(getRequiredPluginMessage('games.ttt.waitingCustom'), {
+                room: customNombre
+            }));
         }
 
-        if (sala.jugadores.length >= 2) return m.reply('⚠️ Esta sala ya tiene 2 jugadores.');
+        if (sala.jugadores.length >= 2) return m.reply(getRequiredPluginMessage('games.ttt.roomFull'));
         sala.jugadores.push(m.sender);
         salasTTT.set(customNombre, sala);
         return await enviarEstado(conn, sala);
@@ -119,11 +128,10 @@ export default definePlugin({
             tablero: [...numerosEmoji],
             turno: m.sender
         });
-        return m.reply(`🏃 Esperando oponente...
-Usa: /ttt para unirte.`);
+        return m.reply(getRequiredPluginMessage('games.ttt.waitingDefault'));
     }
 
-    if (salaLibre.jugadores.includes(m.sender)) return m.reply('⚠️ Ya estás en una sala.');
+    if (salaLibre.jugadores.includes(m.sender)) return m.reply(getRequiredPluginMessage('games.ttt.alreadyInAnyRoom'));
     salaLibre.jugadores.push(m.sender);
     salasTTT.set(salaLibre.nombre, salaLibre);
     return await enviarEstado(conn, salaLibre);
@@ -144,7 +152,7 @@ Usa: /ttt para unirte.`);
             if (ganador) {
                 let texto = '';
                 if (ganador === 'empate') {
-                    texto = '🤝 ¡Empate! Buen juego.';
+                    texto = getRequiredPluginMessage('games.ttt.tie');
                 } else {
                     const xp = randomInt(1000, 3999);
                     const ganadorId = sala.jugadores[sala.tablero[idx] === symbols[0] ? 0 : 1];
@@ -152,7 +160,10 @@ Usa: /ttt para unirte.`);
                     if (!ganadorId || !perdedorId) return;
                     await addWalletResource(ganadorId, 'exp', xp);
                     await addWalletResource(perdedorId, 'exp', -xp);
-                    texto = `🎉 @${ganadorId.split('@')[0]} *ganarte* y recibe *${xp} XP*!`;
+                    texto = renderTemplate(getRequiredPluginMessage('games.ttt.winner'), {
+                        winner: ganadorId.split('@')[0],
+                        xp
+                    });
                 }
                 await enviarEstado(conn, sala, texto);
                 salasTTT.delete(nombre);
@@ -164,7 +175,7 @@ Usa: /ttt para unirte.`);
             sala.turno = nextTurn;
             await enviarEstado(conn, sala);
         } else {
-            m.reply('❌ Esa casilla ya está ocupada.');
+            m.reply(getRequiredPluginMessage('games.ttt.occupiedCell'));
         }
     }
     }

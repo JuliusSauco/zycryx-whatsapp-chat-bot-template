@@ -2,6 +2,7 @@ import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js';
 import {getUserById, setUserBanStatus} from '../../services/user.service.js';
 import type {MessageContent} from '../../types/context.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ['banuser @tag|número', 'unbanuser @tag|número'],
@@ -20,14 +21,14 @@ export default definePlugin({
             targetJid = number + "@s.whatsapp.net";
         }
 
-        if (!targetJid) return m.reply("🤓 Etiqueta al usuario boludito");
+        if (!targetJid) return m.reply(getRequiredPluginMessage('owner.banUser.missingTarget'));
         const cleanJid = targetJid.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
         try {
             const user = await getUserById(cleanJid);
-            if (!user) return m.reply("❌ Ese usuario no está registrado en la base de datos.");
+            if (!user) return m.reply(getRequiredPluginMessage('owner.banUser.unknownUser'));
 
             if (command === "banuser") {
-                let ban = 'https://qu.ax/SJJt.mp3'
+                let ban = getRequiredPluginMessage('owner.banUser.audio')
                 let razon = text?.replace(/^(@\d{5,}|[+]?[\d\s\-()]+)\s*/g, "").trim() || null;
                 await setUserBanStatus(cleanJid, true, razon);
                 try {
@@ -35,7 +36,7 @@ export default definePlugin({
                         audio: {url: ban},
                         contextInfo: {
                             externalAdReply: {
-                                title: `⚠️ ᴱˡ ᵘˢᵘᵃʳᶦᵒ(ᵃ) ᶠᵘᵉ ᵇᵃⁿᵉᵃᵈᵒ(ᵃ) 🙀 ⁿᵒ ᵖᵒᵈʳᵃ ᵘˢᵃʳ ᵃ`,
+                                title: getRequiredPluginMessage('owner.banUser.adTitle'),
                                 body: info.wm,
                                 previewType: "PHOTO",
                                 thumbnail: m.pp,
@@ -45,23 +46,29 @@ export default definePlugin({
                         },
                         ptt: true,
                         mimetype: 'audio/mpeg',
-                        fileName: `error.mp3`
+                        fileName: getRequiredPluginMessage('owner.banUser.audioFileName')
                     };
                     await conn.sendMessage(m.chat, {
                         ...content
                     }, {quoted: m})
                 } catch (e: unknown) {
-                    m.reply(`🚫 El usuario @${cleanJid.split("@")[0]} ha sido *baneado* y no podrá usar el bot.${razon ? `\n\n📌 *Razón:* ${razon}` : ""}`, {mentions: [cleanJid]});
+                    const reasonText = razon ? renderTemplate(getRequiredPluginMessage('owner.banUser.reason'), {reason: razon}) : "";
+                    m.reply(renderTemplate(getRequiredPluginMessage('owner.banUser.banFallback'), {
+                        user: cleanJid.split("@")[0],
+                        reason: reasonText,
+                    }), {mentions: [cleanJid]});
                 }
             }
 
             if (command === "unbanuser") {
                 await setUserBanStatus(cleanJid, false, null);
-                return m.reply(`✅ El usuario @${cleanJid.split("@")[0]} ha sido *desbaneado* y puede volver a usar el bot.`, {mentions: [cleanJid]});
+                return m.reply(renderTemplate(getRequiredPluginMessage('owner.banUser.unbanned'), {
+                    user: cleanJid.split("@")[0],
+                }), {mentions: [cleanJid]});
             }
         } catch (err: unknown) {
             logError(err);
-            return m.reply("❌ Ocurrió un error al ejecutar el comando.");
+            return m.reply(getRequiredPluginMessage('owner.banUser.error'));
         }
     }
 });

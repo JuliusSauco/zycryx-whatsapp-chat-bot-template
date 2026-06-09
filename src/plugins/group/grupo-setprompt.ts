@@ -4,6 +4,7 @@ import {setAutorespondPrompt, setMemoryTtl} from '../../services/group-settings.
 import {readFile} from 'fs/promises';
 import path from 'path';
 import {loadJsonResource} from '../../lib/local-json-resource.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 interface PromptPresetResource {
     label: string;
@@ -26,12 +27,9 @@ async function getPromptManifest(): Promise<PromptResourcesManifest> {
 
 function buildPromptUsage(command: string, presets: Record<string, PromptPresetResource>): string {
     const presetLines = Object.entries(presets)
-        .map(([key, preset]) => `${command} ${key} - ${preset.label}`)
+        .map(([key, preset]) => renderTemplate(getRequiredPluginMessage('group.prompt.presetLine'), {command, key, label: preset.label}))
         .join('\n');
-    return `📌 *Uso del comando ${command} de esta forma:*
-${presetLines}
-${command} tu texto - ✍️ prompt personalizado
-${command} delete|borrar - 🧹 borrar prompt y memoria`;
+    return renderTemplate(getRequiredPluginMessage('group.prompt.usage'), {command, presets: presetLines});
 }
 
 export default definePlugin({
@@ -46,32 +44,26 @@ export default definePlugin({
 
     if (command === 'clearmemory' || command === 'clearai' || command === 'resetai') {
         await clearAiMemory(m.chat);
-        return m.reply('🧠 Memoria del chat borrada correctamente. El bot empezará desde cero.');
+        return m.reply(getRequiredPluginMessage('group.prompt.memoryCleared'));
     }
 
     if (command === 'timeIA' || command === 'memttl') {
-        if (!isOwner) return m.reply('⛔ Solo el *OWNER* puede poner más de 24 horas.');
-        if (!text) return m.reply(`⏱️ *Uso:* ${usedPrefix + command} 10m | 2h | 1d | 0
-Unidades válidas: s (seg), m (min), h (horas), d (días)
-Ejemplos:
-${usedPrefix + command} 30m      → memoria se borra tras 30 minutos
-${usedPrefix + command} 2h       → 2 horas
-${usedPrefix + command} 0        → se borra en cada mensaje
-`);
+        if (!isOwner) return m.reply(getRequiredPluginMessage('group.prompt.ownerOnly'));
+        if (!text) return m.reply(renderTemplate(getRequiredPluginMessage('group.prompt.ttlUsage'), {command: usedPrefix + command}));
 
         if (text === '0') {
             await setMemoryTtl(m.chat, 0);
-            return m.reply('🧠 Memoria desactivada. El bot responderá sin historial.');
+            return m.reply(getRequiredPluginMessage('group.prompt.memoryDisabled'));
         }
 
         const match = text.match(/^(\d+)([smhd])$/i);
-        if (!match) return m.reply('❌ Formato inválido. Usa: 10m, 2h, 1d');
+        if (!match) return m.reply(getRequiredPluginMessage('group.prompt.invalidTtl'));
         const num = parseInt(match[1]);
         const unit = match[2].toLowerCase();
         const unitToSeconds: Record<string, number> = {s: 1, m: 60, h: 3600, d: 86400};
         const seconds = num * unitToSeconds[unit];
         await setMemoryTtl(m.chat, seconds);
-        return m.reply(`✅ Tiempo de memoria actualizado a *${num}${unit}* (${seconds} segundos).`);
+        return m.reply(renderTemplate(getRequiredPluginMessage('group.prompt.ttlUpdated'), {value: `${num}${unit}`, seconds}));
     }
 
     if (!text) return m.reply(buildPromptUsage(usedPrefix + command, promptManifest.presets));
@@ -93,7 +85,7 @@ ${usedPrefix + command} 0        → se borra en cada mensaje
         await clearAiMemory(m.chat);
     }
     const promptLabel = preset ? preset.label : prompt;
-    return m.reply(prompt ? `✅ *Configuración exitosa.*\n\n*Has establecido un nuevo prompt para este chat.*\n💬 A partir de ahora, el bot usará las indicaciones que hayas establecido.\n\n> *Recuerda etiquetar "@tag" o responder a un mensaje del bot para que te responda.*\n\n` + promptLabel : '🗑️ *Prompt borrado con éxito.*');
+    return m.reply(prompt ? renderTemplate(getRequiredPluginMessage('group.prompt.saved'), {label: promptLabel || ''}) : getRequiredPluginMessage('group.prompt.deleted'));
     }
 });
 

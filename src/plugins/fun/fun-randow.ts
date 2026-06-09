@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {httpJson} from '../../lib/http-client.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 import {pickRandom} from '../../utils/random.js'
 import {asmaulhusna, bucin, chiste, piropo} from './fun-randow.data.js'
 import type {ExtendedConn} from '../../types/context.js'
@@ -18,37 +19,37 @@ interface RandomFunConfig {
     logic: string;
     fallback: () => readonly string[];
     title: string;
-    render: (result: string) => string;
+    template: string;
 }
 
 const randomFunConfigs: Record<RandomFunCommand, RandomFunConfig> = {
     piropo: {
-        prompt: 'Cuéntame un piropo, solo di el piropo no agregue mas texto.',
+        prompt: getRequiredPluginMessage('fun.random.piropo.prompt'),
         logic: 'piropo',
         fallback: () => piropo,
-        title: '💞 PIROPO',
-        render: result => `*╭╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼*\n➢ ${result}\n*╰╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼╼*`,
+        title: getRequiredPluginMessage('fun.random.piropo.title'),
+        template: getRequiredPluginMessage('fun.random.piropo.result'),
     },
     chiste: {
-        prompt: 'Cuéntame un chiste, puede ser de cualquier tipo de humor, no repita los chiste haz chiste como jaimito, yayo, solo di el chiste no agregue mas texto y haz chiste nuevo 2024 no repitan los mismo chiste pasado xD.',
+        prompt: getRequiredPluginMessage('fun.random.chiste.prompt'),
         logic: 'chiste',
         fallback: () => chiste,
-        title: '😹 CHISTE',
-        render: result => `*┏━━━━━━━━━━━━┓*\n😹 ${result} 😹\n*┗━━━━━━━━━━━━┛*`,
+        title: getRequiredPluginMessage('fun.random.chiste.title'),
+        template: getRequiredPluginMessage('fun.random.chiste.result'),
     },
     reto: {
-        prompt: 'Dame un reto interesante para hacer, solo di el reto no agregue mas texto y no repitan los reto, que sea diferentes y divertido.',
+        prompt: getRequiredPluginMessage('fun.random.reto.prompt'),
         logic: 'reto',
         fallback: () => bucin,
-        title: '😏 HE COJISTE RETO',
-        render: result => `[ 𝙍𝙀𝙏𝙊 😏 ]\n\n"${result}"`,
+        title: getRequiredPluginMessage('fun.random.reto.title'),
+        template: getRequiredPluginMessage('fun.random.reto.result'),
     },
     verdad: {
-        prompt: 'Dame una pregunta de verdad intrigante',
+        prompt: getRequiredPluginMessage('fun.random.verdad.prompt'),
         logic: 'verdad',
         fallback: () => bucin,
-        title: '🤔 ELIGIRTE VERDAD',
-        render: result => `[ 𝙑𝙀𝙍𝘿𝘼𝘿 🤔 ]\n\n“${result}”`,
+        title: getRequiredPluginMessage('fun.random.verdad.title'),
+        template: getRequiredPluginMessage('fun.random.verdad.result'),
     },
 };
 
@@ -67,15 +68,14 @@ export default definePlugin({
     }
 
     if (command == 'frases') {
-        const ejemplo = `*Asmaul Husna*`
-        const organizar = `Desde Abu Hurairah radhiallahu anhu, Rasulullah SAW dijo: "Tengo noventa y nueve nombres, cien menos 1. Quien los memorice entrará en el Paraíso, y él es un acorde que ama el acorde."
-Significado: "De hecho, yo tengo noventa y nueve nombres, también conocido como cien menos uno. Quien los cuente, entrará en el cielo; Él es Witr y ama a Witr".`
+        const ejemplo = getRequiredPluginMessage('fun.phrases.title')
+        const organizar = getRequiredPluginMessage('fun.phrases.intro')
         const json = asmaulhusna
         let data = json.map((v, i) => `${i + 1}. ${v.latin}\n${v.arabic}\n${v.translation_id}`).join('\n\n')
         const selectedIndex = Number(args[0])
-        if (isNaN(selectedIndex)) throw `Ejemplo:\n${usedPrefix + command} 1`
+        if (isNaN(selectedIndex)) throw renderTemplate(getRequiredPluginMessage('fun.phrases.usage'), {command: usedPrefix + command})
         if (args[0]) {
-            if (selectedIndex < 1 || selectedIndex > 99) throw `mínimo 1 y máximo 99!`
+            if (selectedIndex < 1 || selectedIndex > 99) throw getRequiredPluginMessage('fun.phrases.range')
             let {
                 index,
                 latin,
@@ -83,15 +83,13 @@ Significado: "De hecho, yo tengo noventa y nueve nombres, también conocido como
                 translation_id,
                 translation_en
             } = json.find((v) => v.index == String(args[0]).replace(/[^0-9]/g, ''))!
-            return m.reply(`🔢 *Número:* ${index}
-${arabic}
- 
-${latin}
-
-${translation_id}
-
-${translation_en}
-`.trim())
+            return m.reply(renderTemplate(getRequiredPluginMessage('fun.phrases.detail'), {
+                index,
+                arabic,
+                latin,
+                translationId: translation_id,
+                translationEn: translation_en,
+            }))
         }
         m.reply(ejemplo + data + organizar)
     }
@@ -127,14 +125,14 @@ async function getRandomFunResult(config: RandomFunConfig, sender: string): Prom
 }
 
 async function replyRandomFun(conn: ExtendedConn, m: BotMessage, config: RandomFunConfig, result: string) {
-    return conn.reply(m.chat, config.render(result), m, {
+    return conn.reply(m.chat, renderTemplate(config.template, {result}), m, {
         contextInfo: {
             externalAdReply: {
                 mediaUrl: null,
                 mediaType: 1,
                 description: null,
                 title: config.title,
-                body: '𝐒𝐮𝐩𝐞𝐫 𝐁𝐨𝐭 𝐃𝐞 𝐖𝐡𝐚𝐭𝐬𝐀𝐩𝐩',
+                body: getRequiredPluginMessage('fun.random.adBody'),
                 previewType: 0,
                 thumbnail: m.pp,
                 sourceUrl: pickRandom([info.md, info.yt, info.tiktok])

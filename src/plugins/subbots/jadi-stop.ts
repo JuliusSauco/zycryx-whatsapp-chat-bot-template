@@ -2,6 +2,7 @@ import {logError, logInfo} from '../../lib/logger.js';
 import fs from "fs";
 import path from "path";
 import {definePlugin} from '../../core/define-plugin.js';
+import {getRequiredPluginMessage} from '../../lib/message-template.js';
 
 export default definePlugin({
     help: ['stop'],
@@ -15,9 +16,9 @@ export default definePlugin({
     const cleanId = rawId.replace(/:\d+/, ""); // elimina :16, :17
     const sessionPath = path.join("jadibot", cleanId);
     const isSubBot = fs.existsSync(sessionPath);
-    if (!isSubBot) return m.reply("⚠️ Este comando solo puede ser usado desde una instancia de *SubBot*.")
+    if (!isSubBot) return m.reply(getRequiredPluginMessage('subbots.stop.onlySubbot'))
     try {
-        await m.reply("Adios te voy a extrañar :(");
+        await m.reply(getRequiredPluginMessage('subbots.stop.goodbye'));
         await conn.logout();
 
         setTimeout(() => {
@@ -28,11 +29,11 @@ export default definePlugin({
         }, 2000);
 
         setTimeout(() => {
-            m.reply("✅ *Sesión del SubBot finalizada correctamente.*\nPuedes volver a conectarte usando `/jadibot` o `/serbot`.");
+            m.reply(getRequiredPluginMessage('subbots.stop.success'));
         }, 3000);
     } catch (err: unknown) {
         logError(`❌ Error al cerrar el subbot ${cleanId}:`, err);
-        await m.reply("❌ Ocurrió un error al cerrar la sesión del SubBot.");
+        await m.reply(getRequiredPluginMessage('subbots.stop.error'));
     }
     }
 });

@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js'
+import {getRequiredPluginMessage} from '../../lib/message-template.js'
 
 export default definePlugin({
     help: ["leave"],
@@ -8,7 +9,7 @@ export default definePlugin({
     register: true,
     async execute(m, {conn, text}) {
         let id = text ? text : m.chat
-        await conn.reply(id, '*𝐄𝐥 𝐁𝐨𝐭 𝐚𝐛𝐚𝐧𝐝𝐨𝐧𝐚 𝐞𝐥 𝐠𝐫𝐮𝐩𝐨, 𝐜𝐡𝐚𝐮 👋*')
+        await conn.reply(id, getRequiredPluginMessage('owner.leave.notice'))
         await conn.groupLeave(id)
     }
 })

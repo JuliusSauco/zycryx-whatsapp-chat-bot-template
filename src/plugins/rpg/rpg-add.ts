@@ -1,5 +1,6 @@
 import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {getNumberByLid, getUserById} from '../../services/user.service.js';
 import {addWalletResource} from '../../services/wallet.service.js';
 
@@ -11,44 +12,44 @@ export default definePlugin({
     register: true,
     async execute(m, {command, text}) {
     let who = m.isGroup ? m.mentionedJid?.[0] : m.chat;
-    if (!who) return m.reply("⚠️ Etiqueta a una persona con el @tag");
+    if (!who) return m.reply(getRequiredPluginMessage('rpg.adminAdd.missingTarget'));
     let idFinal = who;
 
     if (idFinal.includes("@lid")) {
         const numero = await getNumberByLid(idFinal);
-        if (!numero) return m.reply("❌ No se encontró al usuario con ese LID en la base de datos.");
+        if (!numero) return m.reply(getRequiredPluginMessage('rpg.adminAdd.lidNotFound'));
         idFinal = numero + "@s.whatsapp.net";
     }
 
     const cleanJid = idFinal.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
     const cantidad = parseInt(text.match(/\d+/)?.[0] || '');
-    if (!cantidad || isNaN(cantidad)) return m.reply("⚠️ Ingresa una cantidad válida");
+    if (!cantidad || isNaN(cantidad)) return m.reply(getRequiredPluginMessage('rpg.adminAdd.invalidAmount'));
     try {
         const user = await getUserById(cleanJid);
-        if (!user) return m.reply("❌ Ese usuario no está registrado en la base de datos.");
+        if (!user) return m.reply(getRequiredPluginMessage('rpg.adminAdd.userNotFound'));
 
         if (/addlimit|añadirdiamantes|dardiamantes/i.test(command)) {
             await addWalletResource(cleanJid, 'limite', cantidad);
-            return m.reply(`*≡ 💎 DIAMANTES AGREGADOS:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲᥣ:* ${cantidad}\n┗━━━━━━━━━━━━`);
+            return m.reply(renderTemplate(getRequiredPluginMessage('rpg.adminAdd.diamondsAdded'), {amount: cantidad}));
         }
 
         if (/removelimit|quitardiamantes|sacardiamantes/i.test(command)) {
             await addWalletResource(cleanJid, 'limite', -cantidad);
-            return m.reply(`*≡ 💎 DIAMANTES QUITADOS:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* ${cantidad}\n┗━━━━━━━━━━━━`);
+            return m.reply(renderTemplate(getRequiredPluginMessage('rpg.adminAdd.diamondsRemoved'), {amount: cantidad}));
         }
 
         if (/addexp|añadirxp|addxp/i.test(command)) {
             await addWalletResource(cleanJid, 'exp', cantidad);
-            return m.reply(`*≡ ✨ EXP AGREGADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲᥣ:* ${cantidad}\n┗━━━━━━━━━━━━`);
+            return m.reply(renderTemplate(getRequiredPluginMessage('rpg.adminAdd.expAdded'), {amount: cantidad}));
         }
 
         if (/removexp|quitarxp|sacarexp/i.test(command)) {
             await addWalletResource(cleanJid, 'exp', -cantidad);
-            return m.reply(`*≡ ✨ EXP QUITADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* ${cantidad}\n┗━━━━━━━━━━━━`);
+            return m.reply(renderTemplate(getRequiredPluginMessage('rpg.adminAdd.expRemoved'), {amount: cantidad}));
         }
     } catch (e: unknown) {
         logError(e);
-        return m.reply("❌ Error al modificar datos.");
+        return m.reply(getRequiredPluginMessage('rpg.adminAdd.error'));
     }
     }
 });

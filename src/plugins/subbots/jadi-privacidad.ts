@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {setSubbotBooleanFlag} from '../../services/subbot.service.js'
 import {definePlugin} from '../../core/define-plugin.js'
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
 export default definePlugin({
     help: ['setprivacy', 'setprestar'],
@@ -10,7 +11,7 @@ export default definePlugin({
     register: true,
     async execute(m, {conn, command, args, usedPrefix}) {
     const val = args[0];
-    if (!['1', '0'].includes(val)) return m.reply(`Usa:\n${usedPrefix}${command} 1 (activar)\n${usedPrefix}${command} 0 (desactivar)`);
+    if (!['1', '0'].includes(val)) return m.reply(renderTemplate(getRequiredPluginMessage('subbots.privacy.usage'), {command: usedPrefix + command}));
 
     const id = conn.user?.id;
     if (!id) return
@@ -19,13 +20,13 @@ export default definePlugin({
         if (/setprivacy|privacy/i.test(command)) {
             const privacyVal = val === '1';
             await setSubbotBooleanFlag(botId, 'privacy', privacyVal);
-            return m.reply(privacyVal ? '✅ *Privacidad activada.*\n> Tu número no se mostrará en la lista de bots.' : '✅ *Privacidad desactivada.*\n> Tu número se mostrará en la lista de bots.');
+            return m.reply(privacyVal ? getRequiredPluginMessage('subbots.privacy.privacyOn') : getRequiredPluginMessage('subbots.privacy.privacyOff'));
         }
 
         if (/setprestar|prestar/i.test(command)) {
             const prestarVal = val === '1';
             await setSubbotBooleanFlag(botId, 'prestar', prestarVal);
-            return m.reply(prestarVal ? '✅ *Prestar bot activado.*\n> Los usuarios pueden usar el bot para unirlo a grupos.' : '✅ *Prestar bot desactivado.*\n> Los usuarios no podrán unir el bot a grupos.');
+            return m.reply(prestarVal ? getRequiredPluginMessage('subbots.privacy.lendOn') : getRequiredPluginMessage('subbots.privacy.lendOff'));
         }
     } catch (err: unknown) {
         logError(err);

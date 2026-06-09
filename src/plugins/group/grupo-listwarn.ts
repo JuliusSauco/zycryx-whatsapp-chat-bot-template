@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {listWarnedUsers} from '../../services/user.service.js';
+import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 const maxwarn = 3
 export default definePlugin({
@@ -16,16 +17,21 @@ export default definePlugin({
             warn: user.warn
         }));
         warnedUsers.sort((a, b) => b.warn - a.warn);
-        let teks = `*📋 LISTA DE ADVERTENCIAS 📋*\n\n`;
-        teks += `Grupo: ${metadata.subject || 'Sin nombre'}\n`;
-        teks += `Total de usuarios con advertencias: ${warnedUsers.length}\n\n`;
+        let teks = renderTemplate(getRequiredPluginMessage('group.listWarn.header'), {
+            group: metadata.subject || getRequiredPluginMessage('group.listWarn.unknownGroup'),
+            total: warnedUsers.length,
+        });
 
         if (warnedUsers.length === 0) {
-            teks += `*¡No hay usuarios con advertencias en este grupo! 😊*`;
+            teks += getRequiredPluginMessage('group.listWarn.empty');
         } else {
-            teks += `*Usuarios advertidos:*\n`;
+            teks += getRequiredPluginMessage('group.listWarn.listTitle');
             for (let user of warnedUsers) {
-                teks += `➥ @${user.id.split('@')[0]} - Advertencias: ${user.warn}/${maxwarn}\n`;
+                teks += renderTemplate(getRequiredPluginMessage('group.listWarn.item'), {
+                    user: user.id.split('@')[0],
+                    warn: user.warn,
+                    maxwarn,
+                });
             }
         }
         await conn.reply(m.chat, teks, m)

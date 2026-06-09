@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js'
+import {getRequiredPluginMessage, getRequiredPluginMessageList, renderTemplate} from '../../lib/message-template.js';
 import {addWalletResourcesAndSetFields, getWallet} from '../../services/wallet.service.js';
 import {formatThousandsDot} from '../../utils/format.js';
 import {pickRandom, randomInt} from '../../utils/random.js';
@@ -14,19 +15,24 @@ export default definePlugin({
     const cooldown = 600_000; //10 min
     const hasil = randomInt(6000);
     const user = await getWallet(m.sender);
-    if (!user) return m.reply('✳️ El usuario no se encuentra en la base de datos.');
+    if (!user) return m.reply(getRequiredPluginMessage('rpg.shared.missingUser'));
     const lastMine = Number(user?.lastmiming) || 0;
     const nextMineTime = lastMine + cooldown;
     const restante = Math.max(0, nextMineTime - now);
-    if (restante > 0) return m.reply(`⏳ 𝐄𝐬𝐩𝐞𝐫𝐚 *${formatDurationMinuteSecondsParen(restante)}* 𝐩𝐚𝐫𝐚 𝐯𝐨𝐥𝐯𝐞𝐫 𝐚 𝐦𝐢𝐧𝐚𝐫`);
-    const minar = pickRandom(['Que pro 😎 has minado', '🌟✨ Genial!! Obtienes', 'WOW!! eres un(a) gran Minero(a) ⛏️ Obtienes', 'Has Minado!!', '😲 Lograste Minar la cantidad de', 'Tus Ingresos subiran gracias a que minaste', '⛏️⛏️⛏️⛏️⛏️ Minando', '🤩 SII!!! AHORA TIENES', 'La minaria esta de tu lado, por ello obtienes', '😻 La suerte de Minar', '♻️ Tu Mision se ha cumplido, lograste minar', '⛏️ La Mineria te ha beneficiado con', '🛣️ Has encontrado un Lugar y por minar dicho lugar Obtienes', '👾 Gracias a que has minado tus ingresos suman', 'Felicidades!! Ahora tienes', '⛏️⛏️⛏️ Obtienes']);
+    if (restante > 0) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.mine.cooldown'), {
+        time: formatDurationMinuteSecondsParen(restante)
+    }));
+    const minar = pickRandom(getRequiredPluginMessageList('rpg.mine.variants'));
 
     await addWalletResourcesAndSetFields({
         userId: m.sender,
         resources: {exp: hasil},
         fields: {lastmiming: now},
     });
-    m.reply(`${minar} *${formatThousandsDot(hasil)} XP*`);
+    m.reply(renderTemplate(getRequiredPluginMessage('rpg.mine.result'), {
+        message: minar,
+        xp: formatThousandsDot(hasil)
+    }));
     }
 });
 
