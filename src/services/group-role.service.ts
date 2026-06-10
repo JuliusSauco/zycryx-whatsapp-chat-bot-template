@@ -39,6 +39,14 @@ function getAdminRole(groupId: string, metadata: GroupMetadata, participant: Gro
         : {role: 'Admin', roleDescription: 'Admin'};
 }
 
+function getAdminFallbackName(groupId: string): string {
+    return `admin_${groupId.split('@')[0] || groupId}`;
+}
+
+function getParticipantAlias(groupId: string, participant: GroupParticipantWithAliases): string {
+    return participant.notify || participant.name || getAdminFallbackName(groupId);
+}
+
 export async function registerGroupAdmins(groupId: string, metadata: GroupMetadata): Promise<number> {
     const admins = (metadata.participants || [])
         .filter(participant => participant.admin === 'admin' || participant.admin === 'superadmin' || participant.isAdmin || participant.isSuperAdmin) as GroupParticipantWithAliases[];
@@ -54,7 +62,7 @@ export async function registerGroupAdmins(groupId: string, metadata: GroupMetada
         }
         await repositories.users.upsertRegisteredAdmin({
             id: userId,
-            nombre: admin.notify || admin.name || userId.split('@')[0],
+            nombre: getParticipantAlias(groupId, admin),
             num: getParticipantPhone(admin, userId),
             lid,
             serialNumber: createHash('md5').update(userId).digest('hex'),

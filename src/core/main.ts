@@ -12,6 +12,7 @@ import {callUpdate, groupJoinRequest, groupsUpdate, handler, messageUpdate, part
 import {loadPlugins} from '../lib/plugins.js';
 import {isOtherBotKey} from '../utils/message-filter.js';
 import {startScheduledTasks} from './scheduled-tasks.js';
+import {syncStartupGroupAdmins} from './startup-admin-sync.js';
 import {logDebug, logError, logInfo, logWarn} from '../lib/logger.js';
 import type {ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
@@ -189,6 +190,7 @@ async function startBot() {
                         groupCache.set(jid, meta);
                     }
                     logInfo(chalk.cyan(`📦 Precargados ${entries.length} grupos en cache`));
+                    await syncStartupGroupAdmins(entries);
                 } catch (e: unknown) {
                     const message = e instanceof Error ? e.message : String(e);
                     logWarn(chalk.yellow("⚠️ No se pudo precargar metadata de grupos:"), message);
