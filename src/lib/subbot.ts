@@ -89,7 +89,9 @@ export async function startSubBot(
             const ownerName = sock.authState.creds.me?.name || "-";
             sock.uptime = Date.now();
             reintentos[sock.userId] = 0;
-            if (globalThis.conns.find((c) => c.userId === sock.userId)) return;
+            // Si quedó un socket previo con el mismo userId (reconexión), se reemplaza
+            // por el nuevo para que conns nunca apunte a un socket muerto.
+            removeConnByUserId(sock.userId);
             globalThis.conns.push(sock);
 
             // Precarga de metadata de grupos para evitar IQs lentos en el primer comando.
@@ -119,6 +121,10 @@ export async function startSubBot(
             const reason = (lastDisconnect?.error as DisconnectErrorLike | undefined)?.output?.statusCode || 0;
             const intentos = reintentos[botId] || 0;
             reintentos[botId] = intentos + 1;
+
+            // Sacar el socket muerto de conns antes de reintentar; la reconexión
+            // exitosa registrará el socket nuevo en el evento 'open'.
+            removeConnByUserId(botId);
 
             if ([401, 403].includes(reason)) {
                 if (intentos < 5) {
@@ -185,9 +191,6 @@ export async function startSubBot(
         }
     });
 
-    process.on('uncaughtException', logError);
-    process.on('unhandledRejection', logError);
-
     sock.ev.on("messages.upsert", async ({messages, type}) => {
         if (type !== "notify") return;
         for (const msg of messages) {
@@ -219,6 +222,12 @@ export async function startSubBot(
             logError(chalk.red("❌ Error procesando call.update:"), err);
         }
     });
+}
+
+function removeConnByUserId(userId: string | undefined): void {
+    if (!userId) return;
+    const index = globalThis.conns.findIndex((c) => c.userId === userId);
+    if (index >= 0) globalThis.conns.splice(index, 1);
 }
 
 function setupGroupEvents(sock: BotSocket): void {

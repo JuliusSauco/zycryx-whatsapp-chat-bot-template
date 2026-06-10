@@ -108,7 +108,15 @@ La segunda busqueda puede encontrar excepciones internas documentadas; no asumir
 ## Documentacion util
 
 - `README.md`: documentacion principal, instalacion, arquitectura y estado publico.
+- `docs/architecture-analysis.md`: fotografia arquitectonica, riesgos y hallazgos de runtime.
+- `docs/architecture-roadmap.md`: roadmap por prioridades P0-P7.
 - `docs/improvement-roadmap.md`: roadmap tecnico interno y estado de refactors.
+- `docs/baileys-connection.md`: flujo de conexion, vinculacion, sesiones y reconexion.
+- `docs/environment-variables.md`: referencia completa de variables de entorno.
+- `docs/adding-commands.md`: guia para agregar comandos nuevos.
+- `docs/deployment.md`: despliegue en servidor, PM2 y backups.
+- `docs/troubleshooting.md`: problemas comunes y soluciones.
 - `docs/data-resources.md`: politica de recursos estaticos vs estado mutable.
 - `docs/http-client-exceptions.md`: excepciones conocidas al HTTP client centralizado.
+- `docs/owner-security.md`: seguridad operativa de comandos owner sensibles.
 - `.env.example`: variables de configuracion esperadas.

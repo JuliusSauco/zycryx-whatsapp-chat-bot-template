@@ -21,6 +21,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - [⚡ Instalacion](#instalacion)
 - [⚙️ Configuracion](#configuracion)
 - [📜 Scripts](#scripts)
+- [🚀 Produccion](#produccion)
 - [🗂️ Estructura](#estructura)
 - [🏛️ Arquitectura](#arquitectura)
 - [🧩 Patrones](#patrones)
@@ -29,7 +30,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - [🗄️ Base De Datos](#base-de-datos)
 - [📦 Recursos](#recursos)
 - [📊 Observabilidad](#observabilidad)
-- [🔐 Secretos](#secretos)
+- [🔐 Secretos Y Seguridad](#secretos)
 - [🧪 Validacion](#validacion)
 - [🗺️ Roadmap y Analisis](#roadmap-y-analisis)
 - [📌 Estado Actual](#estado-actual)
@@ -56,6 +57,9 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - Migraciones versionadas y script `db:ensure-schema`.
 - Soporte para `DB_SCHEMA` usando `search_path`.
 - Subbots con sesiones independientes.
+- Modos de acceso por familia de comandos (`all`/`admins`/`off`) configurables por grupo: juegos, herramientas, RPG, descargas, busquedas, stickers, convertidores, fun y NSFW.
+- Roles de admins por grupo persistidos en `user_group_roles`, sincronizados al iniciar y en eventos promote/demote.
+- Autoresponder configurable por grupo (trigger por mencion o texto) y registro opcional de mensajes (`message_logs`).
 - Tareas programadas para reportes, expiracion de grupos y limpieza de memoria.
 - Recursos base en `resources/data` y recursos mutables de audios en base de datos.
 - Observabilidad con `LOG_LEVEL` y logs de performance configurables.
@@ -90,8 +94,10 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - npm.
 - PostgreSQL 14 o superior.
 - FFmpeg instalado y disponible en PATH.
+- git disponible en PATH (lo usa el comando owner `update`).
+- Python 3 como `python3` (opcional, solo para el comando `speedtest`).
 - Cuenta de WhatsApp para vincular el bot por QR o codigo.
-- Variables de entorno en `.env.local`, `.env.dev`, `.env.test` o `.env.prod`.
+- Variables de entorno en `.env.local`, `.env.dev`, `.env.test` o `.env.prod`. Referencia completa en `docs/environment-variables.md`.
 
 <a id="instalacion"></a>
 ## ⚡ Instalacion
@@ -263,6 +269,28 @@ BOT_FIXED_OWNER_JIDS=573001112233,51999888777
 | `npm run start:test` | Build + serve test sin migrar. |
 | `npm run start:*:migrate` | Build + migraciones + serve para el ambiente indicado. |
 | `npm run bun:start:*` | Alternativas con Bun. |
+
+<a id="produccion"></a>
+## 🚀 Produccion
+
+Guia completa en `docs/deployment.md`. Resumen:
+
+```bash
+npm install
+cp .env.example .env.prod   # completar valores reales
+npm run build
+npm run db:migrate
+npm run serve               # primera vez en terminal real para vincular QR/codigo
+```
+
+Puntos clave:
+
+- Un process manager (PM2, systemd o restart policy de Docker) es **obligatorio**: el bot se reinicia solo cada 3 horas (`process.exit(0)`) como higiene de memoria y espera que el supervisor lo levante.
+- La vinculacion inicial es interactiva (pide QR o codigo por consola); hazla fuera del supervisor y luego arranca bajo PM2.
+- Las migraciones nunca corren automaticamente al arrancar; ejecutalas como paso explicito en cada deploy.
+- Una sola instancia por numero de WhatsApp: el estado de juegos/cooldowns vive en memoria y la sesion es por dispositivo.
+- Respalda `BotSession/` (con el bot detenido) y la base de datos; ver politica de backups en `docs/deployment.md`.
+- Flujo de conexion, sesiones y reconexion documentado en `docs/baileys-connection.md`. Problemas comunes en `docs/troubleshooting.md`.
 
 <a id="estructura"></a>
 ## 🗂️ Estructura
@@ -609,6 +637,8 @@ El schema vive en `src/db/schema.ts` y actualmente incluye:
 - `group_settings`;
 - `chats`;
 - `messages`;
+- `user_group_roles`;
+- `message_logs`;
 - `subbots`;
 - `characters`;
 - `reportes`;
@@ -746,7 +776,7 @@ PERF_LOG_THRESHOLD_MS=300
 ```
 
 <a id="secretos"></a>
-## 🔐 Secretos
+## 🔐 Secretos Y Seguridad
 
 Este repositorio esta pensado para ser publico. No versionar:
 
@@ -757,6 +787,14 @@ Este repositorio esta pensado para ser publico. No versionar:
 - archivos temporales.
 
 Usa `.env.example` como contrato publico y `.env.local` para valores reales. Si GitHub bloquea un push por secret scanning, elimina el secreto del historial antes de subir o rota el token.
+
+Recomendaciones operativas:
+
+- Trata `BotSession/` y `jadibot/` como credenciales: quien tenga esos archivos controla la cuenta de WhatsApp.
+- Manten `BOT_FIXED_OWNER_JIDS` al minimo: esos numeros pueden ejecutar codigo y shell en el servidor (`>`/`=>` y `$`). Los limites aplicados (timeouts, truncado, auditoria `[SENSITIVE]`) estan en `docs/owner-security.md`.
+- Corre el bot con un usuario de sistema dedicado y sin privilegios; PostgreSQL sin exposicion publica.
+- Los guards de permisos (`owner`, `admin`, `group`, access modes por familia) deben declararse en la metadata del plugin, no re-implementarse a mano.
+- Checklist completo de produccion en `docs/deployment.md`.
 
 <a id="validacion"></a>
 ## 🧪 Validacion
@@ -807,6 +845,11 @@ Documentacion tecnica viva:
 | `docs/architecture-analysis.md` | Fotografia arquitectonica actual, riesgos, deuda y buenas practicas. |
 | `docs/architecture-roadmap.md` | Roadmap por prioridades P0-P7. |
 | `docs/improvement-roadmap.md` | Backlog interno de mejoras y refactors. |
+| `docs/baileys-connection.md` | Flujo de conexion, vinculacion, sesiones y reconexion con Baileys. |
+| `docs/environment-variables.md` | Referencia completa de variables de entorno. |
+| `docs/adding-commands.md` | Guia paso a paso para agregar comandos nuevos. |
+| `docs/deployment.md` | Despliegue en servidor, PM2, backups y checklist de produccion. |
+| `docs/troubleshooting.md` | Problemas comunes de conexion, DB, comandos y rendimiento. |
 | `docs/data-resources.md` | Politica de recursos estaticos, multimedia y datos mutables. |
 | `docs/http-client-exceptions.md` | Excepciones justificadas al HTTP client centralizado. |
 | `docs/owner-security.md` | Seguridad operativa de comandos owner sensibles. |
@@ -836,7 +879,9 @@ Resumen actual:
 - Loader de plugins recursivo con soporte para carpetas por familia.
 - Plugins organizados en 19 familias.
 - SDK interno disponible para plugins nuevos y migrados.
-- 29 plugins usan `defineSdkPlugin`; el resto mantiene compatibilidad legacy con `definePlugin`.
+- 29 plugins usan `defineSdkPlugin`; 127 mantienen compatibilidad legacy con `definePlugin`.
+- Modos de acceso por familia (`all`/`admins`/`off`) aplicados por `feature-access.guard.ts` y configurables con el menu de toggles.
+- Roles de admins por grupo en `user_group_roles`, sincronizados al arrancar (`startup-admin-sync.ts`) y en eventos de grupo.
 - `test:p0` evita que plugins migrados al SDK vuelvan a importar helpers legacy de mensajes o HTTP.
 - `content.service` centraliza mensajes, listas y templates desde `resources/data/messages.json`.
 - `src/providers/downloads/youtube.provider.ts` centraliza busqueda, seleccion de calidad, descarga y fallbacks de YouTube.

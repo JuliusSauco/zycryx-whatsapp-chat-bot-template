@@ -220,7 +220,7 @@ async function testGroupSettingsService(): Promise<void> {
         assert.equal((await getContextGroupSettings('group-1@g.us')).audios, true);
         assert.equal(contextReads, 1);
 
-        assert.deepEqual(await getNsfwSettings('group-1@g.us'), {modohorny: false, nsfw_horario: null});
+        assert.deepEqual(await getNsfwSettings('group-1@g.us'), {modohorny: false, nsfwAccessMode: 'all', nsfw_horario: null});
 
         assert.deepEqual(await getGroupSettings('group-1@g.us'), {welcome: true, banned: false});
         assert.deepEqual(await getGroupSettings('group-1@g.us'), {welcome: true, banned: false});

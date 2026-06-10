@@ -1,5 +1,13 @@
 declare module 'syntax-error';
 declare module 'qrcode';
+declare module 'qrcode-terminal' {
+    interface QRCodeTerminal {
+        generate(text: string, options?: {small?: boolean}, callback?: (output: string) => void): void;
+    }
+
+    const qrcodeTerminal: QRCodeTerminal;
+    export default qrcodeTerminal;
+}
 declare module 'cfonts';
 declare module 'node-gtts' {
     interface TextToSpeech {

@@ -2,13 +2,27 @@
 
 Esta lista se mantiene fuera del README para separar la documentacion publica del backlog tecnico del proyecto. Los porcentajes son estimaciones generales para medir avance, no metricas exactas.
 
-## Snapshot 2026-06-09
+## Snapshot 2026-06-10
 
 - Avance general estimado del backlog interno: 70%.
 - Roadmap v1: 100%, cerrado.
 - Roadmap v2: 100%, cerrado.
 - Roadmap v3: 80%, cerrado en pruebas/seguridad; backend queda desestimado hasta tener contrato real.
 - Roadmap v4: 68%, activo; concentra providers, SDK legacy, runtime, i18n y catalogo de comandos.
+- Revision externa 2026-06-10: se agrego el bloque "Higiene de runtime y conexion" con hallazgos de `main.ts`/`subbot.ts` (detalle en `docs/architecture-analysis.md`).
+
+## Higiene de runtime y conexion (revision 2026-06-10)
+
+Hallazgos de la auditoria de conexion/reconexion. Hoy los enmascara el reinicio automatico cada 3 horas; corregirlos es prerequisito para sesiones largas sin reinicio forzado.
+
+- [x] 100% - Restaurar QR de vinculacion del bot principal: Baileys 7 dejo `printQRInTerminal` como no-op; ahora se renderiza el campo `qr` de `connection.update` con `qrcode-terminal`.
+- [x] 100% - Registrar `process.on('uncaughtException'/'unhandledRejection')` y los `setInterval` de limpieza una sola vez, fuera de `startBot()` (movidos a nivel de modulo en `main.ts` via `startMaintenanceTasks()`; `startSubBot` ya no re-registra listeners de proceso).
+- [x] 100% - No reintentar conexion cuando el codigo de cierre es terminal de sesion: `loggedOut` (401), `forbidden` (403) y `badSession` (500) detienen los reintentos y piden re-vinculacion. Nota: 428 (`connectionClosed`) y 440 (`connectionReplaced`) son transitorios y siguen reintentando, antes estaban mal clasificados como error de sesion.
+- [x] 100% - Depurar `globalThis.conns` al cerrar un subbot (remover por `userId` en `close`) y reemplazar la entrada vieja en `open` para que la reconexion registre el socket nuevo.
+- [ ] 0% - Dejar de mutar `globalThis.info` (`wm`, `img2`) por mensaje en `context-builder.ts`; pasar la marca del bot via contexto.
+- [x] 100% - Versionar `package-lock.json` (removido de `.gitignore`) y fijar `ytdl-core` a `^4.11.5` en vez de `latest`.
+- [x] 100% - Sanitizar el error mostrado al usuario en el catch del handler (`sanitizeCommandError`); el log conserva el error completo.
+- [ ] 0% - Revisar el silenciado global de `console.info`/`console.debug` en `startBot()`; preferir niveles del logger propio.
 
 ## Prioridad actual
 

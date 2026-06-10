@@ -2,6 +2,7 @@ import "./config.js";
 import chalk from "chalk";
 import {logCommand, logError} from '../lib/logger.js';
 import {enqueueBackgroundTask} from '../lib/background-task-queue.js';
+import {sanitizeCommandError} from '../lib/sensitive-command.js';
 import {smsg} from "../lib/simple.js";
 import {parseMessage} from './message-parser.js';
 import {buildContext} from './context-builder.js';
@@ -179,8 +180,10 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
             await m.reply(e);
             return;
         }
-        logError(chalk.red(`❌ Error al ejecutar ${parsed.command}: ${e}`));
-        m.reply("❌ Error ejecutando el comando, reporte este error a mi creador con el comando: /report\n\n" + e);
+        // El log conserva el error completo; al usuario solo se le muestra una
+        // versión sanitizada y truncada para no filtrar detalles internos.
+        logError(chalk.red(`❌ Error al ejecutar ${parsed.command}:`), e);
+        await m.reply("❌ Error ejecutando el comando, reporte este error a mi creador con el comando: /report\n\n" + sanitizeCommandError(e));
     }
 }
 

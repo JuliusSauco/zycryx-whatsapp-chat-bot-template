@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import readlineSync from "readline-sync";
+import qrcodeTerminal from "qrcode-terminal";
 import pino from "pino";
 import type {Logger} from "pino";
 import NodeCache from 'node-cache';
@@ -60,6 +61,20 @@ console.error = (...args) => {
     }
     origError(...args);
 };
+
+// Códigos de cierre que indican sesión inválida/terminada: reconectar no sirve,
+// hay que borrar BotSession y volver a vincular (loggedOut, forbidden, badSession).
+const SESSION_TERMINAL_CODES: number[] = [
+    baileys.DisconnectReason.loggedOut,
+    baileys.DisconnectReason.forbidden,
+    baileys.DisconnectReason.badSession,
+];
+
+// Listeners de proceso y tareas de mantenimiento se registran UNA sola vez a nivel
+// de módulo. Antes vivían dentro de startBot() y se duplicaban en cada reconexión.
+process.on('uncaughtException', logError);
+process.on('unhandledRejection', logError);
+startMaintenanceTasks();
 
 main();
 
@@ -150,7 +165,6 @@ async function startBot() {
     console.debug = () => {
     };
     const sock = baileys.makeWASocket({
-        printQRInTerminal: !usarCodigo && !fs.existsSync(BOT_CREDS_PATH),
         logger: createPino({level: 'silent'}),
         browser: ['Windows', 'Chrome', ''] as [string, string, string],
         auth: {
@@ -175,8 +189,15 @@ async function startBot() {
     setupGroupEvents(botSock);
     sock.ev.on("creds.update", saveCreds);
 
-    sock.ev.on("connection.update", async ({connection, lastDisconnect}) => {
+    sock.ev.on("connection.update", async ({connection, lastDisconnect, qr}) => {
         const code = (lastDisconnect?.error as DisconnectErrorLike | undefined)?.output?.statusCode || 0;
+
+        // Baileys 7 deprecó printQRInTerminal (la opción ya no hace nada),
+        // así que el QR de vinculación se renderiza manualmente desde el evento.
+        if (qr && !usarCodigo && !state.creds.registered) {
+            qrcodeTerminal.generate(qr, {small: true});
+            logInfo(chalk.yellow('📲 Escanea el código QR desde WhatsApp para vincular el bot.'));
+        }
 
         if (connection === "open") {
             logInfo(chalk.bold.greenBright('\n▣─────────────────────────────···\n│\n│❧ 𝙲𝙾𝙽𝙴𝙲𝚃𝙰𝙳𝙾 𝙲𝙾𝚁𝚁𝙴𝙲𝚃𝙰𝙼𝙴𝙽𝚃𝙴 𝙰𝙻 𝚆𝙷𝙰𝚃𝚂𝙰𝙿𝙿 ✅\n│\n▣─────────────────────────────···'));
@@ -199,16 +220,14 @@ async function startBot() {
         }
 
         if (connection === "close") {
-            if ([401, 440, 428, 405].includes(code)) {
-                logError(chalk.red(`❌ Error de sesión (${code}) inválida. Borra la carpeta "BotSession" y vuelve a conectar.`));
+            if (SESSION_TERMINAL_CODES.includes(code)) {
+                logError(chalk.red(`❌ Sesión inválida (código ${code}). No se reintentará la conexión: borra la carpeta "BotSession" y vuelve a vincular el bot.`));
+                return;
             }
-            logWarn(chalk.yellow("♻️ Conexión cerrada. Reintentando en 3s..."));
+            logWarn(chalk.yellow(`♻️ Conexión cerrada (código ${code}). Reintentando en 3s...`));
             setTimeout(() => startBot(), 3000);
         }
     });
-
-    process.on('uncaughtException', logError);
-    process.on('unhandledRejection', logError);
 
     if (usarCodigo && !state.creds.registered) {
         setTimeout(async () => {
@@ -247,7 +266,44 @@ async function startBot() {
         }
     });
 
-//tmp    
+    function setupGroupEvents(sock: BotSocket) {
+        sock.ev.on("group-participants.update", async (update) => {
+            try {
+                await participantsUpdate(sock, update);
+            } catch (err: unknown) {
+                logError(chalk.red("❌ Error procesando group-participants.update:"), err);
+            }
+        });
+
+        sock.ev.on("groups.update", async (updates) => {
+            try {
+                for (const update of updates) {
+                    if (!update.id) continue;
+                    await groupsUpdate(sock, {...update, id: update.id});
+                }
+            } catch (err: unknown) {
+                logError(chalk.red("❌ Error procesando groups.update:"), err);
+            }
+        });
+
+        sock.ev.on("group.join-request", async (request) => {
+            try {
+                await groupJoinRequest(sock, request);
+            } catch (err: unknown) {
+                logError(chalk.red("❌ Error procesando group.join-request:"), err);
+            }
+        });
+    }
+}
+
+/**
+ * Tareas de mantenimiento del proceso (independientes del socket):
+ * limpieza de tmp, reinicio periódico y limpieza de archivos de sesión.
+ * Se inician una sola vez a nivel de módulo; NO deben vivir dentro de
+ * startBot() porque cada reconexión las duplicaría.
+ */
+function startMaintenanceTasks(): void {
+    // Limpieza de archivos temporales (>3 min) cada 30s.
     setInterval(() => {
         const tmp = './tmp';
         try {
@@ -264,19 +320,18 @@ async function startBot() {
                     fs.unlinkSync(filePath);
                 }
             })
-//logInfo(chalk.gray(`┏━━━━━━⪻♻️ AUTO-CLEAR 🗑️⪼━━━━━━•\n┃→ ARCHIVOS DE LA CARPETA TMP ELIMINADOS\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━•`));
         } catch (err: unknown) {
             logError('Error cleaning temporary files:', err);
         }
     }, 30 * 1000);
 
+    // Reinicio periódico de higiene de memoria; requiere process manager (PM2/systemd).
     setInterval(() => {
         logWarn('♻️ Reiniciando bot automáticamente...');
         process.exit(0);
     }, 10800000) //3hs
-//3600000
 
-//tmp session basura
+    // Limpieza de sesiones: recorte de pre-keys y archivos viejos en BotSession/jadibot.
     setInterval(() => {
         const now = Date.now();
         const carpetas = ['./jadibot', './BotSession'];
@@ -322,35 +377,6 @@ async function startBot() {
         }
         logDebug(chalk.bold.cyanBright(`\n╭» 🟠 ARCHIVOS 🟠\n│→ Sesiones y pre-keys viejas limpiadas\n╰―――――――――――――――――――――――――――――― 🗑️♻️`));
     }, 10 * 60 * 1000); // cada 10 minutos
-
-    function setupGroupEvents(sock: BotSocket) {
-        sock.ev.on("group-participants.update", async (update) => {
-            try {
-                await participantsUpdate(sock, update);
-            } catch (err: unknown) {
-                logError(chalk.red("❌ Error procesando group-participants.update:"), err);
-            }
-        });
-
-        sock.ev.on("groups.update", async (updates) => {
-            try {
-                for (const update of updates) {
-                    if (!update.id) continue;
-                    await groupsUpdate(sock, {...update, id: update.id});
-                }
-            } catch (err: unknown) {
-                logError(chalk.red("❌ Error procesando groups.update:"), err);
-            }
-        });
-
-        sock.ev.on("group.join-request", async (request) => {
-            try {
-                await groupJoinRequest(sock, request);
-            } catch (err: unknown) {
-                logError(chalk.red("❌ Error procesando group.join-request:"), err);
-            }
-        });
-    }
 }
 
 function enqueueMessage(sock: baileys.WASocket, msg: baileys.WAMessage): void {
