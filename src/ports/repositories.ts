@@ -57,6 +57,7 @@ export interface UserRecord {
     banco: number | null;
     level: number | null;
     role: string | null;
+    roleDescription?: string | null;
     regTime: Date | null;
     serialNumber: string | null;
     serial_number?: string | null;
@@ -120,6 +121,14 @@ export interface CompleteRegistrationInput {
     serialNumber: string;
 }
 
+export interface UpsertRegisteredAdminInput {
+    id: string;
+    nombre: string | null;
+    num: string | null;
+    lid?: string | null;
+    serialNumber: string;
+}
+
 export interface UserRepository {
     findById(userId: string): Promise<UserRecord | null>;
     findNameById(userId: string): Promise<string | null>;
@@ -155,6 +164,7 @@ export interface UserRepository {
     upsertBasicUser(input: UpsertUserInput): Promise<void>;
     clearLidFromOtherUsers(lid: string, userId: string): Promise<void>;
     setUserLid(userId: string, lid: string): Promise<void>;
+    upsertRegisteredAdmin(input: UpsertRegisteredAdminInput): Promise<void>;
     completeRegistration(input: CompleteRegistrationInput): Promise<void>;
     unregister(userId: string): Promise<void>;
     setGender(userId: string, gender: string): Promise<void>;
@@ -176,6 +186,32 @@ export interface UserRepository {
     getMarriageRequest(userId: string): Promise<string | null>;
     marryUsers(userA: string, userB: string): Promise<void>;
     divorceUsers(userA: string, userB: string): Promise<void>;
+}
+
+export interface UserGroupRoleRecord {
+    group_id: string;
+    user_id: string;
+    role: string;
+    role_description: string | null;
+}
+
+export interface UserGroupRoleRepository {
+    upsert(input: {
+        groupId: string;
+        userId: string;
+        role: string;
+        roleDescription: string | null;
+        updatedBy: string | null;
+    }): Promise<void>;
+    insertDefaultIfMissing(input: {
+        groupId: string;
+        userId: string;
+        role: string;
+        roleDescription: string | null;
+        updatedBy?: string | null;
+    }): Promise<void>;
+    find(groupId: string, userId: string): Promise<UserGroupRoleRecord | null>;
+    listByGroup(groupId: string): Promise<UserGroupRoleRecord[]>;
 }
 
 export interface ChatRepository {
@@ -253,13 +289,13 @@ export interface GroupSettingsRepository {
     } | null>;
     setBooleanFlag(groupId: string, flag: string, value: boolean): Promise<void>;
     setAutoAcceptMode(groupId: string, mode: GroupSettings['autoAcceptMode']): Promise<void>;
+    setGreetingHidetagMode(groupId: string, type: 'welcome' | 'bye', mode: GroupSettings['welcomeHidetagMode']): Promise<void>;
     setTextMessage(input: {
         groupId: string;
         type: 'welcome' | 'bye' | 'promote' | 'demote';
         text: string;
         photoMode?: boolean;
         registeredBy?: string;
-        hidetag?: boolean;
         groupPhoto?: boolean;
     }): Promise<void>;
     setNsfwSchedule(groupId: string, schedule: string): Promise<void>;
@@ -402,6 +438,7 @@ export interface DatabaseRepository {
 
 export interface AppRepositories {
     users: UserRepository;
+    userGroupRoles: UserGroupRoleRepository;
     chats: ChatRepository;
     messages: MessageRepository;
     messageLogs: MessageLogRepository;

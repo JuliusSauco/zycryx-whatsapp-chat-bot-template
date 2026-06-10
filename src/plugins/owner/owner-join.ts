@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {getSubbotConfig} from '../../services/subbot.service.js'
 import {setGroupExpiration} from '../../services/group-settings.service.js'
+import {registerGroupAdmins} from '../../services/group-role.service.js'
 import {decrementUserLimit, getUserResources} from '../../services/user.service.js'
 import {definePlugin} from '../../core/define-plugin.js'
 import {
@@ -87,6 +88,8 @@ export default definePlugin({
         if (!res) return m.reply(getRequiredPluginMessage('owner.join.joinFailed'))
 
         await new Promise(r => setTimeout(r, 3000))
+        const metadata = await conn.groupMetadata(res).catch(() => null)
+        if (metadata) await registerGroupAdmins(res, metadata)
         let mes = buildJoinedGroupGreeting(conn.user?.name || 'Bot', solicitante, time, unit)
         await conn.sendMessage(res, {text: mes, contextInfo: {mentionedJid: [`${solicitante}@s.whatsapp.net`]}})
         await setGroupExpiration(res, Date.now() + timeInMs)

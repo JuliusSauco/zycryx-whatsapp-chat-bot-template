@@ -8,7 +8,7 @@ import {
     setCachedGroupSettings,
 } from '../lib/db-cache.js';
 import {repositories} from './data-source.js';
-import type {AutoAcceptMode} from '../types/config.js';
+import type {AutoAcceptMode, GreetingHidetagMode} from '../types/config.js';
 
 export interface ContextGroupSettings {
     banned: boolean;
@@ -78,12 +78,17 @@ export async function setGroupAutoAcceptMode(chatId: string, mode: AutoAcceptMod
     invalidateGroupSettings(chatId);
 }
 
+export async function setGroupGreetingHidetagMode(chatId: string, type: 'welcome' | 'bye', mode: GreetingHidetagMode): Promise<void> {
+    await repositories.groupSettings.setGreetingHidetagMode(chatId, type, mode || 'off');
+    invalidateGroupSettings(chatId);
+}
+
 export async function setGroupTextMessage(
     chatId: string,
     type: 'welcome' | 'bye' | 'promote' | 'demote',
     text: string,
     photoMode?: boolean,
-    options?: { registeredBy?: string; hidetag?: boolean; groupPhoto?: boolean },
+    options?: { registeredBy?: string; groupPhoto?: boolean },
 ): Promise<void> {
     await repositories.groupSettings.setTextMessage({groupId: chatId, type, text, photoMode, ...options});
     invalidateGroupSettings(chatId);

@@ -62,6 +62,7 @@ export const commandMetadata: Record<string, MenuCommandMetadata> = {
     setpp: {emoji: '🖼️', usage: 'setpp', description: 'Cambia la foto del grupo usando una imagen respondida.'},
     setprompt: {emoji: '🧠', usage: 'setprompt <texto>', description: 'Configura el prompt de respuesta automática del grupo.'},
     sethorario: {emoji: '🕒', usage: 'sethorario <HH:MM-HH:MM>', description: 'Define horarios para funciones configurables del grupo.'},
+    setrole: {emoji: '🪪', usage: 'setrole @usuario Rol|Descripcion', description: 'Asigna un rol visible a un admin del grupo.'},
     enable: {emoji: '✅', usage: 'enable <opcion>', description: 'Activa una función configurable del grupo o subbot.'},
     disable: {emoji: '❌', usage: 'disable <opcion>', description: 'Desactiva una función configurable del grupo o subbot.'},
 

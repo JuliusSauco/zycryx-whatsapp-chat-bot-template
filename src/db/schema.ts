@@ -22,7 +22,8 @@ export const usuarios = pgTable('usuarios', {
     exp: integer('exp').default(0),
     banco: integer('banco').default(0),
     level: integer('level').default(0),
-    role: text('role').default('novato'),
+    role: text('role').notNull().default('novato'),
+    roleDescription: text('role_description'),
     regTime: timestamp('reg_time'),
     serialNumber: text('serial_number'),
     stickerPackname: text('sticker_packname'),
@@ -58,10 +59,13 @@ export const groupSettings = pgTable('group_settings', {
     photowelcome: boolean('photowelcome').default(true),
     welcomeRegisteredBy: text('welcome_registered_by'),
     welcomeHidetag: boolean('welcome_hidetag').default(false),
+    welcomeHidetagMode: text('welcome_hidetag_mode').default('off'),
     welcomeGroupPhoto: boolean('welcome_group_photo').default(false),
+    bye: boolean('bye').default(true),
     byeConfigId: serial('bye_config_id'),
     byeRegisteredBy: text('bye_registered_by'),
     byeHidetag: boolean('bye_hidetag').default(false),
+    byeHidetagMode: text('bye_hidetag_mode').default('off'),
     byeGroupPhoto: boolean('bye_group_photo').default(false),
     photobye: boolean('photobye').default(true),
     autolevelup: boolean('autolevelup').default(true),
@@ -95,6 +99,19 @@ export const messages = pgTable('messages', {
     messageCount: integer('message_count').default(0),
 }, table => ({
     pk: primaryKey({columns: [table.userId, table.groupId]}),
+}));
+
+export const userGroupRoles = pgTable('user_group_roles', {
+    groupId: text('group_id').notNull(),
+    userId: text('user_id').notNull(),
+    role: text('role').notNull(),
+    roleDescription: text('role_description'),
+    updatedBy: text('updated_by'),
+    updatedAt: timestamp('updated_at').defaultNow(),
+}, table => ({
+    pk: primaryKey({columns: [table.groupId, table.userId]}),
+    groupIdx: index('user_group_roles_group_idx').on(table.groupId),
+    userIdx: index('user_group_roles_user_idx').on(table.userId),
 }));
 
 export const messageLogs = pgTable('message_logs', {

@@ -4,12 +4,13 @@ import {
     DEFAULT_PP_PATH,
     getByeText,
     getGroupEventImageBuffer,
+    getGroupAdminMentionJids,
     getGroupMentionJids,
     getWelcomeText,
     uniqueJids,
 } from './group-event-resources.js';
 import type {GroupMetadata, GroupParticipant} from '@whiskeysockets/baileys';
-import type {GroupSettings} from '../types/config.js';
+import type {GreetingHidetagMode, GroupSettings} from '../types/config.js';
 import type {EventConn} from './group-event-types.js';
 
 interface GroupGreetingInput {
@@ -24,6 +25,13 @@ interface GroupGreetingInput {
     settings: Partial<GroupSettings>;
 }
 
+function resolveGreetingMentionJids(participants: GroupParticipant[], userJid: string, mode?: GreetingHidetagMode | null, legacyHidetag?: boolean): string[] {
+    const normalizedMode = mode || (legacyHidetag ? 'all' : 'off');
+    if (normalizedMode === 'all') return uniqueJids([...getGroupMentionJids(participants), userJid]);
+    if (normalizedMode === 'admin') return uniqueJids([...getGroupAdminMentionJids(participants), userJid]);
+    return [userJid];
+}
+
 export async function sendWelcomeMessage(input: GroupGreetingInput): Promise<void> {
     const {conn, groupId, participantJid, userJid, userTag, groupName, metadata, metaParticipants, settings} = input;
     const groupDesc = metadata.desc || '*ᴜɴ ɢʀᴜᴘᴏ ɢᴇɴɪᴀ😸*\n *sɪɴ ʀᴇɢʟᴀ 😉*';
@@ -32,9 +40,7 @@ export async function sendWelcomeMessage(input: GroupGreetingInput): Promise<voi
         .replace(/@user/gi, userTag)
         .replace(/@group|@subject/gi, groupName)
         .replace(/@desc/gi, groupDesc);
-    const mentionedJid = settings.welcomeHidetag
-        ? uniqueJids([...getGroupMentionJids(metaParticipants), userJid])
-        : [userJid];
+    const mentionedJid = resolveGreetingMentionJids(metaParticipants, userJid, settings.welcomeHidetagMode, settings.welcomeHidetag);
 
     const welcomeImage = settings.photowelcome
         ? await getGroupEventImageBuffer(conn, groupId, participantJid, userJid, settings.welcomeGroupPhoto)
@@ -70,9 +76,7 @@ export async function sendByeMessage(input: GroupGreetingInput): Promise<void> {
         .replace(/@user/gi, userTag)
         .replace(/@group/gi, groupName)
         .replace(/@desc/gi, groupDesc);
-    const mentionedJid = settings.byeHidetag
-        ? uniqueJids([...getGroupMentionJids(metaParticipants), userJid])
-        : [userJid];
+    const mentionedJid = resolveGreetingMentionJids(metaParticipants, userJid, settings.byeHidetagMode, settings.byeHidetag);
 
     const byeImage = settings.photobye
         ? await getGroupEventImageBuffer(conn, groupId, participantJid, userJid, settings.byeGroupPhoto)

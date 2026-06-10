@@ -80,6 +80,32 @@ export const userRepository: UserRepository = {
             .where(eq(usuarios.id, userId));
     },
 
+    async upsertRegisteredAdmin({id, nombre, num, lid, serialNumber}) {
+        const updates = {
+            nombre: sql`COALESCE(${usuarios.nombre}, excluded.nombre)`,
+            num: sql`COALESCE(${usuarios.num}, excluded.num)`,
+            registered: true,
+            serialNumber: sql`COALESCE(${usuarios.serialNumber}, excluded.serial_number)`,
+            regTime: sql`COALESCE(${usuarios.regTime}, excluded.reg_time)`,
+            ...(lid ? {lid} : {}),
+        };
+
+        await orm.insert(usuarios)
+            .values({
+                id,
+                nombre: nombre || id.split('@')[0],
+                num,
+                lid: lid || null,
+                registered: true,
+                serialNumber,
+                regTime: new Date(),
+            })
+            .onConflictDoUpdate({
+                target: usuarios.id,
+                set: updates,
+            });
+    },
+
     async completeRegistration({id, nombre, edad, gender, birthday, regTime, serialNumber}) {
         await orm.insert(usuarios)
             .values({

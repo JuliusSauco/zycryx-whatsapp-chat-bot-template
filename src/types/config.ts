@@ -55,10 +55,13 @@ export interface GroupSettings {
     photowelcome: boolean;
     welcomeRegisteredBy?: string | null;
     welcomeHidetag: boolean;
+    welcomeHidetagMode?: GreetingHidetagMode | null;
     welcomeGroupPhoto: boolean;
+    bye: boolean;
     byeConfigId?: number | null;
     byeRegisteredBy?: string | null;
     byeHidetag: boolean;
+    byeHidetagMode?: GreetingHidetagMode | null;
     byeGroupPhoto: boolean;
     photobye: boolean;
     autolevelup: boolean;
@@ -86,6 +89,8 @@ export type AutoAcceptMode =
     | 'off_hidetag_admin'
     | 'off_hidetag_all';
 
+export type GreetingHidetagMode = 'off' | 'admin' | 'all';
+
 export interface Usuario {
     id: string;
     nombre?: string | null;
@@ -104,6 +109,7 @@ export interface Usuario {
     banco: number;
     level: number;
     role: string;
+    roleDescription?: string | null;
     reg_time?: Date | null;
     serial_number?: string | null;
     sticker_packname?: string | null;

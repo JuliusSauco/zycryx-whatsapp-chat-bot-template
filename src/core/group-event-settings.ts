@@ -3,6 +3,9 @@ import type {GroupSettings} from '../types/config.js';
 
 const DEFAULT_EVENT_GROUP_SETTINGS: Partial<GroupSettings> = {
     welcome: true,
+    welcomeHidetagMode: 'off',
+    bye: true,
+    byeHidetagMode: 'off',
     detect: true,
     antifake: false,
     autoAcceptMode: 'off',

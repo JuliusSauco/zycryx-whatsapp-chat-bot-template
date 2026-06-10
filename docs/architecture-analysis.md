@@ -2,7 +2,7 @@
 
 Fecha de revision: 2026-06-09.
 
-Este documento resume el estado arquitectonico actual despues de cerrar el P0 del roadmap y de iniciar P1 con providers por dominio.
+Este documento resume el estado arquitectonico actual despues de cerrar P0, iniciar P1 con providers por dominio y alinear los scripts de base de datos.
 
 ## Estado actual
 
@@ -13,9 +13,23 @@ Este documento resume el estado arquitectonico actual despues de cerrar el P0 de
 - Existe `src/services/content.service.ts` como API oficial de mensajes, listas y templates.
 - `src/lib/message-template.ts` queda como fachada legacy mientras se migra el resto de plugins.
 - Los plugins migrados al SDK quedan protegidos por `tests/p0-architecture.test.ts` para no volver a importar `message-template` ni `http-client` directo.
-- P1 ya empezo con `src/providers/downloads/youtube.provider.ts`, consumido por `descargas-play.ts` y `descargas-play2.ts`.
+- P1 ya empezo con providers de descargas para YouTube, Spotify, TikTok, Threads, Instagram, Facebook, MediaFire y Drive.
 - `src/plugins/downloads/youtube-download.helpers.ts` queda como re-export temporal para compatibilidad.
 - La suite de pruebas cubre helpers, router, guards, context builder, servicios, comandos sensibles, providers y compuerta P0.
+- Los scripts de DB estan alineados: `src/db/schema.ts`, journal de migraciones y `database/schema.sql` limpio desde cero.
+
+## Avance por area
+
+| Area | Avance | Lectura |
+|---|---:|---|
+| Core/handler/router/guards | 90% | Arquitectura estable y testeada; quedan mejoras futuras de runtime global. |
+| Persistencia Drizzle/PostgreSQL | 95% | Local estable, migraciones y bootstrap manual alineados. |
+| SDK y contenido | 65% | Contrato nuevo cerrado; migracion legacy por familias pendiente. |
+| Providers externos | 85% | Descargas principales centralizadas; faltan providers secundarios/metadata, IA y conversion multimedia. |
+| Testing | 75% | Core cubierto; faltan mas pruebas de providers, i18n y plugins complejos. |
+| Seguridad owner | 90% | Comandos sensibles auditados; queda vigilancia continua al agregar comandos. |
+| Runtime/escalabilidad | 20% | Hay locks/cache puntuales; falta fachada de globales y cooldowns/pending actions. |
+| i18n/contenido editable | 25% | Mensajes centralizados; faltan locales, fallback y catalogo de comandos. |
 
 ## Hallazgos cuantitativos
 
@@ -59,13 +73,14 @@ Recomendacion:
 - Crear providers por dominio empezando por descargas.
 - Los providers deben devolver modelos normalizados y errores tipados.
 - Los plugins solo deben decidir UX, permisos y envio final.
-- El primer provider creado es `src/providers/downloads/youtube.provider.ts`; `src/plugins/downloads/youtube-download.helpers.ts` queda como re-export de compatibilidad.
-- El siguiente paso recomendado es extraer Spotify y luego TikTok/Instagram/Facebook/MediaFire/Drive.
+- Los primeros providers creados son `src/providers/downloads/youtube.provider.ts`, `src/providers/downloads/spotify.provider.ts`, `src/providers/downloads/tiktok.provider.ts`, `src/providers/downloads/threads.provider.ts`, `src/providers/downloads/instagram.provider.ts`, `src/providers/downloads/facebook.provider.ts`, `src/providers/downloads/mediafire.provider.ts` y `src/providers/downloads/drive.provider.ts`.
+- `src/plugins/downloads/youtube-download.helpers.ts` queda como re-export de compatibilidad.
+- El siguiente paso recomendado es decidir si los stalkers (`igstalk`, `tiktokstalk`) y providers secundarios (`Pinterest`, `AppMusic`, `ModAPK`) quedan dentro de P1 o pasan a un P1.1.
 - Evitar por ahora providers dependientes de backend; P1 debe funcionar con librerias locales y HTTP centralizado.
 
 Pendientes de diseno:
 
-- Estandarizar `ProviderResult` y `ProviderError`.
+- Extender el contrato inicial `ProviderResult`/`ProviderFailureReason` con errores tipados mas expresivos.
 - Definir timeout/retry por proveedor.
 - Separar busqueda, metadata y descarga en contratos claros.
 - Agregar pruebas sin red para fallback y parseo de respuestas.
@@ -161,27 +176,10 @@ Recomendacion:
 - Dejar P3 desestimado hasta tener backend versionado.
 - Providers P1 deben ser locales/libreria, no backend-first.
 
-### Catalogo de comandos editable
-
-Los comandos tienen metadata tecnica dentro de cada plugin (`command`, permisos, `help`, `tags`) y metadata de menu en `src/plugins/menus/menu-command-metadata.ts`.
-
-Riesgo:
-
-- La ayuda visible, menus y permisos documentados pueden divergir de los plugins reales.
-- `--help` por comando no tiene una fuente unificada.
-- Mover el routing completo a JSON seria riesgoso porque muchos comandos usan regex o aliases calculados.
-
-Recomendacion:
-
-- Crear primero un catalogo documental en `resources/data/commands.json`.
-- Mantener el routing tecnico y permisos de ejecucion en los plugins.
-- Usar el catalogo para menus, `/help <comando>` y `/<comando> --help`.
-- Agregar tests de consistencia entre catalogo y plugins cargados.
-
 ## Prioridad recomendada
 
 1. Mantener `test:p0` en `npm test`.
-2. Continuar P1 con providers de descargas: Spotify y luego TikTok/Instagram/Facebook/MediaFire/Drive.
+2. Continuar P1 con providers secundarios: metadata/stalkers, Pinterest, AppMusic, ModAPK y GitClone.
 3. Normalizar errores/timeouts de providers y ampliar pruebas `test:providers`.
 4. Migrar `downloads` al SDK gradualmente mientras se extraen providers.
 5. Migrar el bloque `messages/random/nsfw/audio` al SDK.

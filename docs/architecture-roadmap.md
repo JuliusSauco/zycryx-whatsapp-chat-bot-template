@@ -4,14 +4,27 @@ Este roadmap prioriza cambios estructurales que reducen acoplamiento y preparan 
 
 ## Snapshot 2026-06-09
 
+- Avance general estimado del roadmap arquitectonico: 68%.
 - P0 esta cerrado como contrato arquitectonico: los plugins nuevos y migrados deben usar `defineSdkPlugin`, `sdk.content`, `sdk.http`, `sdk.reply` y helpers del SDK.
 - La compuerta `tests/p0-architecture.test.ts` protege a los plugins migrados para que no vuelvan a importar `message-template` ni `http-client` directamente.
 - Queda deuda legacy visible: 29 plugins usan `defineSdkPlugin`, 126 siguen en `definePlugin`, 121 archivos de plugins aun importan `message-template.js` y 37 importan `http-client.js`.
 - Esa deuda no bloquea P0; se migrara por dominios/familias para evitar refactors masivos dificiles de validar.
 - P3 sigue desestimado hasta que exista backend real. P1 debe avanzar con providers locales por dominio, no con un adapter backend.
-- P1 ya tiene su primer provider real: YouTube vive en `src/providers/downloads/youtube.provider.ts`, con `descargas-play.ts` y `descargas-play2.ts` consumiendo el contrato nuevo.
+- P1 ya tiene providers reales para YouTube, Spotify, TikTok, Threads, Instagram, Facebook, MediaFire y Drive en `src/providers/downloads`.
+- Los scripts de base de datos estan alineados: migraciones registradas en journal y `database/schema.sql` limpio para bootstrap manual desde cero.
 
-## P0 - Contrato de contenido y SDK de plugins
+| Fase | Avance | Estado |
+|---|---:|---|
+| P0 - SDK/contenido | 100% | Cerrado como contrato base; queda deuda legacy fuera de P0. |
+| P1 - Providers | 85% | Descargas principales centralizadas; faltan providers secundarios/metadata y errores normalizados. |
+| P2 - Testing nucleo | 100% | Cerrado para router, guards, context builder y servicios. |
+| P3 - Backend adapter | 0% | Desestimado hasta tener backend real. |
+| P4 - Seguridad owner | 100% | Cerrado para comandos sensibles auditados. |
+| P5 - Runtime/escalabilidad | 20% | Hay locks/cache puntuales; falta inventario y fachadas. |
+| P6 - i18n/contenido | 25% | Base de mensajes lista; falta locales/fallback. |
+| P7 - Catalogo comandos/help | 10% | Mejora registrada; sin implementacion todavia. |
+
+## P0 - Contrato de contenido y SDK de plugins - 100%
 
 Objetivo: que los plugins nuevos y migrados no importen helpers sueltos para mensajes, HTTP, providers, locks o replies.
 
@@ -32,37 +45,39 @@ Objetivo: que los plugins nuevos y migrados no importen helpers sueltos para men
 
 Deuda posterior a P0:
 
-- [ ] Migrar `messages`, `random`, `nsfw` y `audio` al SDK.
-- [ ] Migrar `downloads` al SDK durante la extraccion de providers.
-- [ ] Migrar `stickers` y `media conversion` al SDK despues de estabilizar providers multimedia.
-- [ ] Migrar `group`, `games`, `rpg` y `owner` por bloques funcionales, no archivo por archivo.
+- [ ] 15% - Migrar `messages`, `random`, `nsfw` y `audio` al SDK.
+- [ ] 20% - Migrar `downloads` al SDK durante la extraccion de providers.
+- [ ] 10% - Migrar `stickers` y `media conversion` al SDK despues de estabilizar providers multimedia.
+- [ ] 10% - Migrar `group`, `games`, `rpg` y `owner` por bloques funcionales, no archivo por archivo.
 
-## P1 - Providers por dominio
+Nota: esta deuda queda registrada como migracion legacy posterior. No reabre P0, porque el contrato nuevo y su compuerta ya existen.
+
+## P1 - Providers por dominio - 85%
 
 Objetivo: aislar APIs externas inestables detras de contratos propios.
 
-- [x] Crear `src/providers/downloads` con contrato inicial para busqueda, metadata y media descargable.
-- [x] Empezar por YouTube: extraer `youtube-download.helpers.ts`, `descargas-play.ts` y `descargas-play2.ts` hacia `src/providers/downloads/youtube.provider.ts`.
-- [x] Agregar `tests/download-providers.test.ts` y `npm run test:providers` como compuerta inicial de providers.
-- [x] Mantener `src/plugins/downloads/youtube-download.helpers.ts` como re-export temporal para no romper imports legacy mientras se migra por bloques.
-- [ ] Extraer Spotify a provider: busqueda, metadata, descarga y fallback.
-- [ ] Extraer TikTok/Threads/Instagram/Facebook/MediaFire/Drive a providers por dominio, priorizando comandos con mas APIs externas o fallbacks duplicados.
-- [ ] Crear `src/providers/ai` para ChatGPT, Gemini, DeepSeek, BlackBox y fallbacks publicos, sin depender de backend.
-- [ ] Crear `src/providers/media-conversion` para ffmpeg, sticker, webp/mp4 y Ezgif.
-- [ ] Normalizar errores de providers con codigos internos y mensajes seguros para usuario.
-- [ ] Agregar pruebas unitarias de fallback por dominio y de normalizacion de errores.
-- [ ] Documentar variables externas nuevas o existentes en `.env.example`.
+- [x] 100% - Crear `src/providers/downloads` con contrato inicial para busqueda, metadata y media descargable.
+- [x] 100% - Empezar por YouTube: extraer `youtube-download.helpers.ts`, `descargas-play.ts` y `descargas-play2.ts` hacia `src/providers/downloads/youtube.provider.ts`.
+- [x] 100% - Agregar `tests/download-providers.test.ts` y `npm run test:providers` como compuerta inicial de providers.
+- [x] 100% - Mantener `src/plugins/downloads/youtube-download.helpers.ts` como re-export temporal para no romper imports legacy mientras se migra por bloques.
+- [x] 100% - Extraer Spotify a provider: busqueda, metadata, descarga y fallback.
+- [x] 100% - Extraer TikTok/Threads/Instagram/Facebook/MediaFire/Drive a providers por dominio, priorizando comandos con mas APIs externas o fallbacks duplicados.
+- [ ] 0% - Crear `src/providers/ai` para ChatGPT, Gemini, DeepSeek, BlackBox y fallbacks publicos, sin depender de backend.
+- [ ] 0% - Crear `src/providers/media-conversion` para ffmpeg, sticker, webp/mp4 y Ezgif.
+- [ ] 25% - Normalizar errores de providers con codigos internos y mensajes seguros para usuario.
+- [ ] 30% - Agregar pruebas unitarias de fallback por dominio y de normalizacion de errores.
+- [ ] 20% - Documentar variables externas nuevas o existentes en `.env.example`.
 
 Pendientes tecnicos concretos de P1:
 
-- [ ] Definir tipos compartidos para `ProviderResult`, `ProviderError`, `ProviderFailureReason` y metadata comun.
-- [ ] Decidir politica de timeout/retry por provider: timeout corto por proveedor y fallback al siguiente.
-- [ ] Separar providers que solo buscan metadata de providers que descargan media.
-- [ ] Evitar que plugins conozcan URLs de APIs externas, formatos crudos o llaves de respuesta.
-- [ ] Mantener pruebas sin red para seleccion de fallback, parseo de respuestas y normalizacion de errores.
-- [ ] Documentar excepciones cuando un scraper deba vivir en `src/lib` por cookies, multipart, redirects o streaming.
+- [x] 100% - Definir tipos compartidos iniciales para `ProviderResult`, `ProviderFailureReason` y metadata comun de fallbacks.
+- [ ] 10% - Decidir politica de timeout/retry por provider: timeout corto por proveedor y fallback al siguiente.
+- [ ] 25% - Separar providers que solo buscan metadata de providers que descargan media.
+- [ ] 20% - Evitar que plugins conozcan URLs de APIs externas, formatos crudos o llaves de respuesta.
+- [ ] 20% - Mantener pruebas sin red para seleccion de fallback, parseo de respuestas y normalizacion de errores.
+- [ ] 40% - Documentar excepciones cuando un scraper deba vivir en `src/lib` por cookies, multipart, redirects o streaming.
 
-## P2 - Testing de nucleo
+## P2 - Testing de nucleo - 100%
 
 Objetivo: blindar router, guards, context builder y servicios antes de refactors mas grandes.
 
@@ -71,18 +86,18 @@ Objetivo: blindar router, guards, context builder y servicios antes de refactors
 - [x] Pruebas de context builder con sender, owners, admins, metadata/cache/settings y restricciones simuladas.
 - [x] Pruebas de servicios con repositorios mockeados: chats, group settings, subbots, runtime tasks, wallet y API tokens.
 
-## P3 - Backend adapter real
+## P3 - Backend adapter real - 0%
 
 Objetivo: que `DATA_SOURCE=backend` deje de ser scaffold y tenga contrato REST/GraphQL verificable.
 
 Estado: desestimado por ahora. No avanzar providers o adapters que dependan del backend hasta que exista un backend real y versionado.
 
-- [ ] Definir OpenAPI/GraphQL schema minimo por repositorio.
-- [ ] Implementar adapter REST inicial para agregados prioritarios.
-- [ ] Agregar contract tests compartidos entre Drizzle y backend.
-- [ ] Documentar migracion operativa entre local DB y backend.
+- [ ] 0% - Definir OpenAPI/GraphQL schema minimo por repositorio.
+- [ ] 0% - Implementar adapter REST inicial para agregados prioritarios.
+- [ ] 0% - Agregar contract tests compartidos entre Drizzle y backend.
+- [ ] 0% - Documentar migracion operativa entre local DB y backend.
 
-## P4 - Seguridad operativa owner
+## P4 - Seguridad operativa owner - 100%
 
 Objetivo: reducir riesgo en comandos con ejecucion, red, procesos o salida grande.
 
@@ -91,37 +106,37 @@ Objetivo: reducir riesgo en comandos con ejecucion, red, procesos o salida grand
 - [x] Registrar auditoria de comandos sensibles.
 - [x] Documentar permisos y variables necesarias.
 
-## P5 - Estado runtime y escalabilidad
+## P5 - Estado runtime y escalabilidad - 20%
 
 Objetivo: preparar el bot para crecer sin depender de estado disperso en memoria.
 
-- [ ] Inventariar mapas locales de cooldowns, juegos, retos, pending actions y caches por plugin.
-- [ ] Crear helpers compartidos para cooldowns y acciones pendientes con expiracion.
-- [ ] Documentar que juegos/retos son single-process hasta tener backend/cache externa.
-- [ ] Crear fachada de runtime para `globalThis.conn`, `globalThis.conns` y `globalThis.plugins`.
-- [ ] Revisar locks por usuario existentes y reemplazar mapas locales equivalentes cuando el flujo sea de proceso largo.
+- [ ] 20% - Inventariar mapas locales de cooldowns, juegos, retos, pending actions y caches por plugin.
+- [ ] 15% - Crear helpers compartidos para cooldowns y acciones pendientes con expiracion.
+- [ ] 20% - Documentar que juegos/retos son single-process hasta tener backend/cache externa.
+- [ ] 0% - Crear fachada de runtime para `globalThis.conn`, `globalThis.conns` y `globalThis.plugins`.
+- [ ] 45% - Revisar locks por usuario existentes y reemplazar mapas locales equivalentes cuando el flujo sea de proceso largo.
 
-## P6 - i18n y contenido
+## P6 - i18n y contenido - 25%
 
 Objetivo: convertir el trabajo de `messages.json` en base real para i18n.
 
-- [ ] Definir estructura de locales, por ejemplo `resources/data/locales/es/messages.json`.
-- [ ] Agregar fallback de idioma en `content.service`.
-- [ ] Mantener compatibilidad temporal con `resources/data/messages.json`.
-- [ ] Agregar test de keys requeridas y fallback.
-- [ ] Migrar plugins legacy fuera de `message-template` hacia `sdk.content`.
+- [ ] 0% - Definir estructura de locales, por ejemplo `resources/data/locales/es/messages.json`.
+- [ ] 0% - Agregar fallback de idioma en `content.service`.
+- [x] 100% - Mantener compatibilidad temporal con `resources/data/messages.json`.
+- [ ] 10% - Agregar test de keys requeridas y fallback.
+- [ ] 15% - Migrar plugins legacy fuera de `message-template` hacia `sdk.content`.
 
-## P7 - Catalogo de comandos y ayuda consultable
+## P7 - Catalogo de comandos y ayuda consultable - 10%
 
 Objetivo: separar la documentacion editable de comandos del routing tecnico de plugins.
 
-- [ ] Crear `resources/data/commands.json` como catalogo documental de comandos.
-- [ ] Migrar `src/plugins/menus/menu-command-metadata.ts` hacia JSON o cargarlo desde un servicio.
-- [ ] Crear `src/services/command-catalog.service.ts` para resolver uso, descripcion, ejemplos, aliases, flags y permisos visibles.
-- [ ] Implementar ayuda consultable con `/<comando> --help`, `/help <comando>` y `/ayuda <comando>`.
-- [ ] Soportar subcomandos, por ejemplo `/enable welcome --help`, `/db info --help`, `/setprompt delete --help`.
-- [ ] Agregar prueba que compare catalogo vs plugins cargados para detectar comandos sin documentar y permisos documentados que no coinciden.
-- [ ] Mantener `command` real y permisos de ejecucion dentro del plugin hasta tener una migracion segura; el JSON no debe controlar routing al inicio.
+- [ ] 0% - Crear `resources/data/commands.json` como catalogo documental de comandos.
+- [ ] 10% - Migrar `src/plugins/menus/menu-command-metadata.ts` hacia JSON o cargarlo desde un servicio.
+- [ ] 0% - Crear `src/services/command-catalog.service.ts` para resolver uso, descripcion, ejemplos, aliases, flags y permisos visibles.
+- [ ] 0% - Implementar ayuda consultable con `/<comando> --help`, `/help <comando>` y `/ayuda <comando>`.
+- [ ] 0% - Soportar subcomandos, por ejemplo `/enable welcome --help`, `/db info --help`, `/setprompt delete --help`.
+- [ ] 0% - Agregar prueba que compare catalogo vs plugins cargados para detectar comandos sin documentar y permisos documentados que no coinciden.
+- [x] 100% - Mantener `command` real y permisos de ejecucion dentro del plugin hasta tener una migracion segura; el JSON no debe controlar routing al inicio.
 
 Esta mejora queda registrada, pero no debe mezclarse con P1 hasta cerrar providers iniciales. El catalogo sera fuente documental para menus y ayuda, no fuente de ejecucion al principio.
 

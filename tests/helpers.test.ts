@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {buildAliasMap, buildAliasRegex} from '../src/utils/command-alias.js';
+import {normalizeFixedOwnerId} from '../src/utils/constants.js';
 import {pickRandom, randomChance, randomInt} from '../src/utils/random.js';
 import {createUserRequestLocks} from '../src/lib/user-request-locks.js';
 import {runFirstProvider} from '../src/lib/provider-fallback.js';
@@ -38,6 +39,14 @@ function testCommandAliases(): void {
     const regex = buildAliasRegex(aliasMap);
     assert.equal(regex.test('PLAYAUDIO'), true);
     assert.equal(regex.test('missing'), false);
+}
+
+function testFixedOwnerNormalization(): void {
+    assert.equal(normalizeFixedOwnerId('573001112233'), '573001112233@s.whatsapp.net');
+    assert.equal(normalizeFixedOwnerId('+57 300 111 2233'), '573001112233@s.whatsapp.net');
+    assert.equal(normalizeFixedOwnerId('573001112233@s.whatsapp.net'), '573001112233@s.whatsapp.net');
+    assert.equal(normalizeFixedOwnerId('573001112233:1@s.whatsapp.net'), '573001112233@s.whatsapp.net');
+    assert.equal(normalizeFixedOwnerId(''), null);
 }
 
 function testUserRequestLocks(): void {
@@ -149,6 +158,7 @@ async function testPluginSdk(): Promise<void> {
 
 testRandomHelpers();
 testCommandAliases();
+testFixedOwnerNormalization();
 testUserRequestLocks();
 await testProviderFallback();
 testLegacyArrayRandom();

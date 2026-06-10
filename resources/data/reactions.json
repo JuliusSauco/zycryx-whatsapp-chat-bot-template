@@ -8,7 +8,9 @@
   "an": {
     "help": "msg-gif-cog",
     "commands": ["cogeranal", "anal", "por-el-culo", "sexo-anal", "anosex"],
+    "adult": true,
     "folder": "resources/media/reaction-gifs/an",
+    "nsfwFolder": "resources/media/reaction-gifs/an/nsfw",
     "caption": "🍆💦🍑 {sender} le esta haciendo sexo anal a {targets} 👅"
   },
   "ap": {
@@ -26,13 +28,17 @@
   "cog": {
     "help": "msg-gif-cog",
     "commands": ["coger", "follar", "sexear", "sexo"],
+    "adult": true,
     "folder": "resources/media/reaction-gifs/cog",
+    "nsfwFolder": "resources/media/reaction-gifs/cog/nsfw",
     "caption": "😋🔥💗👙 {sender} se esta cogiendo bien duro a {targets}"
   },
   "dogst": {
     "help": "msg-gif-dogst",
     "commands": ["doggystyle", "encuatro", "en4", "deaperrito", "cogeren4", "coger4", "follar4"],
+    "adult": true,
     "folder": "resources/media/reaction-gifs/dogst",
+    "nsfwFolder": "resources/media/reaction-gifs/dogst/nsfw",
     "caption": "🍆💦 {sender} se esta cogiendo de a perrito a {targets}"
   },
   "fg": {
@@ -68,13 +74,17 @@
   "les": {
     "help": "msg-gif-les",
     "commands": ["lesbian", "sexo-lesbiano", "lesbianas", "sexo-mujeres"],
+    "adult": true,
     "folder": "resources/media/reaction-gifs/les",
+    "nsfwFolder": "resources/media/reaction-gifs/les/nsfw",
     "caption": "👩‍❤️‍💋‍👩 {sender} tiene intenciones lesbicas 🫶 y ganas de hacer tijerasos ✂️ con {targets} 👭"
   },
   "oral": {
     "help": "msg-gif-oral",
     "commands": ["blowjob", "felacion", "chupar", "oral"],
+    "adult": true,
     "folder": "resources/media/reaction-gifs/oral",
+    "nsfwFolder": "resources/media/reaction-gifs/oral/nsfw",
     "caption": "😋🤤🤤🔥 {sender} le esta haciendo un rico oral a {targets}"
   },
   "pat": {

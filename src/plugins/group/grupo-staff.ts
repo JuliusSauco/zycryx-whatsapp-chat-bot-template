@@ -1,6 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {definePlugin} from '../../core/define-plugin.js'
 import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
+import {getGroupParticipantRole} from '../../services/group-role.service.js'
 export default definePlugin({
     help: ['staff'],
     tags: ['group'],
@@ -9,7 +10,6 @@ export default definePlugin({
     register: true,
     async execute(m, {conn, text, metadata}) {
     try {
-        if (!text || !text.trim()) return m.reply(getRequiredPluginMessage('group.staff.missingText'))
         const admins = metadata.participants.filter(p => p.admin)
         if (!admins.length) return m.reply(getRequiredPluginMessage('group.staff.emptyAdmins'))
 
@@ -17,11 +17,14 @@ export default definePlugin({
         const total = users.length
         await m.react("📣")
 
-        const adminList = users.map(u => renderTemplate(getRequiredPluginMessage('group.staff.item'), {
+        const roles = await Promise.all(admins.map(admin => getGroupParticipantRole(m.chat, admin)))
+        const adminList = users.map((u, index) => renderTemplate(getRequiredPluginMessage('group.staff.item'), {
             user: u.replace(/@s\.whatsapp\.net|@lid/g, "").replace(/[^0-9]/g, ""),
+            roleLine: roles[index]?.role ? renderTemplate(getRequiredPluginMessage('group.roles.roleLine'), {role: roles[index].role}) : '',
         })).join(" \n ")
+        const cleanText = (text || '').trim()
         const mensaje = renderTemplate(getRequiredPluginMessage('group.staff.message'), {
-            message: text.trim(),
+            message: cleanText || getRequiredPluginMessage('group.staff.defaultMessage'),
             total,
             admins: adminList,
         })

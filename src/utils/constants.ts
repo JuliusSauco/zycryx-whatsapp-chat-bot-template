@@ -31,10 +31,19 @@ export const DB_THROTTLE_MS = 9_000;
 
 // --- Fixed owners ---
 
+export function normalizeFixedOwnerId(owner: string): string | null {
+    const value = owner.trim()
+    if (!value) return null
+    if (value.includes('@')) return value.replace(/:\d+@/, '@')
+
+    const phone = value.replace(/[^0-9]/g, '')
+    return phone ? `${phone}@s.whatsapp.net` : null
+}
+
 const configuredFixedOwners = ENV.BOT_FIXED_OWNER_JIDS
     .split(',')
-    .map(owner => owner.trim())
-    .filter(Boolean);
+    .map(normalizeFixedOwnerId)
+    .filter((owner): owner is string => Boolean(owner));
 
 /** Owners fijos del bot (decodificados una sola vez al inicio). */
 export const FIXED_OWNERS: readonly string[] = configuredFixedOwners;

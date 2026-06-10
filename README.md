@@ -175,7 +175,7 @@ BOT_BANNER_AUTHOR=by: Zycryx
 BOT_REPOSITORY_URL=
 BOT_WEBSITE_URL=
 BOT_OWNER_NUMBERS=573001112233,51999888777
-BOT_FIXED_OWNER_JIDS=573001112233@s.whatsapp.net,51999888777@s.whatsapp.net
+BOT_FIXED_OWNER_JIDS=573001112233,51999888777
 BOT_MOD_GROUP_ID=
 DEFAULT_MENU_IMAGE=./resources/media/menus/Menu2.jpg
 
@@ -221,10 +221,10 @@ DB_SCHEMA=bot_dev
 BOT_OWNER_NUMBERS=573001112233,51999888777
 ```
 
-`BOT_FIXED_OWNER_JIDS` recibe JIDs completos. Estos owners pueden usar comandos marcados como `rowner`:
+`BOT_FIXED_OWNER_JIDS` recibe numeros internacionales sin `+` o JIDs completos. Estos owners pueden usar comandos marcados como `rowner`:
 
 ```env
-BOT_FIXED_OWNER_JIDS=573001112233@s.whatsapp.net,51999888777@s.whatsapp.net
+BOT_FIXED_OWNER_JIDS=573001112233,51999888777
 ```
 
 <a id="scripts"></a>
@@ -813,11 +813,16 @@ Documentacion tecnica viva:
 
 Resumen actual:
 
-- P0 esta cerrado: SDK interno, `content.service`, migracion base y test arquitectonico.
-- P1 esta en curso: `src/providers/downloads/youtube.provider.ts` ya centraliza YouTube y queda pendiente extraer Spotify, TikTok, Instagram, Facebook, MediaFire y Drive.
-- P2 y P4 estan cerrados: pruebas de core y seguridad operativa owner.
-- P3 queda desestimado hasta tener backend real con contrato versionado.
-- P5, P6 y P7 quedan como mejoras posteriores: estado runtime/escalabilidad, i18n y catalogo documental de comandos con ayuda `--help`.
+| Fase | Avance | Estado |
+|---|---:|---|
+| P0 - SDK/contenido | 100% | Cerrado como contrato base. |
+| P1 - Providers | 85% | En curso; descargas principales ya estan centralizadas. |
+| P2 - Testing nucleo | 100% | Cerrado para router, guards, context builder y servicios. |
+| P3 - Backend adapter | 0% | Desestimado hasta tener backend real. |
+| P4 - Seguridad owner | 100% | Cerrado para comandos sensibles auditados. |
+| P5 - Runtime/escalabilidad | 20% | Pendiente de inventario y fachadas. |
+| P6 - i18n/contenido | 25% | Base lista en `messages.json`; faltan locales. |
+| P7 - Catalogo comandos/help | 10% | Registrado; implementacion pendiente. |
 
 <a id="estado-actual"></a>
 ## 📌 Estado Actual
@@ -836,6 +841,12 @@ Resumen actual:
 - `content.service` centraliza mensajes, listas y templates desde `resources/data/messages.json`.
 - `src/providers/downloads/youtube.provider.ts` centraliza busqueda, seleccion de calidad, descarga y fallbacks de YouTube.
 - `descargas-play.ts` y `descargas-play2.ts` consumen el provider de YouTube; `youtube-download.helpers.ts` queda como re-export temporal.
+- `src/providers/downloads/spotify.provider.ts` centraliza busqueda y descarga de Spotify para `descargas-spotify.ts`.
+- `src/providers/downloads/tiktok.provider.ts` centraliza descarga y busqueda de TikTok para `descargas-tiktok.ts` y `descargas-tiktoksearch.ts`.
+- `src/providers/downloads/threads.provider.ts` centraliza descargas de Threads para `descargas-threads.ts`.
+- `src/providers/downloads/instagram.provider.ts` y `src/providers/downloads/facebook.provider.ts` centralizan descargas sociales para `descargas-ig.ts` y `descargas-fb.ts`.
+- `src/providers/downloads/mediafire.provider.ts` y `src/providers/downloads/drive.provider.ts` centralizan descargas de archivos para `descargas-mediafire.ts` y `descargas-drive.ts`.
+- `src/providers/provider.types.ts` define el contrato inicial `ProviderResult`/`ProviderFailureReason`.
 - `test:providers` valida el bloque inicial de providers.
 - Eventos de grupo separados por modulo: participantes, actualizaciones, solicitudes, recursos, metadata y mensajes auxiliares.
 - Hooks `before` optimizados con contexto compartido para evitar lecturas repetidas de settings, config y metadata.
@@ -845,20 +856,21 @@ Resumen actual:
 - VirusTotal integrado como hook configurable.
 - `src/**/*.ts` sin `any` ni `@ts-ignore`.
 - Build, typecheck y suite de pruebas pasan.
+- Scripts de base de datos alineados: migraciones registradas, `schema.ts` actualizado y `database/schema.sql` listo para bootstrap manual limpio desde cero.
 
 ## 🧭 Mejoras Pendientes Registradas
 
-| Prioridad | Mejora | Estado |
-|---|---|---|
-| P1 | Completar providers de descargas: Spotify, TikTok, Threads, Instagram, Facebook, MediaFire y Drive. | En curso despues de YouTube. |
-| P1 | Normalizar errores, timeouts y retries de providers. | Pendiente. |
-| P1 | Ampliar `test:providers` con casos sin red para fallback y parseo. | Pendiente. |
-| P1/P0 | Migrar `downloads` al SDK mientras se extraen providers. | Pendiente gradual. |
-| P0 deuda | Migrar familias legacy `messages`, `random`, `nsfw` y `audio` al SDK. | Pendiente. |
-| P3 | Definir backend REST/GraphQL real para `DATA_SOURCE=backend`. | Desestimado hasta tener backend. |
-| P5 | Centralizar cooldowns, pending actions, locks y fachadas de runtime global. | Pendiente. |
-| P6 | Preparar i18n con locales y fallback en `content.service`. | Pendiente. |
-| P7 | Crear `resources/data/commands.json` y ayuda `/<comando> --help`. | Registrado, no iniciado. |
+| Prioridad | Mejora | Avance | Estado |
+|---|---|---:|---|
+| P1 | Completar providers de descargas: Spotify, TikTok, Threads, Instagram, Facebook, MediaFire y Drive. | 100% | Bloque principal cerrado. |
+| P1 | Normalizar errores, timeouts y retries de providers. | 25% | Contrato inicial creado. |
+| P1 | Ampliar `test:providers` con casos sin red para fallback y parseo. | 30% | Fallback comun cubierto. |
+| P1/P0 | Migrar `downloads` al SDK mientras se extraen providers. | 20% | Pendiente gradual. |
+| P0 deuda | Migrar familias legacy `messages`, `random`, `nsfw` y `audio` al SDK. | 15% | Pendiente por familias. |
+| P3 | Definir backend REST/GraphQL real para `DATA_SOURCE=backend`. | 0% | Desestimado hasta tener backend. |
+| P5 | Centralizar cooldowns, pending actions, locks y fachadas de runtime global. | 20% | Hay locks/cache puntuales. |
+| P6 | Preparar i18n con locales y fallback en `content.service`. | 25% | Base de contenido lista. |
+| P7 | Crear `resources/data/commands.json` y ayuda `/<comando> --help`. | 10% | Registrado, no iniciado. |
 
 ## ✅ Buenas Practicas Para Nuevos Bots
 

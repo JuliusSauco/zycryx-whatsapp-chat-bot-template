@@ -43,8 +43,6 @@ export default definePlugin({
 
     const hasFoto = text.includes('--foto')
     const hasNoFoto = text.includes('--nofoto')
-    const hasHidetag = text.includes('--hidetag')
-    const hasNoHidetag = text.includes('--nohidetag')
     const hasGroupFoto = text.includes('--groupfoto')
     const hasNoGroupFoto = text.includes('--nogroupfoto')
     const cleanText = text
@@ -52,29 +50,24 @@ export default definePlugin({
         .replace('--nofoto', '')
         .replace('--groupfoto', '')
         .replace('--nogroupfoto', '')
-        .replace('--hidetag', '')
-        .replace('--nohidetag', '')
         .trim()
     const photoMode = hasFoto ? true : hasNoFoto ? false : undefined
-    const hidetag = hasHidetag ? true : hasNoHidetag ? false : undefined
     const groupPhoto = hasGroupFoto ? true : hasNoGroupFoto ? false : undefined
 
     if (command === 'setwelcome') {
         await setGroupTextMessage(m.chat, 'welcome', cleanText, photoMode, {
             registeredBy: m.lid || m.sender,
-            hidetag,
             groupPhoto,
         })
-        return m.reply(renderSavedMessage('group.setConfig.savedWelcome', '✅ Mensaje de bienvenida guardado{photo}{groupPhoto}{hidetag}.', hasFoto, hasNoFoto, hasGroupFoto, hasNoGroupFoto, hasHidetag, hasNoHidetag))
+        return m.reply(renderSavedMessage('group.setConfig.savedWelcome', hasFoto, hasNoFoto, hasGroupFoto, hasNoGroupFoto))
     }
 
     if (command === 'setbye') {
         await setGroupTextMessage(m.chat, 'bye', cleanText, photoMode, {
             registeredBy: m.lid || m.sender,
-            hidetag,
             groupPhoto,
         })
-        return m.reply(renderSavedMessage('group.setConfig.savedBye', '✅ Mensaje de despedida guardado{photo}{groupPhoto}{hidetag}.', hasFoto, hasNoFoto, hasGroupFoto, hasNoGroupFoto, hasHidetag, hasNoHidetag))
+        return m.reply(renderSavedMessage('group.setConfig.savedBye', hasFoto, hasNoFoto, hasGroupFoto, hasNoGroupFoto))
     }
 
     if (command === 'setpromote') {
@@ -89,11 +82,10 @@ export default definePlugin({
     }
 })
 
-function renderSavedMessage(templatePath: string, fallback: string, hasFoto: boolean, hasNoFoto: boolean, hasGroupFoto: boolean, hasNoGroupFoto: boolean, hasHidetag: boolean, hasNoHidetag: boolean): string {
+function renderSavedMessage(templatePath: string, hasFoto: boolean, hasNoFoto: boolean, hasGroupFoto: boolean, hasNoGroupFoto: boolean): string {
     return renderTemplate(getRequiredPluginMessage(templatePath), {
         photo: hasFoto ? getRequiredPluginMessage('group.setConfig.withImage') : hasNoFoto ? getRequiredPluginMessage('group.setConfig.withoutImage') : '',
         groupPhoto: hasGroupFoto ? getRequiredPluginMessage('group.setConfig.withGroupPhoto') : hasNoGroupFoto ? getRequiredPluginMessage('group.setConfig.withUserPhoto') : '',
-        hidetag: hasHidetag ? getRequiredPluginMessage('group.setConfig.withHidetag') : hasNoHidetag ? getRequiredPluginMessage('group.setConfig.withoutHidetag') : '',
     })
 }
 

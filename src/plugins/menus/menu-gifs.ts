@@ -1,4 +1,5 @@
 import {definePlugin} from '../../core/define-plugin.js';
+import {getNsfwSettings} from '../../services/group-settings.service.js';
 
 /**
  * Menú de los comandos `msg-gif-*` agrupados por categoría.
@@ -21,6 +22,7 @@ const AGRESIVO: GifEntry[] = [
     {emoji: '👋', cmd: 'slap', desc: 'Cachetada / golpear'},
     {emoji: '😱', cmd: 'ap', desc: 'Agarra los cachetes'},
     {emoji: '🍑', cmd: 'spank', desc: 'Nalgeas a alguien'},
+    {emoji: '🤰', cmd: 'preg', desc: 'Susto de embarazo'},
 ];
 
 const ADULTO: GifEntry[] = [
@@ -30,7 +32,6 @@ const ADULTO: GifEntry[] = [
     {emoji: '🤤', cmd: 'oral', desc: 'Sexo oral'},
     {emoji: '👯', cmd: 'trio', desc: 'Trío'},
     {emoji: '👩‍❤️‍👩', cmd: 'lesbian', desc: 'Sexo lésbico'},
-    {emoji: '🤰', cmd: 'preg', desc: 'Embarazar'},
 ];
 
 function renderSection(title: string, entries: GifEntry[]): string {
@@ -46,6 +47,11 @@ export default definePlugin({
     async execute(m, {conn, usedPrefix}) {
     const taguser = '@' + m.sender.split('@')[0];
     const pref = usedPrefix || '#';
+    const {modohorny} = m.isGroup ? await getNsfwSettings(m.chat) : {modohorny: false};
+    const adultTitle = modohorny ? 'ADULTO 🔞 ACTIVO' : 'ADULTO 🔞';
+    const adultHint = modohorny
+        ? '> Modo horny activo: estos comandos usan los GIFs explícitos de `nsfw`.'
+        : '> Modo horny apagado: estos comandos usan los GIFs normales.';
 
     const str = `\`Hola ${taguser} 💖彡\`
 
@@ -56,7 +62,8 @@ ${renderSection('CARIÑO', CARINIO)}
 
 ${renderSection('AGRESIVO', AGRESIVO)}
 
-${renderSection('ADULTO 🔞', ADULTO)}
+${renderSection(adultTitle, ADULTO)}
+${adultHint}
 
 *🅛🅞🅛🅘🅑🅞🅣-🅜🅓*`.trim();
 

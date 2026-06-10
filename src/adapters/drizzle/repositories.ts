@@ -12,10 +12,12 @@ import {reportsRepository} from './report.repository.js';
 import {statsRepository} from './stats.repository.js';
 import {subbotsRepository} from './subbot.repository.js';
 import {userRepository} from './user.repository.js';
+import {userGroupRoleRepository} from './user-group-role.repository.js';
 
 export function createDrizzleRepositories(): AppRepositories {
     return {
         users: userRepository,
+        userGroupRoles: userGroupRoleRepository,
         chats: chatsRepository,
         messages: messagesRepository,
         messageLogs: messageLogRepository,

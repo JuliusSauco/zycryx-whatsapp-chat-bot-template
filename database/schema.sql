@@ -46,7 +46,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     exp integer DEFAULT 0,
     banco integer DEFAULT 0,
     level integer DEFAULT 0,
-    role text DEFAULT 'novato',
+    role text NOT NULL DEFAULT 'novato',
+    role_description text,
     reg_time timestamp,
     serial_number text,
     sticker_packname text,
@@ -85,10 +86,13 @@ CREATE TABLE IF NOT EXISTS group_settings (
     photowelcome boolean DEFAULT true,
     welcome_registered_by text,
     welcome_hidetag boolean DEFAULT false,
+    welcome_hidetag_mode text DEFAULT 'off',
     welcome_group_photo boolean DEFAULT false,
+    bye boolean DEFAULT true,
     bye_config_id serial NOT NULL,
     bye_registered_by text,
     bye_hidetag boolean DEFAULT false,
+    bye_hidetag_mode text DEFAULT 'off',
     bye_group_photo boolean DEFAULT false,
     photobye boolean DEFAULT true,
     autolevelup boolean DEFAULT true,
@@ -128,6 +132,25 @@ CREATE TABLE IF NOT EXISTS messages (
     message_count integer DEFAULT 0,
     CONSTRAINT messages_user_id_group_id_pk PRIMARY KEY (user_id, group_id)
 );
+
+-- ------------------------------------------------------------
+-- Group user roles
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS user_group_roles (
+    group_id text NOT NULL,
+    user_id text NOT NULL,
+    role text NOT NULL,
+    role_description text,
+    updated_by text,
+    updated_at timestamp DEFAULT now(),
+    CONSTRAINT user_group_roles_group_id_user_id_pk PRIMARY KEY (group_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS user_group_roles_group_idx
+    ON user_group_roles (group_id);
+
+CREATE INDEX IF NOT EXISTS user_group_roles_user_idx
+    ON user_group_roles (user_id);
 
 -- ------------------------------------------------------------
 -- Message logs

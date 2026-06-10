@@ -35,6 +35,7 @@ export function createBackendRepositories(options: BackendRepositoryOptions): Ap
 
     return {
         users: createPendingRepository('users', client),
+        userGroupRoles: createPendingRepository('userGroupRoles', client),
         chats: createPendingRepository('chats', client),
         messages: createPendingRepository('messages', client),
         messageLogs: createPendingRepository('messageLogs', client),

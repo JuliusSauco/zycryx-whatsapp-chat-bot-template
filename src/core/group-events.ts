@@ -2,6 +2,7 @@ import './config.js';
 import chalk from 'chalk';
 import {logDebug, logError, logWarn} from '../lib/logger.js';
 import {deleteMessageCount, markBotLeftGroup} from '../services/chat.service.js';
+import {registerGroupAdmins} from '../services/group-role.service.js';
 import {handleGroupAntifake} from './group-antifake.js';
 import {sendAdminChangeMessage} from './group-admin-events.js';
 import {getCurrentBotJid} from './group-bot-identity.js';
@@ -57,6 +58,10 @@ export async function participantsUpdate(conn: EventConn, {id, participants, act
 
             switch (action) {
                 case 'add':
+                    if (participantJid.replace(/:\d+/, '') === getCurrentBotJid(conn)) {
+                        const registeredAdmins = await registerGroupAdmins(id, metadata);
+                        logDebug(chalk.green(`[ROLES] ${registeredAdmins} admins registrados para "${groupName}" al ingresar el bot`));
+                    }
                     if (settings.welcome) {
                         await sendWelcomeMessage({
                             conn,
@@ -86,7 +91,7 @@ export async function participantsUpdate(conn: EventConn, {id, participants, act
                         logError("❌ Error en 'remove':", err);
                     }
 
-                    if (settings.welcome) {
+                    if (settings.bye) {
                         await sendByeMessage({
                             conn,
                             groupId: id,
@@ -99,7 +104,7 @@ export async function participantsUpdate(conn: EventConn, {id, participants, act
                             settings,
                         });
                     } else {
-                        logDebug(chalk.yellow(`[BYE] omitido — welcome desactivado en "${groupName}"`));
+                        logDebug(chalk.yellow(`[BYE] omitido — bye desactivado en "${groupName}"`));
                     }
                     break;
 

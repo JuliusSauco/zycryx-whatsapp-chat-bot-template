@@ -5,8 +5,10 @@ import path from 'path'
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js'
 import {cleanJid} from '../../utils/jid.js'
 import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
+import {getNsfwSettings} from '../../services/group-settings.service.js'
 
 const GIF_FOLDER = path.join(process.cwd(), 'resources', 'media', 'reaction-gifs', 'dp')
+const NSFW_GIF_FOLDER = path.join(GIF_FOLDER, 'nsfw')
 
 /**
  * Trío — requiere 2 targets además del sender.
@@ -25,6 +27,12 @@ export default definePlugin({
     register: false,
     async execute(m, {conn, participants}) {
     try {
+        const {modohorny} = await getNsfwSettings(m.chat)
+        const selectedFolder = modohorny ? NSFW_GIF_FOLDER : GIF_FOLDER
+        const selectedFolderLabel = modohorny
+            ? 'resources/media/reaction-gifs/dp/nsfw'
+            : 'resources/media/reaction-gifs/dp'
+
         // 1. Recolectar targets (mención + quoted), excluyendo al sender y dedupeando.
         const rawTargets: string[] = []
         if (m.quoted?.sender) rawTargets.push(m.quoted.sender)
@@ -71,10 +79,12 @@ export default definePlugin({
         }
 
         // 3. Cargar mp4s disponibles.
-        const mp4s = getAvailableMp4s(GIF_FOLDER)
+        const mp4s = getAvailableMp4s(selectedFolder)
 
         if (!mp4s.length) {
-            await m.reply(getRequiredPluginMessage('messages.gifDp.ffmpegHint'))
+            await m.reply(renderTemplate(getRequiredPluginMessage('messages.gifReactions.ffmpegHint'), {
+                folder: selectedFolderLabel,
+            }))
             return
         }
 
@@ -82,7 +92,7 @@ export default definePlugin({
         const targetsResolved: ResolvedMention[] = finalTargets.map(j => resolveMention(j, groupParticipants))
         const targetTags = targetsResolved.map(x => x.tag)
         const randomFile = pickRandomFile(mp4s)
-        const filePath = path.join(GIF_FOLDER, randomFile)
+        const filePath = path.join(selectedFolder, randomFile)
         const texto = senderAlone
             ? renderTemplate(getRequiredPluginMessage('messages.gifDp.alone'), {sender: senderResolved.tag})
             : renderTemplate(getRequiredPluginMessage('messages.gifDp.trio'), {sender: senderResolved.tag, targets: targetTags.join('* y *')})
@@ -103,4 +113,3 @@ export default definePlugin({
     }
     }
 })
-

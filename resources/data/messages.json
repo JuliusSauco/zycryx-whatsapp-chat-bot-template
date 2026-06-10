@@ -545,12 +545,14 @@
       "profile": {
         "noRelationship": "❌ *No estás en ninguna relación, solter@ 🤑.*",
         "relationship": "💍 *Está en una relación con:* {spouseName}",
-        "caption": "*「 PERFIL 」*\n\n👤 *Nombre:* {name}\n☎️ *Número:* {phone}\n🌐 *Link:* wa.me/{waNumber}\n🌍 *Nacionalidad:* {nationality}{ageLine}{genderLine}{birthdayLine}\n💎 *Límite:* {limit}\n⚙️ *Nivel:* {level}\n◯ *Registrado:* {registered}\n\n{relationship}\n\n*•━━━━⪻ 𝙿𝙴𝚁𝙵𝙸𝙻 ⪼━━━━•*",
+        "caption": "*「 PERFIL 」*\n\n👤 *Nombre:* {name}\n🏷️ *Usuario:* {userTag}\n🌍 *Nacionalidad:* {nationality}{ageLine}{genderLine}{birthdayLine}\n💎 *Límite:* {limit}\n⚙️ *Nivel:* {level}\n◯ *Registrado:* {registered}{roleBlock}\n\n{relationship}\n\n*•━━━━⪻ 𝙿𝙴𝚁𝙵𝙸𝙻 ⪼━━━━•*",
         "registeredYes": "Sí",
         "registeredNo": "No",
         "ageLine": "\n🎈 *Edad:* {age}",
         "genderLine": "\n⚧️ *Género:* {gender}",
-        "birthdayLine": "\n🎂 *Cumpleaños:* {birthday}"
+        "birthdayLine": "\n🎂 *Cumpleaños:* {birthday}",
+        "roleBlock": "\n\n* Rol: {role}{descriptionLine}",
+        "roleDescriptionLine": "\n* {description}"
       },
       "leaderboard": {
         "cooldown": "⚠️ Hey @{user} Hay ya se mostró el ranking pendejo 🙄, Solo se muestra cada 3 minutos para evitar spam, Desplázate hacia arriba para verlo completo.👆",
@@ -716,27 +718,26 @@
         "varGroup": "@group → Nombre del grupo",
         "varDesc": "@desc → Descripción del grupo",
         "varAuthor": "@author → Quien ejecuta la acción",
-        "options": "*Opciones adicionales:*\n• --foto → Para enviar el mensaje con imagen\n• --nofoto → Para enviar solo texto\n• --groupfoto → Para priorizar la foto del grupo\n• --nogroupfoto → Para priorizar la foto del usuario\n• --hidetag → Para mencionar a todos\n• --nohidetag → Para mencionar solo al usuario",
+        "options": "*Opciones adicionales:*\n• --foto → Para enviar el mensaje con imagen\n• --nofoto → Para enviar solo texto\n• --groupfoto → Para priorizar la foto del grupo\n• --nogroupfoto → Para priorizar la foto del usuario",
         "exampleWelcome": "Hola @user, bienvenido a @group. Lee las reglas: @desc",
         "exampleBye": "Chao @user, gracias por estar en @group.",
         "examplePromote": "@user ha sido promovido por @author.",
         "exampleDemote": "@user ha sido degradado por @author.",
-        "savedWelcome": "✅ Mensaje de bienvenida guardado{photo}{groupPhoto}{hidetag}.",
-        "savedBye": "✅ Mensaje de despedida guardado{photo}{groupPhoto}{hidetag}.",
+        "savedWelcome": "✅ Mensaje de bienvenida guardado{photo}{groupPhoto}.",
+        "savedBye": "✅ Mensaje de despedida guardado{photo}{groupPhoto}.",
         "savedPromote": "✅ Mensaje de ascenso guardado.",
         "savedDemote": "✅ Mensaje de degradación guardado.",
         "withImage": " con imagen",
         "withoutImage": " sin imagen",
         "withGroupPhoto": " priorizando foto del grupo",
-        "withUserPhoto": " priorizando foto del usuario",
-        "withHidetag": " con hidetag",
-        "withoutHidetag": " sin hidetag"
+        "withUserPhoto": " priorizando foto del usuario"
       },
       "staff": {
         "missingText": "😾 Y el texto?",
         "emptyAdmins": "⚠️ No hay administradores en este grupo.",
+        "defaultMessage": "Lista de administradores del grupo",
         "message": "•══✪〘 *ＳＴＡＦＦ* 〙✪══•\n\n> *𝐒𝐞 𝐧𝐞𝐜𝐞𝐬𝐢𝐭𝐚 𝐥𝐚 𝐩𝐫𝐞𝐬𝐞𝐧𝐜𝐢𝐚 𝐝𝐞 𝐮𝐧 𝐚𝐝𝐦𝐢𝐧𝐬* \n\n*• Mensaje:* {message}\n\n👑 *Administradores ({total}):*\n{admins}\n\n> [ ⚠️ ️] *ᵁˢᵃʳ ᵉˢᵗᵉ ᶜᵒᵐᵃⁿᵈᵒ ˢᵒˡᵒ ᶜᵘᵃⁿᵈᵒ ˢᵉ ᵗʳᵃᵗᵉ ᵈᵉ ᵘⁿᵃ ᵉᵐᵉʳᵍᵉⁿᶜᶦᵃ*",
-        "item": "➥ @{user}"
+        "item": "➥ @{user}{roleLine}"
       },
       "tagAll": {
         "header": "*⺀ ＡＣＴＩＶＥ ＧＲＵＰＯ 🗣️⺀*\n\n",
@@ -765,6 +766,17 @@
       "setHorario": {
         "invalidFormat": "Formato correcto: /sethorario 23:00-06:00",
         "success": "⏰ Horario NSFW establecido a *{range}*"
+      },
+      "setRole": {
+        "ownerOrFounderOnly": "❌ Solo el owner del bot o el creador de este grupo puede asignar roles.",
+        "missingUser": "⚠️ Etiqueta o responde al admin al que quieres asignar rol.",
+        "targetNotAdmin": "⚠️ Ese usuario no es admin del grupo. Solo se pueden asignar roles de grupo a admins.",
+        "missingRole": "⚠️ Escribe el rol. Ejemplo: .setrole @usuario Moderador|Modera el grupo",
+        "saved": "✅ Rol registrado para @{user}: *{role}*.",
+        "savedWithoutDescription": "✅ Rol registrado para @{user}: *{role}*.\n⚠️ No se registró descripción porque no usaste el separador |."
+      },
+      "roles": {
+        "roleLine": "\n* Rol: {role}"
       },
       "setPp": {
         "missingImage": "*⚠️ Responde a una Imagen.*"
@@ -817,7 +829,7 @@
         "bannedYes": "🚫 Sí",
         "bannedNo": "✅ No",
         "nsfwSchedule": "🕒 ({schedule})",
-        "adminItem": "➥ @{user}",
+        "adminItem": "➥ @{user}{roleLine}",
         "response": "『 ＩＮＦＯ ＤＥ ＧＲＵＰＯ 』\n\n*• ID :* \n{groupId}\n\n*• Nombre :* \n{groupName}\n\n*• Miembros :*\n{memberCount}\n\n*• Creador del grupo :*\n@{owner}\n\n*• Admins :*\n{admins}\n\n*• 𝙲𝙾𝙽𝙵𝙸𝙶𝚄𝚁𝙰𝙲𝙸𝙾𝙽 𝙳𝙴𝙻 𝙶𝚁𝚄𝙿𝙾 :*\n• Bot : {botStatus} \n• Bienvenida: {welcome}\n• AntiLink: {antilink}\n• VirusTotal: {virusTotal}\n• AntiFake: {antifake}\n• Detect: {detect}\n• Modo horny: {modohorny}\n• NSFW horario permitido: {nsfwSchedule}\n• Registro mensajes: {messageLogging}\n• Grupo baneado: {banned}"
       },
       "ghosts": {
@@ -1095,11 +1107,13 @@
         "enabledIcon": "✅",
         "disabledIcon": "❌",
         "notGroupIcon": "⚠️",
-        "menu": "*『 ⧼⧼⧼ ＣＯＮＦＩＧＵＲＡＣＩＯ́Ｎ ⧽⧽⧽ 』*\n\n> *Seleccione una opción de la lista*\n> *Para empezar a Configurar*\n\n● *Avisos de la Configuracion:*\n✅ ⇢ *Función Activada*\n❌ ⇢ *Función Desactivada*\n⚠️ ⇢ *Este Chat no es un Grupo*\n\n*『 FUNCIONES PARA ADMINS 』*\n\n🎉 BIENVENIDA {welcome}\n• Mensaje de bienvenida\n• {command} welcome\n\n📢 HIDETAG BIENVENIDA {welcomeHidetag}\n• Mencionar a todos en la bienvenida\n• {command} welcomehidetag\n\n📢 HIDETAG DESPEDIDA {byeHidetag}\n• Mencionar a todos en la despedida\n• {command} byehidetag\n\n📣 DETECTAR AVISOS {detect}\n• Avisar cambios en el grupo\n• {command} detect\n\n🔗 ANTILINK {antilink}\n• Detectar enlaces de grupo\n• {command} antilink\n\n🌐 ANTILINK2 {antilink2}\n• Detectar cualquier link\n• {command} antilink2\n\n🛡️ VIRUSTOTAL {virusTotal}\n• Analizar archivos y enlaces enviados al grupo\n• {command} virustotal\n\n🕵️ ANTIFAKE {antifake}\n• Bloquear números de otros países\n• {command} antifake\n\n🔞 NSFW {modohorny}\n• Contenido +18 en stickers/gifs\n• {command} modohorny\n\n🔒 MODO SOLO ADMIN {modoadmin}\n• Solo admins pueden usar comandos\n• {command} modoadmin\n\n🛂 AUTOACEPTAR {autoAccept}\n• Gestionar solicitudes de ingreso al grupo\n• {prefix}enable autoaceptar\n• {prefix}enable autoaceptar --hidetagadmin\n• {prefix}enable autoaceptar --hidetag\n• {prefix}disable autoaceptar\n• {prefix}disable autoaceptar --hidetagadmin\n• {prefix}disable autoaceptar --hidetag\n\n📝 REGISTRO MENSAJES {messageLogging}\n• Guardar mensajes de texto del grupo\n• {command} registromsg\n\n\n*『 FUNCIONES PARA OWNER 』*\n\n🚫 ANTIPRIVADO {antiPrivate}\n• Bloquear uso en privado\n• {command} antiprivate\n\n📵 ANTILLAMADAS {antiCall}\n• Bloquear llamadas\n• {command} anticall",
+        "menu": "*『 ⧼⧼⧼ ＣＯＮＦＩＧＵＲＡＣＩＯ́Ｎ ⧽⧽⧽ 』*\n\n> *Seleccione una opción de la lista*\n> *Para empezar a Configurar*\n\n● *Avisos de la Configuracion:*\n✅ ⇢ *Función Activada*\n❌ ⇢ *Función Desactivada*\n⚠️ ⇢ *Este Chat no es un Grupo*\n\n*『 FUNCIONES PARA ADMINS 』*\n\n🎉 BIENVENIDA {welcome}\n• Hidetag: {welcomeHidetag}\n• {prefix}enable welcome\n• {prefix}enable welcome --hidetagadmin\n• {prefix}enable welcome --hidetag\n• {prefix}disable welcome\n• {prefix}disable welcome --hidetagadmin\n• {prefix}disable welcome --hidetag\n\n👋 DESPEDIDA {bye}\n• Hidetag: {byeHidetag}\n• {prefix}enable bye\n• {prefix}enable bye --hidetagadmin\n• {prefix}enable bye --hidetag\n• {prefix}disable bye\n• {prefix}disable bye --hidetagadmin\n• {prefix}disable bye --hidetag\n\n📣 DETECTAR AVISOS {detect}\n• Avisar cambios en el grupo\n• {command} detect\n\n🔗 ANTILINK {antilink}\n• Detectar enlaces de grupo\n• {command} antilink\n\n🌐 ANTILINK2 {antilink2}\n• Detectar cualquier link\n• {command} antilink2\n\n🛡️ VIRUSTOTAL {virusTotal}\n• Analizar archivos y enlaces enviados al grupo\n• {command} virustotal\n\n🕵️ ANTIFAKE {antifake}\n• Bloquear números de otros países\n• {command} antifake\n\n🔞 NSFW {modohorny}\n• Contenido +18 en stickers/gifs\n• {command} modohorny\n\n🔒 MODO SOLO ADMIN {modoadmin}\n• Solo admins pueden usar comandos\n• {command} modoadmin\n\n🛂 AUTOACEPTAR {autoAccept}\n• Gestionar solicitudes de ingreso al grupo\n• {prefix}enable autoaceptar\n• {prefix}enable autoaceptar --hidetagadmin\n• {prefix}enable autoaceptar --hidetag\n• {prefix}disable autoaceptar\n• {prefix}disable autoaceptar --hidetagadmin\n• {prefix}disable autoaceptar --hidetag\n\n📝 REGISTRO MENSAJES {messageLogging}\n• Guardar mensajes de texto del grupo\n• {command} registromsg\n\n\n*『 FUNCIONES PARA OWNER 』*\n\n🚫 ANTIPRIVADO {antiPrivate}\n• Bloquear uso en privado\n• {command} antiprivate\n\n📵 ANTILLAMADAS {antiCall}\n• Bloquear llamadas\n• {command} anticall",
         "groupOnly": "⚠️ Este comando solo se puede usar dentro de un grupo.",
         "adminOnly": "⚠️ Solo los admins puede usar este comando.",
         "ownerOrSubbotOnly": "❌ Solo el owner o subbots pueden cambiar esto.",
+        "ownerOrGroupCreatorOnly": "❌ Solo el owner del bot o el creador del grupo puede cambiar esto.",
         "autoAcceptConfigured": "🛂 La opción *autoaceptar* quedó configurada como:\n{status}",
+        "greetingConfigured": "✅ La opción *{type}* quedó *{status}*.\nHidetag: *{hidetag}*",
         "targetAll": "todo el bot",
         "targetUser": "este usuario",
         "targetChat": "este chat",

@@ -2,7 +2,12 @@ import {and, eq, lt, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {groupSettings} from '../../db/schema.js';
 import type {GroupSettingsRepository} from '../../ports/repositories.js';
-import type {AutoAcceptMode} from '../../types/config.js';
+import type {AutoAcceptMode, GreetingHidetagMode} from '../../types/config.js';
+
+function normalizeGreetingHidetagMode(mode: string | null, legacyHidetag: boolean | null): GreetingHidetagMode {
+    if (mode === 'admin' || mode === 'all' || mode === 'off') return mode;
+    return legacyHidetag ? 'all' : 'off';
+}
 
 export const groupSettingsRepository: GroupSettingsRepository = {
     async findByGroupId(groupId) {
@@ -25,10 +30,13 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             photowelcome: row.photowelcome ?? true,
             welcomeRegisteredBy: row.welcomeRegisteredBy,
             welcomeHidetag: row.welcomeHidetag ?? false,
+            welcomeHidetagMode: normalizeGreetingHidetagMode(row.welcomeHidetagMode, row.welcomeHidetag),
             welcomeGroupPhoto: row.welcomeGroupPhoto ?? false,
+            bye: row.bye ?? true,
             byeConfigId: row.byeConfigId,
             byeRegisteredBy: row.byeRegisteredBy,
             byeHidetag: row.byeHidetag ?? false,
+            byeHidetagMode: normalizeGreetingHidetagMode(row.byeHidetagMode, row.byeHidetag),
             byeGroupPhoto: row.byeGroupPhoto ?? false,
             photobye: row.photobye ?? true,
             autolevelup: row.autolevelup ?? true,
@@ -102,6 +110,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
     async setBooleanFlag(groupId, flag, value) {
         const columns = {
             welcome: groupSettings.welcome,
+            bye: groupSettings.bye,
             detect: groupSettings.detect,
             antilink: groupSettings.antilink,
             antilink2: groupSettings.antilink2,
@@ -135,7 +144,22 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             });
     },
 
-    async setTextMessage({groupId, type, text, photoMode, registeredBy, hidetag, groupPhoto}) {
+    async setGreetingHidetagMode(groupId, type, mode) {
+        const normalizedMode = mode || 'off';
+        const isAllMode = normalizedMode === 'all';
+        const values = type === 'welcome'
+            ? {welcomeHidetagMode: normalizedMode, welcomeHidetag: isAllMode}
+            : {byeHidetagMode: normalizedMode, byeHidetag: isAllMode};
+
+        await orm.insert(groupSettings)
+            .values({groupId, ...values})
+            .onConflictDoUpdate({
+                target: groupSettings.groupId,
+                set: values,
+            });
+    },
+
+    async setTextMessage({groupId, type, text, photoMode, registeredBy, groupPhoto}) {
         const textPropertyByType = {
             welcome: 'sWelcome',
             bye: 'sBye',
@@ -161,10 +185,6 @@ export const groupSettingsRepository: GroupSettingsRepository = {
                 values.welcomeRegisteredBy = registeredBy;
                 updates.welcomeRegisteredBy = registeredBy;
             }
-            if (typeof hidetag === 'boolean') {
-                values.welcomeHidetag = hidetag;
-                updates.welcomeHidetag = hidetag;
-            }
             if (typeof groupPhoto === 'boolean') {
                 values.welcomeGroupPhoto = groupPhoto;
                 updates.welcomeGroupPhoto = groupPhoto;
@@ -174,10 +194,6 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             if (registeredBy) {
                 values.byeRegisteredBy = registeredBy;
                 updates.byeRegisteredBy = registeredBy;
-            }
-            if (typeof hidetag === 'boolean') {
-                values.byeHidetag = hidetag;
-                updates.byeHidetag = hidetag;
             }
             if (typeof groupPhoto === 'boolean') {
                 values.byeGroupPhoto = groupPhoto;

@@ -5,12 +5,16 @@ import path from 'path';
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js';
 import {loadCachedJsonResource} from '../../lib/local-json-resource.js';
 import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {getNsfwSettings} from '../../services/group-settings.service.js';
 
 interface ReactionResource {
     help: string;
     commands: string[];
     folder: string;
+    nsfwFolder?: string;
     caption: string;
+    nsfwCaption?: string;
+    adult?: boolean;
 }
 
 type ReactionManifest = Record<string, ReactionResource>;
@@ -28,16 +32,18 @@ export default definePlugin({
     try {
         const reaction = aliasMap[command.toLowerCase()];
         if (!reaction) return m.reply(getRequiredPluginMessage('messages.gifReactions.missingReaction'));
+        const nsfwEnabled = reaction.adult ? (await getNsfwSettings(m.chat)).modohorny === true : false;
 
         const rawMentions: string[] = Array.isArray(m.mentionedJid) ? [...m.mentionedJid] : [];
         if (m.quoted?.sender) rawMentions.push(m.quoted.sender);
         if (!rawMentions.length) rawMentions.push(m.sender);
 
-        const folder = path.resolve(process.cwd(), reaction.folder);
+        const selectedFolder = nsfwEnabled && reaction.nsfwFolder ? reaction.nsfwFolder : reaction.folder;
+        const folder = path.resolve(process.cwd(), selectedFolder);
         const mp4s = getAvailableMp4s(folder);
 
         if (!mp4s.length) {
-            await m.reply(buildFfmpegHint(reaction.folder));
+            await m.reply(buildFfmpegHint(selectedFolder));
             return;
         }
 
@@ -49,7 +55,8 @@ export default definePlugin({
             ...mentionedResolved.map(mention => mention.mentionJid),
         ]));
 
-        const caption = formatReactionCaption(reaction.caption, senderResolved.tag, mentionedResolved.map(mention => mention.tag));
+        const captionTemplate = nsfwEnabled && reaction.nsfwCaption ? reaction.nsfwCaption : reaction.caption;
+        const caption = formatReactionCaption(captionTemplate, senderResolved.tag, mentionedResolved.map(mention => mention.tag));
 
         await conn.sendMessage(m.chat, {
             video: {url: path.join(folder, pickRandomFile(mp4s))},
