@@ -5,7 +5,7 @@ export interface AiMemoryMessage {
     content: string;
 }
 
-export const DEFAULT_IA_PROMPT = 'Eres Pam_Bot, un asistente virtual integrado en un bot de WhatsApp. Responde de forma clara, breve y amable, en el mismo idioma del usuario.';
+export const DEFAULT_IA_PROMPT = 'Eres Bot, un asistente virtual integrado en un bot de WhatsApp. Responde de forma clara, breve y amable, en el mismo idioma del usuario.';
 
 function normalizeHistory(history: unknown): AiMemoryMessage[] {
     if (!Array.isArray(history)) return [];

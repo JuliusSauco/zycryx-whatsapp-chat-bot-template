@@ -8,6 +8,7 @@ import {buildAliasMap, buildAliasRegex} from '../../utils/command-alias.js'
 import {pickRandom} from '../../utils/random.js'
 import {randomAnimeContent, type RandomContentItem} from './random-anime.data.js'
 import {getRequiredPluginMessage} from '../../lib/message-template.js'
+import {canUseNsfw} from '../../utils/nsfw-access.js'
 
 
 interface WaifuPicsResponse {
@@ -22,7 +23,7 @@ export default definePlugin({
     help: Object.keys(aliasMap),
     tags: ['randow'],
     register: true,
-    async execute(m, {conn, command}) {
+    async execute(m, {conn, command, isAdmin, isOwner, isGroupCreator}) {
     try {
         const item = aliasMap[command.toLowerCase()]
         if (!item) return m.reply(getRequiredPluginMessage('random.anime.unknownCommand'))
@@ -45,8 +46,7 @@ export default definePlugin({
             if (!item.api) return m.reply(getRequiredPluginMessage('random.anime.missingApi'))
             let apiPath = `https://api.waifu.pics/sfw/${item.api}`
             try {
-                const {modohorny} = await getNsfwSettings(m.chat)
-                const isNSFW = modohorny === true
+                const isNSFW = canUseNsfw(await getNsfwSettings(m.chat), {isAdmin, isOwner, isGroupCreator})
                 if (isNSFW && item.nsfwApi) {
                     apiPath = `https://api.waifu.pics/nsfw/${item.nsfwApi}`
                 }

@@ -1107,13 +1107,19 @@
         "enabledIcon": "✅",
         "disabledIcon": "❌",
         "notGroupIcon": "⚠️",
-        "menu": "*『 ⧼⧼⧼ ＣＯＮＦＩＧＵＲＡＣＩＯ́Ｎ ⧽⧽⧽ 』*\n\n> *Seleccione una opción de la lista*\n> *Para empezar a Configurar*\n\n● *Avisos de la Configuracion:*\n✅ ⇢ *Función Activada*\n❌ ⇢ *Función Desactivada*\n⚠️ ⇢ *Este Chat no es un Grupo*\n\n*『 FUNCIONES PARA ADMINS 』*\n\n🎉 BIENVENIDA {welcome}\n• Hidetag: {welcomeHidetag}\n• {prefix}enable welcome\n• {prefix}enable welcome --hidetagadmin\n• {prefix}enable welcome --hidetag\n• {prefix}disable welcome\n• {prefix}disable welcome --hidetagadmin\n• {prefix}disable welcome --hidetag\n\n👋 DESPEDIDA {bye}\n• Hidetag: {byeHidetag}\n• {prefix}enable bye\n• {prefix}enable bye --hidetagadmin\n• {prefix}enable bye --hidetag\n• {prefix}disable bye\n• {prefix}disable bye --hidetagadmin\n• {prefix}disable bye --hidetag\n\n📣 DETECTAR AVISOS {detect}\n• Avisar cambios en el grupo\n• {command} detect\n\n🔗 ANTILINK {antilink}\n• Detectar enlaces de grupo\n• {command} antilink\n\n🌐 ANTILINK2 {antilink2}\n• Detectar cualquier link\n• {command} antilink2\n\n🛡️ VIRUSTOTAL {virusTotal}\n• Analizar archivos y enlaces enviados al grupo\n• {command} virustotal\n\n🕵️ ANTIFAKE {antifake}\n• Bloquear números de otros países\n• {command} antifake\n\n🔞 NSFW {modohorny}\n• Contenido +18 en stickers/gifs\n• {command} modohorny\n\n🔒 MODO SOLO ADMIN {modoadmin}\n• Solo admins pueden usar comandos\n• {command} modoadmin\n\n🛂 AUTOACEPTAR {autoAccept}\n• Gestionar solicitudes de ingreso al grupo\n• {prefix}enable autoaceptar\n• {prefix}enable autoaceptar --hidetagadmin\n• {prefix}enable autoaceptar --hidetag\n• {prefix}disable autoaceptar\n• {prefix}disable autoaceptar --hidetagadmin\n• {prefix}disable autoaceptar --hidetag\n\n📝 REGISTRO MENSAJES {messageLogging}\n• Guardar mensajes de texto del grupo\n• {command} registromsg\n\n\n*『 FUNCIONES PARA OWNER 』*\n\n🚫 ANTIPRIVADO {antiPrivate}\n• Bloquear uso en privado\n• {command} antiprivate\n\n📵 ANTILLAMADAS {antiCall}\n• Bloquear llamadas\n• {command} anticall",
+        "menu": "*『 ⧼⧼⧼ ＣＯＮＦＩＧＵＲＡＣＩＯ́Ｎ ⧽⧽⧽ 』*\n\n> *Seleccione una opción de la lista*\n> *Para empezar a Configurar*\n\n● *Avisos de la Configuracion:*\n✅ ⇢ *Función Activada*\n❌ ⇢ *Función Desactivada*\n⚠️ ⇢ *Este Chat no es un Grupo*\n\n*『 FUNCIONES PARA ADMINS 』*\n\n🎉 BIENVENIDA {welcome}\n• Hidetag: {welcomeHidetag}\n• {prefix}enable welcome\n• {prefix}enable welcome --hidetagadmin\n• {prefix}enable welcome --hidetag\n• {prefix}disable welcome\n• {prefix}disable welcome --hidetagadmin\n• {prefix}disable welcome --hidetag\n\n👋 DESPEDIDA {bye}\n• Hidetag: {byeHidetag}\n• {prefix}enable bye\n• {prefix}enable bye --hidetagadmin\n• {prefix}enable bye --hidetag\n• {prefix}disable bye\n• {prefix}disable bye --hidetagadmin\n• {prefix}disable bye --hidetag\n\n📣 DETECTAR AVISOS {detect}\n• Avisar cambios en el grupo\n• {command} detect\n\n🔗 ANTILINK {antilink}\n• Detectar enlaces de grupo\n• {command} antilink\n\n🌐 ANTILINK2 {antilink2}\n• Detectar cualquier link\n• {command} antilink2\n\n🛡️ VIRUSTOTAL {virusTotal}\n• Analizar archivos y enlaces enviados al grupo\n• {command} virustotal\n\n🤖 AUTORESPONDER {autoresponder}\n• Acceso: {autoresponderAccess}\n• Trigger: {autoresponderTrigger}\n• {prefix}enable autoresponder --all\n• {prefix}enable autoresponder --admin\n• {prefix}enable autoresponder --superadmin\n• {prefix}enable autoresponder --owner\n• {prefix}enable autoresponder --triggerall\n• {prefix}disable autoresponder --triggerall\n• {prefix}disable autoresponder\n\n🕵️ ANTIFAKE {antifake}\n• Bloquear números de otros países\n• {command} antifake\n\n🔞 NSFW {modohorny}\n• Contenido +18 en stickers/gifs\n• {command} modohorny\n\n🔐 ACCESO DEL BOT: {botAccess}\n• {prefix}enable bot --all\n• {prefix}enable bot --admin\n• {prefix}enable bot --superadmin\n• {prefix}enable bot --owner\n\n🛂 AUTOACEPTAR {autoAccept}\n• Gestionar solicitudes de ingreso al grupo\n• {prefix}enable autoaceptar\n• {prefix}enable autoaceptar --hidetagadmin\n• {prefix}enable autoaceptar --hidetag\n• {prefix}disable autoaceptar\n• {prefix}disable autoaceptar --hidetagadmin\n• {prefix}disable autoaceptar --hidetag\n\n📝 REGISTRO MENSAJES {messageLogging}\n• Guardar mensajes de texto del grupo\n• {command} registromsg\n\n\n*『 FUNCIONES PARA OWNER 』*\n\n🚫 ANTIPRIVADO {antiPrivate}\n• Bloquear uso en privado\n• {command} antiprivate\n\n📵 ANTILLAMADAS {antiCall}\n• Bloquear llamadas\n• {command} anticall",
         "groupOnly": "⚠️ Este comando solo se puede usar dentro de un grupo.",
         "adminOnly": "⚠️ Solo los admins puede usar este comando.",
         "ownerOrSubbotOnly": "❌ Solo el owner o subbots pueden cambiar esto.",
         "ownerOrGroupCreatorOnly": "❌ Solo el owner del bot o el creador del grupo puede cambiar esto.",
+        "ownerOnly": "❌ Solo el owner del bot puede cambiar esto.",
         "autoAcceptConfigured": "🛂 La opción *autoaceptar* quedó configurada como:\n{status}",
         "greetingConfigured": "✅ La opción *{type}* quedó *{status}*.\nHidetag: *{hidetag}*",
+        "botAccessConfigured": "🔐 El acceso del bot quedó configurado para: *{status}*",
+        "autoresponderConfigured": "🤖 Autoresponder quedó *{status}* para: *{access}*",
+        "autoresponderTriggerConfigured": "🤖 Autoresponder ahora responde por: *{trigger}*",
+        "nsfwConfigured": "🔞 NSFW quedó *{status}* para: *{access}*",
+        "featureAccessConfigured": "🧩 *{feature}* quedó configurado para: *{access}*",
         "targetAll": "todo el bot",
         "targetUser": "este usuario",
         "targetChat": "este chat",
@@ -1211,6 +1217,12 @@
             "restricted": "admins"
           },
           {
+            "emoji": "⚙️",
+            "command": "enable",
+            "description": "Configuración on/off por secciones, permisos y familias.",
+            "restricted": "según permisos"
+          },
+          {
             "emoji": "👑",
             "command": "menuowner",
             "description": "Mantenimiento global y comandos privados del bot.",
@@ -1219,7 +1231,12 @@
           {
             "emoji": "🔧",
             "command": "menutools",
-            "description": "Herramientas, convertidores e inspección."
+            "description": "Herramientas, utilidades e inspección."
+          },
+          {
+            "emoji": "🔄",
+            "command": "menuconvertidores",
+            "description": "Convertidores de audio, stickers, texto y archivos."
           },
           {
             "emoji": "🎮",

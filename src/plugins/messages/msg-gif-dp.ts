@@ -6,6 +6,7 @@ import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../u
 import {cleanJid} from '../../utils/jid.js'
 import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 import {getNsfwSettings} from '../../services/group-settings.service.js'
+import {canUseNsfw} from '../../utils/nsfw-access.js'
 
 const GIF_FOLDER = path.join(process.cwd(), 'resources', 'media', 'reaction-gifs', 'dp')
 const NSFW_GIF_FOLDER = path.join(GIF_FOLDER, 'nsfw')
@@ -25,11 +26,11 @@ export default definePlugin({
     tags: ['fun'],
     command: /^(trio|trio-2h-1m|trio-hmh)$/i,
     register: false,
-    async execute(m, {conn, participants}) {
+    async execute(m, {conn, participants, isAdmin, isOwner, isGroupCreator}) {
     try {
-        const {modohorny} = await getNsfwSettings(m.chat)
-        const selectedFolder = modohorny ? NSFW_GIF_FOLDER : GIF_FOLDER
-        const selectedFolderLabel = modohorny
+        const nsfwEnabled = canUseNsfw(await getNsfwSettings(m.chat), {isAdmin, isOwner, isGroupCreator})
+        const selectedFolder = nsfwEnabled ? NSFW_GIF_FOLDER : GIF_FOLDER
+        const selectedFolderLabel = nsfwEnabled
             ? 'resources/media/reaction-gifs/dp/nsfw'
             : 'resources/media/reaction-gifs/dp'
 

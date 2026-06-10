@@ -55,6 +55,7 @@ export interface PluginContext {
     isOwner: boolean;
     isROwner: boolean;
     isAdmin: boolean;
+    isGroupCreator?: boolean;
     isBotAdmin: boolean;
     isGroup: boolean;
     botConfig?: SubbotConfig;

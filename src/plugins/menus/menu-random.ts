@@ -1,10 +1,10 @@
 import {createMenuPlugin} from './menu-renderer.js';
 
 export default createMenuPlugin({
-    title: '🪄 MENU RANDOM - ANIME, MEMES Y SORPRESAS',
+    title: '🪄 MENU RANDOM Y DIVERSION',
     help: ['menurandom'],
     tags: ['main'],
     command: /^(menurandom|menurandow|menuanime|random|randow)$/i,
-    intro: 'Imágenes, memes y acciones aleatorias SFW para darle variedad al chat.',
-    pluginTags: ['randow'],
+    intro: 'Imágenes, memes, frases, juegos sociales y acciones SFW para darle variedad al chat.',
+    pluginTags: ['randow', 'fun'],
 });

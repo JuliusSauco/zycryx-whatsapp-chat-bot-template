@@ -29,6 +29,21 @@ export const fallbackEmojiByTag: Record<string, string> = {
 
 export const commandMetadata: Record<string, MenuCommandMetadata> = {
     menu: {emoji: '📚', usage: 'menu', description: 'Abre el índice principal con accesos a todos los menús.'},
+    menu2: {emoji: '🔊', usage: 'menu2', description: 'Muestra audios y frases que responden sin prefijo.'},
+    menu3: {emoji: '🎞️', usage: 'menu3', description: 'Muestra GIFs de reacción organizados por categoría.'},
+    menugrupo: {emoji: '👥', usage: 'menugrupo', description: 'Muestra comandos generales para grupos.'},
+    menuadmin: {emoji: '🛡️', usage: 'menuadmin', description: 'Muestra moderación y configuración del grupo.'},
+    menuowner: {emoji: '👑', usage: 'menuowner', description: 'Muestra mantenimiento global y comandos owner.'},
+    menutools: {emoji: '🔧', usage: 'menutools', description: 'Muestra utilidades, inspección, traducción y herramientas.'},
+    menuconvertidores: {emoji: '🔄', usage: 'menuconvertidores', description: 'Muestra comandos para convertir audio, archivos, texto y stickers.'},
+    menujuegos: {emoji: '🎮', usage: 'menujuegos', description: 'Muestra juegos, retos y dinámicas sociales.'},
+    menurpg: {emoji: '💎', usage: 'menurpg', description: 'Muestra economía, registro, niveles y gacha.'},
+    menudescargas: {emoji: '🚀', usage: 'menudescargas', description: 'Muestra descargas de música, video, redes y archivos.'},
+    menubuscar: {emoji: '🔍', usage: 'menubuscar', description: 'Muestra buscadores, letras, imágenes e IA.'},
+    menusticker: {emoji: '🧧', usage: 'menusticker', description: 'Muestra creación, edición y descarga de stickers.'},
+    menurandom: {emoji: '🪄', usage: 'menurandom', description: 'Muestra anime, memes, frases y diversión SFW.'},
+    menunsfw: {emoji: '🔞', usage: 'menunsfw', description: 'Muestra contenido adulto si está habilitado en el grupo.'},
+    menusubbot: {emoji: '✨', usage: 'menusubbot', description: 'Muestra sesiones y personalización de subbots.'},
     uptime: {emoji: '⏱️', usage: 'uptime', description: 'Muestra cuánto tiempo lleva activo el bot.'},
     speedtest: {emoji: '📡', usage: 'speedtest', description: 'Mide la velocidad y latencia del entorno del bot.'},
     sc: {emoji: '🧾', usage: 'sc', description: 'Muestra información del código fuente o runtime del bot.'},
@@ -63,8 +78,27 @@ export const commandMetadata: Record<string, MenuCommandMetadata> = {
     setprompt: {emoji: '🧠', usage: 'setprompt <texto>', description: 'Configura el prompt de respuesta automática del grupo.'},
     sethorario: {emoji: '🕒', usage: 'sethorario <HH:MM-HH:MM>', description: 'Define horarios para funciones configurables del grupo.'},
     setrole: {emoji: '🪪', usage: 'setrole @usuario Rol|Descripcion', description: 'Asigna un rol visible a un admin del grupo.'},
-    enable: {emoji: '✅', usage: 'enable <opcion>', description: 'Activa una función configurable del grupo o subbot.'},
-    disable: {emoji: '❌', usage: 'disable <opcion>', description: 'Desactiva una función configurable del grupo o subbot.'},
+    enable: {emoji: '✅', usage: 'enable', description: 'Abre el menú on/off con secciones configurables según tus permisos.'},
+    'enable saludos': {emoji: '👋', usage: 'enable saludos', description: 'Muestra configuración de bienvenida, despedida e hidetag.'},
+    'enable moderacion': {emoji: '🛡️', usage: 'enable moderacion', description: 'Muestra seguridad, antilinks, antifake, registro y autoaceptar.'},
+    'enable acceso': {emoji: '🔐', usage: 'enable acceso', description: 'Muestra permisos de uso del bot por nivel del grupo.'},
+    'enable familias': {emoji: '🗂️', usage: 'enable familias', description: 'Muestra permisos de uso por familias de comandos.'},
+    'enable ia': {emoji: '🧠', usage: 'enable ia', description: 'Muestra autoresponder, trigger, prompt y memoria.'},
+    'enable adulto': {emoji: '🔞', usage: 'enable adulto', description: 'Muestra modo adulto y horario NSFW.'},
+    'enable subbot': {emoji: '✨', usage: 'enable subbot', description: 'Muestra configuraciones owner de subbot.'},
+    'enable nsfw': {emoji: '🔞', usage: 'enable nsfw --admin', description: 'Activa contenido adulto por nivel de usuario en el grupo.'},
+    'enable bot': {emoji: '🤖', usage: 'enable bot --admin', description: 'Define quién puede usar comandos del bot en el grupo.'},
+    'enable autoresponder': {emoji: '🧠', usage: 'enable autoresponder --admin', description: 'Define quién activa el autoresponder por mención o gatillo.'},
+    'enable autoresponder --triggerall': {emoji: '💬', usage: 'enable autoresponder --triggerall', description: 'Hace que el autoresponder responda todos los mensajes del grupo.'},
+    'enable juegos': {emoji: '🎮', usage: 'enable juegos --admin', description: 'Define quién puede usar comandos de juegos en este grupo.'},
+    'enable herramientas': {emoji: '🔧', usage: 'enable herramientas --admin', description: 'Define quién puede usar herramientas en este grupo.'},
+    'enable rpg': {emoji: '💎', usage: 'enable rpg --admin', description: 'Define quién puede usar RPG, economía y gacha en este grupo.'},
+    'enable descargas': {emoji: '🚀', usage: 'enable descargas --admin', description: 'Define quién puede usar descargas en este grupo.'},
+    'enable buscadores': {emoji: '🔍', usage: 'enable buscadores --admin', description: 'Define quién puede usar búsquedas e IA de consulta en este grupo.'},
+    'enable stickers': {emoji: '🧧', usage: 'enable stickers --admin', description: 'Define quién puede usar stickers en este grupo.'},
+    'enable convertidores': {emoji: '🔄', usage: 'enable convertidores --admin', description: 'Define quién puede usar convertidores en este grupo.'},
+    'enable diversion': {emoji: '🪄', usage: 'enable diversion --admin', description: 'Define quién puede usar comandos random y diversión SFW.'},
+    disable: {emoji: '❌', usage: 'disable <opcion>', description: 'Desactiva una función o regresa una familia configurable a todos.'},
 
     backup: {emoji: '💾', usage: 'backup', description: 'Genera un respaldo de archivos o datos importantes del bot.'},
     restart: {emoji: '🔄', usage: 'restart', description: 'Reinicia el proceso del bot.'},
@@ -174,9 +208,16 @@ export function getCommandMetadata(command: string, tags: string[]): MenuCommand
 }
 
 export function normalizeCommandKey(command: string): string {
-    return command
+    const parts = command
         .trim()
         .replace(/^[#./!]/, '')
-        .split(/\s+/)[0]
-        .toLowerCase();
+        .split(/\s+/)
+        .map(part => part.toLowerCase());
+    const first = parts[0] || '';
+    const second = parts[1] || '';
+    const exact = parts.join(' ');
+    if (commandMetadata[exact]) return exact;
+    if (first === 'enable' && second) return `${first} ${second}`;
+    if (first === 'disable' && second) return commandMetadata[`${first} ${second}`] ? `${first} ${second}` : first;
+    return first;
 }

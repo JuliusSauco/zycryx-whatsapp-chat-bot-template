@@ -5,6 +5,9 @@ import {ensureSystemPrompt, getAiMemory, getAiPromptSettings, saveAiMemory} from
 import type {ExtendedConn} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
 import {httpJson} from '../../lib/http-client.js';
+import type {BeforePluginContext} from '../../types/context.js';
+import {isGroupCreator} from '../../utils/group-creator.js';
+import type {AccessMode, AutoresponderTrigger} from '../../types/config.js';
 
 const MAX_TURNS = 12;
 
@@ -17,7 +20,26 @@ interface MessageContextInfo {
     remoteJid?: string;
 }
 
-export async function before(m: BotMessage, {conn}: {conn: ExtendedConn}) {
+function canUseAutoresponder(mode: AccessMode, ctx: BeforePluginContext, m: BotMessage): boolean {
+    switch (mode) {
+        case 'owner':
+            return ctx.isOwner;
+        case 'superadmin':
+            return ctx.isOwner || isGroupCreator({chatId: ctx.chatId, sender: m.sender, senderLid: m.lid, metadata: ctx.metadata});
+        case 'admin':
+            return ctx.isOwner || ctx.isAdmin;
+        default:
+            return true;
+    }
+}
+
+export async function before(m: BotMessage, ctx: BeforePluginContext & {conn: ExtendedConn}) {
+    const {conn, groupSettings} = ctx;
+    if (groupSettings?.autoresponder === false) return true;
+    const autoresponderTrigger = (groupSettings?.autoresponderTrigger || 'mention') as AutoresponderTrigger;
+    const autoresponderMode = (groupSettings?.autoresponderMode || 'all') as AccessMode;
+    if (autoresponderTrigger !== 'all' && !canUseAutoresponder(autoresponderMode, ctx, m)) return true;
+
     const botIds = [conn.user?.id, conn.user?.lid].filter((j): j is string => Boolean(j)).map(j => j.split('@')[0].split(':')[0]);
 
     const contextInfo = m.msg?.contextInfo as MessageContextInfo | undefined;
@@ -41,8 +63,9 @@ export async function before(m: BotMessage, {conn}: {conn: ExtendedConn}) {
 
     const triggerWords = /\b(bot|simi|alexa|lolibot)\b/i;
     const isTrigger = triggerWords.test(m.originalText || '');
-    logDebug(`[AUTORESP] mención=${mention} trigger=${isTrigger} | originalText="${m.originalText}" text="${m.text}"`);
-    if (!mention && !isTrigger) return true;
+    const respondToAll = autoresponderTrigger === 'all';
+    logDebug(`[AUTORESP] modo=${autoresponderTrigger} mención=${mention} trigger=${isTrigger} | originalText="${m.originalText}" text="${m.text}"`);
+    if (!respondToAll && !mention && !isTrigger) return true;
 
     // 'bot' NO va en no_cmd: es palabra gatillo del autoresponder, no debe excluirse a sí misma.
     const no_cmd = /(PIEDRA|PAPEL|TIJERA|menu|estado|serbot|jadibot|Video|Audio|Exp|diamante|lolicoins?)/i;

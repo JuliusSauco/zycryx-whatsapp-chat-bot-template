@@ -13,6 +13,7 @@ import {adminGuard} from './admin.guard.js';
 import {scopeGuard} from './scope.guard.js';
 import {resourceGuard} from './resource.guard.js';
 import {adminModeGuard} from './admin-mode.guard.js';
+import {featureAccessGuard} from './feature-access.guard.js';
 
 const guards: Guard[] = [
     modeGuard,
@@ -21,6 +22,7 @@ const guards: Guard[] = [
     ownerGuard,
     adminGuard,
     scopeGuard,
+    featureAccessGuard,
     resourceGuard,
     adminModeGuard,
 ];

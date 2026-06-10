@@ -15,10 +15,12 @@ import type {GroupMetadata, GroupParticipant} from '@whiskeysockets/baileys';
 import {getSubbotConfig, updateSubbotTipo} from '../services/subbot.service.js';
 import {clearPrimaryBot, getContextGroupSettings} from '../services/group-settings.service.js';
 import type {SubbotConfig} from '../types/config.js';
+import type {AccessMode, AutoresponderTrigger} from '../types/config.js';
 import type {ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
 import {cleanJid, isGroupJid, resolveSenderInfo} from '../utils/jid.js';
 import {FIXED_OWNERS, GROUP_META_CACHE_TTL} from '../utils/constants.js';
+import {isGroupCreator} from '../utils/group-creator.js';
 
 // --- Cache de metadata de grupos ---
 const groupMetaCache = new Map<string, GroupMetadata>();
@@ -27,11 +29,25 @@ export interface GroupSettings {
     banned: boolean;
     primary_bot: string | null;
     modoadmin: boolean;
+    botAccessMode: AccessMode;
     antifake: boolean;
     message_logging: boolean;
     antilink: boolean;
     antilink2: boolean;
     virusTotal: boolean;
+    autoresponder: boolean;
+    autoresponderMode: AccessMode;
+    autoresponderTrigger: AutoresponderTrigger;
+    gamesAccessMode: AccessMode;
+    toolsAccessMode: AccessMode;
+    rpgAccessMode: AccessMode;
+    downloadsAccessMode: AccessMode;
+    searchAccessMode: AccessMode;
+    stickersAccessMode: AccessMode;
+    convertersAccessMode: AccessMode;
+    funAccessMode: AccessMode;
+    modohorny: boolean;
+    nsfwAccessMode: AccessMode;
     audios: boolean;
     autolevelup: boolean;
 }
@@ -46,6 +62,7 @@ export interface HandlerContext {
     isOwner: boolean;
     isROwner: boolean;
     isAdmin: boolean;
+    isGroupCreator: boolean;
     isBotAdmin: boolean;
     metadata: GroupMetadata;
     participants: GroupParticipant[];
@@ -53,6 +70,7 @@ export interface HandlerContext {
     botConfig: SubbotConfig;
     botJid: string;
     modoAdminActivo: boolean;
+    botAccessMode: AccessMode;
     /** Settings del grupo precargados (lectura en memoria para guards). */
     groupSettings: GroupSettings;
     /** true si el handler debe abortar (grupo baneado, primary bot, etc.) */
@@ -63,11 +81,25 @@ const EMPTY_GROUP_SETTINGS: GroupSettings = {
     banned: false,
     primary_bot: null,
     modoadmin: false,
+    botAccessMode: 'all',
     antifake: false,
     message_logging: false,
     antilink: false,
     antilink2: false,
     virusTotal: false,
+    autoresponder: true,
+    autoresponderMode: 'all',
+    autoresponderTrigger: 'mention',
+    gamesAccessMode: 'all',
+    toolsAccessMode: 'all',
+    rpgAccessMode: 'all',
+    downloadsAccessMode: 'all',
+    searchAccessMode: 'all',
+    stickersAccessMode: 'all',
+    convertersAccessMode: 'all',
+    funAccessMode: 'all',
+    modohorny: false,
+    nsfwAccessMode: 'all',
     audios: false,
     autolevelup: true,
 };
@@ -118,6 +150,7 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
     // --- isAdmin del sender ---
     const uniqueSenderJids = buildSenderJids(m);
     const isAdmin = adminIds.some(adminJid => uniqueSenderJids.includes(adminJid));
+    const groupCreator = isGroup ? isGroupCreator({chatId, sender: m.sender, senderLid: m.lid, metadata}) : false;
     m.isAdmin = isAdmin;
 
     // --- isBotAdmin ---
@@ -142,6 +175,7 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
         isOwner,
         isROwner,
         isAdmin,
+        isGroupCreator: groupCreator,
         isBotAdmin,
         metadata,
         participants,
@@ -149,6 +183,7 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
         botConfig,
         botJid,
         modoAdminActivo: groupSettings.modoadmin,
+        botAccessMode: groupSettings.botAccessMode,
         groupSettings,
         shouldAbort,
     };

@@ -1,5 +1,7 @@
 import {definePlugin} from '../../core/define-plugin.js';
 import {getNsfwSettings} from '../../services/group-settings.service.js';
+import {accessModeLabel} from '../../utils/access-mode.js';
+import {canUseNsfw} from '../../utils/nsfw-access.js';
 
 /**
  * Menú de los comandos `msg-gif-*` agrupados por categoría.
@@ -44,14 +46,17 @@ export default definePlugin({
     tags: ['main'],
     command: /^(menu3|menugif|menugifs|menú3|menú-gif|menú-gifs|menu-gif|menu-gifs|gifs|gif)$/i,
     register: true,
-    async execute(m, {conn, usedPrefix}) {
+    async execute(m, {conn, usedPrefix, isAdmin, isOwner, isGroupCreator}) {
     const taguser = '@' + m.sender.split('@')[0];
     const pref = usedPrefix || '#';
-    const {modohorny} = m.isGroup ? await getNsfwSettings(m.chat) : {modohorny: false};
-    const adultTitle = modohorny ? 'ADULTO 🔞 ACTIVO' : 'ADULTO 🔞';
-    const adultHint = modohorny
-        ? '> Modo horny activo: estos comandos usan los GIFs explícitos de `nsfw`.'
-        : '> Modo horny apagado: estos comandos usan los GIFs normales.';
+    const nsfwSettings = m.isGroup ? await getNsfwSettings(m.chat) : {modohorny: false, nsfwAccessMode: 'all' as const, nsfw_horario: null};
+    const nsfwEnabled = canUseNsfw(nsfwSettings, {isAdmin, isOwner, isGroupCreator});
+    const adultTitle = nsfwEnabled ? 'ADULTO 🔞 ACTIVO' : 'ADULTO 🔞';
+    const adultHint = nsfwEnabled
+        ? '> Modo horny activo para ti: estos comandos usan los GIFs explícitos de `nsfw`.'
+        : nsfwSettings.modohorny
+            ? `> Modo horny activo para: ${accessModeLabel(nsfwSettings.nsfwAccessMode)}. Para ti usa los GIFs normales.`
+            : '> Modo horny apagado: estos comandos usan los GIFs normales.';
 
     const str = `\`Hola ${taguser} 💖彡\`
 

@@ -157,6 +157,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
             isOwner: ctx.isOwner,
             isROwner: ctx.isROwner,
             isAdmin: ctx.isAdmin,
+            isGroupCreator: ctx.isGroupCreator,
             isBotAdmin: ctx.isBotAdmin,
             isGroup: ctx.isGroup,
             botConfig: ctx.botConfig,

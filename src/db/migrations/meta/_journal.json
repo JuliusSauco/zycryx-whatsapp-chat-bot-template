@@ -113,6 +113,55 @@
       "when": 1780326000000,
       "tag": "0015_group_admin_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1780326600000,
+      "tag": "0016_autoresponder_group_setting",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1780327200000,
+      "tag": "0017_bot_access_mode",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1780327800000,
+      "tag": "0018_autoresponder_access_mode",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1780328400000,
+      "tag": "0019_autoresponder_trigger",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1780329000000,
+      "tag": "0020_feature_access_modes",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1780329600000,
+      "tag": "0021_extended_feature_access_modes",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1780330200000,
+      "tag": "0022_nsfw_access_mode",
+      "breakpoints": true
     }
   ]
 }

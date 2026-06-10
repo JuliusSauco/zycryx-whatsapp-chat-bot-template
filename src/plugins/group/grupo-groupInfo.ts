@@ -2,6 +2,7 @@ import {definePlugin} from '../../core/define-plugin.js'
 import {getNumberByLid} from '../../services/user.service.js'
 import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 import {cleanJid} from '../../utils/jid.js'
+import {accessModeLabel} from '../../utils/access-mode.js'
 import {getGroupParticipantRole} from '../../services/group-role.service.js'
 import type {GroupParticipant} from '@whiskeysockets/baileys'
 
@@ -69,7 +70,7 @@ export default definePlugin({
     }))
 
     const data = groupSettings || {}
-    const {welcome, detect, antifake, antilink, virusTotal, modoadmin, primary_bot, modohorny, nsfw_horario, banned, messageLogging} = data
+    const {welcome, detect, antifake, antilink, virusTotal, modoadmin, primary_bot, modohorny, nsfwAccessMode, nsfw_horario, banned, messageLogging} = data
     const fallbackOwner = m.chat.includes('-') ? m.chat.split('-')[0] + '@s.whatsapp.net' : null
     const ownerJid = groupMetadata.owner || groupAdmins.find(p => p.admin === 'superadmin')?.id || fallbackOwner
     const owner = await resolveGroupMention(ownerJid, groupInfoParticipants, getRequiredPluginMessage('group.groupInfo.unknownOwner'))
@@ -93,7 +94,7 @@ export default definePlugin({
         virusTotal: virusTotal ? enabled : disabled,
         antifake: antifake ? enabled : disabled,
         detect: detect ? enabled : disabled,
-        modohorny: modohorny ? enabled : disabled,
+        modohorny: modohorny ? `${enabled} (${accessModeLabel(nsfwAccessMode)})` : disabled,
         nsfwSchedule: nsfw_horario
             ? renderTemplate(getRequiredPluginMessage('group.groupInfo.nsfwSchedule'), {schedule: nsfw_horario})
             : disabled,

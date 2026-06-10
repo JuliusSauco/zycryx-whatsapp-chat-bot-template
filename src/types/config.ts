@@ -47,7 +47,19 @@ export interface GroupSettings {
     antilink: boolean;
     antilink2: boolean;
     virusTotal: boolean;
+    autoresponder: boolean;
+    autoresponderMode?: AccessMode | null;
+    autoresponderTrigger?: AutoresponderTrigger | null;
+    gamesAccessMode?: AccessMode | null;
+    toolsAccessMode?: AccessMode | null;
+    rpgAccessMode?: AccessMode | null;
+    downloadsAccessMode?: AccessMode | null;
+    searchAccessMode?: AccessMode | null;
+    stickersAccessMode?: AccessMode | null;
+    convertersAccessMode?: AccessMode | null;
+    funAccessMode?: AccessMode | null;
     modohorny: boolean;
+    nsfwAccessMode?: AccessMode | null;
     audios: boolean;
     nsfw_horario?: string | null;
     antiStatus: boolean;
@@ -75,6 +87,7 @@ export interface GroupSettings {
     memory_ttl: number;
     primary_bot?: string | null;
     autoAcceptMode?: AutoAcceptMode | null;
+    botAccessMode?: AccessMode | null;
     messageLogging: boolean;
     // allow custom welcome/bye texts
     swelcome?: string | null;
@@ -90,6 +103,9 @@ export type AutoAcceptMode =
     | 'off_hidetag_all';
 
 export type GreetingHidetagMode = 'off' | 'admin' | 'all';
+
+export type AccessMode = 'all' | 'admin' | 'superadmin' | 'owner';
+export type AutoresponderTrigger = 'mention' | 'all';
 
 export interface Usuario {
     id: string;

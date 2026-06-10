@@ -6,6 +6,7 @@ import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../u
 import {loadCachedJsonResource} from '../../lib/local-json-resource.js';
 import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {getNsfwSettings} from '../../services/group-settings.service.js';
+import {canUseNsfw} from '../../utils/nsfw-access.js';
 
 interface ReactionResource {
     help: string;
@@ -28,11 +29,11 @@ export default definePlugin({
     tags: ['fun'],
     command: buildCommandRegex(aliasMap),
     register: false,
-    async execute(m, {conn, participants, command}) {
+    async execute(m, {conn, participants, command, isAdmin, isOwner, isGroupCreator}) {
     try {
         const reaction = aliasMap[command.toLowerCase()];
         if (!reaction) return m.reply(getRequiredPluginMessage('messages.gifReactions.missingReaction'));
-        const nsfwEnabled = reaction.adult ? (await getNsfwSettings(m.chat)).modohorny === true : false;
+        const nsfwEnabled = reaction.adult ? canUseNsfw(await getNsfwSettings(m.chat), {isAdmin, isOwner, isGroupCreator}) : false;
 
         const rawMentions: string[] = Array.isArray(m.mentionedJid) ? [...m.mentionedJid] : [];
         if (m.quoted?.sender) rawMentions.push(m.quoted.sender);

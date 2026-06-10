@@ -10,6 +10,7 @@ type GroupParticipantWithAliases = GroupParticipant & {
     phoneNumber?: string | number | null;
     notify?: string | null;
     name?: string | null;
+    verifiedName?: string | null;
 };
 
 function getPreferredUserJid(participant: GroupParticipantWithAliases): string | null {
@@ -43,8 +44,18 @@ function getAdminFallbackName(groupId: string): string {
     return `admin_${groupId.split('@')[0] || groupId}`;
 }
 
-function getParticipantAlias(groupId: string, participant: GroupParticipantWithAliases): string {
-    return participant.notify || participant.name || getAdminFallbackName(groupId);
+function isGeneratedAdminName(name: string | null | undefined): boolean {
+    return !name || name === 'sin name' || name.startsWith('admin_');
+}
+
+async function getParticipantAlias(groupId: string, userId: string, participant: GroupParticipantWithAliases): Promise<string> {
+    const existing = await repositories.users.findById(userId);
+    if (!isGeneratedAdminName(existing?.nombre)) return existing!.nombre!;
+
+    return participant.notify
+        || participant.name
+        || participant.verifiedName
+        || getAdminFallbackName(groupId);
 }
 
 export async function registerGroupAdmins(groupId: string, metadata: GroupMetadata): Promise<number> {
@@ -62,7 +73,7 @@ export async function registerGroupAdmins(groupId: string, metadata: GroupMetada
         }
         await repositories.users.upsertRegisteredAdmin({
             id: userId,
-            nombre: getParticipantAlias(groupId, admin),
+            nombre: await getParticipantAlias(groupId, userId, admin),
             num: getParticipantPhone(admin, userId),
             lid,
             serialNumber: createHash('md5').update(userId).digest('hex'),

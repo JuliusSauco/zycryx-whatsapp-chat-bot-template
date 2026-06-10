@@ -275,20 +275,40 @@ export interface GroupSettingsRepository {
         banned: boolean;
         primary_bot: string | null;
         modoadmin: boolean;
+        botAccessMode: NonNullable<GroupSettings['botAccessMode']>;
         antifake: boolean;
         message_logging: boolean;
         antilink: boolean;
         antilink2: boolean;
         virusTotal: boolean;
+        autoresponder: boolean;
+        autoresponderMode: NonNullable<GroupSettings['autoresponderMode']>;
+        autoresponderTrigger: NonNullable<GroupSettings['autoresponderTrigger']>;
+        gamesAccessMode: NonNullable<GroupSettings['gamesAccessMode']>;
+        toolsAccessMode: NonNullable<GroupSettings['toolsAccessMode']>;
+        rpgAccessMode: NonNullable<GroupSettings['rpgAccessMode']>;
+        downloadsAccessMode: NonNullable<GroupSettings['downloadsAccessMode']>;
+        searchAccessMode: NonNullable<GroupSettings['searchAccessMode']>;
+        stickersAccessMode: NonNullable<GroupSettings['stickersAccessMode']>;
+        convertersAccessMode: NonNullable<GroupSettings['convertersAccessMode']>;
+        funAccessMode: NonNullable<GroupSettings['funAccessMode']>;
+        modohorny: boolean;
+        nsfwAccessMode: NonNullable<GroupSettings['nsfwAccessMode']>;
         audios: boolean;
         autolevelup: boolean;
     } | null>;
     findNsfwSettings(groupId: string): Promise<{
         modohorny: boolean;
+        nsfwAccessMode: NonNullable<GroupSettings['nsfwAccessMode']>;
         nsfw_horario: string | null;
     } | null>;
     setBooleanFlag(groupId: string, flag: string, value: boolean): Promise<void>;
     setAutoAcceptMode(groupId: string, mode: GroupSettings['autoAcceptMode']): Promise<void>;
+    setBotAccessMode(groupId: string, mode: GroupSettings['botAccessMode']): Promise<void>;
+    setAutoresponderMode(groupId: string, enabled: boolean, mode: GroupSettings['autoresponderMode']): Promise<void>;
+    setAutoresponderTrigger(groupId: string, trigger: GroupSettings['autoresponderTrigger']): Promise<void>;
+    setNsfwMode(groupId: string, enabled: boolean, mode: GroupSettings['nsfwAccessMode']): Promise<void>;
+    setFeatureAccessMode(groupId: string, feature: ConfigurableFeatureKey, mode: GroupSettings['gamesAccessMode']): Promise<void>;
     setGreetingHidetagMode(groupId: string, type: 'welcome' | 'bye', mode: GroupSettings['welcomeHidetagMode']): Promise<void>;
     setTextMessage(input: {
         groupId: string;
@@ -322,6 +342,16 @@ export interface SubbotRepository {
     setPrefix(botId: string, prefix: string[]): Promise<void>;
     setOwners(botId: string, owners: string[]): Promise<void>;
 }
+
+export type ConfigurableFeatureKey =
+    | 'games'
+    | 'tools'
+    | 'rpg'
+    | 'downloads'
+    | 'search'
+    | 'stickers'
+    | 'converters'
+    | 'fun';
 
 export interface CharacterRecord {
     id: number;

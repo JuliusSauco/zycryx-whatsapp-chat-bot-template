@@ -1,10 +1,18 @@
 import type {Guard} from '../types/guard.js';
 import {SILENT_REJECT} from '../types/guard.js';
 
-/** Si el grupo tiene modoAdmin activo, solo admins y owners pueden usar comandos. */
+/** Controla quien puede usar comandos en el grupo segun el modo de acceso del bot. */
 export const adminModeGuard: Guard = async ({ctx}) => {
-    if (ctx.modoAdminActivo && !ctx.isAdmin && !ctx.isOwner) {
-        return SILENT_REJECT;
+    const mode = ctx.botAccessMode || (ctx.modoAdminActivo ? 'admin' : 'all');
+
+    switch (mode) {
+        case 'owner':
+            return ctx.isOwner ? null : SILENT_REJECT;
+        case 'superadmin':
+            return ctx.isOwner || ctx.isGroupCreator ? null : SILENT_REJECT;
+        case 'admin':
+            return ctx.isOwner || ctx.isAdmin ? null : SILENT_REJECT;
+        default:
+            return null;
     }
-    return null;
 };

@@ -2,11 +2,24 @@ import {and, eq, lt, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {groupSettings} from '../../db/schema.js';
 import type {GroupSettingsRepository} from '../../ports/repositories.js';
-import type {AutoAcceptMode, GreetingHidetagMode} from '../../types/config.js';
+import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode} from '../../types/config.js';
 
 function normalizeGreetingHidetagMode(mode: string | null, legacyHidetag: boolean | null): GreetingHidetagMode {
     if (mode === 'admin' || mode === 'all' || mode === 'off') return mode;
     return legacyHidetag ? 'all' : 'off';
+}
+
+function normalizeAccessMode(mode: string | null, fallback: AccessMode = 'all'): AccessMode {
+    if (mode === 'all' || mode === 'admin' || mode === 'superadmin' || mode === 'owner') return mode;
+    return fallback;
+}
+
+function normalizeBotAccessMode(mode: string | null, legacyAdminMode: boolean | null): AccessMode {
+    return normalizeAccessMode(mode, legacyAdminMode ? 'admin' : 'all');
+}
+
+function normalizeAutoresponderTrigger(trigger: string | null): AutoresponderTrigger {
+    return trigger === 'all' ? 'all' : 'mention';
 }
 
 export const groupSettingsRepository: GroupSettingsRepository = {
@@ -23,7 +36,19 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             antilink: row.antilink ?? false,
             antilink2: row.antilink2 ?? false,
             virusTotal: row.virusTotal ?? false,
+            autoresponder: row.autoresponder ?? true,
+            autoresponderMode: normalizeAccessMode(row.autoresponderMode),
+            autoresponderTrigger: normalizeAutoresponderTrigger(row.autoresponderTrigger),
+            gamesAccessMode: normalizeAccessMode(row.gamesAccessMode),
+            toolsAccessMode: normalizeAccessMode(row.toolsAccessMode),
+            rpgAccessMode: normalizeAccessMode(row.rpgAccessMode),
+            downloadsAccessMode: normalizeAccessMode(row.downloadsAccessMode),
+            searchAccessMode: normalizeAccessMode(row.searchAccessMode),
+            stickersAccessMode: normalizeAccessMode(row.stickersAccessMode),
+            convertersAccessMode: normalizeAccessMode(row.convertersAccessMode),
+            funAccessMode: normalizeAccessMode(row.funAccessMode),
             modohorny: row.modohorny ?? false,
+            nsfwAccessMode: normalizeAccessMode(row.nsfwAccessMode),
             audios: row.audios ?? false,
             antiStatus: row.antiStatus ?? false,
             modoadmin: row.modoadmin ?? false,
@@ -51,6 +76,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             memory_ttl: row.memoryTtl ?? 86400,
             primary_bot: row.primaryBot,
             autoAcceptMode: (row.autoAcceptMode || 'off') as AutoAcceptMode,
+            botAccessMode: normalizeBotAccessMode(row.botAccessMode, row.modoadmin),
             messageLogging: row.messageLogging ?? false,
         };
     },
@@ -61,11 +87,25 @@ export const groupSettingsRepository: GroupSettingsRepository = {
                 banned: groupSettings.banned,
                 primary_bot: groupSettings.primaryBot,
                 modoadmin: groupSettings.modoadmin,
+                botAccessMode: groupSettings.botAccessMode,
                 antifake: groupSettings.antifake,
                 message_logging: groupSettings.messageLogging,
                 antilink: groupSettings.antilink,
                 antilink2: groupSettings.antilink2,
                 virusTotal: groupSettings.virusTotal,
+                autoresponder: groupSettings.autoresponder,
+                autoresponderMode: groupSettings.autoresponderMode,
+                autoresponderTrigger: groupSettings.autoresponderTrigger,
+                gamesAccessMode: groupSettings.gamesAccessMode,
+                toolsAccessMode: groupSettings.toolsAccessMode,
+                rpgAccessMode: groupSettings.rpgAccessMode,
+                downloadsAccessMode: groupSettings.downloadsAccessMode,
+                searchAccessMode: groupSettings.searchAccessMode,
+                stickersAccessMode: groupSettings.stickersAccessMode,
+                convertersAccessMode: groupSettings.convertersAccessMode,
+                funAccessMode: groupSettings.funAccessMode,
+                modohorny: groupSettings.modohorny,
+                nsfwAccessMode: groupSettings.nsfwAccessMode,
                 audios: groupSettings.audios,
                 autolevelup: groupSettings.autolevelup,
             })
@@ -78,11 +118,25 @@ export const groupSettingsRepository: GroupSettingsRepository = {
                 banned: !!row.banned,
                 primary_bot: row.primary_bot ?? null,
                 modoadmin: !!row.modoadmin,
+                botAccessMode: normalizeBotAccessMode(row.botAccessMode, row.modoadmin),
                 antifake: !!row.antifake,
                 message_logging: !!row.message_logging,
                 antilink: !!row.antilink,
                 antilink2: !!row.antilink2,
                 virusTotal: !!row.virusTotal,
+                autoresponder: row.autoresponder ?? true,
+                autoresponderMode: normalizeAccessMode(row.autoresponderMode),
+                autoresponderTrigger: normalizeAutoresponderTrigger(row.autoresponderTrigger),
+                gamesAccessMode: normalizeAccessMode(row.gamesAccessMode),
+                toolsAccessMode: normalizeAccessMode(row.toolsAccessMode),
+                rpgAccessMode: normalizeAccessMode(row.rpgAccessMode),
+                downloadsAccessMode: normalizeAccessMode(row.downloadsAccessMode),
+                searchAccessMode: normalizeAccessMode(row.searchAccessMode),
+                stickersAccessMode: normalizeAccessMode(row.stickersAccessMode),
+                convertersAccessMode: normalizeAccessMode(row.convertersAccessMode),
+                funAccessMode: normalizeAccessMode(row.funAccessMode),
+                modohorny: !!row.modohorny,
+                nsfwAccessMode: normalizeAccessMode(row.nsfwAccessMode),
                 audios: !!row.audios,
                 autolevelup: row.autolevelup ?? true,
             }
@@ -93,6 +147,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
         const [row] = await orm
             .select({
                 modohorny: groupSettings.modohorny,
+                nsfwAccessMode: groupSettings.nsfwAccessMode,
                 nsfw_horario: groupSettings.nsfwHorario,
             })
             .from(groupSettings)
@@ -102,6 +157,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
         return row
             ? {
                 modohorny: !!row.modohorny,
+                nsfwAccessMode: normalizeAccessMode(row.nsfwAccessMode),
                 nsfw_horario: row.nsfw_horario ?? null,
             }
             : null;
@@ -115,6 +171,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             antilink: groupSettings.antilink,
             antilink2: groupSettings.antilink2,
             virusTotal: groupSettings.virusTotal,
+            autoresponder: groupSettings.autoresponder,
             antiporn: groupSettings.antiporn,
             audios: groupSettings.audios,
             antifake: groupSettings.antifake,
@@ -141,6 +198,67 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             .onConflictDoUpdate({
                 target: groupSettings.groupId,
                 set: {autoAcceptMode: mode || 'off'},
+            });
+    },
+
+    async setBotAccessMode(groupId, mode) {
+        const normalizedMode = normalizeBotAccessMode(mode || null, false);
+        await orm.insert(groupSettings)
+            .values({groupId, botAccessMode: normalizedMode, modoadmin: normalizedMode === 'admin'})
+            .onConflictDoUpdate({
+                target: groupSettings.groupId,
+                set: {botAccessMode: normalizedMode, modoadmin: normalizedMode === 'admin'},
+            });
+    },
+
+    async setAutoresponderMode(groupId, enabled, mode) {
+        const normalizedMode = normalizeAccessMode(mode || null);
+        await orm.insert(groupSettings)
+            .values({groupId, autoresponder: enabled, autoresponderMode: normalizedMode})
+            .onConflictDoUpdate({
+                target: groupSettings.groupId,
+                set: {autoresponder: enabled, autoresponderMode: normalizedMode},
+            });
+    },
+
+    async setAutoresponderTrigger(groupId, trigger) {
+        const normalizedTrigger = normalizeAutoresponderTrigger(trigger || null);
+        await orm.insert(groupSettings)
+            .values({groupId, autoresponderTrigger: normalizedTrigger})
+            .onConflictDoUpdate({
+                target: groupSettings.groupId,
+                set: {autoresponderTrigger: normalizedTrigger},
+            });
+    },
+
+    async setNsfwMode(groupId, enabled, mode) {
+        const normalizedMode = normalizeAccessMode(mode || null);
+        await orm.insert(groupSettings)
+            .values({groupId, modohorny: enabled, nsfwAccessMode: normalizedMode})
+            .onConflictDoUpdate({
+                target: groupSettings.groupId,
+                set: {modohorny: enabled, nsfwAccessMode: normalizedMode},
+            });
+    },
+
+    async setFeatureAccessMode(groupId, feature, mode) {
+        const normalizedMode = normalizeAccessMode(mode || null);
+        const propertyByFeature = {
+            games: 'gamesAccessMode',
+            tools: 'toolsAccessMode',
+            rpg: 'rpgAccessMode',
+            downloads: 'downloadsAccessMode',
+            search: 'searchAccessMode',
+            stickers: 'stickersAccessMode',
+            converters: 'convertersAccessMode',
+            fun: 'funAccessMode',
+        } as const;
+        const property = propertyByFeature[feature];
+        await orm.insert(groupSettings)
+            .values({groupId, [property]: normalizedMode})
+            .onConflictDoUpdate({
+                target: groupSettings.groupId,
+                set: {[property]: normalizedMode},
             });
     },
 

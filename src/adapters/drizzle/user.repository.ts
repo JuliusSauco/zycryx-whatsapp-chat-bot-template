@@ -62,7 +62,13 @@ export const userRepository: UserRepository = {
             .onConflictDoUpdate({
                 target: usuarios.id,
                 set: {
-                    nombre: sql`excluded.nombre`,
+                    nombre: sql`
+                        CASE
+                            WHEN excluded.nombre IS NULL OR excluded.nombre = 'sin name' THEN ${usuarios.nombre}
+                            WHEN ${usuarios.nombre} IS NULL OR ${usuarios.nombre} = 'sin name' OR ${usuarios.nombre} LIKE 'admin_%' THEN excluded.nombre
+                            ELSE excluded.nombre
+                        END
+                    `,
                     num: sql`COALESCE(${usuarios.num}, excluded.num)`,
                 },
             });
@@ -82,7 +88,14 @@ export const userRepository: UserRepository = {
 
     async upsertRegisteredAdmin({id, nombre, num, lid, serialNumber}) {
         const updates = {
-            nombre: sql`COALESCE(${usuarios.nombre}, excluded.nombre)`,
+            nombre: sql`
+                CASE
+                    WHEN excluded.nombre IS NULL OR excluded.nombre = 'sin name' THEN ${usuarios.nombre}
+                    WHEN excluded.nombre LIKE 'admin_%' AND ${usuarios.nombre} IS NOT NULL THEN ${usuarios.nombre}
+                    WHEN ${usuarios.nombre} IS NULL OR ${usuarios.nombre} = 'sin name' OR ${usuarios.nombre} LIKE 'admin_%' THEN excluded.nombre
+                    ELSE ${usuarios.nombre}
+                END
+            `,
             num: sql`COALESCE(${usuarios.num}, excluded.num)`,
             registered: true,
             serialNumber: sql`COALESCE(${usuarios.serialNumber}, excluded.serial_number)`,

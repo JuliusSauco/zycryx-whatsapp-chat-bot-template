@@ -79,7 +79,19 @@ CREATE TABLE IF NOT EXISTS group_settings (
     antilink boolean DEFAULT false,
     antilink2 boolean DEFAULT false,
     virustotal boolean DEFAULT false,
+    autoresponder boolean DEFAULT true,
+    autoresponder_mode text DEFAULT 'all',
+    autoresponder_trigger text DEFAULT 'mention',
+    games_access_mode text DEFAULT 'all',
+    tools_access_mode text DEFAULT 'all',
+    rpg_access_mode text DEFAULT 'all',
+    downloads_access_mode text DEFAULT 'all',
+    search_access_mode text DEFAULT 'all',
+    stickers_access_mode text DEFAULT 'all',
+    converters_access_mode text DEFAULT 'all',
+    fun_access_mode text DEFAULT 'all',
     modohorny boolean DEFAULT false,
+    nsfw_access_mode text DEFAULT 'all',
     audios boolean DEFAULT false,
     antistatus boolean DEFAULT false,
     modoadmin boolean DEFAULT false,
@@ -108,6 +120,7 @@ CREATE TABLE IF NOT EXISTS group_settings (
     memory_ttl integer DEFAULT 86400,
     primary_bot text,
     autoaccept_mode text DEFAULT 'off',
+    bot_access_mode text DEFAULT 'all',
     message_logging boolean DEFAULT false
 );
 
