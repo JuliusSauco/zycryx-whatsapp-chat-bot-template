@@ -5,6 +5,7 @@ import {
     countChatsByBot,
     deleteMessageCount,
     incrementMessageCount,
+    listGroupMessageActivity,
     listGroupMessageCounts,
     listJoinedGroupIdsByBot,
     logGroupMessage,
@@ -133,6 +134,10 @@ async function testChatService(): Promise<void> {
             calls.push(['listGroupCounts', groupId]);
             return [{user_id: 'u1', message_count: 2}];
         },
+        listGroupActivity: async groupId => {
+            calls.push(['listGroupActivity', groupId]);
+            return [{user_id: 'u1', message_count: 2, last_message_at: new Date('2026-06-01T00:00:00Z')}];
+        },
     };
     repositories.messageLogs = {
         ...originals.messageLogs,
@@ -153,6 +158,7 @@ async function testChatService(): Promise<void> {
         await incrementMessageCount('u1', 'g1');
         await deleteMessageCount('u1', 'g1');
         assert.deepEqual(await listGroupMessageCounts('g1'), [{user_id: 'u1', message_count: 2}]);
+        assert.deepEqual(await listGroupMessageActivity('g1'), [{user_id: 'u1', message_count: 2, last_message_at: new Date('2026-06-01T00:00:00Z')}]);
         await logGroupMessage({
             groupId: 'g1',
             userId: 'u1',

@@ -94,6 +94,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - npm.
 - PostgreSQL 14 o superior.
 - FFmpeg instalado y disponible en PATH.
+- Cliente PostgreSQL (`pg_dump`, `pg_restore`) para backups y restauracion.
 - git disponible en PATH (lo usa el comando owner `update`).
 - Python 3 como `python3` (opcional, solo para el comando `speedtest`).
 - Cuenta de WhatsApp para vincular el bot por QR o codigo.
@@ -250,6 +251,10 @@ BOT_FIXED_OWNER_JIDS=573001112233,51999888777
 | `npm run test:security` | Pruebas de comandos sensibles y sanitizacion. |
 | `npm run test:providers` | Pruebas de providers por dominio. |
 | `npm run test:p0` | Compuerta P0 para plugins migrados al SDK. |
+| `npm run ops:check` | Preflight operativo: Node, env, owners, DB, herramientas, build y sesion. |
+| `npm run ops:backup` | Backup local de DB, sesiones y audios custom con manifest. |
+| `npm run ops:backup:db` | Backup solo de PostgreSQL con `pg_dump`. |
+| `npm run ops:backup:sessions` | Backup solo de sesiones y audios custom. |
 | `npm run db:generate` | Genera migraciones desde `src/db/schema.ts`. |
 | `npm run db:ensure-schema` | Crea el schema configurado si no existe. |
 | `npm run db:migrate` | Ejecuta `db:ensure-schema` y aplica migraciones. |
@@ -273,7 +278,7 @@ BOT_FIXED_OWNER_JIDS=573001112233,51999888777
 <a id="produccion"></a>
 ## 🚀 Produccion
 
-Guia completa en `docs/deployment.md`. Resumen:
+Guia completa en `docs/deployment.md` y runbook diario en `docs/operations-runbook.md`. Resumen:
 
 ```bash
 npm install
@@ -289,8 +294,9 @@ Puntos clave:
 - La vinculacion inicial es interactiva (pide QR o codigo por consola); hazla fuera del supervisor y luego arranca bajo PM2.
 - Las migraciones nunca corren automaticamente al arrancar; ejecutalas como paso explicito en cada deploy.
 - Una sola instancia por numero de WhatsApp: el estado de juegos/cooldowns vive en memoria y la sesion es por dispositivo.
-- Respalda `BotSession/` (con el bot detenido) y la base de datos; ver politica de backups en `docs/deployment.md`.
+- Respalda `BotSession/` (con el bot detenido) y la base de datos con `NODE_ENV=prod npm run ops:backup`; ver politica de backups en `docs/deployment.md`.
 - Flujo de conexion, sesiones y reconexion documentado en `docs/baileys-connection.md`. Problemas comunes en `docs/troubleshooting.md`.
+- Preflight operativo: `NODE_ENV=prod npm run ops:check`.
 
 <a id="estructura"></a>
 ## 🗂️ Estructura
@@ -849,6 +855,8 @@ Documentacion tecnica viva:
 | `docs/environment-variables.md` | Referencia completa de variables de entorno. |
 | `docs/adding-commands.md` | Guia paso a paso para agregar comandos nuevos. |
 | `docs/deployment.md` | Despliegue en servidor, PM2, backups y checklist de produccion. |
+| `docs/operations-runbook.md` | Rutina operativa, preflight, actualizacion segura e incidentes comunes. |
+| `docs/operational-dependencies.md` | Dependencias del sistema por funcionalidad afectada. |
 | `docs/troubleshooting.md` | Problemas comunes de conexion, DB, comandos y rendimiento. |
 | `docs/data-resources.md` | Politica de recursos estaticos, multimedia y datos mutables. |
 | `docs/http-client-exceptions.md` | Excepciones justificadas al HTTP client centralizado. |
@@ -859,13 +867,13 @@ Resumen actual:
 | Fase | Avance | Estado |
 |---|---:|---|
 | P0 - SDK/contenido | 100% | Cerrado como contrato base. |
-| P1 - Providers | 85% | En curso; descargas principales ya estan centralizadas. |
+| P1 - Providers | 100% | Cerrado: descargas, IA, conversores, stalkers y stickers avanzados tienen providers. |
 | P2 - Testing nucleo | 100% | Cerrado para router, guards, context builder y servicios. |
 | P3 - Backend adapter | 0% | Desestimado hasta tener backend real. |
 | P4 - Seguridad owner | 100% | Cerrado para comandos sensibles auditados. |
-| P5 - Runtime/escalabilidad | 20% | Pendiente de inventario y fachadas. |
+| P5 - Runtime/escalabilidad | 100% | Cerrado para helpers compartidos y excepciones documentadas. |
 | P6 - i18n/contenido | 25% | Base lista en `messages.json`; faltan locales. |
-| P7 - Catalogo comandos/help | 10% | Registrado; implementacion pendiente. |
+| P7 - Catalogo comandos/help | 100% | Cerrado con catalogo, ayuda y auditoria. |
 
 <a id="estado-actual"></a>
 ## 📌 Estado Actual
@@ -879,7 +887,7 @@ Resumen actual:
 - Loader de plugins recursivo con soporte para carpetas por familia.
 - Plugins organizados en 19 familias.
 - SDK interno disponible para plugins nuevos y migrados.
-- 29 plugins usan `defineSdkPlugin`; 127 mantienen compatibilidad legacy con `definePlugin`.
+- Todos los plugins usan `defineSdkPlugin`; `definePlugin`, `message-template` y HTTP directo quedaron fuera de `src/plugins`.
 - Modos de acceso por familia (`all`/`admins`/`off`) aplicados por `feature-access.guard.ts` y configurables con el menu de toggles.
 - Roles de admins por grupo en `user_group_roles`, sincronizados al arrancar (`startup-admin-sync.ts`) y en eventos de grupo.
 - `test:p0` evita que plugins migrados al SDK vuelvan a importar helpers legacy de mensajes o HTTP.
@@ -908,14 +916,14 @@ Resumen actual:
 | Prioridad | Mejora | Avance | Estado |
 |---|---|---:|---|
 | P1 | Completar providers de descargas: Spotify, TikTok, Threads, Instagram, Facebook, MediaFire y Drive. | 100% | Bloque principal cerrado. |
-| P1 | Normalizar errores, timeouts y retries de providers. | 25% | Contrato inicial creado. |
-| P1 | Ampliar `test:providers` con casos sin red para fallback y parseo. | 30% | Fallback comun cubierto. |
-| P1/P0 | Migrar `downloads` al SDK mientras se extraen providers. | 20% | Pendiente gradual. |
-| P0 deuda | Migrar familias legacy `messages`, `random`, `nsfw` y `audio` al SDK. | 15% | Pendiente por familias. |
+| P1 | Normalizar errores, timeouts y retries de providers. | 25% | Mantenimiento incremental sobre contrato base cerrado. |
+| P1 | Ampliar `test:providers` con casos sin red para fallback y parseo. | 30% | Fallback comun cubierto; ampliar por proveedor cuando cambien APIs. |
+| P1/P0 | Migrar `downloads` al SDK mientras se extraen providers. | 100% | Cerrado. |
+| P0 deuda | Migrar familias legacy restantes al SDK. | 100% | Cerrado. |
 | P3 | Definir backend REST/GraphQL real para `DATA_SOURCE=backend`. | 0% | Desestimado hasta tener backend. |
-| P5 | Centralizar cooldowns, pending actions, locks y fachadas de runtime global. | 20% | Hay locks/cache puntuales. |
+| P5 | Centralizar cooldowns, pending actions, locks y fachadas de runtime global. | 100% | Cerrado para helpers compartidos y excepciones documentadas. |
 | P6 | Preparar i18n con locales y fallback en `content.service`. | 25% | Base de contenido lista. |
-| P7 | Crear `resources/data/commands.json` y ayuda `/<comando> --help`. | 10% | Registrado, no iniciado. |
+| P7 | Crear `resources/data/commands.json` y ayuda `/<comando> --help`. | 100% | Cerrado con auditoria documental. |
 
 ## ✅ Buenas Practicas Para Nuevos Bots
 

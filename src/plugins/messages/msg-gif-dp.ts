@@ -1,10 +1,9 @@
 import {logError} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {getAvailableMp4s, pickRandomFile} from './gif-media.js'
 import path from 'path'
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js'
 import {cleanJid} from '../../utils/jid.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 import {getNsfwSettings} from '../../services/group-settings.service.js'
 import {canUseNsfw} from '../../utils/nsfw-access.js'
 
@@ -21,14 +20,14 @@ const NSFW_GIF_FOLDER = path.join(GIF_FOLDER, 'nsfw')
  *  4) Responde a un msg sin etiquetar más     → bot pide 1 persona más (sin gif).
  *  5) Responde a un msg + etiqueta a 1 más    → bot manda el gif con ambos.
  */
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['msg-gif-dp'],
     tags: ['fun'],
     command: /^(trio|trio-2h-1m|trio-hmh)$/i,
     register: false,
-    async execute(m, {conn, participants, isAdmin, isOwner, isGroupCreator}) {
+    async execute(m, {sdk, isGroupCreator}) {
     try {
-        const nsfwEnabled = canUseNsfw(await getNsfwSettings(m.chat), {isAdmin, isOwner, isGroupCreator})
+        const nsfwEnabled = canUseNsfw(await getNsfwSettings(sdk.chatId), {isAdmin: sdk.isAdmin, isOwner: sdk.isOwner, isGroupCreator})
         const selectedFolder = nsfwEnabled ? NSFW_GIF_FOLDER : GIF_FOLDER
         const selectedFolderLabel = nsfwEnabled
             ? 'resources/media/reaction-gifs/dp/nsfw'
@@ -39,7 +38,7 @@ export default definePlugin({
         if (m.quoted?.sender) rawTargets.push(m.quoted.sender)
         if (Array.isArray(m.mentionedJid)) rawTargets.push(...m.mentionedJid)
 
-        const senderClean = cleanJid(m.sender || '')
+        const senderClean = cleanJid(sdk.sender || '')
         const seen = new Set<string>([senderClean])
         const targets: string[] = []
         for (const jid of rawTargets) {
@@ -49,8 +48,8 @@ export default definePlugin({
             targets.push(c)
         }
 
-        const groupParticipants = getParticipantsFast(conn, m.chat, participants)
-        const senderResolved = resolveMention(m.sender, groupParticipants)
+        const groupParticipants = getParticipantsFast(sdk.conn, sdk.chatId, sdk.participants)
+        const senderResolved = resolveMention(sdk.sender, groupParticipants)
 
         // 2. Resolver según cantidad de targets disponibles.
         let finalTargets: string[]
@@ -65,14 +64,14 @@ export default definePlugin({
             const partialResolved = resolveMention(targets[0], groupParticipants)
             const mentionsForReply = [senderResolved.mentionJid, partialResolved.mentionJid]
 
-            await conn.sendMessage(m.chat, {
-                text: renderTemplate(getRequiredPluginMessage('messages.gifDp.needOneMore'), {
+            await sdk.sendMessage({
+                text: sdk.content.renderMessage('messages.gifDp.needOneMore', {
                     sender: senderResolved.tag,
                     target: partialResolved.tag
                 }),
                 mentions: mentionsForReply,
                 contextInfo: {mentionedJid: mentionsForReply},
-            }, {quoted: m})
+            })
             return
         } else {
             // Escenarios 3 y 5: 2 o más targets → tomar los primeros 2.
@@ -83,7 +82,7 @@ export default definePlugin({
         const mp4s = getAvailableMp4s(selectedFolder)
 
         if (!mp4s.length) {
-            await m.reply(renderTemplate(getRequiredPluginMessage('messages.gifReactions.ffmpegHint'), {
+            await sdk.reply.text(sdk.content.renderMessage('messages.gifReactions.ffmpegHint', {
                 folder: selectedFolderLabel,
             }))
             return
@@ -95,11 +94,11 @@ export default definePlugin({
         const randomFile = pickRandomFile(mp4s)
         const filePath = path.join(selectedFolder, randomFile)
         const texto = senderAlone
-            ? renderTemplate(getRequiredPluginMessage('messages.gifDp.alone'), {sender: senderResolved.tag})
-            : renderTemplate(getRequiredPluginMessage('messages.gifDp.trio'), {sender: senderResolved.tag, targets: targetTags.join('* y *')})
+            ? sdk.content.renderMessage('messages.gifDp.alone', {sender: senderResolved.tag})
+            : sdk.content.renderMessage('messages.gifDp.trio', {sender: senderResolved.tag, targets: targetTags.join('* y *')})
         const mentions = Array.from(new Set([senderResolved.mentionJid, ...targetsResolved.map(x => x.mentionJid)]))
 
-        await conn.sendMessage(m.chat, {
+        await sdk.sendMessage({
             video: {url: filePath},
             mimetype: 'video/mp4',
             gifPlayback: true,
@@ -107,10 +106,10 @@ export default definePlugin({
             mentions,
             // contextInfo propio para evitar que simple.ts inyecte el banner "Ver canal".
             contextInfo: {mentionedJid: mentions},
-        }, {quoted: m})
+        })
     } catch (e: unknown) {
         logError(e)
-        m.react('❌️')
+        sdk.reply.react('❌️')
     }
     }
 })

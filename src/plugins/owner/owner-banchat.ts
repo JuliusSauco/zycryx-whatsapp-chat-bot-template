@@ -1,14 +1,13 @@
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {setGroupBanned} from '../../services/group-settings.service.js';
-import {getRequiredPluginMessage} from '../../lib/message-template.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['banchat'],
     tags: ['owner'],
     command: /^banchat|ban2|banchat1$/i,
     owner: true,
-    async execute(m) {
+    async execute(m, {sdk}) {
         await setGroupBanned(m.chat, true);
-        m.reply(getRequiredPluginMessage('owner.banChat.success'));
+        await sdk.reply.message('owner.banChat.success');
     },
 });

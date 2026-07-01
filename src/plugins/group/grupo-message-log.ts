@@ -1,34 +1,33 @@
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {getGroupSettings, setGroupBooleanFlag} from '../../services/group-settings.service.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['msglog on/off/estado', 'registromsg on/off/estado'],
     tags: ['group'],
     command: /^(msglog|messagelog|registromsg|registrarmensajes)$/i,
     admin: true,
     group: true,
-    async execute(m, {args, usedPrefix, command}) {
-        const action = (args[0] || 'estado').toLowerCase();
+    async execute(m, {sdk}) {
+        const action = (sdk.args[0] || 'estado').toLowerCase();
 
         if (['on', 'activar', 'activo', 'enable', 'encender'].includes(action)) {
-            await setGroupBooleanFlag(m.chat, 'messageLogging', true);
-            return m.reply(getRequiredPluginMessage('group.messageLog.enabled'));
+            await setGroupBooleanFlag(sdk.chatId, 'messageLogging', true);
+            return sdk.reply.message('group.messageLog.enabled');
         }
 
         if (['off', 'desactivar', 'inactivo', 'disable', 'apagar'].includes(action)) {
-            await setGroupBooleanFlag(m.chat, 'messageLogging', false);
-            return m.reply(getRequiredPluginMessage('group.messageLog.disabled'));
+            await setGroupBooleanFlag(sdk.chatId, 'messageLogging', false);
+            return sdk.reply.message('group.messageLog.disabled');
         }
 
         if (['estado', 'status'].includes(action)) {
-            const settings = await getGroupSettings(m.chat);
+            const settings = await getGroupSettings(sdk.chatId);
             const enabled = settings?.messageLogging ?? false;
-            return m.reply(renderTemplate(getRequiredPluginMessage('group.messageLog.status'), {
-                status: enabled ? getRequiredPluginMessage('group.messageLog.statusEnabled') : getRequiredPluginMessage('group.messageLog.statusDisabled')
-            }));
+            return sdk.reply.message('group.messageLog.status', {
+                status: enabled ? sdk.content.message('group.messageLog.statusEnabled') : sdk.content.message('group.messageLog.statusDisabled')
+            });
         }
 
-        return m.reply(renderTemplate(getRequiredPluginMessage('group.messageLog.usage'), {command: usedPrefix + command}));
+        return sdk.reply.message('group.messageLog.usage', {command: sdk.usedPrefix + sdk.command});
     },
 });

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {buildContext, groupMetaCache} from '../src/core/context-builder.js';
+import {setMainConnection} from '../src/core/runtime-state.js';
 import {invalidateGroupSettings, invalidateSubbotConfig} from '../src/lib/db-cache.js';
 import {repositories} from '../src/services/data-source.js';
 import type {SubbotConfig} from '../src/types/config.js';
@@ -109,8 +110,8 @@ function createConn(calls: Calls, options: {
         },
     } as unknown as ExtendedConn;
 
-    if (options.isMain) globalThis.conn = conn;
-    else globalThis.conn = {} as ExtendedConn;
+    if (options.isMain) setMainConnection(conn);
+    else setMainConnection({} as ExtendedConn);
 
     return conn;
 }
@@ -171,8 +172,9 @@ async function testPrivateChatSenderAndOwnerResolution(): Promise<void> {
         assert.equal(ctx.isCreator, false);
         assert.equal(ctx.botJid, '2222@s.whatsapp.net');
         assert.equal(ctx.shouldAbort, false);
-        assert.equal(globalThis.info.wm, 'CustomBot');
-        assert.equal(globalThis.info.img2, 'custom-logo');
+        assert.deepEqual(ctx.branding, {watermark: 'CustomBot', logoUrl: 'custom-logo'});
+        assert.equal(globalThis.info.wm, 'BaseBot');
+        assert.equal(globalThis.info.img2, 'base-logo');
         assert.deepEqual(calls.groupMetadata, []);
         assert.deepEqual(calls.updateTipo, [{botId: '2222@s.whatsapp.net', tipo: 'oficial'}]);
     });

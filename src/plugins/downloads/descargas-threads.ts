@@ -1,9 +1,9 @@
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin, type PluginContentSdk} from '../../core/sdk-plugin.js';
 import {logInfo} from '../../lib/logger.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 import {downloadThreadsMedia, type ThreadsProviderMedia} from '../../providers/downloads/threads.provider.js';
 import type {proto} from '@whiskeysockets/baileys';
+import {renderDownloadFailure} from './download-error.js';
 
 interface UserRequest {
     active: boolean;
@@ -12,48 +12,50 @@ interface UserRequest {
 
 const userRequests = createUserRequestLocks<UserRequest>();
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['thread'],
     tags: ['downloader'],
     command: /^(thread|threads|threaddl)$/i,
     register: true,
     limit: 1,
-    async execute(m, {conn, args, usedPrefix, command}) {
-        if (!args[0]) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.threads.missingUrl'), {
-            command: usedPrefix + command,
-        }));
+    async execute(m, {sdk}) {
+        if (!sdk.args[0]) return sdk.reply.message('downloads.threads.missingUrl', {
+            command: sdk.usedPrefix + sdk.command,
+        });
 
-        const activeRequest = userRequests.get(m.sender);
-        if (activeRequest) return await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.threads.locked'), {
-            user: m.sender.split('@')[0],
+        const activeRequest = userRequests.get(sdk.sender);
+        if (activeRequest) return sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.threads.locked', {
+            user: sdk.sender.split('@')[0],
         }), activeRequest.message || m);
 
-        const {key} = await conn.sendMessage(m.chat, {text: getRequiredPluginMessage('downloads.threads.downloading')}, {quoted: m});
-        userRequests.acquire(m.sender, {active: true, message: {key, chat: m.chat, fromMe: true}});
-        await m.react('⌛');
+        const {key} = await sdk.sendMessage({text: sdk.content.message('downloads.threads.downloading')});
+        userRequests.acquire(sdk.sender, {active: true, message: {key, chat: sdk.chatId, fromMe: true}});
+        await sdk.reply.react('⌛');
 
         try {
-            const media = await downloadThreadsMedia(args[0]);
-            if (!media.data) throw new Error('No media found');
+            const media = await downloadThreadsMedia(sdk.args[0]);
+            if (!media.data) {
+                return sdk.conn.sendMessage(sdk.chatId, {text: renderDownloadFailure('threads', media.failures), edit: key});
+            }
 
-            await conn.sendFile(m.chat, media.data.url, media.data.fileName, getThreadsCaption(media.data), m);
-            await m.react('✅');
-            await conn.sendMessage(m.chat, {text: getRequiredPluginMessage('downloads.threads.completed'), edit: key});
+            await sdk.sendFile(media.data.url, media.data.fileName, getThreadsCaption(sdk.content, media.data));
+            await sdk.reply.react('✅');
+            await sdk.conn.sendMessage(sdk.chatId, {text: sdk.content.message('downloads.threads.completed'), edit: key});
         } catch (e: unknown) {
-            await m.react('❌');
-            await conn.sendMessage(m.chat, {
-                text: renderTemplate(getRequiredPluginMessage('downloads.threads.error'), {error: String(e)}),
+            await sdk.reply.react('❌');
+            await sdk.conn.sendMessage(sdk.chatId, {
+                text: sdk.content.renderMessage('downloads.threads.error', {error: String(e)}),
                 edit: key,
             });
             logInfo(e);
         } finally {
-            userRequests.release(m.sender);
+            userRequests.release(sdk.sender);
         }
     },
 });
 
-function getThreadsCaption(media: ThreadsProviderMedia): string {
+function getThreadsCaption(content: PluginContentSdk, media: ThreadsProviderMedia): string {
     return media.type === 'image'
-        ? getRequiredPluginMessage('downloads.threads.imageCaption')
-        : getRequiredPluginMessage('downloads.threads.videoCaption');
+        ? content.message('downloads.threads.imageCaption')
+        : content.message('downloads.threads.videoCaption');
 }

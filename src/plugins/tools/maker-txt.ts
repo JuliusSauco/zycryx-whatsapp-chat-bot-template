@@ -12,7 +12,7 @@ export default defineSdkPlugin({
     if (sdk.command == 'txt' || sdk.command == 'escribir') {
         if (!teks) return sdk.reply.message('tools.maker.txtUsage', {command: sdk.usedPrefix + sdk.command})
         let img = `${info.fgmods.url}/maker/txt?text=${encodeURIComponent(teks)}&apikey=${info.fgmods.key}`;
-        return sdk.sendFile(img, 'img.png', sdk.content.renderMessage('tools.maker.txtCaption', {watermark: info.wm}));
+        return sdk.sendFile(img, 'img.png', sdk.content.renderMessage('tools.maker.txtCaption', {watermark: sdk.branding.watermark}));
     }
 
     if (sdk.command == 'carbon') {

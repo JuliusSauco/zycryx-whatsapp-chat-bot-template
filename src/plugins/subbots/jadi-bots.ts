@@ -1,12 +1,10 @@
 import {getSubbotConfig} from '../../services/subbot.service.js'
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin, type PluginContentSdk} from '../../core/sdk-plugin.js'
 import type {SubbotConfig} from '../../types/config.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
-
-type SubbotConnection = (typeof globalThis.conns)[number]
+import {getMainConnection, getSubbotConnections, type RuntimeConnection} from '../../core/runtime-state.js'
 
 interface ActiveSubbot {
-    socket: SubbotConnection
+    socket: RuntimeConnection
     configId: string
     cleanId: string
     name: string
@@ -25,40 +23,40 @@ const fallbackSubbotConfig: SubbotConfig = {
     tipo: null,
 }
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['bots'],
     tags: ['jadibot'],
     command: /^bots$/i,
-    async execute(m) {
+    async execute(_m, {sdk}) {
         const mainId = getMainBotId()
-        const activeSubbots = getActiveSubbots(globalThis.conns || [], mainId)
+        const activeSubbots = getActiveSubbots(getSubbotConnections(), mainId)
 
-        if (!activeSubbots.length) return m.reply(getRequiredPluginMessage('subbots.list.empty'))
+        if (!activeSubbots.length) return sdk.reply.message('subbots.list.empty')
 
         const configs = await loadSubbotConfigs(activeSubbots.map((bot) => bot.configId))
         const lines = activeSubbots.map((bot) => {
             const config = configs.get(bot.configId) ?? fallbackSubbotConfig
-            return formatSubbotLine(bot, config)
+            return formatSubbotLine(bot, config, sdk.content)
         })
 
-        return m.reply(renderTemplate(getRequiredPluginMessage('subbots.list.response'), {
+        return sdk.reply.message('subbots.list.response', {
             count: activeSubbots.length,
             lines: lines.join('\n\n')
-        }))
+        })
     }
 })
 
 function getMainBotId(): string | undefined {
-    return globalThis.conn?.user?.id?.split('@')[0].split(':')[0]
+    return getMainConnection()?.user?.id?.split('@')[0].split(':')[0]
 }
 
-function getActiveSubbots(sockets: SubbotConnection[], mainId?: string): ActiveSubbot[] {
+function getActiveSubbots(sockets: RuntimeConnection[], mainId?: string): ActiveSubbot[] {
     return sockets
         .map(toActiveSubbot)
         .filter((bot): bot is ActiveSubbot => bot !== null && bot.cleanId !== mainId)
 }
 
-function toActiveSubbot(socket: SubbotConnection): ActiveSubbot | null {
+function toActiveSubbot(socket: RuntimeConnection): ActiveSubbot | null {
     if (typeof socket.uptime !== 'number') return null
 
     const userId = socket.user?.id
@@ -88,25 +86,25 @@ async function loadSubbotConfigs(configIds: string[]): Promise<Map<string, Subbo
     return new Map(entries)
 }
 
-function formatSubbotLine(bot: ActiveSubbot, config: SubbotConfig): string {
-    const mode = config.mode === 'private' ? getRequiredPluginMessage('subbots.list.modePrivate') : getRequiredPluginMessage('subbots.list.modePublic')
+function formatSubbotLine(bot: ActiveSubbot, config: SubbotConfig, pluginContent: PluginContentSdk): string {
+    const mode = config.mode === 'private' ? pluginContent.message('subbots.list.modePrivate') : pluginContent.message('subbots.list.modePublic')
     const prefixes = Array.isArray(config.prefix) ? config.prefix : [config.prefix]
     const prefixText = prefixes.map((prefix) => `\`${prefix}\``).join(', ')
     const mainPrefix = prefixes[0] === '' ? '' : prefixes[0]
     const menuText = mainPrefix ? `${mainPrefix}menu` : 'menu'
-    const uptime = bot.socket.uptime ? formatearMs(Date.now() - bot.socket.uptime) : getRequiredPluginMessage('subbots.list.unknown')
+    const uptime = bot.socket.uptime ? formatearMs(Date.now() - bot.socket.uptime) : pluginContent.message('subbots.list.unknown')
     const showNumber = !config.privacy
     const showLendOption = Boolean(config.prestar && !config.privacy)
     const title = showNumber
         ? `wa.me/${bot.cleanId}?text=${encodeURIComponent(menuText)} (${bot.name})`
         : `(${bot.name})`
 
-    return renderTemplate(getRequiredPluginMessage('subbots.list.line'), {
+    return pluginContent.renderMessage('subbots.list.line', {
         title,
         uptime,
         mode,
         prefixes: prefixText,
-        lendLine: showLendOption ? getRequiredPluginMessage('subbots.list.lendLine') : ''
+        lendLine: showLendOption ? pluginContent.message('subbots.list.lendLine') : ''
     })
 }
 

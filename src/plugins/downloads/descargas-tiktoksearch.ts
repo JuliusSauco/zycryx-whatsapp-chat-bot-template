@@ -1,40 +1,39 @@
 import {logError} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 import {searchTikTokVideos} from '../../providers/downloads/tiktok.provider.js';
 import {randomInt} from '../../utils/random.js';
 
 const userRequests = createUserRequestLocks();
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['tiktoksearch <texto>'],
     tags: ['downloader'],
     command: ['tiktoksearch', 'ttsearch'],
     register: true,
     limit: 4,
-    async execute(m, {conn, usedPrefix, command, text}) {
-    if (!text) throw renderTemplate(getRequiredPluginMessage('downloads.tiktokSearch.missingQuery'), {
-        command: usedPrefix + command
+    async execute(m, {sdk}) {
+    if (!sdk.text) throw sdk.content.renderMessage('downloads.tiktokSearch.missingQuery', {
+        command: sdk.usedPrefix + sdk.command
     })
-    if (!userRequests.acquire(m.sender)) return m.reply(getRequiredPluginMessage('downloads.tiktokSearch.locked'))
-    m.react("⏳")
+    if (!userRequests.acquire(sdk.sender)) return sdk.reply.message('downloads.tiktokSearch.locked')
+    await sdk.reply.react("⏳")
     try {
-        const searchResults = await searchTikTokVideos(text);
-        if (searchResults.length === 0) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.tiktokSearch.noResults'), {query: text}));
+        const searchResults = await searchTikTokVideos(sdk.text);
+        if (searchResults.length === 0) return sdk.reply.message('downloads.tiktokSearch.noResults', {query: sdk.text});
         shuffleArray(searchResults);
-        let selectedResults = searchResults.slice(0, 5);
+        const selectedResults = searchResults.slice(0, 5);
         const medias = selectedResults.map(result => ({type: "video", data: {url: result.url}}));
-        await conn.sendAlbumMessage(m.chat, medias, renderTemplate(getRequiredPluginMessage('downloads.tiktokSearch.albumCaption'), {query: text}), m);
-        m.react("✅️");
+        await sdk.conn.sendAlbumMessage(sdk.chatId, medias, sdk.content.renderMessage('downloads.tiktokSearch.albumCaption', {query: sdk.text}), m);
+        await sdk.reply.react("✅️");
     } catch (error: unknown) {
-        m.react("❌️")
+        await sdk.reply.react("❌️")
         logError(error);
     } finally {
-        userRequests.release(m.sender);
+        userRequests.release(sdk.sender);
     }
     }
-});
+});
 
 ;
 

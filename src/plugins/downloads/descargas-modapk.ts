@@ -1,123 +1,60 @@
 import {logInfo} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import type {QuotedMessage} from '../../types/context.js';
-import {httpJson} from '../../lib/http-client.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
-import {runFirstProvider, type Provider} from '../../lib/provider-fallback.js';
+import {createExpiringMap} from '../../lib/ephemeral-state.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
+import {downloadModApk} from '../../providers/downloads/modapk.provider.js';
+import {renderDownloadFailure} from './download-error.js';
 
-interface ApkData {
-    name: string
-    package?: string
-    developer?: string
-    publish?: string
-    lastUpdate?: string
-    size: string
-    icon: string
-    dllink: string
-}
-
-interface DorratzApkResponse {
-    name?: string
-    package?: string
-    lastUpdate?: string
-    size?: string
-    icon?: string
-    dllink?: string
-}
-
-interface MainApkResponse {
-    data?: {
-        name?: string
-        developer?: string
-        publish?: string
-        size?: string
-        image?: string
-        download?: string
-    }
-}
-
-const userMessages = new Map<string, QuotedMessage>();
+const userMessages = createExpiringMap<QuotedMessage>({ttlMs: 10 * 60 * 1000});
 const userRequests = createUserRequestLocks();
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['apk', 'apkmod'],
     tags: ['downloader'],
     command: /^(apkmod|apk|modapk|dapk2|aptoide|aptoidedl)$/i,
     register: true,
     limit: 2,
-    async execute(m, {conn, text}) {
-    if (!text) return m.reply(getRequiredPluginMessage('downloads.modApk.missingQuery'))
-    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.modApk.locked'), {
-        user: m.sender.split('@')[0]
-    }), userMessages.get(m.sender) || m)
-    m.react("⌛");
+    async execute(m, {sdk}) {
+    if (!sdk.text) return sdk.reply.message('downloads.modApk.missingQuery')
+    if (!userRequests.acquire(sdk.sender)) return sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.modApk.locked', {
+        user: sdk.sender.split('@')[0]
+    }), userMessages.get(sdk.sender) || m)
+    await sdk.reply.react("⌛");
     try {
-        const downloadProviders: Array<Provider<ApkData>> = [
-            {
-                name: 'dorratz-apk',
-                run: async () => {
-                    const data = await httpJson<DorratzApkResponse>(`https://api.dorratz.com/v2/apk-dl?text=${text}`);
-                    if (!data.name || !data.size || !data.icon || !data.dllink) throw new Error('No data from dorratz API');
-                    return {
-                        name: data.name,
-                        package: data.package,
-                        lastUpdate: data.lastUpdate,
-                        size: data.size,
-                        icon: data.icon,
-                        dllink: data.dllink
-                    };
-                },
-            },
-            {
-                name: 'main-apk',
-                run: async () => {
-                    const data = await httpJson<MainApkResponse>(`${info.apis}/download/apk?query=${text}`);
-                    const apkData = data.data;
-                    if (!apkData?.name || !apkData.size || !apkData.image || !apkData.download) throw new Error('Respuesta inválida de API principal');
-                    return {
-                        name: apkData.name,
-                        developer: apkData.developer,
-                        publish: apkData.publish,
-                        size: apkData.size,
-                        icon: apkData.image,
-                        dllink: apkData.download
-                    };
-                },
-            },
-        ];
-
-        const apkData = await runFirstProvider(downloadProviders, 'No se pudo descargar el APK desde ninguna API');
+        const apkResult = await downloadModApk(sdk.text);
+        if (!apkResult.data) return sdk.reply.text(renderDownloadFailure('modApk', apkResult.failures));
+        const apkData = apkResult.data;
         const developerOrPackage = apkData.developer
-            ? renderTemplate(getRequiredPluginMessage('downloads.modApk.developerLine'), {developer: apkData.developer})
-            : renderTemplate(getRequiredPluginMessage('downloads.modApk.packageLine'), {package: apkData.package});
-        const response = renderTemplate(getRequiredPluginMessage('downloads.modApk.response'), {
+            ? sdk.content.renderMessage('downloads.modApk.developerLine', {developer: apkData.developer})
+            : sdk.content.renderMessage('downloads.modApk.packageLine', {package: apkData.package});
+        const response = sdk.content.renderMessage('downloads.modApk.response', {
             name: apkData.name,
             developerOrPackage,
             updatedAt: apkData.developer ? apkData.publish : apkData.lastUpdate,
             size: apkData.size
         });
-        const responseMessage = await conn.sendFile(m.chat, apkData.icon, 'apk.jpg', response, m);
-        userMessages.set(m.sender, responseMessage);
+        const responseMessage = await sdk.sendFile(apkData.icon, 'apk.jpg', response);
+        userMessages.set(sdk.sender, responseMessage);
 
         const apkSize = apkData.size.toLowerCase();
         if (apkSize.includes('gb') || (apkSize.includes('mb') && parseFloat(apkSize) > 999)) {
-            await m.reply(getRequiredPluginMessage('downloads.modApk.tooLarge'));
+            await sdk.reply.message('downloads.modApk.tooLarge');
             return;
         }
 
-        await conn.sendMessage(m.chat, {
-            document: {url: apkData.dllink},
+        await sdk.sendMessage({
+            document: {url: apkData.downloadUrl},
             mimetype: 'application/vnd.android.package-archive',
             fileName: `${apkData.name}.apk`,
             caption: undefined
-        }, {quoted: m});
-        m.react("✅");
+        });
+        await sdk.reply.react("✅");
     } catch (e: unknown) {
-        m.react('❌');
+        await sdk.reply.react('❌');
         logInfo(e);
     } finally {
-        userRequests.release(m.sender);
+        userRequests.release(sdk.sender);
     }
     }
 });

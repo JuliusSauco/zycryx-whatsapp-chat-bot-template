@@ -1,44 +1,44 @@
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin, type PluginContentSdk} from '../../core/sdk-plugin.js';
 import {logInfo} from '../../lib/logger.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 import {downloadInstagramMedia, type InstagramProviderMedia} from '../../providers/downloads/instagram.provider.js';
+import {renderDownloadFailure} from './download-error.js';
 
 const userRequests = createUserRequestLocks();
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['instagram *<link ig>*'],
     tags: ['downloader'],
     command: /^(instagramdl|instagram|igdl|ig|instagramdl2|instagram2|igdl2|ig2|instagramdl3|instagram3|igdl3|ig3)$/i,
     register: true,
     limit: 1,
-    async execute(m, {conn, args, command, usedPrefix}) {
-        if (!args[0]) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.instagram.missingUrl'), {
-            command: usedPrefix + command,
-        }));
-        if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.instagram.locked'), {
-            user: m.sender.split('@')[0],
-        }), m);
+    async execute(m, {sdk}) {
+        if (!sdk.args[0]) return sdk.reply.message('downloads.instagram.missingUrl', {
+            command: sdk.usedPrefix + sdk.command,
+        });
+        if (!userRequests.acquire(sdk.sender)) return sdk.reply.message('downloads.instagram.locked', {
+            user: sdk.sender.split('@')[0],
+        });
 
-        await m.react('⌛');
+        await sdk.reply.react('⌛');
         try {
-            const media = await downloadInstagramMedia(args[0]);
-            if (!media.data) throw new Error('No se pudo descargar el archivo desde ninguna API');
+            const media = await downloadInstagramMedia(sdk.args[0]);
+            if (!media.data) return sdk.reply.text(renderDownloadFailure('instagram', media.failures));
 
-            await conn.sendFile(m.chat, media.data.url, media.data.fileName, getInstagramCaption(media.data), m);
-            await m.react('✅');
+            await sdk.sendFile(media.data.url, media.data.fileName, getInstagramCaption(sdk.content, media.data));
+            await sdk.reply.react('✅');
         } catch (e: unknown) {
-            await m.react('❌');
+            await sdk.reply.react('❌');
             logInfo(e);
         } finally {
-            userRequests.release(m.sender);
+            userRequests.release(sdk.sender);
         }
     },
 });
 
-function getInstagramCaption(media: InstagramProviderMedia): string {
+function getInstagramCaption(content: PluginContentSdk, media: InstagramProviderMedia): string {
     if (media.caption) return media.caption;
     return media.type === 'image'
-        ? getRequiredPluginMessage('downloads.instagram.imageCaption')
-        : getRequiredPluginMessage('downloads.instagram.videoCaption');
+        ? content.message('downloads.instagram.imageCaption')
+        : content.message('downloads.instagram.videoCaption');
 }

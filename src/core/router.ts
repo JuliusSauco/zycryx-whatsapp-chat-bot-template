@@ -15,7 +15,7 @@ export class CommandRouter {
     private commandBeforePlugins: Plugin[] = [];
 
     /**
-     * Registra todos los plugins. Llamar cada vez que global.plugins cambia.
+     * Registra todos los plugins. Llamar cada vez que cambia el registro runtime.
      * Limpia el estado anterior antes de registrar.
      */
     registerAll(plugins: Record<string, Plugin>): void {

@@ -1,24 +1,23 @@
 import {logError, logInfo} from '../../lib/logger.js';
 import fs from "fs";
 import path from "path";
-import {definePlugin} from '../../core/define-plugin.js';
-import {getRequiredPluginMessage} from '../../lib/message-template.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['stop'],
     tags: ['jadibot'],
     command: /^(stop)$/i,
     owner: true,
     private: true,
     register: true,
-    async execute(m, {conn}) {
+    async execute(m, {conn, sdk}) {
     const rawId = conn.user?.id || "";
     const cleanId = rawId.replace(/:\d+/, ""); // elimina :16, :17
     const sessionPath = path.join("jadibot", cleanId);
     const isSubBot = fs.existsSync(sessionPath);
-    if (!isSubBot) return m.reply(getRequiredPluginMessage('subbots.stop.onlySubbot'))
+    if (!isSubBot) return sdk.reply.message('subbots.stop.onlySubbot')
     try {
-        await m.reply(getRequiredPluginMessage('subbots.stop.goodbye'));
+        await sdk.reply.message('subbots.stop.goodbye');
         await conn.logout();
 
         setTimeout(() => {
@@ -29,11 +28,11 @@ export default definePlugin({
         }, 2000);
 
         setTimeout(() => {
-            m.reply(getRequiredPluginMessage('subbots.stop.success'));
+            void sdk.reply.message('subbots.stop.success');
         }, 3000);
     } catch (err: unknown) {
         logError(`❌ Error al cerrar el subbot ${cleanId}:`, err);
-        await m.reply(getRequiredPluginMessage('subbots.stop.error'));
+        await sdk.reply.message('subbots.stop.error');
     }
     }
 });

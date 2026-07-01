@@ -7,12 +7,18 @@ import {format} from 'util'
 import {router} from '../core/router.js'
 import {logDebug, logError, logInfo, logWarn} from './logger.js';
 import type {Plugin} from '../types/plugin.js'
+import {
+    clearLoadedPlugins,
+    getLoadedPlugins,
+    removeLoadedPlugin,
+    setLoadedPlugin,
+} from '../core/runtime-state.js'
 
 const __libDir = dirname(fileURLToPath(import.meta.url))
 const pluginFolder = join(__libDir, '..', 'plugins')
 const pluginFilter = (filename: string): boolean => /\.(js|ts)$/.test(filename) && !filename.endsWith('.d.ts')
 const watchedDirs = new Set<string>()
-globalThis.plugins = {}
+clearLoadedPlugins()
 
 type PluginModule = {
     default?: Plugin;
@@ -65,17 +71,17 @@ export async function loadPlugins(): Promise<void> {
             const module = asPluginModule(await import(`${pathFile}?update=${Date.now()}`))
             const plugin = setPluginName(normalizePlugin(module), filename)
 
-            globalThis.plugins[filename] = plugin
+            setLoadedPlugin(filename, plugin)
 
             if (typeof plugin.before === 'function') {
                 plugin.__hasBefore = true
             }
         } catch (e) {
             logError(chalk.red(`${filename}:\n${format(e)}`))
-            delete globalThis.plugins[filename]
+            removeLoadedPlugin(filename)
         }
     }
-    router.registerAll(globalThis.plugins)
+    router.registerAll(getLoadedPlugins())
 }
 
 const reload = async (filename: string): Promise<void> => {
@@ -98,16 +104,16 @@ const reload = async (filename: string): Promise<void> => {
             const module = asPluginModule(await import(`${pathFile}?update=${Date.now()}`))
             const plugin = setPluginName(normalizePlugin(module), filename)
 
-            globalThis.plugins[filename] = plugin
-            router.registerAll(globalThis.plugins)
+            setLoadedPlugin(filename, plugin)
+            router.registerAll(getLoadedPlugins())
             logInfo(chalk.green(`UPDATE : ${filename}`))
         } catch (e) {
             logError(chalk.red(`❌ ERROR RECARGANDO ${filename}:\n${format(e)}`))
         }
     } else {
         logWarn(chalk.yellow(`PLUGIN ELIMINADO: ${filename}`))
-        delete globalThis.plugins[filename]
-        router.registerAll(globalThis.plugins)
+        removeLoadedPlugin(filename)
+        router.registerAll(getLoadedPlugins())
     }
 }
 

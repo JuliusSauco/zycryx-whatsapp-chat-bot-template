@@ -45,6 +45,14 @@ export async function listGroupMessageCounts(groupId: string): Promise<Array<{
     return repositories.messages.listGroupCounts(groupId);
 }
 
+export async function listGroupMessageActivity(groupId: string): Promise<Array<{
+    user_id: string;
+    message_count: number;
+    last_message_at: Date | null;
+}>> {
+    return repositories.messages.listGroupActivity(groupId);
+}
+
 export async function logGroupMessage(input: {
     groupId: string;
     userId: string;

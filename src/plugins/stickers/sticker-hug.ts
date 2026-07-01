@@ -1,29 +1,24 @@
 import {logError} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
-import {definePlugin} from '../../core/define-plugin.js'
-import {httpBuffer, httpJson} from '../../lib/http-client.js'
-import {getRequiredPluginMessage} from '../../lib/message-template.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
+import {getRemoteMediaBuffer, getWaifuActionUrl} from '../../providers/media-conversion/sticker.provider.js';
 
-interface WaifuPicsResponse {
-    url?: string;
-}
-
-export default definePlugin({
-    help: ['hug'],
+export default defineSdkPlugin({
+    help: ['abrazito'],
     tags: ['sticker'],
     command: /^(hug|abrazo|abrazar|abrazito)$/i,
     register: true,
-    async execute(m, {conn}) {
+    async execute(m, {sdk}) {
     try {
         if (m.quoted?.sender) m.mentionedJid.push(m.quoted.sender)
-        if (!m.mentionedJid.length) m.mentionedJid.push(m.sender)
+        if (!m.mentionedJid.length) m.mentionedJid.push(sdk.sender)
 
-        const getName = async (jid: string) => (await conn.getName(jid).catch(() => null)) || `+${jid.split('@')[0]}`
-        const senderName = await getName(m.sender)
+        const getName = async (jid: string) => (await sdk.conn.getName(jid).catch(() => null)) || `+${jid.split('@')[0]}`
+        const senderName = await getName(sdk.sender)
         const mentionedNames = await Promise.all(m.mentionedJid.map(getName))
         const texto = `🤗 ${senderName} abrazó con cariño a ${mentionedNames.join(', ')}`
-        const {url: gifUrl} = await httpJson<WaifuPicsResponse>('https://api.waifu.pics/sfw/hug')
-        if (!gifUrl) return m.reply(getRequiredPluginMessage('stickers.common.apiNoSticker'))
+        const gifUrl = await getWaifuActionUrl('hug')
+        if (!gifUrl) return sdk.reply.message('stickers.common.apiNoSticker')
 
         let stiker
         try {
@@ -33,14 +28,14 @@ export default definePlugin({
         }
 
         if (stiker) {
-            await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, {
+            await sdk.sendFile(stiker, 'sticker.webp', '', m, true, {
                 contextInfo: {
                     forwardingScore: 200,
                     isForwarded: false,
                     externalAdReply: {
                         showAdAttribution: false,
                         title: texto,
-                        body: info.wm,
+                        body: sdk.branding.watermark,
                         mediaType: 2,
                         sourceUrl: info.md,
                         thumbnail: m.pp
@@ -50,16 +45,16 @@ export default definePlugin({
             return
         }
 
-        const gifBuffer = await httpBuffer(gifUrl)
-        await conn.sendMessage(m.chat, {
+        const gifBuffer = await getRemoteMediaBuffer(gifUrl)
+        await sdk.sendMessage({
             video: gifBuffer,
             gifPlayback: true,
             caption: texto,
             mentions: m.mentionedJid
-        }, {quoted: m})
+        })
     } catch (e: unknown) {
         logError(e)
-        m.react("❌️")
+        await sdk.reply.react("❌️")
     }
     }
 })

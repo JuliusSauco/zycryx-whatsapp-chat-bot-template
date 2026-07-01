@@ -1,11 +1,10 @@
 import {logError} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {getUserWarnInfo, incrementUserWarn, resetUserWarn} from '../../services/user.service.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 const maxwarn = 3;
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['warn @user [razón]'],
     tags: ['group'],
     command: /^warn$/i,
@@ -13,7 +12,7 @@ export default definePlugin({
     botAdmin: true,
     group: true,
     register: true,
-    async execute(m, {conn, text}) {
+    async execute(m, {sdk}) {
     try {
         let who: string;
         if (m.isGroup) {
@@ -22,33 +21,33 @@ export default definePlugin({
             who = m.chat;
         }
 
-        if (!who) return m.reply(getRequiredPluginMessage('group.warn.missingUser'))
+        if (!who) return sdk.reply.message('group.warn.missingUser')
         const user = await getUserWarnInfo(who);
-        if (!user) return m.reply(getRequiredPluginMessage('group.warn.unknownUser'))
+        if (!user) return sdk.reply.message('group.warn.unknownUser')
 
-        const name = (await conn.getName(m.sender)) || m.sender.split('@')[0];
+        const name = (await sdk.conn.getName(sdk.sender)) || sdk.sender.split('@')[0];
         let warn = user.warn || 0;
 
         if (warn < maxwarn) {
             await incrementUserWarn(who);
             warn += 1;
 
-            let reason = text.trim() || getRequiredPluginMessage('group.warn.defaultReason');
-            await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('group.warn.notice'), {
+            let reason = sdk.text.trim() || sdk.content.message('group.warn.defaultReason');
+            await sdk.reply.message('group.warn.notice', {
                 user: who.split('@')[0],
                 admin: name,
                 warn,
                 maxwarn,
                 reason,
-            }), m)
+            })
         } else if (warn >= maxwarn) {
             await resetUserWarn(who);
-            await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('group.warn.kickNotice'), {
+            await sdk.reply.message('group.warn.kickNotice', {
                 user: who.split('@')[0],
                 maxwarn,
-            }), m)
+            })
             await delay(3000);
-            await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
+            await sdk.conn.groupParticipantsUpdate(sdk.chatId, [who], 'remove');
         }
     } catch (err: unknown) {
         logError(err);

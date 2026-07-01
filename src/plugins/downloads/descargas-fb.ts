@@ -1,46 +1,46 @@
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin, type PluginContentSdk} from '../../core/sdk-plugin.js';
 import {logInfo} from '../../lib/logger.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 import {downloadFacebookMedia, isFacebookUrl, type FacebookProviderMedia} from '../../providers/downloads/facebook.provider.js';
+import {renderDownloadFailure} from './download-error.js';
 
 const userRequests = createUserRequestLocks();
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['fb', 'facebook', 'fbdl'],
     tags: ['downloader'],
     command: /^(facebook|fb|facebookdl|fbdl|facebook2|fb2|facebookdl2|fbdl2|facebook3|fb3|facebookdl3|fbdl3|facebook4|fb4|facebookdl4|fbdl4|facebook5|fb5|facebookdl5|fbdl5)$/i,
     register: true,
     limit: 3,
-    async execute(m, {conn, args, command, usedPrefix}) {
-        const missingUrlMessage = renderTemplate(getRequiredPluginMessage('downloads.facebook.missingUrl'), {
-            command: usedPrefix + command,
+    async execute(m, {sdk}) {
+        const missingUrlMessage = sdk.content.renderMessage('downloads.facebook.missingUrl', {
+            command: sdk.usedPrefix + sdk.command,
         });
-        if (!args[0]) return m.reply(missingUrlMessage);
-        if (!isFacebookUrl(args[0])) return m.reply(missingUrlMessage);
-        if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.facebook.locked'), {
-            user: m.sender.split('@')[0],
-        }), m);
+        if (!sdk.args[0]) return sdk.reply.text(missingUrlMessage);
+        if (!isFacebookUrl(sdk.args[0])) return sdk.reply.text(missingUrlMessage);
+        if (!userRequests.acquire(sdk.sender)) return sdk.reply.message('downloads.facebook.locked', {
+            user: sdk.sender.split('@')[0],
+        });
 
-        await m.react('⌛');
+        await sdk.reply.react('⌛');
         try {
-            const media = await downloadFacebookMedia(args[0]);
-            if (!media.data) throw new Error('No se pudo descargar el video o imagen desde ninguna API');
+            const media = await downloadFacebookMedia(sdk.args[0]);
+            if (!media.data) return sdk.reply.text(renderDownloadFailure('facebook', media.failures));
 
-            await conn.sendFile(m.chat, media.data.url, media.data.fileName, getFacebookCaption(media.data), m);
-            await m.react('✅');
+            await sdk.sendFile(media.data.url, media.data.fileName, getFacebookCaption(sdk.content, media.data));
+            await sdk.reply.react('✅');
         } catch (e: unknown) {
-            await m.react('❌');
+            await sdk.reply.react('❌');
             logInfo(e);
         } finally {
-            userRequests.release(m.sender);
+            userRequests.release(sdk.sender);
         }
     },
 });
 
-function getFacebookCaption(media: FacebookProviderMedia): string {
-    if (media.type === 'image') return getRequiredPluginMessage('downloads.facebook.imageCaption');
+function getFacebookCaption(content: PluginContentSdk, media: FacebookProviderMedia): string {
+    if (media.type === 'image') return content.message('downloads.facebook.imageCaption');
     return media.captionVariant === 'bold'
-        ? getRequiredPluginMessage('downloads.facebook.videoCaptionBold')
-        : getRequiredPluginMessage('downloads.facebook.videoCaption');
+        ? content.message('downloads.facebook.videoCaptionBold')
+        : content.message('downloads.facebook.videoCaption');
 }

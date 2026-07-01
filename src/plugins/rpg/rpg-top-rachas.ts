@@ -1,14 +1,13 @@
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import {listWallets} from '../../services/wallet.service.js';
 import type {UserWallet} from '../../ports/repositories.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['topstreak [página]'],
     tags: ['econ'],
     command: ['topstreak', 'streaktop', 'streak'],
     register: true,
-    async execute(m, {args}) {
+    async execute(m, {args, sdk}) {
     const page = Math.max(1, parseInt(args[0]) || 1);
     const pageSize = 10;
     const offset = (page - 1) * pageSize;
@@ -20,13 +19,13 @@ export default definePlugin({
         .sort((a, b) => b.dailystreak - a.dailystreak);
     const totalActivos = users.length;
 
-    if (!users.length) return m.reply(getRequiredPluginMessage('rpg.streakTop.noActive'));
+    if (!users.length) return sdk.reply.message('rpg.streakTop.noActive');
 
     const paginated = users.slice(offset, offset + pageSize);
 
-    if (!paginated.length) return m.reply(getRequiredPluginMessage('rpg.streakTop.noPage'));
+    if (!paginated.length) return sdk.reply.message('rpg.streakTop.noPage');
 
-    let ranking = renderTemplate(getRequiredPluginMessage('rpg.streakTop.header'), {
+    let ranking = sdk.content.renderMessage('rpg.streakTop.header', {
         page,
         totalActive: totalActivos
     });
@@ -41,18 +40,18 @@ export default definePlugin({
         let premio = '';
 
         if (streak >= 100) {
-            premio = getRequiredPluginMessage('rpg.streakTop.prizeHundred');
+            premio = sdk.content.message('rpg.streakTop.prizeHundred');
         } else if (streak >= 50) {
-            premio = getRequiredPluginMessage('rpg.streakTop.prizeFifty');
+            premio = sdk.content.message('rpg.streakTop.prizeFifty');
         } else if (streak >= 30) {
-            premio = getRequiredPluginMessage('rpg.streakTop.prizeThirty');
+            premio = sdk.content.message('rpg.streakTop.prizeThirty');
         } else if (streak % 7 === 0) {
-            premio = getRequiredPluginMessage('rpg.streakTop.prizeWeekly');
+            premio = sdk.content.message('rpg.streakTop.prizeWeekly');
         }
 
-        const corona = (puesto === 1) ? getRequiredPluginMessage('rpg.streakTop.crown') : '';
+        const corona = (puesto === 1) ? sdk.content.message('rpg.streakTop.crown') : '';
 
-        ranking += renderTemplate(getRequiredPluginMessage('rpg.streakTop.line'), {
+        ranking += sdk.content.renderMessage('rpg.streakTop.line', {
             position: puesto,
             name: nombre,
             crown: corona,
@@ -61,9 +60,9 @@ export default definePlugin({
         });
     }
 
-    ranking += getRequiredPluginMessage('rpg.streakTop.footer');
+    ranking += sdk.content.message('rpg.streakTop.footer');
 
-    m.reply(ranking.trim());
+    await sdk.reply.text(ranking.trim());
     }
 });
 

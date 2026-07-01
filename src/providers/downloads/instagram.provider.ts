@@ -1,6 +1,6 @@
 import {instagramdl} from '@bochilteam/scraper';
 import {httpJson, httpText} from '../../lib/http-client.js';
-import {runProviderCandidates, type ProviderCandidate, type ProviderResult} from '../provider.types.js';
+import {DEFAULT_PROVIDER_TIMEOUT_MS, LONG_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
 interface InstagramArrayResponse {
     data?: Array<{
@@ -30,7 +30,7 @@ export function inferInstagramMediaType(url: string, fallbackType?: string): 'vi
 }
 
 export function buildInstagramDownloadProviders(postUrl: string): ProviderCandidate<InstagramProviderMedia>[] {
-    return [
+    return withProviderPolicy([
         {
             name: 'siputz-instagram',
             run: async () => {
@@ -63,6 +63,7 @@ export function buildInstagramDownloadProviders(postUrl: string): ProviderCandid
         },
         {
             name: 'bochil-instagram',
+            timeoutMs: LONG_PROVIDER_TIMEOUT_MS,
             run: async () => {
                 const result = await instagramdl(postUrl) as Array<{url?: string}>;
                 const mediaUrl = result[0]?.url;
@@ -77,7 +78,7 @@ export function buildInstagramDownloadProviders(postUrl: string): ProviderCandid
                 };
             },
         },
-    ];
+    ], {timeoutMs: DEFAULT_PROVIDER_TIMEOUT_MS, retries: 1});
 }
 
 export function downloadInstagramMedia(postUrl: string): Promise<ProviderResult<InstagramProviderMedia>> {

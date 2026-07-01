@@ -1,5 +1,5 @@
-import {definePlugin} from '../../core/define-plugin.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
+import {content} from '../../services/content.service.js'
 import {getGroupSettings, setGroupAutoAcceptMode, setGroupAutoresponderMode, setGroupAutoresponderTrigger, setGroupBooleanFlag, setGroupBotAccessMode, setGroupFeatureAccessMode, setGroupGreetingHidetagMode, setGroupNsfwMode} from '../../services/group-settings.service.js'
 import {getSubbotConfig, setSubbotBooleanFlag} from '../../services/subbot.service.js'
 import {isGroupCreator} from '../../utils/group-creator.js'
@@ -10,17 +10,17 @@ import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMo
 function getAutoAcceptModeLabel(mode?: AutoAcceptMode | null): string {
     switch (mode || 'off') {
         case 'on':
-            return getRequiredPluginMessage('config.toggle.autoAcceptOnSilent')
+            return content.message('config.toggle.autoAcceptOnSilent')
         case 'on_hidetag_admin':
-            return getRequiredPluginMessage('config.toggle.autoAcceptOnAdmins')
+            return content.message('config.toggle.autoAcceptOnAdmins')
         case 'on_hidetag_all':
-            return getRequiredPluginMessage('config.toggle.autoAcceptOnAll')
+            return content.message('config.toggle.autoAcceptOnAll')
         case 'off_hidetag_admin':
-            return getRequiredPluginMessage('config.toggle.autoAcceptOffAdmins')
+            return content.message('config.toggle.autoAcceptOffAdmins')
         case 'off_hidetag_all':
-            return getRequiredPluginMessage('config.toggle.autoAcceptOffAll')
+            return content.message('config.toggle.autoAcceptOffAll')
         default:
-            return getRequiredPluginMessage('config.toggle.autoAcceptOff')
+            return content.message('config.toggle.autoAcceptOff')
     }
 }
 
@@ -90,16 +90,16 @@ function getCurrentGreetingHidetagMode(mode?: GreetingHidetagMode | null, legacy
     return mode || (legacyHidetag ? 'all' : 'off')
 }
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: [
-        'enable',
-        'enable saludos',
-        'enable moderacion',
-        'enable acceso',
-        'enable familias',
-        'enable ia',
-        'enable adulto',
-        'enable subbot',
+        'config',
+        'config saludos',
+        'config seguridad',
+        'config acceso',
+        'config comandos',
+        'config ia',
+        'config adulto',
+        'config subbot',
         'enable nsfw --admin',
         'enable bot --admin',
         'enable autoresponder --triggerall',
@@ -114,14 +114,15 @@ export default definePlugin({
         'disable <opcion>',
     ],
     tags: ['nable'],
-    command: /^((en|dis)able|(tru|fals)e|(turn)?o(n|ff)|[01])$/i,
+    command: /^(config|((en|dis)able|(tru|fals)e|(turn)?o(n|ff)|[01]))$/i,
     register: true,
     async execute(m, {conn, args, usedPrefix, command, isAdmin, isOwner, metadata, chatId: contextChatId}) {
     const isEnable = /true|enable|(turn)?on|1/i.test(command)
+    const isConfigMenu = /^config$/i.test(command)
     const type = (args[0] || '').toLowerCase()
     const chatId = m.chat
     const botId = conn.user?.id
-    if (!botId) return m.reply(getRequiredPluginMessage('config.toggle.missingBotId'))
+    if (!botId) return m.reply(content.message('config.toggle.missingBotId'))
     const cleanId = botId.replace(/:\d+/, '')
     const isSubbot = botId !== 'main'
     let isAll = false, isUser = false
@@ -133,13 +134,13 @@ export default definePlugin({
     let selectedNsfwMode: {enabled: boolean; mode: AccessMode} | null = null
     let selectedGreetingConfig: {type: 'welcome' | 'bye'; enabled: boolean; hidetagMode: GreetingHidetagMode} | null = null
     const chat: Partial<GroupSettings> = await getGroupSettings(chatId) || {}
-    const enabledIcon = getRequiredPluginMessage('config.toggle.enabledIcon')
-    const disabledIcon = getRequiredPluginMessage('config.toggle.disabledIcon')
-    const notGroupIcon = getRequiredPluginMessage('config.toggle.notGroupIcon')
+    const enabledIcon = content.message('config.toggle.enabledIcon')
+    const disabledIcon = content.message('config.toggle.disabledIcon')
+    const notGroupIcon = content.message('config.toggle.notGroupIcon')
     const botConfig = isSubbot ? await getSubbotConfig(botId) : null
-    const groupOnly = getRequiredPluginMessage('config.toggle.groupOnly')
-    const adminOnly = getRequiredPluginMessage('config.toggle.adminOnly')
-    const ownerOrGroupCreatorOnly = getRequiredPluginMessage('config.toggle.ownerOrGroupCreatorOnly')
+    const groupOnly = content.message('config.toggle.groupOnly')
+    const adminOnly = content.message('config.toggle.adminOnly')
+    const ownerOrGroupCreatorOnly = content.message('config.toggle.ownerOrGroupCreatorOnly')
     const isFounder = m.isGroup && isGroupCreator({chatId: contextChatId || chatId, sender: m.sender, senderLid: m.lid, metadata})
 
     const menuState = {
@@ -158,13 +159,13 @@ export default definePlugin({
     }
     const sectionKey = getToggleSectionKey(type)
     const menu = renderToggleMenu(menuState, sectionKey)
-    if (!type || sectionKey) return m.reply(menu)
+    if (isConfigMenu || !type || sectionKey) return m.reply(menu)
 
     const configureFeatureAccess = async (input: FeatureAccessInput) => {
         if (!m.isGroup) throw groupOnly
         const mode = isEnable ? resolveAccessMode(args, 'all') : 'all'
         if (mode === 'owner') {
-            if (!isOwner) throw getRequiredPluginMessage('config.toggle.ownerOnly')
+            if (!isOwner) throw content.message('config.toggle.ownerOnly')
         } else if (mode === 'superadmin') {
             if (!isOwner && !isFounder) throw ownerOrGroupCreatorOnly
         } else if (!isAdmin) {
@@ -277,7 +278,7 @@ export default definePlugin({
                 }
                 const mode = isEnable ? resolveAccessMode(args, 'all') : 'all'
                 if (mode === 'owner') {
-                    if (!isOwner) throw getRequiredPluginMessage('config.toggle.ownerOnly')
+                    if (!isOwner) throw content.message('config.toggle.ownerOnly')
                 } else if (mode === 'superadmin') {
                     if (!isOwner && !isFounder) throw ownerOrGroupCreatorOnly
                 } else if (!isAdmin) {
@@ -314,7 +315,7 @@ export default definePlugin({
             if (!m.isGroup) throw groupOnly
             selectedNsfwMode = {enabled: isEnable, mode: isEnable ? resolveAccessMode(args, 'all') : 'all'}
             if (selectedNsfwMode.mode === 'owner') {
-                if (!isOwner) throw getRequiredPluginMessage('config.toggle.ownerOnly')
+                if (!isOwner) throw content.message('config.toggle.ownerOnly')
             } else if (!isOwner && !isFounder) {
                 throw ownerOrGroupCreatorOnly
             }
@@ -340,7 +341,7 @@ export default definePlugin({
         case 'modoowner':
         case 'onlyowner':
             if (!m.isGroup) throw groupOnly
-            if (!isOwner) throw getRequiredPluginMessage('config.toggle.ownerOnly')
+            if (!isOwner) throw content.message('config.toggle.ownerOnly')
             selectedBotAccessMode = isEnable ? 'owner' : 'all'
             await setGroupBotAccessMode(chatId, selectedBotAccessMode)
             break
@@ -351,7 +352,7 @@ export default definePlugin({
             if (!m.isGroup) throw groupOnly
             selectedBotAccessMode = isEnable ? resolveAccessMode(args, 'all') : 'all'
             if (selectedBotAccessMode === 'owner') {
-                if (!isOwner) throw getRequiredPluginMessage('config.toggle.ownerOnly')
+                if (!isOwner) throw content.message('config.toggle.ownerOnly')
             } else if (selectedBotAccessMode === 'superadmin') {
                 if (!isOwner && !isFounder) throw ownerOrGroupCreatorOnly
             } else if (!isAdmin) {
@@ -428,14 +429,14 @@ export default definePlugin({
 
         case 'antiprivate':
         case 'antiprivado':
-            if (!isSubbot && !isOwner) return m.reply(getRequiredPluginMessage('config.toggle.ownerOrSubbotOnly'))
+            if (!isSubbot && !isOwner) return m.reply(content.message('config.toggle.ownerOrSubbotOnly'))
             await setSubbotBooleanFlag(cleanId, 'anti_private', isEnable)
             isAll = true
             break
 
         case 'anticall':
         case 'antillamada':
-            if (!isSubbot && !isOwner) return m.reply(getRequiredPluginMessage('config.toggle.ownerOrSubbotOnly'))
+            if (!isSubbot && !isOwner) return m.reply(content.message('config.toggle.ownerOrSubbotOnly'))
             await setSubbotBooleanFlag(cleanId, 'anti_call', isEnable)
             isAll = true
             break
@@ -445,56 +446,56 @@ export default definePlugin({
     }
 
     if (selectedAutoAcceptMode) {
-        return m.reply(renderTemplate(getRequiredPluginMessage('config.toggle.autoAcceptConfigured'), {
+        return m.reply(content.renderMessage('config.toggle.autoAcceptConfigured', {
             status: getAutoAcceptModeLabel(selectedAutoAcceptMode),
         }))
     }
 
     if (selectedGreetingConfig) {
-        return m.reply(renderTemplate(getRequiredPluginMessage('config.toggle.greetingConfigured'), {
+        return m.reply(content.renderMessage('config.toggle.greetingConfigured', {
             type: selectedGreetingConfig.type,
-            status: selectedGreetingConfig.enabled ? getRequiredPluginMessage('config.toggle.enabledLabel') : getRequiredPluginMessage('config.toggle.disabledLabel'),
+            status: selectedGreetingConfig.enabled ? content.message('config.toggle.enabledLabel') : content.message('config.toggle.disabledLabel'),
             hidetag: getGreetingHidetagModeLabel(selectedGreetingConfig.hidetagMode),
         }))
     }
 
     if (selectedBotAccessMode) {
-        return m.reply(renderTemplate(getRequiredPluginMessage('config.toggle.botAccessConfigured'), {
+        return m.reply(content.renderMessage('config.toggle.botAccessConfigured', {
             status: getAccessModeLabel(selectedBotAccessMode),
         }))
     }
 
     if (selectedAutoresponderMode) {
-        return m.reply(renderTemplate(getRequiredPluginMessage('config.toggle.autoresponderConfigured'), {
-            status: selectedAutoresponderMode.enabled ? getRequiredPluginMessage('config.toggle.enabledLabel') : getRequiredPluginMessage('config.toggle.disabledLabel'),
+        return m.reply(content.renderMessage('config.toggle.autoresponderConfigured', {
+            status: selectedAutoresponderMode.enabled ? content.message('config.toggle.enabledLabel') : content.message('config.toggle.disabledLabel'),
             access: getAccessModeLabel(selectedAutoresponderMode.mode),
         }))
     }
 
     if (selectedAutoresponderTrigger) {
-        return m.reply(renderTemplate(getRequiredPluginMessage('config.toggle.autoresponderTriggerConfigured'), {
+        return m.reply(content.renderMessage('config.toggle.autoresponderTriggerConfigured', {
             trigger: getAutoresponderTriggerLabel(selectedAutoresponderTrigger),
         }))
     }
 
     if (selectedNsfwMode) {
-        return m.reply(renderTemplate(getRequiredPluginMessage('config.toggle.nsfwConfigured'), {
-            status: selectedNsfwMode.enabled ? getRequiredPluginMessage('config.toggle.enabledLabel') : getRequiredPluginMessage('config.toggle.disabledLabel'),
+        return m.reply(content.renderMessage('config.toggle.nsfwConfigured', {
+            status: selectedNsfwMode.enabled ? content.message('config.toggle.enabledLabel') : content.message('config.toggle.disabledLabel'),
             access: getAccessModeLabel(selectedNsfwMode.mode),
         }))
     }
 
     if (selectedFeatureAccessMode) {
-        return m.reply(renderTemplate(getRequiredPluginMessage('config.toggle.featureAccessConfigured'), {
+        return m.reply(content.renderMessage('config.toggle.featureAccessConfigured', {
             feature: selectedFeatureAccessMode.feature,
             access: getAccessModeLabel(selectedFeatureAccessMode.mode),
         }))
     }
 
-    await m.reply(renderTemplate(getRequiredPluginMessage('config.toggle.updated'), {
+    await m.reply(content.renderMessage('config.toggle.updated', {
         type,
-        target: isAll ? getRequiredPluginMessage('config.toggle.targetAll') : isUser ? getRequiredPluginMessage('config.toggle.targetUser') : getRequiredPluginMessage('config.toggle.targetChat'),
-        status: isEnable ? getRequiredPluginMessage('config.toggle.enabledLabel') : getRequiredPluginMessage('config.toggle.disabledLabel'),
+        target: isAll ? content.message('config.toggle.targetAll') : isUser ? content.message('config.toggle.targetUser') : content.message('config.toggle.targetChat'),
+        status: isEnable ? content.message('config.toggle.enabledLabel') : content.message('config.toggle.disabledLabel'),
     }))
     }
 })

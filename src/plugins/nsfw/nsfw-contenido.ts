@@ -1,11 +1,9 @@
 import {logError} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
-import {httpJson, httpRequest} from '../../lib/http-client.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {loadStringArrayResource} from '../../lib/local-json-resource.js'
 import {buildAliasMap, buildAliasRegex} from '../../utils/command-alias.js'
 import {pickRandom} from '../../utils/random.js'
 import {nsfwContent, type NsfwContentItem} from './nsfw-contenido.data.js'
-import {getRequiredPluginMessage} from '../../lib/message-template.js'
 
 
 interface UrlResponse {
@@ -17,60 +15,60 @@ interface UrlResponse {
 
 const aliasMap = buildAliasMap<NsfwContentItem>(nsfwContent)
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: Object.keys(aliasMap),
     tags: ['nsfw'],
     command: buildAliasRegex(aliasMap),
     limit: 2,
     register: true,
-    async execute(m, {conn, command}) {
+    async execute(m, {sdk}) {
     try {
-        const item = aliasMap[command.toLowerCase()]
-        if (!item) return m.reply(getRequiredPluginMessage('nsfw.content.unknownCommand'))
+        const item = aliasMap[sdk.command.toLowerCase()]
+        if (!item) return sdk.reply.message('nsfw.content.unknownCommand')
 
         if (item.type === 'array') {
-            if (!item.array?.length) return m.reply(getRequiredPluginMessage('nsfw.content.emptySource'))
+            if (!item.array?.length) return sdk.reply.message('nsfw.content.emptySource')
             const url = pickRandom(item.array)
-            await conn.sendFile(m.chat, url, 'nsfw.jpg', item.label, m)
+            await sdk.sendFile(url, 'nsfw.jpg', item.label)
             return
         }
 
         if (item.type === 'json') {
-            if (!item.dataFile) return m.reply(getRequiredPluginMessage('nsfw.content.missingJsonSource'))
+            if (!item.dataFile) return sdk.reply.message('nsfw.content.missingJsonSource')
             const data = await loadStringArrayResource(item.dataFile)
             const img = pickRandom(data)
-            await conn.sendFile(m.chat, img, 'nsfw.jpg', item.label, m)
+            await sdk.sendFile(img, 'nsfw.jpg', item.label)
             return
         }
 
         if (item.type === 'waifu') {
-            if (!item.api) return m.reply(getRequiredPluginMessage('nsfw.content.missingApi'))
-            const {url} = await httpJson<UrlResponse>(`https://api.waifu.pics/nsfw/${item.api}`)
-            if (!url) return m.reply(getRequiredPluginMessage('nsfw.content.missingImage'))
-            await conn.sendFile(m.chat, url, 'waifu.jpg', item.label, m)
+            if (!item.api) return sdk.reply.message('nsfw.content.missingApi')
+            const {url} = await sdk.http.json<UrlResponse>(`https://api.waifu.pics/nsfw/${item.api}`)
+            if (!url) return sdk.reply.message('nsfw.content.missingImage')
+            await sdk.sendFile(url, 'waifu.jpg', item.label)
             return
         }
 
         if (item.type === 'api') {
-            if (!item.api) return m.reply(getRequiredPluginMessage('nsfw.content.missingApi'))
-            const res = await httpRequest(item.api)
+            if (!item.api) return sdk.reply.message('nsfw.content.missingApi')
+            const res = await sdk.http.request(item.api)
             const contentType = res.headers.get('content-type') || ''
             if (contentType.startsWith('image/')) {
                 const buffer = Buffer.from(await res.arrayBuffer())
-                await conn.sendFile(m.chat, buffer, 'img.jpg', item.label, m)
+                await sdk.sendFile(buffer, 'img.jpg', item.label)
                 return
             }
             const json = await res.json() as UrlResponse
             const value = item.field ? json[item.field] : json.url || json.message
             const url = typeof value === 'string' ? value : null
-            if (!url) return m.reply(getRequiredPluginMessage('nsfw.content.missingUrl'))
-            await conn.sendFile(m.chat, url, 'nsfw.jpg', item.label, m)
+            if (!url) return sdk.reply.message('nsfw.content.missingUrl')
+            await sdk.sendFile(url, 'nsfw.jpg', item.label)
             return
         }
-        m.reply(getRequiredPluginMessage('nsfw.content.unsupportedSource'))
+        await sdk.reply.message('nsfw.content.unsupportedSource')
     } catch (e: unknown) {
         logError('[NSFW ERROR]', e)
-        m.reply(getRequiredPluginMessage('nsfw.content.sendError'))
+        await sdk.reply.message('nsfw.content.sendError')
     }
     }
 })

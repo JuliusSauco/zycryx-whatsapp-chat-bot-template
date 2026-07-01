@@ -4,32 +4,30 @@ import uploadFile from '../../lib/uploadFile.js'
 import uploadImage from '../../lib/uploadImage.js'
 import {webp2png} from '../../lib/webp2mp4.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js';
-import {definePlugin} from '../../core/define-plugin.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {pickRandom} from '../../utils/random.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['sticker'],
     tags: ['sticker'],
     command: ['s', 'sticker'],
     register: true,
-    async execute(m, {conn, args, usedPrefix, command}) {
+    async execute(m, {sdk}) {
     let stiker: Buffer | string | false = false;
-    const {packname: f, author: g} = await getStickerExif(m.sender);
+    const {packname: f, author: g} = await getStickerExif(sdk.sender);
     try {
         let q = m.quoted ? m.quoted : m
         let mime = q.msg?.mimetype || q.mimetype || q.mediaType || ''
         if (/webp|image|video/g.test(mime)) {
-            if (/video/g.test(mime)) if ((q.msg?.seconds || q.seconds || 0) > 18) return m.reply(getRequiredPluginMessage('stickers.common.stickerVideoTooLong'))
+            if (/video/g.test(mime)) if ((q.msg?.seconds || q.seconds || 0) > 18) return sdk.reply.message('stickers.common.stickerVideoTooLong')
             let img = await q.download?.()
-            if (!img) return m.reply(renderTemplate(getRequiredPluginMessage('stickers.common.missingStickerMedia'), {command: usedPrefix + command}))
+            if (!img) return sdk.reply.message('stickers.common.missingStickerMedia', {command: sdk.usedPrefix + sdk.command})
             let out: string | string[] | undefined
             try {
                 stiker = await sticker(img, false, f, g)
             } catch (e: unknown) {
                 logError(e)
             } finally {
-//conn.reply(m.chat, `Calma crack estoy haciendo tu sticker 👏\n\n> *Recuerda los video son de 7 segundos*`, m)
                 if (!stiker) {
                     if (/webp/g.test(mime)) out = await webp2png(img)
                     else if (/image/g.test(mime)) out = await uploadImage(img)
@@ -39,20 +37,20 @@ export default definePlugin({
                     stiker = await sticker(false, out, f, g)
                 }
             }
-        } else if (args[0]) {
-            if (isUrl(args[0])) stiker = await sticker(false, args[0], f, g)
-            else return m.reply(getRequiredPluginMessage('stickers.common.invalidUrl'))
+        } else if (sdk.args[0]) {
+            if (isUrl(sdk.args[0])) stiker = await sticker(false, sdk.args[0], f, g)
+            else return sdk.reply.message('stickers.common.invalidUrl')
         }
     } catch (e: unknown) {
         logError(e)
     } finally {
-        if (stiker) await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, {
+        if (stiker) await sdk.sendFile(stiker, 'sticker.webp', '', m, true, {
             contextInfo: {
                 'forwardingScore': 200,
                 'isForwarded': false,
                 externalAdReply: {
                     showAdAttribution: false,
-                    title: info.wm,
+                    title: sdk.branding.watermark,
                     body: ``,
                     mediaType: 2,
                     sourceUrl: pickRandom([info.nna, info.nna2, info.md, info.yt]),
@@ -60,7 +58,7 @@ export default definePlugin({
                 }
             }
         })
-        else return m.reply(renderTemplate(getRequiredPluginMessage('stickers.common.missingStickerMedia'), {command: usedPrefix + command}))
+        else return sdk.reply.message('stickers.common.missingStickerMedia', {command: sdk.usedPrefix + sdk.command})
     }
     }
 })

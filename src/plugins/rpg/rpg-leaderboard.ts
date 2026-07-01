@@ -1,8 +1,8 @@
-import {definePlugin} from '../../core/define-plugin.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
+import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import type {UserWallet} from '../../ports/repositories.js'
 import {listWallets} from '../../services/wallet.service.js'
 import {formatCompactNumber} from '../../utils/format.js'
+import {createExpiringMap} from '../../lib/ephemeral-state.js'
 import type {proto} from '@whiskeysockets/baileys'
 
 type RankedWallet = UserWallet & {jid: string}
@@ -13,22 +13,22 @@ interface CooldownEntry {
     rankingMessage: proto.WebMessageInfo | null;
 }
 
-const cooldowns = new Map<string, CooldownEntry>()
 const COOLDOWN_DURATION = 180000 // 3 min
+const cooldowns = createExpiringMap<CooldownEntry>({ttlMs: COOLDOWN_DURATION})
 
-export default definePlugin({
-    help: ['top'],
+export default defineSdkPlugin({
+    help: ['leaderboard'],
     tags: ['econ'],
     command: ['leaderboard', 'lb'],
     register: true,
-    async execute(m, {conn, args}) {
+    async execute(m, {conn, args, sdk}) {
     const chatId = m.chat
     const now = Date.now()
     const chatData = cooldowns.get(chatId) || {lastUsed: 0, rankingMessage: null}
     const timeLeft = COOLDOWN_DURATION - (now - chatData.lastUsed)
 
     if (timeLeft > 0) {
-        await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.leaderboard.cooldown'), {
+        await conn.reply(m.chat, sdk.content.renderMessage('rpg.leaderboard.cooldown', {
             user: m.sender.split('@')[0]
         }), chatData.rankingMessage || m)
         return
@@ -44,7 +44,7 @@ export default definePlugin({
 
     const format = (list: RankedWallet[], prop: RankingProp, icon: string) =>
         list.slice(0, len).map(({jid, [prop]: value}, i) =>
-            renderTemplate(getRequiredPluginMessage('rpg.leaderboard.line'), {
+            sdk.content.renderMessage('rpg.leaderboard.line', {
                 position: i + 1,
                 user: jid.split('@')[0],
                 compactValue: formatCompactNumber(value),
@@ -52,7 +52,7 @@ export default definePlugin({
                 icon
             })).join('\n')
 
-    const text = renderTemplate(getRequiredPluginMessage('rpg.leaderboard.caption'), {
+    const text = sdk.content.renderMessage('rpg.leaderboard.caption', {
         len,
         expPosition: sortedExp.findIndex(u => u.jid === m.sender) + 1,
         expTotal: sortedExp.length,
@@ -68,7 +68,7 @@ export default definePlugin({
         bankRanking: format(sortedBanc, 'banco', '💵')
     }).trim()
 
-    const rankingMessage = await m.reply(text, null, {mentions: conn.parseMention(text)})
+    const rankingMessage = await sdk.reply.text(text, null, {mentions: conn.parseMention(text)})
     cooldowns.set(chatId, {lastUsed: now, rankingMessage})
     }
 })

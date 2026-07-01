@@ -1,21 +1,14 @@
 import {logError} from '../../lib/logger.js';
-import {blackboxAi} from '../../lib/scraper.js';
-import {chatCompletion} from '../../lib/ai.js';
 import {ensureSystemPrompt, getAiMemory, getAiPromptSettings, saveAiMemory} from '../../services/chat-memory.service.js';
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
-
-interface TextApiResponse {
-    data?: string;
-    result?: string;
-    gpt?: string;
-    message?: string;
-}
-
-interface BingResponse {
-    result?: {
-        ai_response?: string;
-    };
-}
+import {
+    generateBlackboxText,
+    generateCopilotText,
+    generateDeepSeekText,
+    generateGeminiText,
+    generateMemoryChatResponse,
+    generateOpenAiText,
+} from '../../providers/ai/text.provider.js';
 
 export default defineSdkPlugin({
     help: ["chagpt", "ia", "openai", "gemini", "copilot", "blackbox", "deepseek"],
@@ -31,20 +24,13 @@ export default defineSdkPlugin({
 
     if (sdk.command == 'ia' || sdk.command == 'chatgpt') {
         await sdk.conn.sendPresenceUpdate('composing', sdk.chatId)
-        let result = '';
-        // Intenta los proveedores con key en la DB (groq → xai → ...).
-        const aiResult = await chatCompletion(memory, {temperature: 0.9, maxTokens: 600});
-        if (aiResult) {
-            result = aiResult;
-        } else {
-            // Todas las keys de la DB fallaron → fallback a API pública.
-            try {
-                let res = await sdk.http.json<TextApiResponse>(`${info.apis}/ia/gptprompt?text=${encodeURIComponent(sdk.text)}&prompt=${encodeURIComponent(systemPrompt)}`);
-                result = res.data || sdk.content.message('tools.ai.noResponse');
-            } catch (e: unknown) {
-                result = sdk.content.message('tools.ai.noResponse');
-            }
-        }
+        const aiResult = await generateMemoryChatResponse(sdk.text, memory, {
+            fallbackText: sdk.content.message('tools.ai.noResponse'),
+            systemPrompt,
+            temperature: 0.9,
+            maxTokens: 600,
+        });
+        const result = aiResult.data || sdk.content.message('tools.ai.noResponse');
         memory.push({role: 'assistant', content: result});
 
         try {
@@ -57,66 +43,37 @@ export default defineSdkPlugin({
 
     if (sdk.command == 'openai' || sdk.command == 'chatgpt2') {
         await sdk.conn.sendPresenceUpdate('composing', sdk.chatId);
-        try {
-            let res = await sdk.http.json<TextApiResponse>(`https://api.dorratz.com/ai/gpt?prompt=${encodeURIComponent(sdk.text)}`)
-            const decoded = decodeApiText(res.result, sdk.content.message('tools.ai.noResponse'));
-            await sdk.reply.text(decoded);
-        } catch (e: unknown) {
-            try {
-                let res = await sdk.http.json<TextApiResponse>(`${info.apis}/ia/gptweb?text=${encodeURIComponent(sdk.text)}`)
-                await sdk.reply.text(res.gpt || sdk.content.message('tools.ai.noResponse'))
-            } catch (e: unknown) {
-                try {
-                    let res = await sdk.http.json<TextApiResponse>(`${info.apis}/api/ia2?text=${encodeURIComponent(sdk.text)}`)
-                    await sdk.reply.text(res.gpt || sdk.content.message('tools.ai.noResponse'))
-                } catch (e: unknown) {
-                    try {
-                        let res = await sdk.http.json<TextApiResponse>(`${info.apis}/ia/chatgpt?q=${encodeURIComponent(sdk.text)}`)
-                        await sdk.reply.text(res.data || sdk.content.message('tools.ai.noResponse'))
-                    } catch (e: unknown) {
-                    }
-                }
-            }
-        }
+        const result = await generateOpenAiText(sdk.text);
+        await sdk.reply.text(result.data || sdk.content.message('tools.ai.noResponse'));
     }
 
     if (sdk.command == 'deepseek') {
         await sdk.conn.sendPresenceUpdate('composing', sdk.chatId);
-        try {
-            const res = await sdk.http.json<TextApiResponse>(`https://api.dorratz.com/ai/deepseek?prompt=${encodeURIComponent(sdk.text)}`);
-            const decoded = decodeApiText(res.result, sdk.content.message('tools.ai.noResponse'));
-            await sdk.reply.text(decoded);
-        } catch (e: unknown) {
-            logError('Error DeepSeek:', e);
+        const result = await generateDeepSeekText(sdk.text);
+        if (result.data) {
+            await sdk.reply.text(result.data);
+        } else {
+            logError('Error DeepSeek:', result.failures);
             await sdk.reply.message('tools.ai.deepseekError');
         }
     }
 
     if (sdk.command == 'gemini') {
         await sdk.conn.sendPresenceUpdate('composing', sdk.chatId)
-        try {
-            let res = await sdk.http.json<TextApiResponse>(`https://api.dorratz.com/ai/gemini?prompt=${encodeURIComponent(sdk.text)}`)
-            await sdk.reply.text(res.message || sdk.content.message('tools.ai.noResponse'))
-        } catch (e: unknown) {
-            try {
-                let res = await sdk.http.json<TextApiResponse>(`https://delirius-apiofc.vercel.app/ia/gemini?query=${encodeURIComponent(sdk.text)}`)
-                await sdk.reply.text(res.message || sdk.content.message('tools.ai.noResponse'))
-            } catch (e: unknown) {
-            }
-        }
+        const result = await generateGeminiText(sdk.text);
+        await sdk.reply.text(result.data || sdk.content.message('tools.ai.noResponse'));
     }
 
     if (sdk.command === 'blackbox') {
-        const result = await blackboxAi(sdk.text);
-        if (result.status) return await sdk.reply.text(result.data.response);
-        return await sdk.reply.message('tools.ai.blackboxError', {error: result.error});
+        const result = await generateBlackboxText(sdk.text);
+        if (result.data) return await sdk.reply.text(result.data);
+        return await sdk.reply.message('tools.ai.blackboxError', {error: result.failures[0]?.error || sdk.content.message('tools.ai.noResponse')});
     }
 
     if (sdk.command == 'copilot' || sdk.command == 'bing') {
         await sdk.conn.sendPresenceUpdate('composing', sdk.chatId)
-        try {
-            let res = await sdk.http.json<BingResponse>(`https://api.dorratz.com/ai/bing?prompt=${encodeURIComponent(sdk.text)}`)
-            const responseText = res.result?.ai_response || sdk.content.message('tools.ai.noResponse')
+        const result = await generateCopilotText(sdk.text);
+        const responseText = result.data || sdk.content.message('tools.ai.noResponse');
             await sdk.sendMessage({
                 text: responseText, contextInfo: {
                     externalAdReply: {
@@ -131,22 +88,6 @@ export default defineSdkPlugin({
                 }
             })
 //m.reply(res.result.ai_response)
-        } catch (e: unknown) {
-            try {
-                let res = await sdk.http.json<TextApiResponse>(`${info.apis}/ia/bingia?query=${encodeURIComponent(sdk.text)}`)
-                await sdk.reply.text(res.message || sdk.content.message('tools.ai.noResponse'))
-            } catch (e: unknown) {
-            }
-        }
     }
     }
 });
-
-function decodeApiText(value: string | undefined, fallback: string): string {
-    if (!value) return fallback;
-    try {
-        return JSON.parse(`"${value}"`) as string;
-    } catch {
-        return value;
-    }
-}

@@ -236,6 +236,7 @@ export interface MessageRepository {
     incrementUserGroupCount(userId: string, groupId: string): Promise<void>;
     deleteUserGroupCount(userId: string, groupId: string): Promise<void>;
     listGroupCounts(groupId: string): Promise<Array<{user_id: string; message_count: number}>>;
+    listGroupActivity(groupId: string): Promise<Array<{user_id: string; message_count: number; last_message_at: Date | null}>>;
 }
 
 export type MessageLogType = 'text' | 'multimedia';

@@ -1,5 +1,4 @@
-import {definePlugin} from '../../core/define-plugin.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import {addWalletResourcesAndSetFields, getWallet} from '../../services/wallet.service.js';
 import {formatShortThousands, formatThousandsDot} from '../../utils/format.js';
 import {formatDurationHoursMinutesShort} from '../../utils/time.js';
@@ -10,23 +9,23 @@ const bonusExp = 10000;
 const bonusLimit = 10;
 const bonusMoney = 5000;
 
-export default definePlugin({
+export default defineSdkPlugin({
     command: ['daily', 'claim'],
     help: ['daily', 'claim'],
     tags: ['econ'],
     register: true,
-    async execute(m, {conn}) {
+    async execute(m, {conn, sdk}) {
         const now = Date.now();
         const user = await getWallet(m.sender);
-        if (!user) return m.reply(getRequiredPluginMessage('rpg.shared.missingUser'));
+        if (!user) return sdk.reply.message('rpg.shared.missingUser');
         const lastClaim = Number(user.lastclaim) || 0;
         const streak = Number(user.dailystreak) || 0;
         const nextClaimTime = lastClaim + 86400000;
         const restante = Math.max(0, nextClaimTime - now);
 
-        if (now - lastClaim < 86400000) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.daily.alreadyClaimed'), {
+        if (now - lastClaim < 86400000) return sdk.reply.message('rpg.daily.alreadyClaimed', {
             time: formatDurationHoursMinutesShort(restante)
-        }));
+        });
 
         const newStreak = (now - lastClaim < 172800000) ? streak + 1 : 1;
         const currentExp = free + (newStreak - 1) * expIncrease;
@@ -40,7 +39,7 @@ export default definePlugin({
                 fields: {lastclaim: now, dailystreak: newStreak},
             });
 
-            bonusText = renderTemplate(getRequiredPluginMessage('rpg.daily.bonus'), {
+            bonusText = sdk.content.renderMessage('rpg.daily.bonus', {
                 bonusExp: formatThousandsDot(bonusExp),
                 bonusLimit,
                 bonusMoney: formatThousandsDot(bonusMoney)
@@ -53,12 +52,12 @@ export default definePlugin({
             });
         }
 
-        await conn.fakeReply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.daily.reward'), {
+        await conn.fakeReply(m.chat, sdk.content.renderMessage('rpg.daily.reward', {
             currentExp: formatThousandsDot(currentExp),
             streak: newStreak,
             bonusText,
             nextExpShort: formatShortThousands(nextExp),
             nextExp: formatThousandsDot(nextExp)
-        }), '13135550002@s.whatsapp.net', getRequiredPluginMessage('rpg.daily.quoted'), 'status@broadcast');
+        }), '13135550002@s.whatsapp.net', sdk.content.message('rpg.daily.quoted'), 'status@broadcast');
     }
 });

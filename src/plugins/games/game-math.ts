@@ -1,7 +1,10 @@
-import {definePlugin} from '../../core/define-plugin.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {addWalletResource} from '../../services/wallet.service.js';
 import {pickRandom, randomInt} from '../../utils/random.js';
+import {createExpiringMap} from '../../lib/ephemeral-state.js';
+import type {BotMessage} from '../../types/message.js';
+import type {ExtendedConn} from '../../types/context.js';
+import {content} from '../../services/content.service.js';
 
 type MathOperator = '+' | '-' | '*' | '/';
 type DifficultyKey = keyof typeof dificultades;
@@ -10,9 +13,19 @@ interface MathGame {
     result: number;
     exp: number;
     intentos: number;
+    chat: string;
+    message: BotMessage;
+    conn: ExtendedConn;
 }
 
-const mathGames = new Map<string, MathGame>();
+const mathGames = createExpiringMap<MathGame>({
+    ttlMs: 40_000,
+    onExpire: async (_sender, game) => {
+        await game.conn.reply(game.chat, content.renderMessage('games.math.timeout', {
+            result: game.result,
+        }), game.message);
+    },
+});
 
 const dificultades = {
     noob: {ops: ['+', '-'], min: 1, max: 10, tiempo: 15000, exp: [300, 600]},
@@ -23,17 +36,17 @@ const dificultades = {
     impossible: {ops: ['+', '-', '*', '/'], min: 200, max: 999, tiempo: 40000, exp: [3000, 5000]}
 } satisfies Record<string, {ops: MathOperator[]; min: number; max: number; tiempo: number; exp: [number, number]}>;
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['math [dificultad]'],
     tags: ['game'],
     command: ['math', 'mates', 'matemáticas'],
     register: true,
-    async execute(m, {conn, args}) {
+    async execute(m, {conn, args, branding, sdk}) {
     const dificultad = (args[0] || '').toLowerCase();
     if (!isDifficultyKey(dificultad)) {
-        return m.reply(renderTemplate(getRequiredPluginMessage('games.math.invalidDifficulty'), {
+        return sdk.reply.message('games.math.invalidDifficulty', {
             difficulties: Object.keys(dificultades).map(k => `- ${k}`).join('\n')
-        }));
+        });
     }
 
     const nivel = dificultades[dificultad];
@@ -42,27 +55,19 @@ export default definePlugin({
     const op = pickRandom(nivel.ops);
     const result = calculate(a, b, op);
     const recompensa = randomInt(nivel.exp[0], nivel.exp[1]);
-    mathGames.set(m.sender, {result, exp: recompensa, intentos: 3});
-
-    setTimeout(() => {
-        if (mathGames.has(m.sender)) {
-            mathGames.delete(m.sender);
-            conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('games.math.timeout'), {result}), m);
-        }
-    }, nivel.tiempo);
-    return m.reply(renderTemplate(getRequiredPluginMessage('games.math.question'), {
-        watermark: info.wm,
+    mathGames.set(m.sender, {result, exp: recompensa, intentos: 3, chat: m.chat, message: m, conn}, nivel.tiempo);
+    return sdk.reply.message('games.math.question', {
+        watermark: branding.watermark,
         a,
         operator: op,
         b,
         seconds: nivel.tiempo / 1000,
         reward: recompensa,
         version: info.vs
-    }));
+    });
     },
 
     async before(m) {
-    if (!mathGames.has(m.sender)) return;
     const data = mathGames.get(m.sender);
     if (!data) return;
     const {result, exp} = data;
@@ -77,15 +82,15 @@ export default definePlugin({
     if (correcta) {
         mathGames.delete(m.sender);
         await addWalletResource(m.sender, 'exp', exp);
-        return m.reply(renderTemplate(getRequiredPluginMessage('games.math.correct'), {exp}));
+        return m.reply(content.renderMessage('games.math.correct', {exp}));
     } else {
         data.intentos--;
         if (data.intentos <= 0) {
             mathGames.delete(m.sender);
-            return m.reply(renderTemplate(getRequiredPluginMessage('games.math.failed'), {result}));
+            return m.reply(content.renderMessage('games.math.failed', {result}));
         } else {
-            mathGames.set(m.sender, data);
-            return m.reply(renderTemplate(getRequiredPluginMessage('games.math.incorrect'), {attempts: data.intentos}));
+            mathGames.set(m.sender, data, mathGames.remainingMs(m.sender));
+            return m.reply(content.renderMessage('games.math.incorrect', {attempts: data.intentos}));
         }
     }
     }

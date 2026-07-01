@@ -1,4 +1,4 @@
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {getNsfwSettings} from '../../services/group-settings.service.js';
 import {accessModeLabel} from '../../utils/access-mode.js';
 import {canUseNsfw} from '../../utils/nsfw-access.js';
@@ -41,7 +41,7 @@ function renderSection(title: string, entries: GifEntry[]): string {
     return `\`<${title}/>\`\n${lines}`;
 }
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['menugif'],
     tags: ['main'],
     command: /^(menu3|menugif|menugifs|menú3|menú-gif|menú-gifs|menu-gif|menu-gifs|gifs|gif)$/i,

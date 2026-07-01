@@ -1,40 +1,39 @@
 import {logError} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {listWarnedUsers} from '../../services/user.service.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
 const maxwarn = 3
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['listwarn'],
     tags: ['group'],
     command: /^listwarn$/i,
     register: true,
-    async execute(m, {conn, participants, metadata}) {
+    async execute(m, {sdk}) {
     try {
         const users = await listWarnedUsers();
-        const warnedUsers = users.filter(user => participants.some(p => p.id === user.id)).map(user => ({
+        const warnedUsers = users.filter(user => sdk.participants.some(p => p.id === user.id)).map(user => ({
             id: user.id,
             warn: user.warn
         }));
         warnedUsers.sort((a, b) => b.warn - a.warn);
-        let teks = renderTemplate(getRequiredPluginMessage('group.listWarn.header'), {
-            group: metadata.subject || getRequiredPluginMessage('group.listWarn.unknownGroup'),
+        let teks = sdk.content.renderMessage('group.listWarn.header', {
+            group: sdk.metadata.subject || sdk.content.message('group.listWarn.unknownGroup'),
             total: warnedUsers.length,
         });
 
         if (warnedUsers.length === 0) {
-            teks += getRequiredPluginMessage('group.listWarn.empty');
+            teks += sdk.content.message('group.listWarn.empty');
         } else {
-            teks += getRequiredPluginMessage('group.listWarn.listTitle');
+            teks += sdk.content.message('group.listWarn.listTitle');
             for (let user of warnedUsers) {
-                teks += renderTemplate(getRequiredPluginMessage('group.listWarn.item'), {
+                teks += sdk.content.renderMessage('group.listWarn.item', {
                     user: user.id.split('@')[0],
                     warn: user.warn,
                     maxwarn,
                 });
             }
         }
-        await conn.reply(m.chat, teks, m)
+        await sdk.reply.text(teks)
     } catch (err: unknown) {
         logError(err);
     }

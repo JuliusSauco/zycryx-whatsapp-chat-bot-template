@@ -8,6 +8,7 @@ import {
 } from '../services/runtime-tasks.service.js';
 import {logDebug, logError, logInfo} from '../lib/logger.js';
 import {pickRandom} from '../utils/random.js';
+import {getMainConnection} from './runtime-state.js';
 
 let started = false;
 
@@ -24,7 +25,7 @@ export function startScheduledTasks(): void {
 
 async function handleExpiredGroups(): Promise<void> {
     try {
-        const conn = globalThis.conn;
+        const conn = getMainConnection();
         if (!conn || typeof conn.groupLeave !== 'function') return;
 
         const rows = await listExpiredGroups(Date.now());
@@ -56,7 +57,7 @@ async function forwardPendingReports(): Promise<void> {
     if (!modGroupId) return;
 
     try {
-        const conn = globalThis.conn;
+        const conn = getMainConnection();
         if (!conn || typeof conn.sendMessage !== 'function') return;
 
         try {

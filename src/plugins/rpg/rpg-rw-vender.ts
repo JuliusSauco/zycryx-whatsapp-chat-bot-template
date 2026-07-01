@@ -1,21 +1,27 @@
 import {logError} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 //Código elaborado por: https://github.com/elrebelde21
 
 import {completeCharacterSale, listCharactersByOwner, putCharacterForSale} from '../../services/character.service.js';
 import {addWalletResource, getWallet} from '../../services/wallet.service.js';
 import type {CharacterRecord} from '../../ports/repositories.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {createPendingActionStore} from '../../lib/ephemeral-state.js';
+import {content} from '../../services/content.service.js';
 
 interface PendingSale {
     seller: string;
     buyer: string;
     character: CharacterRecord;
     price: number;
-    timer: ReturnType<typeof setTimeout>;
+    notifyExpired: () => Promise<unknown>;
 }
 
-const pendingSales = new Map<string, PendingSale>();
+const pendingSales = createPendingActionStore<PendingSale>({
+    ttlMs: 60_000,
+    onExpire: (_buyer, sale) => {
+        void sale.notifyExpired();
+    },
+});
 const cooldownTime = 3600000; // 1 hora
 
 function calculateMaxPrice(basePrice: number, votes: number) {
@@ -31,7 +37,7 @@ function calculateMinPrice(basePrice: number) {
     return Math.round(basePrice * 0.95);
 }
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['rw-vender'],
     tags: ['gacha'],
     command: ['rw-vender', 'vender'],
@@ -47,53 +53,49 @@ export default definePlugin({
         try {
             const buyerData = await getWallet(buyer);
             if (!buyerData || buyerData.exp < price) {
-                pendingSales.delete(buyerId);
-                clearTimeout(sale.timer);
-                return conn.reply(m.chat, getRequiredPluginMessage('rpg.rw.saleNotEnoughExp'), m);
+                pendingSales.cancel(buyerId);
+                return conn.reply(m.chat, content.message('rpg.rw.saleNotEnoughExp'), m);
             }
 
             const sellerExp = Math.round(price * 0.75);
             await addWalletResource(buyer, 'exp', -price);
             await addWalletResource(seller, 'exp', sellerExp);
             await completeCharacterSale(character.id, buyer, price);
-            clearTimeout(sale.timer);
-            pendingSales.delete(buyerId);
+            pendingSales.cancel(buyerId);
 
-            return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rw.saleAccepted'), {
+            return conn.reply(m.chat, content.renderMessage('rpg.rw.saleAccepted', {
                 buyer: buyer.split('@')[0],
                 name: character.name,
                 seller: seller.split('@')[0],
                 price
             }), m, {mentions: [buyer, seller]});
         } catch (e: unknown) {
-            clearTimeout(sale.timer);
-            pendingSales.delete(buyerId);
-            return conn.reply(m.chat, getRequiredPluginMessage('rpg.rw.processBuyError'), m);
+            pendingSales.cancel(buyerId);
+            return conn.reply(m.chat, content.message('rpg.rw.processBuyError'), m);
         }
     } else if (response === 'rechazar') {
-        clearTimeout(sale.timer);
-        pendingSales.delete(buyerId);
-        return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rw.saleRejected'), {name: sale.character.name}), m);
+        pendingSales.cancel(buyerId);
+        return conn.reply(m.chat, content.renderMessage('rpg.rw.saleRejected', {name: sale.character.name}), m);
     }
     },
-    async execute(m, {conn, args, usedPrefix, command}) {
+    async execute(m, {conn, args, usedPrefix, command, sdk}) {
     try {
         const userCharacters = await listCharactersByOwner(m.sender);
 
         if (args.length < 2) {
-            if (userCharacters.length === 0) return conn.reply(m.chat, getRequiredPluginMessage('rpg.rw.noCharacters'), m);
-            let characterList = getRequiredPluginMessage('rpg.rw.characterListHeader');
+            if (userCharacters.length === 0) return sdk.reply.message('rpg.rw.noCharacters');
+            let characterList = sdk.content.message('rpg.rw.characterListHeader');
             userCharacters.forEach((character, index) => {
-                characterList += renderTemplate(getRequiredPluginMessage('rpg.rw.characterListLine'), {
+                characterList += sdk.content.renderMessage('rpg.rw.characterListLine', {
                     position: index + 1,
                     name: character.name,
                     price: character.price
                 });
             });
-            return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rw.saleUsage'), {
+            return sdk.reply.message('rpg.rw.saleUsage', {
                 command: usedPrefix + command,
                 characterList
-            }), m);
+            });
         }
 
         const mentioned = m.mentionedJid[0] || null;
@@ -104,53 +106,50 @@ export default definePlugin({
         }
 
         const price = parseInt(priceText || '');
-        if (isNaN(price) || price <= 0) return conn.reply(m.chat, getRequiredPluginMessage('rpg.rw.invalidPrice'), m);
+        if (isNaN(price) || price <= 0) return sdk.reply.message('rpg.rw.invalidPrice');
 
         const nameParts = args.slice(0, mentioned ? -2 : -1);
         const characterName = nameParts.join(' ').trim();
-        if (!characterName) return conn.reply(m.chat, getRequiredPluginMessage('rpg.rw.missingCharacterName'), m);
+        if (!characterName) return sdk.reply.message('rpg.rw.missingCharacterName');
 
         const characterToSell = userCharacters.find(
             c => c.name.toLowerCase() === characterName.toLowerCase()
         );
 
-        if (!characterToSell) return conn.reply(m.chat, getRequiredPluginMessage('rpg.rw.sellNotFound'), m);
-        if (characterToSell.for_sale) return conn.reply(m.chat, getRequiredPluginMessage('rpg.rw.alreadyForSale'), m);
+        if (!characterToSell) return sdk.reply.message('rpg.rw.sellNotFound');
+        if (characterToSell.for_sale) return sdk.reply.message('rpg.rw.alreadyForSale');
 
         if (characterToSell.last_removed_time) {
             const timeSinceRemoval = Date.now() - characterToSell.last_removed_time;
             if (timeSinceRemoval < cooldownTime) {
                 const remainingTime = Math.ceil((cooldownTime - timeSinceRemoval) / 60000);
-                return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rw.publishCooldown'), {
+                return sdk.reply.message('rpg.rw.publishCooldown', {
                     minutes: remainingTime,
                     name: characterToSell.name
-                }), m);
+                });
             }
         }
 
         const minPrice = calculateMinPrice(characterToSell.price);
         const maxPrice = calculateMaxPrice(characterToSell.price, characterToSell.votes || 0);
-        if (price < minPrice) return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rw.minPrice'), {name: characterToSell.name, price: minPrice}), m);
-        if (price > maxPrice) return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rw.maxPrice'), {name: characterToSell.name, price: maxPrice}), m);
+        if (price < minPrice) return sdk.reply.message('rpg.rw.minPrice', {name: characterToSell.name, price: minPrice});
+        if (price > maxPrice) return sdk.reply.message('rpg.rw.maxPrice', {name: characterToSell.name, price: maxPrice});
 
         if (mentioned) {
-            if (pendingSales.has(mentioned)) return conn.reply(m.chat, getRequiredPluginMessage('rpg.rw.pendingBuyer'), m);
+            if (pendingSales.get(mentioned)) return sdk.reply.message('rpg.rw.pendingBuyer');
 
-            pendingSales.set(mentioned, {
+            pendingSales.start(mentioned, {
                 seller: m.sender,
                 buyer: mentioned,
                 character: characterToSell,
                 price,
-                timer: setTimeout(() => {
-                    pendingSales.delete(mentioned);
-                    conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rw.offerExpired'), {
-                        buyer: mentioned.split('@')[0],
-                        name: characterToSell.name
-                    }), m, {mentions: [mentioned]});
-                }, 60000), // 1 minuto
+                notifyExpired: () => conn.reply(m.chat, sdk.content.renderMessage('rpg.rw.offerExpired', {
+                    buyer: mentioned.split('@')[0],
+                    name: characterToSell.name
+                }), m, {mentions: [mentioned]}),
             });
 
-            return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rw.directOffer'), {
+            return conn.reply(m.chat, sdk.content.renderMessage('rpg.rw.directOffer', {
                 buyer: mentioned.split('@')[0],
                 seller: m.sender.split('@')[0],
                 name: characterToSell.name,
@@ -159,14 +158,14 @@ export default definePlugin({
         } else {
             const previousPrice = characterToSell.price;
             await putCharacterForSale(characterToSell.id, price, m.sender, previousPrice);
-            return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rw.marketPublished'), {
+            return sdk.reply.message('rpg.rw.marketPublished', {
                 name: characterToSell.name,
                 price
-            }), m);
+            });
         }
     } catch (e: unknown) {
         logError(e);
-        return conn.reply(m.chat, getRequiredPluginMessage('rpg.rw.saleError'), m);
+        return sdk.reply.message('rpg.rw.saleError');
     }
     }
 });

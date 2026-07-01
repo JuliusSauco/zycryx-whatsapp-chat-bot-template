@@ -2,7 +2,7 @@
 
 Fecha de revision: 2026-06-10.
 
-Este documento resume el estado arquitectonico actual despues de cerrar P0, iniciar P1 con providers por dominio y alinear los scripts de base de datos. La revision 2026-06-10 agrega hallazgos de runtime y conexion (ver seccion al final de riesgos).
+Este documento resume el estado arquitectonico actual despues de cerrar P0, iniciar P1 con providers por dominio, alinear los scripts de base de datos y cerrar P5 para runtime single-process. La revision 2026-06-10 agrega hallazgos de runtime y conexion (ver seccion al final de riesgos).
 
 ## Estado actual
 
@@ -22,14 +22,14 @@ Este documento resume el estado arquitectonico actual despues de cerrar P0, inic
 
 | Area | Avance | Lectura |
 |---|---:|---|
-| Core/handler/router/guards | 90% | Arquitectura estable y testeada; quedan mejoras futuras de runtime global. |
+| Core/handler/router/guards | 92% | Arquitectura estable y testeada; runtime global ya tiene fachada, quedan mejoras puntuales. |
 | Persistencia Drizzle/PostgreSQL | 95% | Local estable, migraciones y bootstrap manual alineados. |
-| SDK y contenido | 65% | Contrato nuevo cerrado; migracion legacy por familias pendiente. |
-| Providers externos | 85% | Descargas principales centralizadas; faltan providers secundarios/metadata, IA y conversion multimedia. |
+| SDK y contenido | 100% | Contrato nuevo cerrado; plugins y hooks migrados fuera de `definePlugin`, `message-template` y HTTP directo en plugins. |
+| Providers externos | 100% | P1 cerrado: descargas, IA, conversores, stalkers y stickers avanzados tienen providers por dominio. |
 | Testing | 75% | Core cubierto; faltan mas pruebas de providers, i18n y plugins complejos. |
 | Seguridad owner | 90% | Comandos sensibles auditados; queda vigilancia continua al agregar comandos. |
-| Runtime/escalabilidad | 20% | Hay locks/cache puntuales; falta fachada de globales y cooldowns/pending actions. |
-| i18n/contenido editable | 25% | Mensajes centralizados; faltan locales, fallback y catalogo de comandos. |
+| Runtime/escalabilidad | 85% | P5 cerrado para modo single-process; queda como futuro mover estado efimero a cache externa si hay multi-replica. |
+| i18n/contenido editable | 35% | Mensajes y catalogo de comandos centralizados; faltan locales y fallback. |
 
 ## Hallazgos cuantitativos
 
@@ -37,10 +37,12 @@ Valores de referencia obtenidos con `rg` sobre `src/plugins`:
 
 | Indicador | Valor | Lectura |
 |---|---:|---|
-| Plugins con `defineSdkPlugin` | 29 | Base migrada al contrato nuevo. |
-| Plugins con `definePlugin` | 127 | Deuda legacy a migrar gradualmente. |
-| Archivos que importan `message-template.js` | 121 | Textos ya centralizados en JSON, pero muchos plugins aun usan fachada legacy. |
-| Archivos que importan `http-client.js` | 37 | Candidatos naturales para providers o SDK HTTP. |
+| Plugins con `defineSdkPlugin` | 157 | Plugins migrados al contrato nuevo. |
+| Plugins con `definePlugin` | 0 | Deuda legacy cerrada en plugins. |
+| Archivos que importan `message-template.js` en plugins | 0 | Plugins y hooks consumen `sdk.content` o `content.service`. |
+| Archivos que importan `http-client.js` en plugins | 0 | El HTTP directo se movio a SDK, providers o servicios. |
+| Archivos con `new Map` en core/lib/plugins | 10 | Restan caches, infraestructura o indices locales aceptados por P5. |
+| Archivos con `setTimeout`/`clearTimeout` en core/lib/plugins | 21 | Restan timeouts/reintentos/delays operativos aceptados por P5. |
 
 Estos numeros no bloquean P0. El P0 garantiza el contrato para plugins nuevos y migrados; la deuda restante se trabaja por dominios.
 
@@ -60,7 +62,7 @@ Estos numeros no bloquean P0. El P0 garantiza el contrato para plugins nuevos y 
 
 ### Providers externos parcialmente centralizados
 
-Los plugins de `downloads`, `stickers`, `random`, `nsfw`, `rpg` y algunos hooks todavia conocen URLs, formatos de respuesta y fallbacks de APIs externas.
+Algunos plugins legacy y hooks todavia conocen URLs, formatos de respuesta y fallbacks de APIs externas.
 
 Riesgo:
 
@@ -75,7 +77,8 @@ Recomendacion:
 - Los plugins solo deben decidir UX, permisos y envio final.
 - Los primeros providers creados son `src/providers/downloads/youtube.provider.ts`, `src/providers/downloads/spotify.provider.ts`, `src/providers/downloads/tiktok.provider.ts`, `src/providers/downloads/threads.provider.ts`, `src/providers/downloads/instagram.provider.ts`, `src/providers/downloads/facebook.provider.ts`, `src/providers/downloads/mediafire.provider.ts` y `src/providers/downloads/drive.provider.ts`.
 - `src/plugins/downloads/youtube-download.helpers.ts` queda como re-export de compatibilidad.
-- El siguiente paso recomendado es decidir si los stalkers (`igstalk`, `tiktokstalk`) y providers secundarios (`Pinterest`, `AppMusic`, `ModAPK`) quedan dentro de P1 o pasan a un P1.1.
+- AppleMusic, ModAPK, Pinterest, InstagramStalk y TikTokStalk ya viven en `src/providers/downloads`; IA de texto/imagen vive en `src/providers/ai`; conversores base y stickers avanzados viven en `src/providers/media-conversion`.
+- P1 queda cerrado. Las mejoras futuras de timeout/retry o nuevos proveedores se tratan como mantenimiento incremental.
 - Evitar por ahora providers dependientes de backend; P1 debe funcionar con librerias locales y HTTP centralizado.
 
 Pendientes de diseno:
@@ -87,7 +90,7 @@ Pendientes de diseno:
 
 ### Migracion SDK incompleta
 
-Hay muchos plugins aun en `definePlugin`, `m.reply`, `conn.reply`, `conn.sendMessage` y helpers legacy.
+La migracion de plugins fuera de `definePlugin`, `message-template` y `http-client` directo queda cerrada. Aun pueden existir llamadas `m.reply`, `conn.reply` o envios especiales donde el flujo de Baileys lo requiere.
 
 Riesgo:
 
@@ -98,28 +101,29 @@ Riesgo:
 Recomendacion:
 
 - Migrar por familias, no archivo suelto.
-- Siguiente bloque recomendado: `messages`, `random`, `nsfw` y `audio`.
-- Luego bloques grandes: `downloads`, `stickers`, `group`, `games`, `rpg`, `owner`.
+- Bloques `messages`, `random`, `nsfw`, `audio`, `downloads`, `stickers`, `group`, `rpg`, `owner`, `menus`, `subbots`, `games`, `fun`, `config` y hooks migrados.
+- Siguiente bloque recomendado: preparar P6 i18n/locales o ampliar pruebas de plugins complejos.
 
 ### Estado en memoria por plugin
 
-Existen mapas locales para cooldowns, juegos, retos, temporales y solicitudes. Algunos son estado natural de runtime; otros podrian beneficiarse de helpers compartidos.
+Los mapas locales de cooldowns, juegos, retos, temporales y solicitudes quedaron migrados al helper compartido cuando representan estado efimero de usuario, chat o juego. `src/lib/ephemeral-state.ts` cubre cooldowns, expiring maps y pending actions; `src/lib/user-request-locks.ts` cubre procesos largos por usuario.
 
 Riesgo:
 
-- Limpieza inconsistente.
-- Dificultad para escalar a varias replicas.
-- Posibles leaks si un timeout no libera estado.
+- Dificultad para escalar a varias replicas sin cache externa.
+- Posibles leaks si un nuevo plugin ignora los helpers compartidos.
 
 Recomendacion:
 
 - Mantener estado efimero en memoria mientras el bot sea single-process.
-- Centralizar patrones repetidos: cooldowns, pending actions, locks, expiraciones.
-- Documentar que juegos/retos no son multi-replica hasta tener backend o cache externa.
+- Para nuevos cooldowns, pending actions, locks o expiraciones, usar `src/lib/ephemeral-state.ts` o `src/lib/user-request-locks.ts`.
+- Tratar juegos/retos como no multi-replica hasta tener backend o cache externa.
+- `new Map` queda reservado para caches internas, infraestructura o indices locales puros dentro de una ejecucion.
+- `setTimeout` queda reservado para timeouts HTTP/scraper, reconexion, borrados diferidos, tareas programadas, colas y expiraciones encapsuladas.
 
 ### Globales del runtime
 
-`globalThis.conn`, `globalThis.conns`, `globalThis.plugins` e `info` siguen siendo parte del runtime.
+`globalThis.conn`, `globalThis.conns`, `globalThis.plugins` e `info` siguen existiendo como almacenamiento legacy interno. El acceso a conexiones y plugins cargados ya pasa por `src/core/runtime-state.ts`; `info` queda como configuracion/fallback y la marca del bot viaja por contexto.
 
 Riesgo:
 
@@ -129,8 +133,8 @@ Riesgo:
 Recomendacion:
 
 - No eliminarlos de golpe.
-- Crear fachadas pequenas para acceso a conexiones, plugins activos y config publica.
-- Migrar consumidores nuevos a esas fachadas.
+- Mantener `runtime-state.ts` como unica frontera aceptada para conexiones y plugins.
+- Seguir migrando consumidores nuevos a contexto/SDK en vez de leer `info` directamente.
 
 ### Recursos multimedia locales
 
@@ -148,19 +152,20 @@ Recomendacion:
 
 ### Catalogos JSON editables
 
-Ya existen manifiestos para mensajes, prompts, audios y reacciones. Falta llevar comandos a un patron similar sin convertir JSON en fuente de routing.
+Ya existen manifiestos para mensajes, prompts, audios, reacciones y comandos. El catalogo de comandos queda como fuente documental, no como fuente de routing.
 
-Riesgo:
+Riesgo residual:
 
 - Menus, ayuda y metadata visible pueden divergir de los plugins reales.
-- La ayuda `--help` no tiene una fuente documental unica.
+- La consistencia entre catalogo y plugins cargados debe mantenerse con auditoria cuando se agreguen comandos nuevos.
 
-Recomendacion:
+Estado aplicado:
 
-- Registrar `resources/data/commands.json` como catalogo documental.
-- Crear `command-catalog.service.ts`.
-- Soportar `/help <comando>` y `/<comando> --help`.
-- Validar consistencia entre catalogo y plugins cargados.
+- `resources/data/commands.json` registrado como catalogo documental.
+- `command-catalog.service.ts` creado.
+- `help <comando>`, `ayuda <comando>` y `<comando> --help` soportados con respuestas compactas para WhatsApp.
+- `catalogaudit` agregado para validar consistencia entre catalogo y plugins cargados.
+- P7 cerrado: subcomandos (`db info`, `setprompt delete`, `enable welcome`) y colisiones documentales (`top`, GIF/sticker/random) resueltas.
 
 ### Backend adapter pendiente
 
@@ -184,20 +189,20 @@ Riesgos detectados al auditar `src/core/main.ts` y `src/lib/subbot.ts`. La mayor
 2. **Reconexion infinita con sesion invalida (corregido 2026-06-10).** Los codigos terminales detienen los reintentos y piden re-vinculacion. Ademas se corrigio la clasificacion: los terminales reales son `loggedOut` (401), `forbidden` (403) y `badSession` (500); 428 (`connectionClosed`) y 440 (`connectionReplaced`) son transitorios y deben reintentar.
 3. **`globalThis.conns` nunca se depuraba (corregido 2026-06-10).** Al cerrar un subbot se remueve su entrada por `userId`, y al reconectar la entrada vieja se reemplaza por el socket nuevo.
 4. **QR de vinculacion (corregido 2026-06-10).** Baileys 7 deprecó `printQRInTerminal` (no-op), por lo que la opcion 1 del menu de vinculacion no mostraba ningun QR. Corregido renderizando el campo `qr` de `connection.update` con `qrcode-terminal`.
-5. **`globalThis.info` mutado por mensaje (pendiente).** `context-builder.ts` escribe `info.wm`/`info.img2` con la config del subbot que procesa cada mensaje. Con bot principal + subbots procesando en paralelo, la marca de un bot puede filtrarse en la respuesta de otro. Correccion sugerida: pasar la marca via contexto en lugar de mutar el global compartido. Requiere revisar los plugins que leen `info.wm`, por eso se trata como refactor aparte.
+5. **`globalThis.info` mutado por mensaje (corregido 2026-06-30).** `context-builder.ts` ya no escribe `info.wm`/`info.img2` por mensaje. La marca se calcula en contexto (`branding`) y `info` queda como fallback legacy.
 6. **`package-lock.json` ignorado en git (corregido 2026-06-10).** Lockfile versionado y `ytdl-core` fijado a `^4.11.5` en vez de `latest`.
-7. **`console.info`/`console.debug` silenciados globalmente (pendiente).** Oculta diagnostico de cualquier libreria. Preferir configurar niveles del logger propio; revisar si Baileys 7 sigue necesitando el silencio.
+7. **`console.info`/`console.debug` silenciados globalmente (corregido 2026-07-01).** `startBot()` y `startSubBot()` ya no reasignan funciones globales de consola. Baileys queda silencioso mediante `pino` en `silent` y los logs del proyecto siguen pasando por `src/lib/logger.ts` y `LOG_LEVEL`.
 8. **Error crudo expuesto al usuario (corregido 2026-06-10).** El catch del handler ahora pasa el error por `sanitizeCommandError` antes de responder en el chat; el log conserva el error completo.
 
 ## Prioridad recomendada
 
 1. Mantener `test:p0` en `npm test`.
-2. Continuar P1 con providers secundarios: metadata/stalkers, Pinterest, AppMusic, ModAPK y GitClone.
+2. Ampliar pruebas unitarias de plugins complejos ahora que la migracion SDK esta cerrada.
 3. Normalizar errores/timeouts de providers y ampliar pruebas `test:providers`.
-4. Migrar `downloads` al SDK gradualmente mientras se extraen providers.
-5. Migrar el bloque `messages/random/nsfw/audio` al SDK.
+4. Continuar con P6 i18n/locales por scorecard.
+5. Preparar P6 i18n sobre `content.service` y `resources/data/messages.json`.
 6. Migrar providers de stickers y media conversion cuando descargas este estable.
-7. Registrar catalogo de comandos editable despues de estabilizar providers iniciales.
+7. Mantener P5 cerrado: aplicar helpers de estado efimero en nuevos flujos y no agregar mapas/timers manuales para cooldowns, retos o pending actions.
 
 ## Buenas practicas vigentes
 

@@ -1,7 +1,7 @@
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {getAudioConfig} from '../../services/audio-response.service.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['menu2'],
     tags: ['main'],
     command: /^(menu2|audios|menú2|memu2|menuaudio|menuaudios|memuaudios|memuaudio|audios|audio)$/i,

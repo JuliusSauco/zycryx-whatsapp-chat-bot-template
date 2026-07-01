@@ -17,6 +17,12 @@ Si el archivo no existe, se usan las variables del sistema (`dotenv.config()` si
 
 `drizzle.config.ts` replica esta misma logica para que `drizzle-kit` use el mismo ambiente.
 
+Para validar un ambiente sin arrancar el bot:
+
+```bash
+NODE_ENV=prod npm run ops:check
+```
+
 ## Entorno y marca
 
 | Variable | Default | Uso |

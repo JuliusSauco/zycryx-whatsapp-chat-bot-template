@@ -1,9 +1,10 @@
-import {definePlugin} from '../../core/define-plugin.js';
-import type {PluginDefinition} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
+import type {SdkPluginDefinition} from '../../core/sdk-plugin.js';
 import type {Plugin} from '../../types/plugin.js';
 import type {BotMessage} from '../../types/message.js';
 import type {PluginContext} from '../../types/context.js';
-import {getCommandMetadata} from './menu-command-metadata.js';
+import {getCommandMetadata, getMenuCommandDedupeKey} from './menu-command-metadata.js';
+import {getLoadedPlugins} from '../../core/runtime-state.js';
 
 type MenuPlugin = Plugin & {
     disabled?: boolean;
@@ -55,7 +56,7 @@ export async function sendRenderedMenu(m: BotMessage, ctx: PluginContext, defini
 }
 
 export function createMenuPlugin(definition: MenuDefinition): Plugin {
-    const pluginDefinition: PluginDefinition = {
+    const pluginDefinition: SdkPluginDefinition = {
         help: definition.help,
         tags: definition.tags,
         command: definition.command,
@@ -67,7 +68,7 @@ export function createMenuPlugin(definition: MenuDefinition): Plugin {
         },
     };
 
-    return definePlugin(pluginDefinition);
+    return defineSdkPlugin(pluginDefinition);
 }
 
 export function renderMenuText(definition: MenuDefinition, usedPrefix: string): string {
@@ -89,7 +90,7 @@ export function renderMenuText(definition: MenuDefinition, usedPrefix: string): 
 }
 
 function getHelpEntries(tags: string[], include?: (entry: HelpEntry) => boolean): HelpEntry[] {
-    const plugins = Object.entries(global.plugins as Record<string, MenuPlugin>)
+    const plugins = Object.entries(getLoadedPlugins() as Record<string, MenuPlugin>)
         .filter(([, plugin]) => !plugin.disabled);
 
     const entries = plugins.flatMap(([pluginName, plugin]) => {
@@ -113,9 +114,20 @@ function getHelpEntries(tags: string[], include?: (entry: HelpEntry) => boolean)
         }));
     });
 
-    return entries
-        .filter((entry) => include ? include(entry) : true)
+    return dedupeHelpEntries(entries.filter((entry) => include ? include(entry) : true))
         .sort((a, b) => a.command.localeCompare(b.command, 'es'));
+}
+
+function dedupeHelpEntries(entries: HelpEntry[]): HelpEntry[] {
+    const seen = new Set<string>();
+    const deduped: HelpEntry[] = [];
+    for (const entry of entries) {
+        const key = getMenuCommandDedupeKey(entry.command);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        deduped.push(entry);
+    }
+    return deduped;
 }
 
 function renderEntry(entry: HelpEntry, usedPrefix: string): string {
