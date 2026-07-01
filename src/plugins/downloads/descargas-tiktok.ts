@@ -1,37 +1,39 @@
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {logInfo} from '../../lib/logger.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 import {downloadTikTokVideo, isTikTokUrl} from '../../providers/downloads/tiktok.provider.js';
+import {renderDownloadFailure} from './download-error.js';
 
 const userRequests = createUserRequestLocks();
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['tiktok'],
     tags: ['downloader'],
     command: /^(tt|tiktok)(dl|nowm)?$/i,
     limit: 1,
-    async execute(m, {conn, text, args, usedPrefix, command}) {
-        if (!text) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.tiktok.missingUrl'), {
-            command: usedPrefix + command,
-        }));
-        if (!isTikTokUrl(text)) return m.reply(getRequiredPluginMessage('downloads.tiktok.invalidUrl'));
-        if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.tiktok.locked'), {
-            user: m.sender.split('@')[0],
-        }), m);
+    async execute(m, {sdk}) {
+        if (!sdk.text) return sdk.reply.message('downloads.tiktok.missingUrl', {
+            command: sdk.usedPrefix + sdk.command,
+        });
+        if (!isTikTokUrl(sdk.text)) return sdk.reply.message('downloads.tiktok.invalidUrl');
+        if (!userRequests.acquire(sdk.sender)) return sdk.reply.message('downloads.tiktok.locked', {
+            user: sdk.sender.split('@')[0],
+        });
 
-        const {key} = await conn.sendMessage(m.chat, {text: getRequiredPluginMessage('downloads.tiktok.downloading')}, {quoted: m});
+        const {key} = await sdk.sendMessage({text: sdk.content.message('downloads.tiktok.downloading')});
         try {
-            const media = await downloadTikTokVideo(args[0]);
-            if (!media.data) throw new Error('No se pudo descargar el video desde ninguna API');
+            const media = await downloadTikTokVideo(sdk.args[0]);
+            if (!media.data) {
+                return sdk.conn.sendMessage(sdk.chatId, {text: renderDownloadFailure('tiktok', media.failures), edit: key});
+            }
 
-            await conn.sendFile(m.chat, media.data.url, media.data.fileName, getRequiredPluginMessage('downloads.tiktok.caption'), m);
-            await conn.sendMessage(m.chat, {text: getRequiredPluginMessage('downloads.tiktok.completed'), edit: key});
+            await sdk.sendFile(media.data.url, media.data.fileName, sdk.content.message('downloads.tiktok.caption'));
+            await sdk.conn.sendMessage(sdk.chatId, {text: sdk.content.message('downloads.tiktok.completed'), edit: key});
         } catch (e: unknown) {
             logInfo(e);
-            m.react('❌');
+            await sdk.reply.react('❌');
         } finally {
-            userRequests.release(m.sender);
+            userRequests.release(sdk.sender);
         }
     },
 });

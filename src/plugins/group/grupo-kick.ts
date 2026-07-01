@@ -1,7 +1,6 @@
-import {definePlugin} from '../../core/define-plugin.js';
-import {getRequiredPluginMessage} from '../../lib/message-template.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     command: ['kick', 'expulsar'],
     help: ['kick *@user*'],
     tags: ['group'],
@@ -9,11 +8,11 @@ export default definePlugin({
     group: true,
     botAdmin: true,
     register: true,
-    async execute(m, {conn}) {
-        const kickte = getRequiredPluginMessage('group.kick.missingUser');
-        if (!m.mentionedJid[0] && !m.quoted) return m.reply(kickte, m.chat, {mentions: conn.parseMention(kickte)});
+    async execute(m, {sdk}) {
+        const kickte = sdk.content.message('group.kick.missingUser');
+        if (!m.mentionedJid[0] && !m.quoted) return sdk.reply.text(kickte, null, {mentions: await sdk.conn.parseMention(kickte)});
         const user = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted?.sender;
-        if (!user) return m.reply(kickte, m.chat, {mentions: await conn.parseMention(kickte)});
-        await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
+        if (!user) return sdk.reply.text(kickte, null, {mentions: await sdk.conn.parseMention(kickte)});
+        await sdk.conn.groupParticipantsUpdate(sdk.chatId, [user], 'remove');
     }
 });

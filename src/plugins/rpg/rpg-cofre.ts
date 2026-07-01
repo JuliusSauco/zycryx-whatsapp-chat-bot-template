@@ -1,28 +1,27 @@
-import {definePlugin} from '../../core/define-plugin.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import {addWalletResourcesAndSetFields, getWallet} from '../../services/wallet.service.js';
 import {randomInt} from '../../utils/random.js';
 import {formatDurationHoursMinutes} from '../../utils/time.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['cofre', 'coffer', 'abrircofre'],
     tags: ['econ'],
     command: ['coffer', 'cofre', 'abrircofre', 'cofreabrir'],
     register: true,
     level: 9,
-    async execute(m, {conn}) {
+    async execute(m, {conn, sdk}) {
     const cooldown = 122_400_000; // 3 días
     const now = Date.now();
     const user = await getWallet(m.sender);
-    if (!user) return m.reply(getRequiredPluginMessage('rpg.shared.missingUser'));
+    if (!user) return sdk.reply.message('rpg.shared.missingUser');
     const lastCofre = Number(user?.lastcofre) || 0;
     const nextTime = lastCofre + cooldown;
     const restante = Math.max(0, nextTime - now);
-    if (restante > 0) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.cofre.cooldown'), {
+    if (restante > 0) return sdk.reply.message('rpg.cofre.cooldown', {
         time: formatDurationHoursMinutes(restante)
-    }));
+    });
 
-    const img = getRequiredPluginMessage('rpg.cofre.image');
+    const img = sdk.content.message('rpg.cofre.image');
     const diamantes = randomInt(30);
     const coins = randomInt(4000);
     const xp = randomInt(5000);
@@ -33,7 +32,7 @@ export default definePlugin({
         fields: {lastcofre: now},
     });
 
-    const texto = renderTemplate(getRequiredPluginMessage('rpg.cofre.caption'), {
+    const texto = sdk.content.renderMessage('rpg.cofre.caption', {
         diamonds: diamantes,
         coins,
         xp
@@ -47,7 +46,7 @@ export default definePlugin({
                 remoteJid: 'status@broadcast'
             },
             message: {
-                conversation: getRequiredPluginMessage('rpg.cofre.quoted')
+                conversation: sdk.content.message('rpg.cofre.quoted')
             }
         }
     });

@@ -3,14 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import {repositories} from './data-source.js';
 import {ENV} from '../core/env.js';
-
-export interface AudioEntry {
-    regex: string;
-    audio?: string;
-    audios?: string[];
-}
-
-export type AudioConfig = Record<string, Record<string, AudioEntry>>;
+import type {AudioConfig, AudioEntry, AudioResponseRecord} from '../domain/audio-responses.js';
+import {getAudioUrls, normalizeAudioEntry} from '../domain/audio-responses.js';
 
 const seedAudiosPath = path.resolve('./resources/data/audios.json');
 let seedCache: AudioConfig | null = null;
@@ -19,15 +13,6 @@ const regexCache = new Map<string, RegExp | null>();
 const AUDIO_CACHE_TTL_MS = Number.isFinite(ENV.AUDIO_CACHE_TTL_MS) && ENV.AUDIO_CACHE_TTL_MS > 0
     ? ENV.AUDIO_CACHE_TTL_MS
     : 300_000;
-
-function normalizeEntry(entry: AudioEntry): AudioEntry {
-    const audios = entry.audios?.length ? entry.audios : entry.audio ? [entry.audio] : [];
-    return {
-        regex: entry.regex,
-        ...(audios.length === 1 ? {audio: audios[0]} : {}),
-        ...(audios.length > 1 ? {audios} : {}),
-    };
-}
 
 function readSeedAudios(): AudioConfig {
     if (seedCache) return structuredClone(seedCache);
@@ -42,7 +27,7 @@ function readSeedAudios(): AudioConfig {
     return structuredClone(seedCache);
 }
 
-function mergeDynamicAudios(base: AudioConfig, records: Awaited<ReturnType<typeof repositories.audioResponses.listAll>>): AudioConfig {
+function mergeDynamicAudios(base: AudioConfig, records: AudioResponseRecord[]): AudioConfig {
     for (const record of records) {
         if (!base[record.scope]) base[record.scope] = {};
 
@@ -51,7 +36,7 @@ function mergeDynamicAudios(base: AudioConfig, records: Awaited<ReturnType<typeo
             continue;
         }
 
-        base[record.scope][record.phrase] = normalizeEntry({
+        base[record.scope][record.phrase] = normalizeAudioEntry({
             regex: record.regex,
             audios: record.audioUrls,
         });
@@ -111,12 +96,11 @@ export async function findMatchingAudioInScopes(scopes: string[], text: string):
 }
 
 export async function upsertAudioEntry(scope: string, phrase: string, entry: AudioEntry): Promise<void> {
-    const audios = entry.audios?.length ? entry.audios : entry.audio ? [entry.audio] : [];
     await repositories.audioResponses.upsert({
         scope,
         phrase,
         regex: entry.regex,
-        audioUrls: audios,
+        audioUrls: getAudioUrls(entry),
     });
     invalidateAudioConfig();
 }

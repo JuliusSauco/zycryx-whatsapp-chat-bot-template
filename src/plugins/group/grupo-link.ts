@@ -1,18 +1,15 @@
-import {definePlugin} from '../../core/define-plugin.js'
-import {replyFailure} from '../../lib/reply-helpers.js'
-import {getRequiredPluginMessage} from '../../lib/message-template.js'
-export default definePlugin({
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
+export default defineSdkPlugin({
     help: ['linkgroup'],
     tags: ['group'],
     command: /^link(gro?up)?$/i,
     botAdmin: true,
     group: true,
     register: true,
-    async execute(m, {conn}) {
-    const group = m.chat;
-    const code = await conn.groupInviteCode(group).catch(() => null)
-    if (!code) return replyFailure(m, getRequiredPluginMessage('group.link.failure'))
-    return m.reply('https://chat.whatsapp.com/' + code)
+    async execute(m, {sdk}) {
+    const code = await sdk.conn.groupInviteCode(sdk.chatId).catch(() => null)
+    if (!code) return sdk.reply.failure(sdk.content.message('group.link.failure'))
+    return sdk.reply.text('https://chat.whatsapp.com/' + code)
     }
 });
 ;

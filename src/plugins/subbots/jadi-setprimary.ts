@@ -1,21 +1,20 @@
 import {logError} from '../../lib/logger.js';
 import {setPrimaryBot} from '../../services/group-settings.service.js';
-import {definePlugin} from '../../core/define-plugin.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['setprimary'],
     tags: ['jadibot'],
     command: /^setprimary$/i,
     group: true,
     admin: true,
-    async execute(m, {conn}) {
+    async execute(m, {conn, sdk}) {
     const mentioned = m.mentionedJid?.[0];
 
     if (!mentioned) {
         try {
             await setPrimaryBot(m.chat, null);
-            await m.reply(getRequiredPluginMessage('subbots.primary.cleared'));
+            await sdk.reply.message('subbots.primary.cleared');
         } catch (err: unknown) {
             logError(err);
         }
@@ -28,7 +27,7 @@ export default definePlugin({
     if (selectedId !== botId) {
         try {
             await conn.sendMessage(m.chat, {
-                text: renderTemplate(getRequiredPluginMessage('subbots.primary.selected'), {bot: selectedId}),
+                text: sdk.content.renderMessage('subbots.primary.selected', {bot: selectedId}),
                 mentions: [mentioned]
             }, {quoted: m});
             await setPrimaryBot(m.chat, mentioned);
@@ -37,7 +36,7 @@ export default definePlugin({
         }
     } else {
         await setPrimaryBot(m.chat, botId + "@s.whatsapp.net");
-        await m.reply(getRequiredPluginMessage('subbots.primary.selfSelected'));
+        await sdk.reply.message('subbots.primary.selfSelected');
     }
     }
 });

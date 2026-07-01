@@ -1,6 +1,6 @@
 import fg from 'api-dylux';
 import {httpJson} from '../../lib/http-client.js';
-import {runProviderCandidates, type ProviderCandidate, type ProviderResult} from '../provider.types.js';
+import {DEFAULT_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
 interface AgatzFacebookResponse {
     data?: {
@@ -45,7 +45,7 @@ export function isFacebookUrl(input: string): boolean {
 }
 
 export function buildFacebookDownloadProviders(postUrl: string): ProviderCandidate<FacebookProviderMedia>[] {
-    return [
+    return withProviderPolicy([
         {
             name: 'agatz-facebook',
             run: async () => {
@@ -89,7 +89,7 @@ export function buildFacebookDownloadProviders(postUrl: string): ProviderCandida
                 return url ? {type: 'video', url, fileName: 'video.mp4', captionVariant: 'bold'} : null;
             },
         },
-    ];
+    ], {timeoutMs: DEFAULT_PROVIDER_TIMEOUT_MS, retries: 1});
 }
 
 export function downloadFacebookMedia(postUrl: string): Promise<ProviderResult<FacebookProviderMedia>> {

@@ -9,8 +9,9 @@ import {
     scanFileWithVirusTotal,
     scanUrlWithVirusTotal,
 } from '../../lib/virustotal.js';
+import {createExpiringMap} from '../../lib/ephemeral-state.js';
 import {logError} from '../../lib/logger.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {content} from '../../services/content.service.js';
 import type {BeforePluginContext, ExtendedConn} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
 import type {VirusTotalStats} from '../../lib/virustotal.js';
@@ -53,8 +54,8 @@ const FALLBACK_EXTENSION_BY_MIME: Record<string, string> = {
     'audio/ogg': 'ogg',
 };
 const URL_REGEX = /(?:https?:\/\/|www\.)[^\s<>"']+|(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:com|net|org|edu|gov|mil|int|io|co|dev|app|xyz|info|biz|me|tv|gg|ly|link|site|online|store|cloud|tech|ai|pe|cl|ar|ec|bo|uy|py|ve|mx|br|es|us|uk|ca|de|fr|it|nl|jp|kr|cn|in|au|ru|za|co\.uk|com\.co|com\.mx|com\.br)(?:\/[^\s<>"']*)?/gi;
-const recentlyScannedUrls = new Map<string, number>();
 const URL_DEDUP_TTL_MS = 2 * 60 * 1000;
+const recentlyScannedUrls = createExpiringMap<true>({ttlMs: URL_DEDUP_TTL_MS});
 
 export const runBeforeOnCommand = true;
 
@@ -156,7 +157,7 @@ async function handleMaliciousContent(conn: ExtendedConn, m: BotMessage, stats: 
 
     if (!m.isBotAdmin) {
         await conn.sendMessage(m.chat, {
-            text: renderTemplate(getRequiredPluginMessage('hooks.virusTotal.maliciousNoAdmin'), {
+            text: content.renderMessage('hooks.virusTotal.maliciousNoAdmin', {
                 threatLabel
             }),
             mentions: m.sender ? [m.sender] : [],
@@ -184,14 +185,14 @@ async function handleMaliciousContent(conn: ExtendedConn, m: BotMessage, stats: 
     }
 
     await conn.sendMessage(m.chat, {
-        text: renderTemplate(getRequiredPluginMessage('hooks.virusTotal.maliciousActionReport'), {
+        text: content.renderMessage('hooks.virusTotal.maliciousActionReport', {
             threatLabel,
             deleteStatus: deleted
-                ? getRequiredPluginMessage('hooks.virusTotal.messageDeleted')
-                : getRequiredPluginMessage('hooks.virusTotal.messageDeleteFailed'),
+                ? content.message('hooks.virusTotal.messageDeleted')
+                : content.message('hooks.virusTotal.messageDeleteFailed'),
             removeStatus: removed
-                ? renderTemplate(getRequiredPluginMessage('hooks.virusTotal.authorRemoved'), {user: targetMention})
-                : renderTemplate(getRequiredPluginMessage('hooks.virusTotal.authorRemoveFailed'), {user: targetMention})
+                ? content.renderMessage('hooks.virusTotal.authorRemoved', {user: targetMention})
+                : content.renderMessage('hooks.virusTotal.authorRemoveFailed', {user: targetMention})
         }),
         mentions: m.sender ? [m.sender] : [],
     });
@@ -199,12 +200,8 @@ async function handleMaliciousContent(conn: ExtendedConn, m: BotMessage, stats: 
 
 function shouldSkipUrl(chatId: string, url: string): boolean {
     const key = `${chatId}:${url.toLowerCase()}`;
-    const now = Date.now();
-    const previous = recentlyScannedUrls.get(key) || 0;
-    if (now - previous < URL_DEDUP_TTL_MS) return true;
-
-    recentlyScannedUrls.set(key, now);
-    setTimeout(() => recentlyScannedUrls.delete(key), URL_DEDUP_TTL_MS);
+    if (recentlyScannedUrls.has(key)) return true;
+    recentlyScannedUrls.set(key, true);
     return false;
 }
 
@@ -224,7 +221,7 @@ async function scanUrlsInText(conn: ExtendedConn, m: BotMessage, text: string): 
             logError('[VirusTotal URL]', detail);
             await conn.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
             await conn.sendMessage(m.chat, {
-                text: renderTemplate(getRequiredPluginMessage('hooks.virusTotal.urlScanError'), {detail}),
+                text: content.renderMessage('hooks.virusTotal.urlScanError', {detail}),
             }, {quoted: m});
         }
     }
@@ -246,7 +243,7 @@ export async function before(m: BotMessage, {conn, groupSettings}: BeforePluginC
     if (declaredSize && declaredSize > maxBytes) {
         const filename = buildFileName(media.payload);
         await conn.sendMessage(m.chat, {
-            text: renderTemplate(getRequiredPluginMessage('hooks.virusTotal.declaredFileTooLarge'), {
+            text: content.renderMessage('hooks.virusTotal.declaredFileTooLarge', {
                 filename,
                 size: formatBytes(declaredSize),
                 maxSize: formatBytes(maxBytes)
@@ -262,7 +259,7 @@ export async function before(m: BotMessage, {conn, groupSettings}: BeforePluginC
 
         if (buffer.length > maxBytes) {
             await conn.sendMessage(m.chat, {
-                text: renderTemplate(getRequiredPluginMessage('hooks.virusTotal.downloadedFileTooLarge'), {
+                text: content.renderMessage('hooks.virusTotal.downloadedFileTooLarge', {
                     size: formatBytes(buffer.length),
                     maxSize: formatBytes(maxBytes)
                 }),
@@ -286,7 +283,7 @@ export async function before(m: BotMessage, {conn, groupSettings}: BeforePluginC
         logError('[VirusTotal]', detail);
         await conn.sendMessage(m.chat, {react: {text: '❌', key: m.key}});
         await conn.sendMessage(m.chat, {
-            text: renderTemplate(getRequiredPluginMessage('hooks.virusTotal.fileScanError'), {detail}),
+            text: content.renderMessage('hooks.virusTotal.fileScanError', {detail}),
         }, {quoted: m});
     }
 }

@@ -1,7 +1,7 @@
 import {logError} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {defineSdkPlugin, type PluginContentSdk} from '../../core/sdk-plugin.js'
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
+import {renderDownloadFailure} from './download-error.js';
 import {
     downloadYouTubeAudio,
     downloadYouTubeVideo,
@@ -11,78 +11,80 @@ import {
 } from '../../providers/downloads/youtube.provider.js';
 
 const userRequests = createUserRequestLocks();
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['ytmp4', 'ytmp3'],
     tags: ['downloader'],
     command: /^(ytmp3|ytmp4|fgmp4|fgmp3|dlmp3|ytmp4doc|ytmp3doc)$/i,
-    async execute(m, {conn, text, args, command}) {
-    if (!args[0]) return m.reply(getRequiredPluginMessage('downloads.play2.missingUrl'))
-    const sendType = command.includes('doc') ? 'document' : command.includes('mp3') ? 'audio' : 'video';
-    const yt_play = await searchYouTube(args.join(' '));
-    const youtubeLink = resolveIndexedYoutubeLink(args[0], m.sender);
+    async execute(m, {sdk}) {
+    if (!sdk.args[0]) return sdk.reply.message('downloads.play2.missingUrl')
+    const sendType = sdk.command.includes('doc') ? 'document' : sdk.command.includes('mp3') ? 'audio' : 'video';
+    const yt_play = await searchYouTube(sdk.args.join(' '));
+    const youtubeLink = resolveIndexedYoutubeLink(sdk.args[0], sdk.sender);
 
-    if (!userRequests.acquire(m.sender)) {
-        return m.reply(getRequiredPluginMessage('downloads.play2.locked'))
+    if (!userRequests.acquire(sdk.sender)) {
+        return sdk.reply.message('downloads.play2.locked')
     }
     try {
 
-        if (command == 'ytmp3' || command == 'fgmp3' || command == 'ytmp3doc') {
-            await m.react('⌛')
-            const media = await downloadYouTubeAudio(args[0], {
-                format: args[1] || 'mp3',
+        if (sdk.command == 'ytmp3' || sdk.command == 'fgmp3' || sdk.command == 'ytmp3doc') {
+            await sdk.reply.react('⌛')
+            const result = await downloadYouTubeAudio(sdk.args[0], {
+                format: sdk.args[1] || 'mp3',
                 fallbackUrl: youtubeLink,
             });
-            if (!media) return m.react("❌")
-            await conn.sendMessage(m.chat, {
+            const media = result.data;
+            if (!media) return sdk.reply.text(renderDownloadFailure('play2', result.failures))
+            await sdk.sendMessage({
                 [sendType]: {url: media.url},
                 mimetype: media.mimetype,
                 fileName: media.fileName,
                 contextInfo: {}
-            }, {quoted: m});
+            });
         }
 
-        if (command == 'ytmp4' || command == 'fgmp4' || command == 'ytmp4doc') {
-            await m.react('⌛')
-            const [, quality = '720'] = text.split(' ');
+        if (sdk.command == 'ytmp4' || sdk.command == 'fgmp4' || sdk.command == 'ytmp4doc') {
+            await sdk.reply.react('⌛')
+            const [, quality = '720'] = sdk.text.split(' ');
             const selectedQuality = selectQuality(quality, false);
-            const media = await downloadYouTubeVideo(args[0], {
+            const result = await downloadYouTubeVideo(sdk.args[0], {
                 searchUrl: yt_play[0]?.url,
                 fallbackUrl: youtubeLink,
                 title: yt_play[0]?.title,
                 quality: selectedQuality,
             });
-            if (!media) return m.react("❌")
-            await conn.sendMessage(m.chat, {
+            const media = result.data;
+            if (!media) return sdk.reply.text(renderDownloadFailure('play2', result.failures))
+            await sdk.sendMessage({
                 [sendType]: {url: media.url},
                 mimetype: media.mimetype,
                 fileName: media.fileName,
                 caption: media.fileName === 'error.mp4'
-                    ? renderTemplate(getRequiredPluginMessage('downloads.play2.watermarkCaption'), {watermark: info.wm})
-                    : renderVideoCaption(media.title || yt_play[0]?.title || 'video'),
+                    ? sdk.content.renderMessage('downloads.play2.watermarkCaption', {watermark: sdk.branding.watermark})
+                    : renderVideoCaption(sdk.content, media.title || yt_play[0]?.title || 'video'),
                 thumbnail: media.thumbnail
-            }, {quoted: m})
+            })
         }
 
     } catch (error: unknown) {
         logError(error);
-        m.react("❌️")
+        await sdk.reply.react("❌️")
     } finally {
-        userRequests.release(m.sender);
+        userRequests.release(sdk.sender);
     }
     }
 })
 
-function renderVideoCaption(title: string, variant: 'default' | 'compact' | 'quality' = 'default', quality?: string): string {
+function renderVideoCaption(content: PluginContentSdk, title: string, variant: 'default' | 'compact' | 'quality' = 'default', quality?: string): string {
     if (variant === 'compact') {
-        return renderTemplate(getRequiredPluginMessage('downloads.play2.videoCaptionCompact'), {title});
+        return content.renderMessage('downloads.play2.videoCaptionCompact', {title});
     }
 
     if (variant === 'quality') {
-        return renderTemplate(getRequiredPluginMessage('downloads.play2.videoCaptionQuality'), {
+        return content.renderMessage('downloads.play2.videoCaptionQuality', {
             title,
             quality
         });
     }
 
-    return renderTemplate(getRequiredPluginMessage('downloads.play2.videoCaption'), {title});
+    return content.renderMessage('downloads.play2.videoCaption', {title});
 }

@@ -1,5 +1,5 @@
 import {httpJson} from '../../lib/http-client.js';
-import {runProviderCandidates, type ProviderCandidate, type ProviderResult} from '../provider.types.js';
+import {DEFAULT_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
 export interface SpotifyTrack {
     title: string;
@@ -35,7 +35,7 @@ export async function searchSpotify(query: string): Promise<SpotifyTrack[]> {
 }
 
 export function buildSpotifyDownloadProviders(trackUrl: string): ProviderCandidate<string>[] {
-    return [
+    return withProviderPolicy([
         {
             name: 'siputz-spotify',
             run: async () => {
@@ -50,7 +50,7 @@ export function buildSpotifyDownloadProviders(trackUrl: string): ProviderCandida
                 return data.data?.url;
             },
         },
-    ];
+    ], {timeoutMs: DEFAULT_PROVIDER_TIMEOUT_MS, retries: 1});
 }
 
 export async function resolveSpotifyDownloadUrl(trackUrl: string): Promise<ProviderResult<string>> {

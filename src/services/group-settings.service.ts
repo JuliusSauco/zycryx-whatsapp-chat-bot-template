@@ -9,34 +9,7 @@ import {
 } from '../lib/db-cache.js';
 import {repositories} from './data-source.js';
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode} from '../types/config.js';
-import type {ConfigurableFeatureKey} from '../ports/repositories.js';
-
-export interface ContextGroupSettings {
-    banned: boolean;
-    primary_bot: string | null;
-    modoadmin: boolean;
-    botAccessMode: AccessMode;
-    antifake: boolean;
-    message_logging: boolean;
-    antilink: boolean;
-    antilink2: boolean;
-    virusTotal: boolean;
-    autoresponder: boolean;
-    autoresponderMode: AccessMode;
-    autoresponderTrigger: AutoresponderTrigger;
-    gamesAccessMode: AccessMode;
-    toolsAccessMode: AccessMode;
-    rpgAccessMode: AccessMode;
-    downloadsAccessMode: AccessMode;
-    searchAccessMode: AccessMode;
-    stickersAccessMode: AccessMode;
-    convertersAccessMode: AccessMode;
-    funAccessMode: AccessMode;
-    modohorny: boolean;
-    nsfwAccessMode: AccessMode;
-    audios: boolean;
-    autolevelup: boolean;
-}
+import type {ConfigurableFeatureKey, ContextGroupSettings, GroupSettingsRecord} from '../domain/groups.js';
 
 const EMPTY_CONTEXT_SETTINGS: ContextGroupSettings = {
     banned: false,
@@ -89,8 +62,8 @@ export async function getNsfwSettings(chatId: string): Promise<{
     return row ?? {modohorny: false, nsfwAccessMode: 'all', nsfw_horario: null};
 }
 
-export async function getGroupSettings(chatId: string) {
-    const cached = getCachedFullGroupSettings<Awaited<ReturnType<typeof repositories.groupSettings.findByGroupId>>>(chatId);
+export async function getGroupSettings(chatId: string): Promise<GroupSettingsRecord | null> {
+    const cached = getCachedFullGroupSettings<GroupSettingsRecord>(chatId);
     if (cached) return cached;
 
     const settings = await repositories.groupSettings.findByGroupId(chatId);

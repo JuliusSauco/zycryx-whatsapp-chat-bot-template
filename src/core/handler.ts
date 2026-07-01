@@ -12,6 +12,7 @@ import {trackGroupMessageLog, trackMessageCount} from './message-log.js';
 import {logPerfIfSlow, markPerf, type PerfDetail, type PerfMarks} from './performance-logger.js';
 import {router} from './router.js';
 import {runGuards} from '../guards/index.js';
+import {buildInlineHelpQuery, isInlineHelpRequest, renderCommandHelp} from '../services/command-help.service.js';
 import {cleanJid, isUserJid, jidToPhone, resolveSenderInfo} from '../utils/jid.js';
 import {isBlockedPhoneNumber, MESSAGE_DEDUP_TTL} from '../utils/constants.js';
 import {
@@ -97,6 +98,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
                 participants: ctx.participants,
                 metadata: ctx.metadata,
                 botConfig: ctx.botConfig,
+                branding: ctx.branding,
                 groupSettings: hookGroupSettings,
             });
         } catch (e: unknown) {
@@ -117,6 +119,17 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     const plugin = router.resolve(parsed.command, parsed.originalText, !!parsed.usedPrefix);
     if (!plugin) {
         logPerfIfSlow(marks, perfStart, parsed.command || 'no-command', chatId, perfDetails);
+        return;
+    }
+
+    if (isInlineHelpRequest(parsed.args)) {
+        await m.reply(renderCommandHelp({
+            query: buildInlineHelpQuery(parsed.command, parsed.text),
+            usedPrefix: parsed.usedPrefix,
+            plugin,
+        }));
+        markPerf(marks, 'help', perfStart);
+        logPerfIfSlow(marks, perfStart, `${parsed.command}:help`, chatId, perfDetails);
         return;
     }
 
@@ -162,6 +175,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
             isBotAdmin: ctx.isBotAdmin,
             isGroup: ctx.isGroup,
             botConfig: ctx.botConfig,
+            branding: ctx.branding,
             chatId: ctx.chatId,
             sender: ctx.sender,
             groupSettings: pluginGroupSettings,

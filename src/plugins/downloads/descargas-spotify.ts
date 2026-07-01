@@ -1,40 +1,40 @@
 import {logInfo} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import type {QuotedMessage} from '../../types/context.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
-import {replyReportableError} from '../../lib/reply-helpers.js';
+import {createExpiringMap} from '../../lib/ephemeral-state.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 import {downloadSpotifyTrack, searchSpotify} from '../../providers/downloads/spotify.provider.js';
+import {renderDownloadFailure} from './download-error.js';
 
-const userMessages = new Map<string, QuotedMessage>();
+const userMessages = createExpiringMap<QuotedMessage>({ttlMs: 10 * 60 * 1000});
 const userRequests = createUserRequestLocks();
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['spotify'],
     tags: ['downloader'],
     command: /^(spotify|music)$/i,
     register: true,
     limit: 1,
-    async execute(m, {conn, text, usedPrefix, command}) {
-    if (!text) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.spotify.missingQuery'), {
-        command: usedPrefix + command
-    }))
-    if (!userRequests.acquire(m.sender)) return await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.spotify.locked'), {
-        user: m.sender.split('@')[0]
-    }), userMessages.get(m.sender) || m)
-    m.react(`⌛`);
+    async execute(m, {sdk}) {
+    if (!sdk.text) return sdk.reply.message('downloads.spotify.missingQuery', {
+        command: sdk.usedPrefix + sdk.command
+    })
+    if (!userRequests.acquire(sdk.sender)) return sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.spotify.locked', {
+        user: sdk.sender.split('@')[0]
+    }), userMessages.get(sdk.sender) || m)
+    await sdk.reply.react(`⌛`);
     try {
-        const song = await searchSpotify(text);
-        if (song.length === 0) return m.reply(getRequiredPluginMessage('downloads.spotify.noResults'))
+        const song = await searchSpotify(sdk.text);
+        if (song.length === 0) return sdk.reply.message('downloads.spotify.noResults')
         const track = song[0];
-        const spotifyMessage = renderTemplate(getRequiredPluginMessage('downloads.spotify.trackMessage'), {
+        const spotifyMessage = sdk.content.renderMessage('downloads.spotify.trackMessage', {
             title: track.title,
             artist: track.artist,
             album: track.album,
             duration: track.duration,
             publish: track.publish
         });
-        const message = await conn.sendMessage(m.chat, {
+        const message = await sdk.sendMessage({
             text: spotifyMessage,
             contextInfo: {
                 forwardingScore: 1,
@@ -44,31 +44,31 @@ export default definePlugin({
                     containsAutoReply: true,
                     renderLargerThumbnail: true,
                     title: track.title,
-                    body: getRequiredPluginMessage('downloads.spotify.adBody'),
+                    body: sdk.content.message('downloads.spotify.adBody'),
                     mediaType: 1,
                     thumbnailUrl: track.image,
                     mediaUrl: track.url,
                     sourceUrl: track.url
                 }
             }
-        }, {quoted: m});
-        userMessages.set(m.sender, message);
+        });
+        userMessages.set(sdk.sender, message);
 
         const media = await downloadSpotifyTrack(track);
-        if (!media.data) throw new Error('No se pudo descargar la canción desde ninguna API');
-        await conn.sendMessage(m.chat, {
+        if (!media.data) return sdk.reply.text(renderDownloadFailure('spotify', media.failures));
+        await sdk.sendMessage({
             audio: {url: media.data.url},
             fileName: media.data.fileName,
             mimetype: media.data.mimetype,
             contextInfo: {}
-        }, {quoted: m});
-        m.react('✅️');
+        });
+        await sdk.reply.react('✅️');
     } catch (error: unknown) {
-        await replyReportableError(m, error);
+        await sdk.reply.reportableError(error);
         logInfo(error);
-        m.react('❌');
+        await sdk.reply.react('❌');
     } finally {
-        userRequests.release(m.sender);
+        userRequests.release(sdk.sender);
     }
     }
 });

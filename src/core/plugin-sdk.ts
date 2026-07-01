@@ -76,6 +76,7 @@ export interface PluginSdk {
     readonly isOwner: boolean;
     readonly isAdmin: boolean;
     readonly isBotAdmin: boolean;
+    readonly branding: PluginContext['branding'];
     readonly groupSettings: PluginContext['groupSettings'];
     readonly metadata: PluginContext['metadata'];
     readonly participants: PluginContext['participants'];
@@ -118,6 +119,7 @@ export function createPluginSdk(m: BotMessage, ctx: PluginContext): PluginSdk {
         isOwner: ctx.isOwner,
         isAdmin: ctx.isAdmin,
         isBotAdmin: ctx.isBotAdmin,
+        branding: ctx.branding,
         groupSettings: ctx.groupSettings,
         metadata: ctx.metadata,
         participants: ctx.participants,

@@ -1,21 +1,20 @@
 import {logInfo} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {Jimp, JimpMime} from "jimp";
 import {S_WHATSAPP_NET} from "@whiskeysockets/baileys";
-import {getRequiredPluginMessage} from '../../lib/message-template.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ["setppgc"],
     tags: ["group"],
     command: /^setpp(group|grup|gc)?$/i,
     admin: true,
     botAdmin: true,
     group: true,
-    async execute(m, {conn}) {
+    async execute(m, {sdk}) {
     try {
-        let groupId = m.chat;
+        let groupId = sdk.chatId;
         let quotedMsg = m.quoted ? m.quoted : m;
-        if (!m.quoted) return m.reply(getRequiredPluginMessage('group.setPp.missingImage'));
+        if (!m.quoted) return sdk.reply.message('group.setPp.missingImage');
         let media = await quotedMsg.download();
 
         async function processImage(media: Buffer) {
@@ -30,16 +29,16 @@ export default definePlugin({
 
         var {img: processedImage} = await processImage(media);
 
-        conn.query({
+        sdk.conn.query({
             tag: "iq",
             attrs: {target: groupId, to: S_WHATSAPP_NET, type: "set", xmlns: "w:profile:picture"},
             content: [{tag: "picture", attrs: {type: "image"}, content: processedImage}],
         });
 
-        m.react("✅️");
+        await sdk.reply.react("✅️");
     } catch (error: unknown) {
         logInfo(error);
-        return m.react("❌");
+        return sdk.reply.react("❌");
     }
     }
 });

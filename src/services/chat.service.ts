@@ -1,4 +1,5 @@
 import {repositories} from './data-source.js';
+import type {CreateMessageLogInput, MarkMessageDeletedInput} from '../domain/operations.js';
 
 export async function upsertActiveChat(input: {
     chatId: string;
@@ -45,24 +46,18 @@ export async function listGroupMessageCounts(groupId: string): Promise<Array<{
     return repositories.messages.listGroupCounts(groupId);
 }
 
-export async function logGroupMessage(input: {
-    groupId: string;
-    userId: string;
-    messageId: string;
-    messageText: string;
-    messageType: 'text' | 'multimedia';
-    isReply: boolean;
-    replyToMessageId: string | null;
-}): Promise<void> {
+export async function listGroupMessageActivity(groupId: string): Promise<Array<{
+    user_id: string;
+    message_count: number;
+    last_message_at: Date | null;
+}>> {
+    return repositories.messages.listGroupActivity(groupId);
+}
+
+export async function logGroupMessage(input: CreateMessageLogInput): Promise<void> {
     await repositories.messageLogs.create(input);
 }
 
-export async function markGroupMessageDeleted(input: {
-    groupId: string;
-    messageId: string;
-    deletedBy: string | null;
-    deletedByLid: string | null;
-    deletedAt: Date;
-}): Promise<void> {
+export async function markGroupMessageDeleted(input: MarkMessageDeletedInput): Promise<void> {
     await repositories.messageLogs.markDeleted(input);
 }

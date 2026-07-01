@@ -1,7 +1,6 @@
-import {definePlugin} from '../../core/define-plugin.js';
-import {getRequiredPluginMessage} from '../../lib/message-template.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     command: ['promote', 'daradmin', 'darpoder'],
     help: ['promote *593xxx*', 'promote *@usuario*', 'promote *responder chat*'],
     tags: ['group'],
@@ -9,22 +8,22 @@ export default definePlugin({
     admin: true,
     botAdmin: true,
     register: true,
-    async execute(m, {conn, text}) {
+    async execute(m, {sdk}) {
         let number = '';
-        if (isNaN(Number(text)) && !text.match(/@/g)) {
+        if (isNaN(Number(sdk.text)) && !sdk.text.match(/@/g)) {
             // no-op
-        } else if (isNaN(Number(text))) {
-            number = text.split('@')[1];
-        } else if (!isNaN(Number(text))) {
-            number = text;
+        } else if (isNaN(Number(sdk.text))) {
+            number = sdk.text.split('@')[1];
+        } else if (!isNaN(Number(sdk.text))) {
+            number = sdk.text;
         }
 
-        if (!text && !m.quoted) return conn.reply(m.chat, getRequiredPluginMessage('group.promote.missing'), m);
-        if (number.length > 13 || (number.length < 11 && number.length > 0)) return conn.reply(m.chat, getRequiredPluginMessage('group.promote.invalidNumber'), m);
+        if (!sdk.text && !m.quoted) return sdk.reply.message('group.promote.missing');
+        if (number.length > 13 || (number.length < 11 && number.length > 0)) return sdk.reply.message('group.promote.invalidNumber');
 
         let user = '';
         try {
-            if (text) {
+            if (sdk.text) {
                 user = number + '@s.whatsapp.net';
             } else if (m.quoted?.sender) {
                 user = m.quoted.sender;
@@ -34,7 +33,7 @@ export default definePlugin({
         } catch {
         }
 
-        await conn.groupParticipantsUpdate(m.chat, [user], 'promote');
-        await conn.reply(m.chat, getRequiredPluginMessage('group.promote.success'), m);
+        await sdk.conn.groupParticipantsUpdate(sdk.chatId, [user], 'promote');
+        await sdk.reply.message('group.promote.success');
     }
 });

@@ -1,6 +1,5 @@
-import {definePlugin} from '../../core/define-plugin.js'
-import {getRequiredPluginMessage} from '../../lib/message-template.js'
-export default definePlugin({
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
+export default defineSdkPlugin({
     help: ['*593xxx*', '*@usuario*', '*responder chat*'].map((v) => 'demote ' + v),
     tags: ['group'],
     command: /^(demote|quitarpoder|quitaradmin)$/i,
@@ -8,20 +7,20 @@ export default definePlugin({
     botAdmin: true,
     group: true,
     register: true,
-    async execute(m, {conn, text}) {
+    async execute(m, {sdk}) {
     let number = '';
-    if (isNaN(Number(text)) && !text.match(/@/g)) {
-    } else if (isNaN(Number(text))) {
-        number = text.split('@')[1];
-    } else if (!isNaN(Number(text))) {
-        number = text;
+    if (isNaN(Number(sdk.text)) && !sdk.text.match(/@/g)) {
+    } else if (isNaN(Number(sdk.text))) {
+        number = sdk.text.split('@')[1];
+    } else if (!isNaN(Number(sdk.text))) {
+        number = sdk.text;
     }
 
-    if (!text && !m.quoted) return conn.reply(m.chat, getRequiredPluginMessage('group.demote.missing'), m);
-    if (number.length > 13 || (number.length < 11 && number.length > 0)) return conn.reply(m.chat, getRequiredPluginMessage('group.demote.invalidNumber'), m);
+    if (!sdk.text && !m.quoted) return sdk.reply.message('group.demote.missing');
+    if (number.length > 13 || (number.length < 11 && number.length > 0)) return sdk.reply.message('group.demote.invalidNumber');
     let user = '';
     try {
-        if (text) {
+        if (sdk.text) {
             user = number + '@s.whatsapp.net';
         } else if (m.quoted?.sender) {
             user = m.quoted.sender;
@@ -30,9 +29,9 @@ export default definePlugin({
         }
     } catch (e: unknown) {
     } finally {
-        if (!user) return m.reply(getRequiredPluginMessage('group.demote.missingUser'));
-        await conn.groupParticipantsUpdate(m.chat, [user], 'demote');
-        conn.reply(m.chat, getRequiredPluginMessage('group.demote.success'), m);
+        if (!user) return sdk.reply.message('group.demote.missingUser');
+        await sdk.conn.groupParticipantsUpdate(sdk.chatId, [user], 'demote');
+        await sdk.reply.message('group.demote.success');
     }
     }
 });

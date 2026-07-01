@@ -1,52 +1,32 @@
 import {logInfo} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js';
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {ENV} from '../../core/env.js';
-import {httpJson, type HttpRequestOptions} from '../../lib/http-client.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {getEmojiMixUrls} from '../../providers/media-conversion/sticker.provider.js';
 
-interface TenorMediaFormat {
-    url: string;
-}
-
-interface TenorResult {
-    media_formats?: {
-        png_transparent?: TenorMediaFormat;
-        gif_transparent?: TenorMediaFormat;
-    };
-    url?: string;
-}
-
-interface TenorResponse {
-    results?: TenorResult[];
-}
-
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['emojimix'].map((v) => v + ' emot1|emot2>'),
     tags: ['sticker'],
     command: /^(emojimix|emogimix|combinaremojis|crearemoji|emojismix|emogismix)$/i,
     register: true,
     limit: 1,
-    async execute(m, {conn, text, args, usedPrefix, command}) {
-    if (!ENV.TENOR_API_KEY) return m.reply(getRequiredPluginMessage('stickers.emojiMix.missingConfig'));
-    const {packname: f, author: g} = await getStickerExif(m.sender);
-    if (!args[0]) return m.reply(renderTemplate(getRequiredPluginMessage('stickers.emojiMix.usage'), {command: usedPrefix + command}))
+    async execute(m, {sdk}) {
+    if (!ENV.TENOR_API_KEY) return sdk.reply.message('stickers.emojiMix.missingConfig');
+    const {packname: f, author: g} = await getStickerExif(sdk.sender);
+    if (!sdk.args[0]) return sdk.reply.message('stickers.emojiMix.usage', {command: sdk.usedPrefix + sdk.command})
 //conn.fakeReply(m.chat, `Calma crack estoy procesando 👏\n\n> *Esto puede demorar unos minutos*`, '0@s.whatsapp.net', `No haga spam gil`, 'status@broadcast', null, fake)
     try {
-        let [emoji1, emoji2] = text.split('+')
-        let anu = await fetchJson<TenorResponse>(`https://tenor.googleapis.com/v2/featured?key=${ENV.TENOR_API_KEY}&contentfilter=high&media_filter=png_transparent&component=proactive&collection=emoji_kitchen_v5&q=${encodeURIComponent(emoji1)}_${encodeURIComponent(emoji2)}`)
-        for (let res of anu.results || []) {
-            const imageUrl = res.media_formats?.png_transparent?.url || res.media_formats?.gif_transparent?.url || res.url;
-            if (!imageUrl) continue;
+        let [emoji1, emoji2] = sdk.text.split('+')
+        for (const imageUrl of await getEmojiMixUrls(emoji1, emoji2)) {
             let stiker = await sticker(false, imageUrl, f, g)
-            await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, {
+            await sdk.sendFile(stiker, 'sticker.webp', '', m, true, {
                 contextInfo: {
                     'forwardingScore': 200,
                     'isForwarded': false,
                     externalAdReply: {
                         showAdAttribution: false,
-                        title: info.wm,
+                        title: sdk.branding.watermark,
                         body: ``,
                         mediaType: 2,
                         sourceUrl: info.md,
@@ -60,5 +40,3 @@ export default definePlugin({
     }
     }
 })
-
-const fetchJson = <T>(url: string, options?: HttpRequestOptions) => httpJson<T>(url, options)

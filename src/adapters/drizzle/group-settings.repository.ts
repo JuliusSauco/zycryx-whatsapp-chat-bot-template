@@ -2,94 +2,30 @@ import {and, eq, lt, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {groupSettings} from '../../db/schema.js';
 import type {GroupSettingsRepository} from '../../ports/repositories.js';
-import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode} from '../../types/config.js';
-
-function normalizeGreetingHidetagMode(mode: string | null, legacyHidetag: boolean | null): GreetingHidetagMode {
-    if (mode === 'admin' || mode === 'all' || mode === 'off') return mode;
-    return legacyHidetag ? 'all' : 'off';
-}
-
-function normalizeAccessMode(mode: string | null, fallback: AccessMode = 'all'): AccessMode {
-    if (mode === 'all' || mode === 'admin' || mode === 'superadmin' || mode === 'owner') return mode;
-    return fallback;
-}
-
-function normalizeBotAccessMode(mode: string | null, legacyAdminMode: boolean | null): AccessMode {
-    return normalizeAccessMode(mode, legacyAdminMode ? 'admin' : 'all');
-}
-
-function normalizeAutoresponderTrigger(trigger: string | null): AutoresponderTrigger {
-    return trigger === 'all' ? 'all' : 'mention';
-}
+import {
+    mapContextGroupSettings,
+    mapGroupSettings,
+    mapNsfwGroupSettings,
+    normalizeAccessMode,
+    normalizeAutoresponderTrigger,
+    normalizeBotAccessMode,
+} from './group-settings.mapper.js';
 
 export const groupSettingsRepository: GroupSettingsRepository = {
     async findByGroupId(groupId) {
         const [row] = await orm.select().from(groupSettings).where(eq(groupSettings.groupId, groupId)).limit(1);
-        if (!row) return null;
-
-        return {
-            group_id: row.groupId,
-            welcomeConfigId: row.welcomeConfigId,
-            welcome: row.welcome ?? true,
-            detect: row.detect ?? true,
-            antifake: row.antifake ?? false,
-            antilink: row.antilink ?? false,
-            antilink2: row.antilink2 ?? false,
-            virusTotal: row.virusTotal ?? false,
-            autoresponder: row.autoresponder ?? true,
-            autoresponderMode: normalizeAccessMode(row.autoresponderMode),
-            autoresponderTrigger: normalizeAutoresponderTrigger(row.autoresponderTrigger),
-            gamesAccessMode: normalizeAccessMode(row.gamesAccessMode),
-            toolsAccessMode: normalizeAccessMode(row.toolsAccessMode),
-            rpgAccessMode: normalizeAccessMode(row.rpgAccessMode),
-            downloadsAccessMode: normalizeAccessMode(row.downloadsAccessMode),
-            searchAccessMode: normalizeAccessMode(row.searchAccessMode),
-            stickersAccessMode: normalizeAccessMode(row.stickersAccessMode),
-            convertersAccessMode: normalizeAccessMode(row.convertersAccessMode),
-            funAccessMode: normalizeAccessMode(row.funAccessMode),
-            modohorny: row.modohorny ?? false,
-            nsfwAccessMode: normalizeAccessMode(row.nsfwAccessMode),
-            audios: row.audios ?? false,
-            antiStatus: row.antiStatus ?? false,
-            modoadmin: row.modoadmin ?? false,
-            photowelcome: row.photowelcome ?? true,
-            welcomeRegisteredBy: row.welcomeRegisteredBy,
-            welcomeHidetag: row.welcomeHidetag ?? false,
-            welcomeHidetagMode: normalizeGreetingHidetagMode(row.welcomeHidetagMode, row.welcomeHidetag),
-            welcomeGroupPhoto: row.welcomeGroupPhoto ?? false,
-            bye: row.bye ?? true,
-            byeConfigId: row.byeConfigId,
-            byeRegisteredBy: row.byeRegisteredBy,
-            byeHidetag: row.byeHidetag ?? false,
-            byeHidetagMode: normalizeGreetingHidetagMode(row.byeHidetagMode, row.byeHidetag),
-            byeGroupPhoto: row.byeGroupPhoto ?? false,
-            photobye: row.photobye ?? true,
-            autolevelup: row.autolevelup ?? true,
-            nsfw_horario: row.nsfwHorario,
-            sWelcome: row.sWelcome,
-            sBye: row.sBye,
-            sPromote: row.sPromote,
-            sDemote: row.sDemote,
-            sAutorespond: row.sAutorespond,
-            banned: row.banned ?? false,
-            expired: row.expired ?? 0,
-            memory_ttl: row.memoryTtl ?? 86400,
-            primary_bot: row.primaryBot,
-            autoAcceptMode: (row.autoAcceptMode || 'off') as AutoAcceptMode,
-            botAccessMode: normalizeBotAccessMode(row.botAccessMode, row.modoadmin),
-            messageLogging: row.messageLogging ?? false,
-        };
+        return row ? mapGroupSettings(row) : null;
     },
 
     async findContextSettings(groupId) {
         const [row] = await orm
             .select({
                 banned: groupSettings.banned,
-                primary_bot: groupSettings.primaryBot,
+                primaryBot: groupSettings.primaryBot,
                 modoadmin: groupSettings.modoadmin,
                 botAccessMode: groupSettings.botAccessMode,
                 antifake: groupSettings.antifake,
-                message_logging: groupSettings.messageLogging,
+                messageLogging: groupSettings.messageLogging,
                 antilink: groupSettings.antilink,
                 antilink2: groupSettings.antilink2,
                 virusTotal: groupSettings.virusTotal,
@@ -113,34 +49,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             .where(eq(groupSettings.groupId, groupId))
             .limit(1);
 
-        return row
-            ? {
-                banned: !!row.banned,
-                primary_bot: row.primary_bot ?? null,
-                modoadmin: !!row.modoadmin,
-                botAccessMode: normalizeBotAccessMode(row.botAccessMode, row.modoadmin),
-                antifake: !!row.antifake,
-                message_logging: !!row.message_logging,
-                antilink: !!row.antilink,
-                antilink2: !!row.antilink2,
-                virusTotal: !!row.virusTotal,
-                autoresponder: row.autoresponder ?? true,
-                autoresponderMode: normalizeAccessMode(row.autoresponderMode),
-                autoresponderTrigger: normalizeAutoresponderTrigger(row.autoresponderTrigger),
-                gamesAccessMode: normalizeAccessMode(row.gamesAccessMode),
-                toolsAccessMode: normalizeAccessMode(row.toolsAccessMode),
-                rpgAccessMode: normalizeAccessMode(row.rpgAccessMode),
-                downloadsAccessMode: normalizeAccessMode(row.downloadsAccessMode),
-                searchAccessMode: normalizeAccessMode(row.searchAccessMode),
-                stickersAccessMode: normalizeAccessMode(row.stickersAccessMode),
-                convertersAccessMode: normalizeAccessMode(row.convertersAccessMode),
-                funAccessMode: normalizeAccessMode(row.funAccessMode),
-                modohorny: !!row.modohorny,
-                nsfwAccessMode: normalizeAccessMode(row.nsfwAccessMode),
-                audios: !!row.audios,
-                autolevelup: row.autolevelup ?? true,
-            }
-            : null;
+        return row ? mapContextGroupSettings(row) : null;
     },
 
     async findNsfwSettings(groupId) {
@@ -148,19 +57,13 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             .select({
                 modohorny: groupSettings.modohorny,
                 nsfwAccessMode: groupSettings.nsfwAccessMode,
-                nsfw_horario: groupSettings.nsfwHorario,
+                nsfwHorario: groupSettings.nsfwHorario,
             })
             .from(groupSettings)
             .where(eq(groupSettings.groupId, groupId))
             .limit(1);
 
-        return row
-            ? {
-                modohorny: !!row.modohorny,
-                nsfwAccessMode: normalizeAccessMode(row.nsfwAccessMode),
-                nsfw_horario: row.nsfw_horario ?? null,
-            }
-            : null;
+        return row ? mapNsfwGroupSettings(row) : null;
     },
 
     async setBooleanFlag(groupId, flag, value) {

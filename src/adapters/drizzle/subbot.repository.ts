@@ -2,34 +2,19 @@ import {eq, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {subbots} from '../../db/schema.js';
 import type {SubbotRepository} from '../../ports/repositories.js';
-
-function mapSubbot(row: typeof subbots.$inferSelect) {
-    return {
-        id: row.id,
-        tipo: row.tipo,
-        name: row.name,
-        logo_url: row.logoUrl,
-        prefix: row.prefix ?? ['/', '.', '#'],
-        mode: row.mode ?? 'public',
-        owners: row.owners ?? [],
-        anti_private: row.antiPrivate ?? true,
-        anti_call: row.antiCall ?? false,
-        privacy: row.privacy,
-        prestar: row.prestar,
-    };
-}
+import {mapSubbotConfig} from './subbot.mapper.js';
 
 export const subbotsRepository: SubbotRepository = {
     async findConfig(botId) {
         const [row] = await orm.select().from(subbots).where(eq(subbots.id, botId)).limit(1);
-        return row ? mapSubbot(row) : null;
+        return row ? mapSubbotConfig(row) : null;
     },
 
     async listConfigs(tipo) {
         const rows = tipo
             ? await orm.select().from(subbots).where(eq(subbots.tipo, tipo))
             : await orm.select().from(subbots);
-        return rows.map(mapSubbot);
+        return rows.map(mapSubbotConfig);
     },
 
     async countByType() {

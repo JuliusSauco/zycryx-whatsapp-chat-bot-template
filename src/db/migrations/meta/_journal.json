@@ -162,6 +162,13 @@
       "when": 1780330200000,
       "tag": "0022_nsfw_access_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1782864000000,
+      "tag": "0023_message_last_activity",
+      "breakpoints": true
     }
   ]
 }

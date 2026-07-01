@@ -8,7 +8,7 @@ import type {
     UserResources,
     UserStickerSettings,
     UserWarnInfo,
-} from '../ports/repositories.js';
+} from '../domain/users.js';
 
 export async function getUserById(userId: string) {
     return repositories.users.findById(userId);

@@ -1,133 +1,85 @@
-export interface UserBanInfo {
-    banned: boolean;
-    razon_ban: string | null;
-    avisos_ban: number;
-}
+import type {
+    BannedUserInfo,
+    CompleteRegistrationInput,
+    MarriedUserInfo,
+    RewardTimestampField,
+    UpsertRegisteredAdminInput,
+    UpsertUserInput,
+    UserBanInfo,
+    UserRecord,
+    UserResources,
+    UserStickerSettings,
+    UserWallet,
+    UserWarnInfo,
+    WalletResource,
+} from '../domain/users.js';
+import type {GroupSettings} from '../types/config.js';
+import type {
+    ConfigurableFeatureKey,
+    ContextGroupSettings,
+    ExpiredGroup,
+    GroupSettingsRecord,
+    NsfwGroupSettings,
+    UserGroupRoleRecord,
+} from '../domain/groups.js';
+import type {SubbotBooleanFlag, SubbotConfig, SubbotTypeCounts} from '../domain/subbots.js';
+import type {AudioResponseRecord, UpsertAudioResponseInput} from '../domain/audio-responses.js';
+import type {
+    CharacterClaimOwner,
+    CharacterRecord,
+    CharacterSaleInput,
+    CompleteCharacterSaleInput,
+    CreateCharacterInput,
+} from '../domain/characters.js';
+import type {
+    ChatMemoryRecord,
+    CreateMessageLogInput,
+    ExpirableChatMemory,
+    MarkMessageDeletedInput,
+    MessageLogType,
+} from '../domain/operations.js';
 
-export interface UserResources {
-    limite: number;
-    money: number;
-    level: number;
-}
-
-export type WalletResource = 'limite' | 'exp' | 'money' | 'banco';
-export type RewardTimestampField = 'lastclaim' | 'dailystreak' | 'lastcofre' | 'lastmiming' | 'lastwork' | 'crime' | 'lastrob' | 'lastslut' | 'timevot' | 'ryTime';
-
-export interface UserWallet {
-    id: string;
-    nombre: string | null;
-    limite: number;
-    exp: number;
-    money: number;
-    banco: number;
-    level: number;
-    role: string | null;
-    wait: number;
-    lastclaim: number;
-    dailystreak: number;
-    lastcofre: number;
-    lastmiming: number;
-    lastwork: number;
-    crime: number;
-    lastrob: number;
-    lastslut: number;
-    timevot: number;
-    ryTime: number;
-}
-
-export interface UserRecord {
-    id: string;
-    nombre: string | null;
-    registered: boolean | null;
-    num: string | null;
-    lid: string | null;
-    banned: boolean | null;
-    razonBan: string | null;
-    avisosBan: number | null;
-    warnPv: boolean | null;
-    warn: number | null;
-    warnAntiporn: number | null;
-    warnEstado: number | null;
-    edad: number | null;
-    gender: string | null;
-    birthday: string | null;
-    money: number | null;
-    limite: number | null;
-    exp: number | null;
-    banco: number | null;
-    level: number | null;
-    role: string | null;
-    roleDescription?: string | null;
-    regTime: Date | null;
-    serialNumber: string | null;
-    serial_number?: string | null;
-    stickerPackname: string | null;
-    stickerAuthor: string | null;
-    ryTime: number | null;
-    lastwork: number | null;
-    lastmiming: number | null;
-    lastclaim: number | null;
-    dailystreak: number | null;
-    lastcofre: number | null;
-    lastrob: number | null;
-    lastslut: number | null;
-    timevot: number | null;
-    wait: number | null;
-    crime: number | null;
-    marry: string | null;
-    marryRequest: string | null;
-}
-
-export interface UserStickerSettings {
-    sticker_packname: string | null;
-    sticker_author: string | null;
-}
-
-export interface UserWarnInfo {
-    id: string;
-    warn: number;
-}
-
-export interface BannedUserInfo {
-    id: string;
-    razon_ban: string | null;
-    avisos_ban: number;
-}
-
-export interface MarriedUserInfo {
-    id: string;
-    marry: string | null;
-}
-
-export interface UserNumberByLid {
-    lid: string;
-    num: string | null;
-}
-
-export interface UpsertUserInput {
-    id: string;
-    nombre: string;
-    num: string | null;
-    lid?: string;
-}
-
-export interface CompleteRegistrationInput {
-    id: string;
-    nombre: string;
-    edad: number;
-    gender: string;
-    birthday: string | null;
-    regTime: Date;
-    serialNumber: string;
-}
-
-export interface UpsertRegisteredAdminInput {
-    id: string;
-    nombre: string | null;
-    num: string | null;
-    lid?: string | null;
-    serialNumber: string;
-}
+export type {
+    BannedUserInfo,
+    CompleteRegistrationInput,
+    MarriedUserInfo,
+    RewardTimestampField,
+    UpsertRegisteredAdminInput,
+    UpsertUserInput,
+    UserBanInfo,
+    UserNumberByLid,
+    UserRecord,
+    UserResources,
+    UserStickerSettings,
+    UserWallet,
+    UserWarnInfo,
+    WalletResource,
+} from '../domain/users.js';
+export type {
+    ConfigurableFeatureKey,
+    ContextGroupSettings,
+    ExpiredGroup,
+    GroupSettingsRecord,
+    NsfwGroupSettings,
+    UserGroupRoleRecord,
+} from '../domain/groups.js';
+export type {SubbotBooleanFlag, SubbotConfig, SubbotTypeCounts} from '../domain/subbots.js';
+export type {AudioConfig, AudioEntry, AudioResponseRecord, UpsertAudioResponseInput} from '../domain/audio-responses.js';
+export type {
+    CharacterClaimOwner,
+    CharacterRecord,
+    CharacterSaleInput,
+    CompleteCharacterSaleInput,
+    CreateCharacterInput,
+} from '../domain/characters.js';
+export type {
+    AiMemoryMessage,
+    ChatMemoryRecord,
+    CreateMessageLogInput,
+    ExpirableChatMemory,
+    MarkMessageDeletedInput,
+    MessageLogType,
+} from '../domain/operations.js';
 
 export interface UserRepository {
     findById(userId: string): Promise<UserRecord | null>;
@@ -188,13 +140,6 @@ export interface UserRepository {
     divorceUsers(userA: string, userB: string): Promise<void>;
 }
 
-export interface UserGroupRoleRecord {
-    group_id: string;
-    user_id: string;
-    role: string;
-    role_description: string | null;
-}
-
 export interface UserGroupRoleRepository {
     upsert(input: {
         groupId: string;
@@ -236,27 +181,12 @@ export interface MessageRepository {
     incrementUserGroupCount(userId: string, groupId: string): Promise<void>;
     deleteUserGroupCount(userId: string, groupId: string): Promise<void>;
     listGroupCounts(groupId: string): Promise<Array<{user_id: string; message_count: number}>>;
+    listGroupActivity(groupId: string): Promise<Array<{user_id: string; message_count: number; last_message_at: Date | null}>>;
 }
 
-export type MessageLogType = 'text' | 'multimedia';
-
 export interface MessageLogRepository {
-    create(input: {
-        groupId: string;
-        userId: string;
-        messageId: string;
-        messageText: string;
-        messageType: MessageLogType;
-        isReply: boolean;
-        replyToMessageId: string | null;
-    }): Promise<void>;
-    markDeleted(input: {
-        groupId: string;
-        messageId: string;
-        deletedBy: string | null;
-        deletedByLid: string | null;
-        deletedAt: Date;
-    }): Promise<void>;
+    create(input: CreateMessageLogInput): Promise<void>;
+    markDeleted(input: MarkMessageDeletedInput): Promise<void>;
 }
 
 export interface StatsRepository {
@@ -264,44 +194,10 @@ export interface StatsRepository {
     sumCommands(): Promise<number>;
 }
 
-export interface ExpiredGroup {
-    group_id: string;
-    expired: number;
-}
-
 export interface GroupSettingsRepository {
-    findByGroupId(groupId: string): Promise<Partial<GroupSettings> | null>;
-    findContextSettings(groupId: string): Promise<{
-        banned: boolean;
-        primary_bot: string | null;
-        modoadmin: boolean;
-        botAccessMode: NonNullable<GroupSettings['botAccessMode']>;
-        antifake: boolean;
-        message_logging: boolean;
-        antilink: boolean;
-        antilink2: boolean;
-        virusTotal: boolean;
-        autoresponder: boolean;
-        autoresponderMode: NonNullable<GroupSettings['autoresponderMode']>;
-        autoresponderTrigger: NonNullable<GroupSettings['autoresponderTrigger']>;
-        gamesAccessMode: NonNullable<GroupSettings['gamesAccessMode']>;
-        toolsAccessMode: NonNullable<GroupSettings['toolsAccessMode']>;
-        rpgAccessMode: NonNullable<GroupSettings['rpgAccessMode']>;
-        downloadsAccessMode: NonNullable<GroupSettings['downloadsAccessMode']>;
-        searchAccessMode: NonNullable<GroupSettings['searchAccessMode']>;
-        stickersAccessMode: NonNullable<GroupSettings['stickersAccessMode']>;
-        convertersAccessMode: NonNullable<GroupSettings['convertersAccessMode']>;
-        funAccessMode: NonNullable<GroupSettings['funAccessMode']>;
-        modohorny: boolean;
-        nsfwAccessMode: NonNullable<GroupSettings['nsfwAccessMode']>;
-        audios: boolean;
-        autolevelup: boolean;
-    } | null>;
-    findNsfwSettings(groupId: string): Promise<{
-        modohorny: boolean;
-        nsfwAccessMode: NonNullable<GroupSettings['nsfwAccessMode']>;
-        nsfw_horario: string | null;
-    } | null>;
+    findByGroupId(groupId: string): Promise<GroupSettingsRecord | null>;
+    findContextSettings(groupId: string): Promise<ContextGroupSettings | null>;
+    findNsfwSettings(groupId: string): Promise<NsfwGroupSettings | null>;
     setBooleanFlag(groupId: string, flag: string, value: boolean): Promise<void>;
     setAutoAcceptMode(groupId: string, mode: GroupSettings['autoAcceptMode']): Promise<void>;
     setBotAccessMode(groupId: string, mode: GroupSettings['botAccessMode']): Promise<void>;
@@ -333,9 +229,9 @@ export interface GroupSettingsRepository {
 export interface SubbotRepository {
     findConfig(botId: string): Promise<SubbotConfig | null>;
     listConfigs(tipo?: string | null): Promise<SubbotConfig[]>;
-    countByType(): Promise<{total: number; oficiales: number; subbots: number}>;
+    countByType(): Promise<SubbotTypeCounts>;
     updateTipo(botId: string, tipo: string): Promise<void>;
-    setBooleanFlag(botId: string, flag: string, value: boolean): Promise<void>;
+    setBooleanFlag(botId: string, flag: SubbotBooleanFlag, value: boolean): Promise<void>;
     setName(botId: string, name: string): Promise<void>;
     setLogoUrl(botId: string, logoUrl: string): Promise<void>;
     setMode(botId: string, mode: string): Promise<void>;
@@ -343,43 +239,17 @@ export interface SubbotRepository {
     setOwners(botId: string, owners: string[]): Promise<void>;
 }
 
-export type ConfigurableFeatureKey =
-    | 'games'
-    | 'tools'
-    | 'rpg'
-    | 'downloads'
-    | 'search'
-    | 'stickers'
-    | 'converters'
-    | 'fun';
-
-export interface CharacterRecord {
-    id: number;
-    name: string;
-    url: string;
-    tipo: string | null;
-    anime: string | null;
-    rareza: string | null;
-    price: number;
-    previous_price: number | null;
-    claimed_by: string | null;
-    for_sale: boolean;
-    seller: string | null;
-    votes: number;
-    last_removed_time: number | null;
-}
-
 export interface CharacterRepository {
     findByUrl(url: string): Promise<CharacterRecord | null>;
     findByName(name: string): Promise<CharacterRecord | null>;
     findOwnedByName(name: string, ownerId: string): Promise<CharacterRecord | null>;
     listByOwner(ownerId: string): Promise<CharacterRecord[]>;
-    listClaimOwners(): Promise<Array<{claimed_by: string | null}>>;
-    create(input: Omit<CharacterRecord, 'id'>): Promise<CharacterRecord>;
+    listClaimOwners(): Promise<CharacterClaimOwner[]>;
+    create(input: CreateCharacterInput): Promise<CharacterRecord>;
     setOwner(characterId: number, ownerId: string): Promise<void>;
-    setForSale(characterId: number, input: {price: number; seller: string; previousPrice: number | null}): Promise<void>;
+    setForSale(characterId: number, input: CharacterSaleInput): Promise<void>;
     withdrawFromSale(characterId: number, removedAt: number): Promise<void>;
-    completeSale(characterId: number, input: {buyer: string; price?: number}): Promise<void>;
+    completeSale(characterId: number, input: CompleteCharacterSaleInput): Promise<void>;
     vote(characterId: number, votes: number, price: number): Promise<void>;
 }
 
@@ -387,23 +257,10 @@ export interface ApiTokenRepository {
     findTokenB64(name: string): Promise<string | null>;
 }
 
-export interface AudioResponseRecord {
-    scope: string;
-    phrase: string;
-    regex: string;
-    audioUrls: string[];
-    deleted: boolean | null;
-}
-
 export interface AudioResponseRepository {
     listByScopes(scopes: string[]): Promise<AudioResponseRecord[]>;
     listAll(): Promise<AudioResponseRecord[]>;
-    upsert(input: {
-        scope: string;
-        phrase: string;
-        regex: string;
-        audioUrls: string[];
-    }): Promise<void>;
+    upsert(input: UpsertAudioResponseInput): Promise<void>;
     markDeleted(scope: string, phrase: string, regex?: string): Promise<void>;
 }
 
@@ -425,17 +282,6 @@ export interface ReportRepository {
     }): Promise<void>;
     listPending(limit: number): Promise<PendingReport[]>;
     deleteById(id: number): Promise<void>;
-}
-
-export interface ExpirableChatMemory {
-    chat_id: string;
-    updated_at: Date | string;
-    memory_ttl: number;
-}
-
-export interface ChatMemoryRecord {
-    history: unknown;
-    updated_at: Date | string | null;
 }
 
 export interface ChatMemoryRepository {
@@ -482,4 +328,3 @@ export interface AppRepositories {
     chatMemory: ChatMemoryRepository;
     database: DatabaseRepository;
 }
-import type {GroupSettings, SubbotConfig} from '../types/config.js';

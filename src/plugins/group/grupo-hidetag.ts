@@ -1,18 +1,17 @@
 import {logError} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import type {MessageContent} from '../../types/context.js'
-import {getRequiredPluginMessage} from '../../lib/message-template.js'
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['hidetag'],
     tags: ['group'],
     command: /^(hidetag|notificar|notify)$/i,
     admin: true,
     group: true,
     register: true,
-    async execute(m, {conn, text, participants, usedPrefix, command}) {
-    if (!m.quoted && !text) return m.reply(getRequiredPluginMessage('group.hidetag.missingText'))
-    let users = participants.map(u => conn.decodeJid(u.id))
+    async execute(m, {sdk}) {
+    if (!m.quoted && !sdk.text) return sdk.reply.message('group.hidetag.missingText')
+    let users = sdk.participants.map(u => sdk.conn.decodeJid(u.id))
     if (m.quoted && m.quoted.message) {
         const type = Object.keys(m.quoted.message)[0]
         const isMedia = ['imageMessage', 'videoMessage', 'audioMessage', 'stickerMessage', 'documentMessage'].includes(type)
@@ -22,23 +21,23 @@ export default definePlugin({
                 let msg: MessageContent = {contextInfo: {mentionedJid: users}}
                 if (type === 'imageMessage') {
                     msg.image = mediax
-                    if (text) msg.caption = text
+                    if (sdk.text) msg.caption = sdk.text
                 } else if (type === 'videoMessage') {
                     msg.video = mediax
-                    if (text) msg.caption = text
+                    if (sdk.text) msg.caption = sdk.text
                 } else if (type === 'audioMessage') {
                     msg.audio = mediax
                     msg.ptt = true
-                    msg.fileName = getRequiredPluginMessage('group.hidetag.audioFileName')
+                    msg.fileName = sdk.content.message('group.hidetag.audioFileName')
                     msg.mimetype = 'audio/mp4'
                 } else if (type === 'stickerMessage') {
                     msg.sticker = mediax
                 } else if (type === 'documentMessage') {
                     msg.document = mediax
-                    msg.fileName = getRequiredPluginMessage('group.hidetag.documentFileName')
+                    msg.fileName = sdk.content.message('group.hidetag.documentFileName')
                     msg.mimetype = m.quoted.mimetype || 'application/octet-stream'
                 }
-                await conn.sendMessage(m.chat, msg, {quoted: undefined})
+                await sdk.conn.sendMessage(sdk.chatId, msg, {quoted: undefined})
                 return
             } catch (e: unknown) {
             }
@@ -52,8 +51,8 @@ export default definePlugin({
     }
 
     if (!texto && typeof m.originalText === 'string' && m.originalText.length > 0) {
-        let prefix = usedPrefix || ''
-        let cmd = command || ''
+        let prefix = sdk.usedPrefix || ''
+        let cmd = sdk.command || ''
         let original = m.originalText.trimStart()
         if (original.slice(0, prefix.length + cmd.length).toLowerCase() === (prefix + cmd).toLowerCase()) {
             texto = original.slice(prefix.length + cmd.length).trimStart()
@@ -63,7 +62,7 @@ export default definePlugin({
     }
 
     try {
-        await conn.sendMessage(m.chat, {text: texto, contextInfo: {mentionedJid: users}}, {quoted: undefined})
+        await sdk.conn.sendMessage(sdk.chatId, {text: texto, contextInfo: {mentionedJid: users}}, {quoted: undefined})
     } catch (e: unknown) {
         logError(e)
     }

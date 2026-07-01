@@ -1,62 +1,60 @@
 import {logInfo} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import type {QuotedMessage} from '../../types/context.js';
-import {httpRequest} from '../../lib/http-client.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
-import {replyReportableError} from '../../lib/reply-helpers.js';
+import {createExpiringMap} from '../../lib/ephemeral-state.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 
 const regex = /(?:https|git)(?::\/\/|@)github\.com[\/:]([^\/:]+)\/(.+)/i;
-const userCaptions = new Map<string, QuotedMessage>();
+const userCaptions = createExpiringMap<QuotedMessage>({ttlMs: 10 * 60 * 1000});
 const userRequests = createUserRequestLocks();
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['gitclone <url>'],
     tags: ['downloader'],
     command: /gitclone|clonarepo|clonarrepo|repoclonar/i,
     register: true,
     limit: 2,
     level: 1,
-    async execute(m, {args, usedPrefix, command, conn}) {
-    if (!args[0]) throw renderTemplate(getRequiredPluginMessage('downloads.gitclone.missingUrl'), {
-        command: usedPrefix + command
+    async execute(m, {sdk}) {
+    if (!sdk.args[0]) throw sdk.content.renderMessage('downloads.gitclone.missingUrl', {
+        command: sdk.usedPrefix + sdk.command
     })
-    if (!regex.test(args[0])) return m.reply(getRequiredPluginMessage('downloads.gitclone.invalidUrl'))
-    if (!userRequests.acquire(m.sender)) {
-        conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.gitclone.locked'), {
-            user: m.sender.split('@')[0]
-        }), userCaptions.get(m.sender) || m)
+    if (!regex.test(sdk.args[0])) return sdk.reply.message('downloads.gitclone.invalidUrl')
+    if (!userRequests.acquire(sdk.sender)) {
+        await sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.gitclone.locked', {
+            user: sdk.sender.split('@')[0]
+        }), userCaptions.get(sdk.sender) || m)
         return;
     }
     try {
-        const downloadGit = await conn.reply(m.chat, getRequiredPluginMessage('downloads.gitclone.progress'), m, {
+        const downloadGit = await sdk.conn.reply(sdk.chatId, sdk.content.message('downloads.gitclone.progress'), m, {
             contextInfo: {
                 externalAdReply: {
                     mediaUrl: undefined,
                     mediaType: 1,
                     description: undefined,
-                    title: info.wm,
-                    body: getRequiredPluginMessage('downloads.gitclone.adBody'),
+                    title: sdk.branding.watermark,
+                    body: sdk.content.message('downloads.gitclone.adBody'),
                     previewType: 0,
                     thumbnail: m.pp,
                     sourceUrl: info.nna
                 }
             }
         });
-        userCaptions.set(m.sender, downloadGit);
-        let [_, user, repo] = args[0].match(regex) || [];
+        userCaptions.set(sdk.sender, downloadGit);
+        let [_, user, repo] = sdk.args[0].match(regex) || [];
         repo = repo.replace(/.git$/, '');
         let url = `https://api.github.com/repos/${user}/${repo}/zipball`;
-        const disposition = (await httpRequest(url, {method: 'HEAD'})).headers.get('content-disposition') || '';
+        const disposition = (await sdk.http.request(url, {method: 'HEAD'})).headers.get('content-disposition') || '';
         let filename = disposition.match(/attachment; filename=(.*)/)?.[1] || `${repo}.zip`;
-        await conn.sendFile(m.chat, url, filename, undefined, m);
+        await sdk.sendFile(url, filename);
     } catch (e: unknown) {
-        await replyReportableError(m, e);
+        await sdk.reply.reportableError(e);
         logInfo(e);
     } finally {
-        userRequests.release(m.sender);
+        userRequests.release(sdk.sender);
     }
     }
-});
+});
 
 ;

@@ -14,6 +14,11 @@ export interface FileInfo {
     [key: string]: unknown;
 }
 
+export interface BotBranding {
+    watermark: string;
+    logoUrl: string | Buffer;
+}
+
 /**
  * Conn extendido con métodos custom agregados en simple.ts.
  * WASocket base + reply, sendFile, fakeReply, parseMention, etc.
@@ -59,6 +64,7 @@ export interface PluginContext {
     isBotAdmin: boolean;
     isGroup: boolean;
     botConfig?: SubbotConfig;
+    branding: BotBranding;
     chatId?: string;
     sender?: string;
     groupSettings?: Partial<GroupSettings>;
@@ -75,5 +81,6 @@ export interface BeforePluginContext {
     participants: GroupParticipant[];
     metadata: GroupMetadata;
     botConfig: SubbotConfig;
+    branding: BotBranding;
     groupSettings: Partial<GroupSettings>;
 }

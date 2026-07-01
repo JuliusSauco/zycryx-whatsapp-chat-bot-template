@@ -3,7 +3,7 @@
 ![Tecnologias principales](https://skillicons.dev/icons?i=typescript,nodejs,npm,postgres,git&theme=dark)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)
 ![Baileys](https://img.shields.io/badge/Baileys-7.x-25D366?logo=whatsapp&logoColor=white)
 ![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?logo=drizzle&logoColor=111)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1?logo=postgresql&logoColor=white)
@@ -11,7 +11,7 @@
 
 Plantilla modular para construir bots de WhatsApp con TypeScript, Baileys, Drizzle ORM y PostgreSQL. Esta base esta pensada para reutilizar core, arquitectura, persistencia, guards, subbots, observabilidad y utilidades entre varios proyectos, cambiando marca, comandos, textos, recursos multimedia, owners y APIs externas.
 
-El proyecto esta orientado a capas: los plugins no deberian consultar la base directamente; pasan por servicios, puertos y adapters. El adapter estable es Drizzle + PostgreSQL. El adapter backend REST/GraphQL existe como scaffold preparado para un contrato futuro.
+El proyecto esta orientado a capas: los plugins no deberian consultar la base directamente; pasan por servicios, puertos y repositorios. La persistencia oficial es conexion directa a PostgreSQL mediante Drizzle ORM.
 
 ## 📚 Contenido
 
@@ -32,6 +32,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - [📊 Observabilidad](#observabilidad)
 - [🔐 Secretos Y Seguridad](#secretos)
 - [🧪 Validacion](#validacion)
+- [🔎 Auditoria Tecnica](#auditoria-tecnica)
 - [🗺️ Roadmap y Analisis](#roadmap-y-analisis)
 - [📌 Estado Actual](#estado-actual)
 
@@ -52,8 +53,8 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - Pipeline de eventos de grupo separado por responsabilidad: participantes, cambios de grupo, solicitudes de ingreso, antifake, welcome/bye y promote/demote.
 - Persistencia con Drizzle ORM sobre PostgreSQL.
 - Repositorios Drizzle separados por agregado.
-- Puertos de repositorio para desacoplar servicios del adapter concreto.
-- Scaffold de backend REST/GraphQL futuro con `DATA_SOURCE=backend`.
+- Puertos de repositorio para desacoplar servicios de la implementacion Drizzle.
+- Conexion directa a PostgreSQL como decision arquitectonica; no hay adapter backend REST/GraphQL.
 - Migraciones versionadas y script `db:ensure-schema`.
 - Soporte para `DB_SCHEMA` usando `search_path`.
 - Subbots con sesiones independientes.
@@ -90,10 +91,11 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 <a id="requisitos"></a>
 ## 📋 Requisitos
 
-- Node.js 18 o superior.
+- Node.js 20 LTS o superior.
 - npm.
 - PostgreSQL 14 o superior.
 - FFmpeg instalado y disponible en PATH.
+- Cliente PostgreSQL (`pg_dump`, `pg_restore`) para backups y restauracion.
 - git disponible en PATH (lo usa el comando owner `update`).
 - Python 3 como `python3` (opcional, solo para el comando `speedtest`).
 - Cuenta de WhatsApp para vincular el bot por QR o codigo.
@@ -180,27 +182,50 @@ BOT_BANNER_NAME=ZYCRYX BOT
 BOT_BANNER_AUTHOR=by: Zycryx
 BOT_REPOSITORY_URL=
 BOT_WEBSITE_URL=
+BOT_YOUTUBE_URL=
+BOT_TIKTOK_URL=
+BOT_FACEBOOK_URL=
+BOT_INSTAGRAM_URL=
+BOT_GROUP_LINKS=
+BOT_CHANNEL_LINKS=
 BOT_OWNER_NUMBERS=573001112233,51999888777
 BOT_FIXED_OWNER_JIDS=573001112233,51999888777
 BOT_MOD_GROUP_ID=
 DEFAULT_MENU_IMAGE=./resources/media/menus/Menu2.jpg
 
-DATA_SOURCE=local
 LOG_LEVEL=command
 PERF_LOG_THRESHOLD_MS=750
-
-BACKEND_PROTOCOL=rest
-BACKEND_BASE_URL=
-BACKEND_API_TOKEN=
-BACKEND_TIMEOUT_MS=10000
+HTTP_TIMEOUT_MS=15000
+DB_CACHE_TTL_MS=300000
+AUDIO_CACHE_TTL_MS=300000
+BACKGROUND_TASK_CONCURRENCY=4
 
 API_BASE_URL=https://api.delirius.store
 API_KEY=
+FGMODS_API_URL=https://api.fgmods.xyz/api
+FGMODS_API_KEY=
+NEOXR_API_URL=https://api.neoxr.eu/api
+NEOXR_API_KEY=
+ACR_HOST=identify-eu-west-1.acrcloud.com
+ACR_ACCESS_KEY=
+ACR_ACCESS_SECRET=
+ALYACHAN_API_KEY=
+BETABOTZ_API_KEY=
+LOLHUMAN_API_KEY=
+TENOR_API_KEY=
+TELEGRAM_BOT_TOKEN=
+SKYULTRA_API_KEY=
+UNSPLASH_ACCESS_KEY=
+ZENKEY_API_KEY=
+TRANSLATE_API_KEY=
 PERPLEXITY_API_KEYS=
 SPOTIFY_CLIENT_ID=
 SPOTIFY_CLIENT_SECRET=
 VIRUSTOTAL_API_KEY=
 VIRUSTOTAL_ENABLED=true
+VIRUSTOTAL_MAX_FILE_MB=32
+VIRUSTOTAL_POLL_ATTEMPTS=6
+VIRUSTOTAL_POLL_INTERVAL_MS=10000
 
 DB_HOST=localhost
 DB_PORT=5432
@@ -238,18 +263,34 @@ BOT_FIXED_OWNER_JIDS=573001112233,51999888777
 
 | Script | Descripcion |
 |---|---|
-| `npm run clean` | Elimina `dist` y `tsconfig.tsbuildinfo`. |
+| `npm run clean` | Elimina `dist` y `tsconfig.tsbuildinfo` con un script portable Node.js. |
 | `npm run build` | Limpia y compila TypeScript a `dist/`. |
 | `npm run typecheck` | Valida tipos sin emitir archivos. |
-| `npm test` | Ejecuta helpers, router, guards, context builder, servicios, seguridad, providers y P0. |
+| `npm test` | Ejecuta helpers, dominios de usuarios/grupos/subbots/audios/operacion/personajes, estado efimero, router, guards, context builder, servicios, seguridad, providers, catalogo, ayuda y P0. |
 | `npm run test:helpers` | Pruebas de helpers compartidos. |
+| `npm run test:user-domain` | Pruebas de mappers y defaults del dominio de usuarios. |
+| `npm run test:group-domain` | Pruebas de mappers y defaults del dominio de grupos. |
+| `npm run test:subbot-domain` | Pruebas de mappers y defaults del dominio de subbots. |
+| `npm run test:audio-domain` | Pruebas de mappers y normalizacion del dominio de audios. |
+| `npm run test:operations-domain` | Pruebas de memoria IA y mappers operativos. |
+| `npm run test:character-domain` | Pruebas de mappers y reglas de precios de personajes RPG. |
+| `npm run test:ephemeral` | Pruebas de cooldowns, expiraciones y pending actions compartidas. |
 | `npm run test:router` | Pruebas del router de comandos. |
 | `npm run test:guards` | Pruebas de guards y pipeline de permisos. |
 | `npm run test:context` | Pruebas del context builder. |
 | `npm run test:services` | Pruebas de servicios con repositorios mockeados. |
 | `npm run test:security` | Pruebas de comandos sensibles y sanitizacion. |
-| `npm run test:providers` | Pruebas de providers por dominio. |
+| `npm run test:providers` | Pruebas de providers de descargas por dominio. |
+| `npm run test:ai-providers` | Pruebas de providers de IA. |
+| `npm run test:media-conversion` | Pruebas de providers de conversion multimedia y stickers. |
+| `npm run test:catalog` | Valida formato y aliases clave del catalogo de comandos. |
+| `npm run test:catalog-audit` | Valida auditoria entre catalogo documental y plugins cargados. |
+| `npm run test:help` | Pruebas de ayuda consultable (`help`, `ayuda`, `--help`). |
 | `npm run test:p0` | Compuerta P0 para plugins migrados al SDK. |
+| `npm run ops:check` | Preflight operativo: Node, env, owners, DB, herramientas, build y sesion. |
+| `npm run ops:backup` | Backup local de DB, sesiones y audios custom con manifest. |
+| `npm run ops:backup:db` | Backup solo de PostgreSQL con `pg_dump`. |
+| `npm run ops:backup:sessions` | Backup solo de sesiones y audios custom. |
 | `npm run db:generate` | Genera migraciones desde `src/db/schema.ts`. |
 | `npm run db:ensure-schema` | Crea el schema configurado si no existe. |
 | `npm run db:migrate` | Ejecuta `db:ensure-schema` y aplica migraciones. |
@@ -273,7 +314,7 @@ BOT_FIXED_OWNER_JIDS=573001112233,51999888777
 <a id="produccion"></a>
 ## 🚀 Produccion
 
-Guia completa en `docs/deployment.md`. Resumen:
+Guia completa en `docs/deployment.md` y runbook diario en `docs/operations-runbook.md`. Resumen:
 
 ```bash
 npm install
@@ -289,8 +330,9 @@ Puntos clave:
 - La vinculacion inicial es interactiva (pide QR o codigo por consola); hazla fuera del supervisor y luego arranca bajo PM2.
 - Las migraciones nunca corren automaticamente al arrancar; ejecutalas como paso explicito en cada deploy.
 - Una sola instancia por numero de WhatsApp: el estado de juegos/cooldowns vive en memoria y la sesion es por dispositivo.
-- Respalda `BotSession/` (con el bot detenido) y la base de datos; ver politica de backups en `docs/deployment.md`.
+- Respalda `BotSession/` (con el bot detenido) y la base de datos con `NODE_ENV=prod npm run ops:backup`; ver politica de backups en `docs/deployment.md`.
 - Flujo de conexion, sesiones y reconexion documentado en `docs/baileys-connection.md`. Problemas comunes en `docs/troubleshooting.md`.
+- Preflight operativo: `NODE_ENV=prod npm run ops:check`.
 
 <a id="estructura"></a>
 ## 🗂️ Estructura
@@ -312,7 +354,6 @@ zycryx-whatsapp-chat-bot-template/
 │       └── prompts/
 ├── src/
 │   ├── adapters/
-│   │   ├── backend/
 │   │   └── drizzle/
 │   ├── core/
 │   ├── db/
@@ -358,7 +399,6 @@ zycryx-whatsapp-chat-bot-template/
 | `resources/media/` | Imagenes, audios y recursos multimedia usados por plugins. |
 | `resources/media/reaction-gifs/` | GIFs de reaccion guardados como MP4 para envio inline en WhatsApp. |
 | `resources/text/` | Textos versionados: mensajes base y prompts. |
-| `src/adapters/backend/` | Scaffold REST/GraphQL futuro. |
 | `src/adapters/drizzle/` | Implementacion local de repositorios con Drizzle. |
 | `src/core/` | Arranque, entorno, router, parser, handler, contexto y tareas. |
 | `src/db/` | Cliente, schema y migraciones Drizzle. |
@@ -389,9 +429,7 @@ flowchart TD
     K --> L["services"]
     L --> M["ports/repositories.ts"]
     M --> N["adapters/drizzle"]
-    M --> O["adapters/backend"]
     N --> P["PostgreSQL"]
-    O --> Q["REST/GraphQL futuro"]
     K --> R["lib/utils/apis"]
     K --> S["Respuesta WhatsApp"]
 ```
@@ -424,7 +462,6 @@ Componentes principales:
 | `services/content.service.ts` | API oficial de mensajes, listas y templates. |
 | `ports/repositories.ts` | Contratos de persistencia. |
 | `adapters/drizzle/` | Repositorios PostgreSQL con Drizzle. |
-| `adapters/backend/` | Adapter pendiente de contrato externo. |
 | `providers/downloads/youtube.provider.ts` | Provider inicial de YouTube: busqueda, descarga, calidad y fallbacks. |
 
 <a id="patrones"></a>
@@ -466,8 +503,8 @@ plugin/core -> service -> repository port -> adapter -> storage
 
 Actualmente:
 
-- `DATA_SOURCE=local`: Drizzle + PostgreSQL.
-- `DATA_SOURCE=backend`: scaffold que falla de forma explicita hasta definir contrato REST/GraphQL.
+- Drizzle + PostgreSQL es la unica implementacion soportada.
+- Los puertos siguen existiendo para mantener servicios testeables y evitar SQL directo en plugins.
 
 ### 🧬 Repository Pattern
 
@@ -556,7 +593,7 @@ WhatsApp message
   -> plugin ejecuta accion
   -> service aplica caso de uso
   -> repository port consulta/persiste
-  -> adapter Drizzle o backend futuro
+  -> adapter Drizzle
   -> respuesta vuelve a WhatsApp
 ```
 
@@ -835,6 +872,53 @@ O si ya compilaste:
 npm run serve:local
 ```
 
+<a id="auditoria-tecnica"></a>
+## 🔎 Auditoria Tecnica
+
+Barrido de referencia: 2026-07-01. El estado medido del codigo confirma que la arquitectura actual ya esta mayormente alineada con los roadmaps recientes:
+
+| Indicador | Resultado |
+|---|---:|
+| Archivos TypeScript en `src/plugins` | 188 |
+| Plugins con `defineSdkPlugin` | 157 |
+| Plugins con `definePlugin` | 0 |
+| Imports directos de `message-template.js` en plugins | 0 |
+| Imports directos de `http-client.js` en plugins | 0 |
+| Coincidencias de `any`, `@ts-ignore` o `@ts-expect-error` en `src/**/*.ts` | 0 |
+| ADRs registrados en `docs/adr` | 5 |
+| Suites unitarias en `tests` | 20 |
+
+Hallazgos y buenas practicas vigentes:
+
+- El core mantiene una separacion sana entre handler, contexto, router, guards, eventos, runtime state, servicios y adapters.
+- El SDK de plugins ya es el contrato operativo: nuevos comandos deben entrar por `defineSdkPlugin`, `sdk.reply`, `sdk.content`, `sdk.http`, providers y locks.
+- La fachada `core/runtime-state.ts` y `branding` por contexto reducen el acoplamiento a `globalThis`.
+- Los providers ya cubren descargas, IA, conversion multimedia y stickers avanzados con errores tipados, timeout y retry opt-in.
+- El estado efimero repetido debe seguir pasando por `src/lib/ephemeral-state.ts` o `src/lib/user-request-locks.ts`; los mapas/timers restantes son caches, infraestructura, delays operativos o indices locales aceptados.
+- `src/lib/scraper.ts`, `src/lib/ezgif-convert.ts`, `src/lib/webp2mp4.ts` y `src/lib/http-client.ts` son excepciones internas conocidas para HTTP especial; los plugins no deben importar `fetch`, `axios`, `node-fetch` ni `http-client` directamente.
+- El script `clean` debe mantenerse portable porque `build` forma parte del flujo recomendado de produccion en Linux, Windows y macOS.
+
+Oportunidades de optimizacion detectadas:
+
+| Prioridad | Area | Recomendacion |
+|---|---|---|
+| P1 | Archivos temporales | Migrar comandos que escriben en `./tmp` (por ejemplo reconocimiento musical) a `fs.promises.mkdtemp`, `try/finally` y rutas generadas por helper para evitar archivos huerfanos ante error. |
+| P1 | Delays operativos | Crear un helper compartido `delay(ms)` para plugins de grupo/stickers/subbots que hoy declaran delays locales. No es urgente, pero reduce duplicacion. |
+| P1 | Providers | Agregar metricas por provider: candidato usado, motivo de fallo dominante, duracion y retry aplicado. Esto ayuda a detectar APIs externas inestables sin leer logs crudos. |
+| P2 | P0 architecture tests | Ampliar gradualmente la compuerta de mapas/timers manuales a nuevas familias cuando se migren mas flujos a `ephemeral-state`. |
+| P2 | Pruebas de plugins complejos | Cubrir comandos RPG, grupo y owner con mocks de servicios/repositorios para validar permisos, dinero, limites y mensajes sin conectar Baileys. |
+| P2 | i18n | Convertir `resources/data/messages.json` en estructura por locales con fallback (`es` como default) y tests de keys requeridas. |
+| P3 | Runtime multi-proceso | Mantener single-process por ahora. Si se escala, mover cooldowns, juegos, pending actions y deduplicacion a Redis o cache compatible. |
+
+Arquitecturas futuras razonables:
+
+| Opcion | Cuando conviene | Cambios principales |
+|---|---|---|
+| Modular monolith actual | Un bot por numero, despliegue simple, plugins versionados con el repo. | Mantener SDK, services, providers, Drizzle y PM2/systemd. Es el camino recomendado hoy. |
+| Worker + cache externa | Cuando se requiera alta disponibilidad o multiples procesos. | Externalizar estado efimero a Redis, locks distribuidos, colas de trabajo y deduplicacion compartida. |
+| Plataforma multi-tenant de bots | Cuando varios bots compartan core pero tengan marca, owners y plugins habilitados distintos. | Separar tenant config, branding, recursos, providers y permisos por bot; schema por tenant o tablas con `bot_id`. |
+| Event-driven para tareas pesadas | Cuando descargas, conversiones o IA bloqueen demasiado el ciclo de mensajes. | Mover descargas/conversiones a cola con workers, estados consultables y callbacks/respuestas diferidas. |
+
 <a id="roadmap-y-analisis"></a>
 ## 🗺️ Roadmap y Analisis
 
@@ -845,10 +929,13 @@ Documentacion tecnica viva:
 | `docs/architecture-analysis.md` | Fotografia arquitectonica actual, riesgos, deuda y buenas practicas. |
 | `docs/architecture-roadmap.md` | Roadmap por prioridades P0-P7. |
 | `docs/improvement-roadmap.md` | Backlog interno de mejoras y refactors. |
+| `docs/adr/` | Decisiones arquitectonicas aceptadas: branding por contexto, runtime state, providers, catalogo y estado efimero. |
 | `docs/baileys-connection.md` | Flujo de conexion, vinculacion, sesiones y reconexion con Baileys. |
 | `docs/environment-variables.md` | Referencia completa de variables de entorno. |
 | `docs/adding-commands.md` | Guia paso a paso para agregar comandos nuevos. |
 | `docs/deployment.md` | Despliegue en servidor, PM2, backups y checklist de produccion. |
+| `docs/operations-runbook.md` | Rutina operativa, preflight, actualizacion segura e incidentes comunes. |
+| `docs/operational-dependencies.md` | Dependencias del sistema por funcionalidad afectada. |
 | `docs/troubleshooting.md` | Problemas comunes de conexion, DB, comandos y rendimiento. |
 | `docs/data-resources.md` | Politica de recursos estaticos, multimedia y datos mutables. |
 | `docs/http-client-exceptions.md` | Excepciones justificadas al HTTP client centralizado. |
@@ -859,13 +946,13 @@ Resumen actual:
 | Fase | Avance | Estado |
 |---|---:|---|
 | P0 - SDK/contenido | 100% | Cerrado como contrato base. |
-| P1 - Providers | 85% | En curso; descargas principales ya estan centralizadas. |
+| P1 - Providers | 100% | Cerrado: descargas, IA, conversores, stalkers y stickers avanzados tienen providers. |
 | P2 - Testing nucleo | 100% | Cerrado para router, guards, context builder y servicios. |
-| P3 - Backend adapter | 0% | Desestimado hasta tener backend real. |
+| P3 - Backend adapter | Cancelado | Descartado: el bot se conecta directamente a PostgreSQL. |
 | P4 - Seguridad owner | 100% | Cerrado para comandos sensibles auditados. |
-| P5 - Runtime/escalabilidad | 20% | Pendiente de inventario y fachadas. |
+| P5 - Runtime/escalabilidad | 100% | Cerrado para helpers compartidos y excepciones documentadas. |
 | P6 - i18n/contenido | 25% | Base lista en `messages.json`; faltan locales. |
-| P7 - Catalogo comandos/help | 10% | Registrado; implementacion pendiente. |
+| P7 - Catalogo comandos/help | 100% | Cerrado con catalogo, ayuda y auditoria. |
 
 <a id="estado-actual"></a>
 ## 📌 Estado Actual
@@ -875,11 +962,11 @@ Resumen actual:
 - Plugins y core consumen servicios/puertos, no SQL directo.
 - `api_tokens` migrado a Drizzle.
 - `audio_responses` almacena audios dinamicos.
-- Backend REST/GraphQL preparado como adapter pendiente, no activo por defecto.
+- Backend REST/GraphQL descartado; la persistencia soportada es PostgreSQL directo con Drizzle.
 - Loader de plugins recursivo con soporte para carpetas por familia.
 - Plugins organizados en 19 familias.
 - SDK interno disponible para plugins nuevos y migrados.
-- 29 plugins usan `defineSdkPlugin`; 127 mantienen compatibilidad legacy con `definePlugin`.
+- Todos los plugins usan `defineSdkPlugin`; `definePlugin`, `message-template` y HTTP directo quedaron fuera de `src/plugins`.
 - Modos de acceso por familia (`all`/`admins`/`off`) aplicados por `feature-access.guard.ts` y configurables con el menu de toggles.
 - Roles de admins por grupo en `user_group_roles`, sincronizados al arrancar (`startup-admin-sync.ts`) y en eventos de grupo.
 - `test:p0` evita que plugins migrados al SDK vuelvan a importar helpers legacy de mensajes o HTTP.
@@ -908,19 +995,19 @@ Resumen actual:
 | Prioridad | Mejora | Avance | Estado |
 |---|---|---:|---|
 | P1 | Completar providers de descargas: Spotify, TikTok, Threads, Instagram, Facebook, MediaFire y Drive. | 100% | Bloque principal cerrado. |
-| P1 | Normalizar errores, timeouts y retries de providers. | 25% | Contrato inicial creado. |
-| P1 | Ampliar `test:providers` con casos sin red para fallback y parseo. | 30% | Fallback comun cubierto. |
-| P1/P0 | Migrar `downloads` al SDK mientras se extraen providers. | 20% | Pendiente gradual. |
-| P0 deuda | Migrar familias legacy `messages`, `random`, `nsfw` y `audio` al SDK. | 15% | Pendiente por familias. |
-| P3 | Definir backend REST/GraphQL real para `DATA_SOURCE=backend`. | 0% | Desestimado hasta tener backend. |
-| P5 | Centralizar cooldowns, pending actions, locks y fachadas de runtime global. | 20% | Hay locks/cache puntuales. |
+| P1 | Normalizar errores, timeouts y retries de providers. | 25% | Mantenimiento incremental sobre contrato base cerrado. |
+| P1 | Ampliar `test:providers` con casos sin red para fallback y parseo. | 30% | Fallback comun cubierto; ampliar por proveedor cuando cambien APIs. |
+| P1/P0 | Migrar `downloads` al SDK mientras se extraen providers. | 100% | Cerrado. |
+| P0 deuda | Migrar familias legacy restantes al SDK. | 100% | Cerrado. |
+| P3 | Backend REST/GraphQL. | Cancelado | Descartado por decision arquitectonica; usar PostgreSQL directo. |
+| P5 | Centralizar cooldowns, pending actions, locks y fachadas de runtime global. | 100% | Cerrado para helpers compartidos y excepciones documentadas. |
 | P6 | Preparar i18n con locales y fallback en `content.service`. | 25% | Base de contenido lista. |
-| P7 | Crear `resources/data/commands.json` y ayuda `/<comando> --help`. | 10% | Registrado, no iniciado. |
+| P7 | Crear `resources/data/commands.json` y ayuda `/<comando> --help`. | 100% | Cerrado con auditoria documental. |
 
 ## ✅ Buenas Practicas Para Nuevos Bots
 
 - Copiar `.env.example` y completar secretos solo en archivos ignorados.
-- Mantener `DATA_SOURCE=local` hasta que el backend tenga contrato estable.
+- Mantener PostgreSQL directo con Drizzle como persistencia oficial.
 - Crear nuevos comandos con `defineSdkPlugin`.
 - Ubicar cada plugin dentro de su familia.
 - Usar servicios existentes antes de crear nuevos accesos a datos.

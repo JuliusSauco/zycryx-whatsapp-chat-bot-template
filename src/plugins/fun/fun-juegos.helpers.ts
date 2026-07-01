@@ -1,6 +1,6 @@
 import type {GroupParticipant} from '@whiskeysockets/baileys';
-import {httpBuffer} from '../../lib/http-client.js';
-import {getRequiredPluginMessage, getRequiredPluginMessageList, renderTemplate} from '../../lib/message-template.js';
+import type {PluginHttpSdk} from '../../core/sdk-plugin.js';
+import {content} from '../../services/content.service.js';
 import type {ExtendedConn} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
 import {resolveMention, type ParticipantLike, type ResolvedMention} from '../../utils/mention.js';
@@ -77,7 +77,7 @@ const topTemplates: Record<TopCommand, TopTemplate> = {
         render: users => topTemplates.topintegrantes.render(users),
     },
     toplagrasa: {
-        render: users => renderCustomTop(getTopTitle('toplagrasa'), users, getRequiredPluginMessageList('fun.games.top.customRows')),
+        render: users => renderCustomTop(getTopTitle('toplagrasa'), users, content.messageList('fun.games.top.customRows')),
     },
     topgrasa: {
         render: users => topTemplates.toplagrasa.render(users),
@@ -142,9 +142,9 @@ export function isDoxxeoCommand(command: string): boolean {
 }
 
 export async function replyPercentageGame(conn: ExtendedConn, m: BotMessage, command: PercentageCommand, text: string) {
-    if (!text) return m.reply(getRequiredPluginMessage('fun.games.missingMention'));
+    if (!text) return m.reply(content.message('fun.games.missingMention'));
 
-    const juego = renderTemplate(getRequiredPluginMessage(`fun.games.percentages.${command}`), {
+    const juego = content.renderMessage(`fun.games.percentages.${command}`, {
         target: text.toUpperCase(),
         percent: String(randomPercent()),
         command: command.toUpperCase(),
@@ -155,27 +155,27 @@ export async function replyPercentageGame(conn: ExtendedConn, m: BotMessage, com
 export async function replyRandomPair(m: BotMessage, participants: GroupParticipant[], mode: 'friendship' | 'couple') {
     const [a, b] = getRandomParticipantIds(participants, 2, m.sender);
     const text = mode === 'friendship'
-        ? renderTemplate(getRequiredPluginMessage('fun.games.friendshipPair'), {first: toM(a), second: toM(b)})
-        : renderTemplate(getRequiredPluginMessage('fun.games.couplePair'), {first: toM(a), second: toM(b)});
+        ? content.renderMessage('fun.games.friendshipPair', {first: toM(a), second: toM(b)})
+        : content.renderMessage('fun.games.couplePair', {first: toM(a), second: toM(b)});
     return m.reply(text, null, {mentions: [a, b]});
 }
 
 export async function replyActionTarget(conn: ExtendedConn, m: BotMessage, command: string, text: string) {
     const action = command.replace('how', '');
-    if (!text) return m.reply(renderTemplate(getRequiredPluginMessage('fun.games.actionMissingText'), {action}));
+    if (!text) return m.reply(content.renderMessage('fun.games.actionMissingText', {action}));
     const target = m.mentionedJid[0] || m.quoted?.sender;
-    if (!target) return m.reply(renderTemplate(getRequiredPluginMessage('fun.games.actionMissingTarget'), {action}));
+    if (!target) return m.reply(content.renderMessage('fun.games.actionMissingTarget', {action}));
 
-    return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('fun.games.actionResult'), {targetText: text}), undefined, {mentions: [target]});
+    return conn.reply(m.chat, content.renderMessage('fun.games.actionResult', {targetText: text}), undefined, {mentions: [target]});
 }
 
 export async function replyPersonality(conn: ExtendedConn, m: BotMessage, text: string) {
-    if (!text) return conn.reply(m.chat, getRequiredPluginMessage('fun.games.personalityMissingName'), m);
-    const percentageOptions = getRequiredPluginMessageList('fun.games.personalityOptions.percentages');
-    const personTypes = getRequiredPluginMessageList('fun.games.personalityOptions.personTypes');
-    const alwaysOptions = getRequiredPluginMessageList('fun.games.personalityOptions.always');
-    const genders = getRequiredPluginMessageList('fun.games.personalityOptions.genders');
-    const personalidad = renderTemplate(getRequiredPluginMessage('fun.games.personalityResult'), {
+    if (!text) return conn.reply(m.chat, content.message('fun.games.personalityMissingName'), m);
+    const percentageOptions = content.messageList('fun.games.personalityOptions.percentages');
+    const personTypes = content.messageList('fun.games.personalityOptions.personTypes');
+    const alwaysOptions = content.messageList('fun.games.personalityOptions.always');
+    const genders = content.messageList('fun.games.personalityOptions.genders');
+    const personalidad = content.renderMessage('fun.games.personalityResult', {
         name: text,
         goodMoral: pickRandom(percentageOptions),
         badMoral: pickRandom(percentageOptions),
@@ -192,11 +192,11 @@ export async function replyPersonality(conn: ExtendedConn, m: BotMessage, text: 
 }
 
 export async function replyShip(conn: ExtendedConn, m: BotMessage, text: string) {
-    if (!text) return m.reply(getRequiredPluginMessage('fun.games.shipMissingNames'));
+    if (!text) return m.reply(content.message('fun.games.shipMissingNames'));
     const [text1, ...text2Parts] = text.split(' ');
     const text2 = text2Parts.join(' ');
-    if (!text2) return m.reply(getRequiredPluginMessage('fun.games.shipMissingSecond'));
-    const love = renderTemplate(getRequiredPluginMessage('fun.games.shipResult'), {
+    if (!text2) return m.reply(content.message('fun.games.shipMissingSecond'));
+    const love = content.renderMessage('fun.games.shipResult', {
         first: text1,
         second: text2,
         percent: String(randomInt(100)),
@@ -205,8 +205,8 @@ export async function replyShip(conn: ExtendedConn, m: BotMessage, text: string)
 }
 
 export async function replyLoveMeter(conn: ExtendedConn, m: BotMessage, text: string) {
-    if (!text) return m.reply(getRequiredPluginMessage('fun.games.missingMention'));
-    return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('fun.games.loveMeterResult'), {
+    if (!text) return m.reply(content.message('fun.games.missingMention'));
+    return conn.reply(m.chat, content.renderMessage('fun.games.loveMeterResult', {
         target: text,
         percent: String(randomInt(100)),
     }).trim(), m, m.mentionedJid ? {
@@ -216,7 +216,7 @@ export async function replyLoveMeter(conn: ExtendedConn, m: BotMessage, text: st
 
 export async function replyDoxxeo(conn: ExtendedConn, m: BotMessage, text: string) {
     const sentMessage = await conn.sendMessage(m.chat, {
-        text: getRequiredPluginMessage('fun.games.doxxeoStart'),
+        text: content.message('fun.games.doxxeoStart'),
         mentions: await conn.parseMention(text)
     }, {quoted: m});
     if (!sentMessage) return;
@@ -231,7 +231,7 @@ export async function replyDoxxeo(conn: ExtendedConn, m: BotMessage, text: strin
 
     for (const boost of boosts) {
         await delay(1000);
-        await conn.sendMessage(m.chat, {text: renderTemplate(getRequiredPluginMessage('fun.games.doxxeoProgress'), {boost}), edit: key});
+        await conn.sendMessage(m.chat, {text: content.renderMessage('fun.games.doxxeoProgress', {boost}), edit: key});
     }
 
     const start = performance.now();
@@ -239,11 +239,11 @@ export async function replyDoxxeo(conn: ExtendedConn, m: BotMessage, text: strin
     await conn.sendMessage(m.chat, {text: buildDoxxeoResult(text, speed), edit: key});
 }
 
-export async function replyGayCanvas(conn: ExtendedConn, m: BotMessage) {
+export async function replyGayCanvas(conn: ExtendedConn, m: BotMessage, httpBuffer: PluginHttpSdk['buffer']) {
     const audioUrl = 'https://qu.ax/HfeP.mp3';
     const who = m.isGroup ? (m.mentionedJid[0] || m.sender) : m.sender;
     const gayScore = randomInt(100);
-    const caption = renderTemplate(getRequiredPluginMessage('fun.games.gayCaption'), {
+    const caption = content.renderMessage('fun.games.gayCaption', {
         user: who.split("@")[0],
         score: String(gayScore),
         label: getGayLabel(gayScore),
@@ -268,11 +268,11 @@ export async function replyGayCanvas(conn: ExtendedConn, m: BotMessage) {
 }
 
 export async function replyFreeTop(conn: ExtendedConn, m: BotMessage, participants: GroupParticipant[], text: string, usedPrefix: string) {
-    if (!text) return m.reply(renderTemplate(getRequiredPluginMessage('fun.games.freeTopUsage'), {prefix: usedPrefix}));
+    if (!text) return m.reply(content.renderMessage('fun.games.freeTopUsage', {prefix: usedPrefix}));
     const users = getRandomParticipants(participants, 10, m.sender);
     const mentions = users.map(user => user.mentionJid);
     const x = pickRandom(['🤓', '😅', '😂', '😳', '😎', '🥵', '😱', '🤑', '🙄', '💩', '🍑', '🤨', '🥴', '🔥', '👇🏻', '😔', '👀', '🌚']);
-    const top = renderTemplate(getRequiredPluginMessage('fun.games.freeTopResult'), {
+    const top = content.renderMessage('fun.games.freeTopResult', {
         emoji: x,
         topic: text,
         rows: users.map((user, index) => `*${index + 1}. ${user.tag}*`).join('\n'),
@@ -326,7 +326,7 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 function getTopTitle(key: string): string {
-    return getRequiredPluginMessage(`fun.games.top.titles.${key}`);
+    return content.message(`fun.games.top.titles.${key}`);
 }
 
 function renderTopRows(title: string, users: TopParticipant[], emojis: string[], mode: 'emoji-both' | 'suffix', suffix?: string): string {
@@ -334,7 +334,7 @@ function renderTopRows(title: string, users: TopParticipant[], emojis: string[],
         const emoji = emojis[index % emojis.length];
         const label = `${emoji} ${user.tag}`;
         const end = mode === 'emoji-both' ? emoji : suffix || '';
-        return renderTemplate(getRequiredPluginMessage('fun.games.top.row'), {
+        return content.renderMessage('fun.games.top.row', {
             index: String(index + 1),
             label,
             suffix: end,
@@ -344,23 +344,23 @@ function renderTopRows(title: string, users: TopParticipant[], emojis: string[],
 }
 
 function renderCustomTop(title: string, users: TopParticipant[], rowTemplates: string[]): string {
-    const rows = users.map((user, index) => renderTemplate(getRequiredPluginMessage('fun.games.top.customRow'), {
+    const rows = users.map((user, index) => content.renderMessage('fun.games.top.customRow', {
         index: String(index + 1),
-        label: renderTemplate(rowTemplates[index], {user: user.tag}),
+        label: content.renderTemplate(rowTemplates[index], {user: user.tag}),
     }));
     return `${title} \n    \n${rows.join('\n')}`;
 }
 
 function renderCouplesTop(users: TopParticipant[]): string {
-    const pairMessages = getRequiredPluginMessageList('fun.games.top.couplesMessages');
+    const pairMessages = content.messageList('fun.games.top.couplesMessages');
     const pairCount = Math.floor(users.length / 2);
 
-    if (pairCount === 0) return getRequiredPluginMessage('fun.games.top.couplesEmpty');
+    if (pairCount === 0) return content.message('fun.games.top.couplesEmpty');
 
     const rows = Array.from({length: pairCount}, (_, index) => {
         const first = users[index * 2];
         const second = users[index * 2 + 1];
-        return renderTemplate(getRequiredPluginMessage('fun.games.top.couplesRow'), {
+        return content.renderMessage('fun.games.top.couplesRow', {
             index: String(index + 1),
             first: first.tag,
             second: second.tag,
@@ -368,23 +368,23 @@ function renderCouplesTop(users: TopParticipant[]): string {
         });
     });
 
-    return renderTemplate(getRequiredPluginMessage('fun.games.top.couplesTitle'), {
+    return content.renderMessage('fun.games.top.couplesTitle', {
         count: String(pairCount),
         rows: rows.join('\n\n'),
     });
 }
 
 function getGayLabel(score: number): string {
-    if (score < 20) return getRequiredPluginMessage('fun.games.gayLabels.low');
-    if (score <= 30) return getRequiredPluginMessage('fun.games.gayLabels.mediumLow');
-    if (score <= 40) return getRequiredPluginMessage('fun.games.gayLabels.medium');
-    if (score <= 49) return getRequiredPluginMessage('fun.games.gayLabels.mediumHigh');
-    if (score === 50) return getRequiredPluginMessage('fun.games.gayLabels.half');
-    return getRequiredPluginMessage('fun.games.gayLabels.high');
+    if (score < 20) return content.message('fun.games.gayLabels.low');
+    if (score <= 30) return content.message('fun.games.gayLabels.mediumLow');
+    if (score <= 40) return content.message('fun.games.gayLabels.medium');
+    if (score <= 49) return content.message('fun.games.gayLabels.mediumHigh');
+    if (score === 50) return content.message('fun.games.gayLabels.half');
+    return content.message('fun.games.gayLabels.high');
 }
 
 function buildDoxxeoResult(text: string, speed: string): string {
-    return renderTemplate(getRequiredPluginMessage('fun.games.doxxeoResult'), {
+    return content.renderMessage('fun.games.doxxeoResult', {
         name: text,
         speed,
     });

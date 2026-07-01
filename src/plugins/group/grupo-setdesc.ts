@@ -1,13 +1,13 @@
-import {definePlugin} from '../../core/define-plugin.js'
-export default definePlugin({
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
+export default defineSdkPlugin({
     help: ['setdesc'],
     tags: ['group'],
     command: /^setdesk|setdesc|newdesc|descripción|descripcion$/i,
     admin: true,
     botAdmin: true,
     group: true,
-    async execute(m, {conn, args}) {
-    await conn.groupUpdateDescription(m.chat, `${args.join(" ")}`);
-    m.react("✅️")
+    async execute(m, {sdk}) {
+    await sdk.conn.groupUpdateDescription(sdk.chatId, `${sdk.args.join(" ")}`);
+    await sdk.reply.react("✅️")
     }
-})
+})

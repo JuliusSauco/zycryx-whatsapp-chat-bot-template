@@ -3,7 +3,7 @@ import type {GroupMetadata, GroupParticipant} from '@whiskeysockets/baileys';
 import {repositories} from './data-source.js';
 import {cleanJid, isLidJid, isUserJid} from '../utils/jid.js';
 import {getGroupCreatorJids, getParticipantIdentityJids} from '../utils/group-creator.js';
-import type {UserGroupRoleRecord} from '../ports/repositories.js';
+import type {UserGroupRoleRecord} from '../domain/groups.js';
 
 type GroupParticipantWithAliases = GroupParticipant & {
     participantAlt?: string | null;

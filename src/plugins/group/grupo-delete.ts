@@ -1,13 +1,12 @@
 import {logError, logInfo} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import type {proto} from '@whiskeysockets/baileys'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
 type CachedMessage = {
     key?: proto.IMessageKey
 }
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['delete *@user*'],
     tags: ['group'],
     command: /^del(ete)?$/i,
@@ -15,26 +14,26 @@ export default definePlugin({
     botAdmin: true,
     group: true,
     register: true,
-    async execute(m, {conn, args}) {
+    async execute(m, {sdk}) {
 
-    if (!m.quoted && !m.mentionedJid?.length && !args[0]) return m.reply(getRequiredPluginMessage('group.delete.missingTarget'))
+    if (!m.quoted && !m.mentionedJid?.length && !sdk.args[0]) return sdk.reply.message('group.delete.missingTarget')
     try {
         if (m.quoted) {
             let delet = m.quoted.sender;
             let bang = m.quoted.id;
-            return conn.sendMessage(m.chat, {delete: {remoteJid: m.chat, fromMe: false, id: bang, participant: delet}});
+            return sdk.conn.sendMessage(sdk.chatId, {delete: {remoteJid: sdk.chatId, fromMe: false, id: bang, participant: delet}});
         }
 
         let target = '';
         if (m.mentionedJid?.length) {
             target = m.mentionedJid[0];
-        } else if (args[0] && args[0].startsWith('+')) {
-            target = args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+        } else if (sdk.args[0] && sdk.args[0].startsWith('+')) {
+            target = sdk.args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net';
         } else {
-            return m.reply(getRequiredPluginMessage('group.delete.missingMention'));
+            return sdk.reply.message('group.delete.missingMention');
         }
 
-        let chats = conn.chats?.[m.chat]?.messages || {};
+        let chats = sdk.conn.chats?.[sdk.chatId]?.messages || {};
         let messagesToDelete = Object.values(chats).filter((msg): msg is CachedMessage => {
             const key = (msg as CachedMessage).key;
             return key?.participant === target || key?.remoteJid === target;
@@ -47,17 +46,17 @@ export default definePlugin({
         for (let i = 0; i < totalToDelete; i++) {
             let message = messagesToDelete[i];
             try {
-                await conn.sendMessage(m.chat, {delete: message.key});
+                await sdk.conn.sendMessage(sdk.chatId, {delete: message.key});
                 deletedCount++;
                 await delay(100);
             } catch (err: unknown) {
                 logInfo(err);
             }
         }
-        m.reply(renderTemplate(getRequiredPluginMessage('group.delete.success'), {
+        await sdk.reply.message('group.delete.success', {
             count: deletedCount,
             target: target.includes('@s.whatsapp.net'),
-        }));
+        });
     } catch (err: unknown) {
         logError(err);
     }

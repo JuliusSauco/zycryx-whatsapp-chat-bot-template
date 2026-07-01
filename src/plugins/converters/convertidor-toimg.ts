@@ -1,5 +1,5 @@
-import {webp2png} from '../../lib/webp2mp4.js';
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
+import {convertWebpToPng} from '../../providers/media-conversion/image.provider.js';
 
 export default defineSdkPlugin({
     help: ['toimg (reply)'],
@@ -14,7 +14,7 @@ export default defineSdkPlugin({
     if (!mime.includes('webp')) throw notStickerMessage;
     await sdk.reply.message('converters.toImage.processing');
     const media = await q.download();
-    const out = await webp2png(media).catch(() => null) || Buffer.alloc(0);
+    const out = await convertWebpToPng(media);
     await sdk.sendFile(out, 'sticker.png');
     }
 });

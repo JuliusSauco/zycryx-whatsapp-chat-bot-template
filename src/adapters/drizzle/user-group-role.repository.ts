@@ -2,6 +2,7 @@ import {and, eq} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {userGroupRoles} from '../../db/schema.js';
 import type {UserGroupRoleRepository} from '../../ports/repositories.js';
+import {mapUserGroupRole} from './group-settings.mapper.js';
 
 export const userGroupRoleRepository: UserGroupRoleRepository = {
     async upsert({groupId, userId, role, roleDescription, updatedBy}) {
@@ -27,13 +28,7 @@ export const userGroupRoleRepository: UserGroupRoleRepository = {
             .where(and(eq(userGroupRoles.groupId, groupId), eq(userGroupRoles.userId, userId)))
             .limit(1);
 
-        if (!row) return null;
-        return {
-            group_id: row.groupId,
-            user_id: row.userId,
-            role: row.role,
-            role_description: row.roleDescription ?? null,
-        };
+        return row ? mapUserGroupRole(row) : null;
     },
 
     async listByGroup(groupId) {
@@ -41,11 +36,6 @@ export const userGroupRoleRepository: UserGroupRoleRepository = {
             .from(userGroupRoles)
             .where(eq(userGroupRoles.groupId, groupId));
 
-        return rows.map(row => ({
-            group_id: row.groupId,
-            user_id: row.userId,
-            role: row.role,
-            role_description: row.roleDescription ?? null,
-        }));
+        return rows.map(mapUserGroupRole);
     },
 };

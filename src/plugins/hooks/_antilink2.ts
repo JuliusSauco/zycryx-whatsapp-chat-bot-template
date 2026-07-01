@@ -1,5 +1,5 @@
 import {logError} from '../../lib/logger.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {content} from '../../services/content.service.js';
 import type {BeforePluginContext} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
 
@@ -27,11 +27,11 @@ export async function before(m: BotMessage, {conn, groupSettings, isAdmin, isBot
     }
 
     if (!isBotAdmin) return await conn.sendMessage(m.chat, {
-        text: renderTemplate(getRequiredPluginMessage('hooks.antiLink.botNotAdmin'), {user: userTag}),
+        text: content.renderMessage('hooks.antiLink.botNotAdmin', {user: userTag}),
         mentions: [m.sender]
     }, {quoted: m});
     await conn.sendMessage(m.chat, {
-        text: renderTemplate(getRequiredPluginMessage('hooks.antiLink.removedStrict'), {user: userTag}),
+        text: content.renderMessage('hooks.antiLink.removedStrict', {user: userTag}),
         mentions: [m.sender]
     }, {quoted: m});
     try {

@@ -1,9 +1,12 @@
 import {logError} from '../../lib/logger.js';
 import moment from 'moment-timezone';
 import {countUsers, getUserById} from '../../services/user.service.js';
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
+import {createExpiringMap} from '../../lib/ephemeral-state.js';
 import type {proto} from '@whiskeysockets/baileys';
-import {getRequiredPluginMessage, getRequiredPluginMessageObjectList, renderTemplate} from '../../lib/message-template.js';
+import {getMainConnection} from '../../core/runtime-state.js';
+import {renderCommandHelp} from '../../services/command-help.service.js';
+import {content} from '../../services/content.service.js';
 
 interface MenuCooldown {
     lastUsed: number;
@@ -17,57 +20,63 @@ interface MenuAccess {
     restricted?: string;
 }
 
-const cooldowns = new Map<string, MenuCooldown>();
 const COOLDOWN_DURATION = 180000;
+const cooldowns = createExpiringMap<MenuCooldown>({ttlMs: COOLDOWN_DURATION});
 
 const infoCommands: MenuAccess[] = [
-    ...getRequiredPluginMessageObjectList<MenuAccess>('menus.main.infoCommands'),
+    ...content.messageObjectList<MenuAccess>('menus.main.infoCommands'),
 ];
 
 const menuAccess: MenuAccess[] = [
-    ...getRequiredPluginMessageObjectList<MenuAccess>('menus.main.menuAccess'),
+    ...content.messageObjectList<MenuAccess>('menus.main.menuAccess'),
 ];
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['menu'],
     tags: ['main'],
-    command: /^(menu|help|allmenu|menú)$/i,
-    async execute(m, {conn, usedPrefix}) {
+    command: /^(menu|help|ayuda|allmenu|menú)$/i,
+    async execute(m, {conn, text, usedPrefix, command, branding, sdk}) {
         const chatId = m.key?.remoteJid || m.chat;
         const prefix = usedPrefix || '#';
+
+        if (/^(help|ayuda)$/i.test(command) && text.trim()) {
+            await m.reply(renderCommandHelp({query: text, usedPrefix: prefix}));
+            return;
+        }
+
         const now = Date.now();
         const chatData = cooldowns.get(chatId) || {lastUsed: 0, menuMessage: null};
         const timeLeft = COOLDOWN_DURATION - (now - chatData.lastUsed);
 
         if (timeLeft > 0) {
             try {
-                const senderTag = m.sender ? `@${m.sender.split('@')[0]}` : getRequiredPluginMessage('menus.main.fallbackUser');
-                await conn.reply(chatId, renderTemplate(getRequiredPluginMessage('menus.main.cooldown'), {user: senderTag}), chatData.menuMessage || m);
+                const senderTag = m.sender ? `@${m.sender.split('@')[0]}` : sdk.content.message('menus.main.fallbackUser');
+                await conn.reply(chatId, sdk.content.renderMessage('menus.main.cooldown', {user: senderTag}), chatData.menuMessage || m);
             } catch {
                 return;
             }
             return;
         }
 
-        const text = await buildMainMenuText(m.sender, m.pushName || getRequiredPluginMessage('menus.main.fallbackName'), prefix, conn.user?.id);
+        const menuText = await buildMainMenuText(m.sender, m.pushName || sdk.content.message('menus.main.fallbackName'), prefix, branding.watermark, conn.user?.id);
 
         try {
             const menuMessage = await conn.sendMessage(chatId, {
-                text,
+                text: menuText,
                 contextInfo: {
-                    mentionedJid: await conn.parseMention(text),
+                    mentionedJid: await conn.parseMention(menuText),
                 },
             }, {quoted: m});
             cooldowns.set(chatId, {lastUsed: now, menuMessage});
-            m.react('🙌');
+            await sdk.reply.react('🙌');
         } catch (err: unknown) {
-            m.react('❌');
+            await sdk.reply.react('❌');
             logError(err);
         }
     },
 });
 
-async function buildMainMenuText(sender: string, name: string, prefix: string, botId?: string): Promise<string> {
+async function buildMainMenuText(sender: string, name: string, prefix: string, watermark: string, botId?: string): Promise<string> {
     const fecha = moment.tz('America/Argentina/Buenos_Aires').format('DD/MM/YYYY');
     const hora = moment.tz('America/Argentina/Buenos_Aires').format('HH:mm:ss');
     const muptime = clockString(process.uptime() * 1000);
@@ -75,8 +84,8 @@ async function buildMainMenuText(sender: string, name: string, prefix: string, b
     const {total, registered} = await getUserCounts();
     const botOfc = buildBotLine(botId);
 
-    return renderTemplate(getRequiredPluginMessage('menus.main.menu'), {
-        watermark: info.wm,
+    return content.renderMessage('menus.main.menu', {
+        watermark,
         name,
         date: fecha,
         time: hora,
@@ -110,8 +119,8 @@ async function getUserCounts(): Promise<{total: number; registered: number}> {
 function renderAccessList(items: MenuAccess[], prefix: string): string {
     return items
         .map((item) => {
-            const restricted = item.restricted ? renderTemplate(getRequiredPluginMessage('menus.main.restricted'), {value: item.restricted}) : '';
-            return renderTemplate(getRequiredPluginMessage('menus.main.accessItem'), {...item, prefix, restricted});
+            const restricted = item.restricted ? content.renderMessage('menus.main.restricted', {value: item.restricted}) : '';
+            return content.renderMessage('menus.main.accessItem', {...item, prefix, restricted});
         })
         .join('\n');
 }
@@ -119,10 +128,10 @@ function renderAccessList(items: MenuAccess[], prefix: string): string {
 function buildBotLine(botId?: string): string {
     if (!botId) return '';
     const jidNum = botId.replace(/:\d+/, '').split('@')[0];
-    const globalId = global.conn?.user?.id;
-    if (!globalId || botId === globalId) return renderTemplate(getRequiredPluginMessage('menus.main.officialBot'), {bot: jidNum});
+    const globalId = getMainConnection()?.user?.id;
+    if (!globalId || botId === globalId) return content.renderMessage('menus.main.officialBot', {bot: jidNum});
     const mainBot = globalId.replace(/:\d+/, '').split('@')[0];
-    return renderTemplate(getRequiredPluginMessage('menus.main.subBot'), {bot: mainBot});
+    return content.renderMessage('menus.main.subBot', {bot: mainBot});
 }
 
 const clockString = (ms: number) => {

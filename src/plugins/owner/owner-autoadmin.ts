@@ -1,15 +1,14 @@
-import {definePlugin} from '../../core/define-plugin.js'
-import {getRequiredPluginMessage} from '../../lib/message-template.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['autoadmin'],
     tags: ['owner'],
     command: /^admin.|atad|autoadmin$/i,
     owner: true,
     botAdmin: true,
-    async execute(m, {conn, isAdmin}) {
+    async execute(m, {conn, isAdmin, sdk}) {
         if (m.fromMe) throw 'Nggk'
-        if (isAdmin) return m.reply(getRequiredPluginMessage('owner.autoAdmin.alreadyAdmin'))
+        if (isAdmin) return sdk.reply.message('owner.autoAdmin.alreadyAdmin')
         await conn.groupParticipantsUpdate(m.chat, [m.sender], "promote")
     }
 })

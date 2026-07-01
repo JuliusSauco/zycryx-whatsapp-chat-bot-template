@@ -1,15 +1,14 @@
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 //Código elaborado por: https://github.com/elrebelde21
 
 import {listCharacterClaimOwners} from '../../services/character.service.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['rw-personajes'],
     tags: ['gacha'],
     command: ['rw-personajes', 'ranking'],
     register: true,
-    async execute(m, {conn}) {
+    async execute(m, {sdk}) {
 
     try {
         const characters = await listCharacterClaimOwners();
@@ -25,22 +24,22 @@ export default definePlugin({
             .sort(([, countA], [, countB]) => countB - countA)
             .slice(0, 10);
 
-        let textt = renderTemplate(getRequiredPluginMessage('rpg.rw.rankingHeader'), {
+        let textt = sdk.content.renderMessage('rpg.rw.rankingHeader', {
             claimedCount: claimedCharacters.length
         });
-        textt += getRequiredPluginMessage('rpg.rw.rankingTopHeader');
+        textt += sdk.content.message('rpg.rw.rankingTopHeader');
         topUsers.forEach(([user, count], index) => {
-            textt += renderTemplate(getRequiredPluginMessage('rpg.rw.rankingLine'), {
+            textt += sdk.content.renderMessage('rpg.rw.rankingLine', {
                 position: index + 1,
                 user: user.split('@')[0],
                 count
             });
         });
 
-        await conn.sendMessage(m.chat, {
-            text: textt + getRequiredPluginMessage('rpg.rw.rankingFooter'),
+        await sdk.sendMessage({
+            text: textt + sdk.content.message('rpg.rw.rankingFooter'),
             contextInfo: {mentionedJid: topUsers.map(([user]) => user)}
-        }, {quoted: m});
+        });
     } catch (e: unknown) {
     }
     }

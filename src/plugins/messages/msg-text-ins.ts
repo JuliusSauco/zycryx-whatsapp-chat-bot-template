@@ -1,5 +1,5 @@
 import {logError} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import path from 'path'
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js'
 import {pickRandom} from '../../utils/random.js'
@@ -45,12 +45,12 @@ function escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['msg-text-ins'],
     tags: ['fun'],
     command: COMMAND_REGEX,
     register: false,
-    async execute(m, {conn, participants}) {
+    async execute(m, {sdk}) {
     try {
         // mención > respuesta > a sí mismo (misma lógica que los msg-gif-*).
         if (!Array.isArray(m.mentionedJid)) m.mentionedJid = []
@@ -59,11 +59,11 @@ export default definePlugin({
 
         const frases = getFrases()
         if (!frases.length) {
-            await m.reply(INS_CONFIG.emptyMessage)
+            await sdk.reply.text(INS_CONFIG.emptyMessage)
             return
         }
 
-        const groupParticipants = getParticipantsFast(conn, m.chat, participants)
+        const groupParticipants = getParticipantsFast(sdk.conn, sdk.chatId, sdk.participants)
         const mentionedResolved: ResolvedMention[] = m.mentionedJid.map((jid: string) => resolveMention(jid, groupParticipants))
         const mentionedTags = mentionedResolved.map((x: ResolvedMention) => x.tag)
         const mentions = Array.from(new Set(mentionedResolved.map((x: ResolvedMention) => x.mentionJid)))
@@ -71,15 +71,15 @@ export default definePlugin({
         const fraseRandom = pickRandom(frases)
         const texto = `${mentionedTags.join(' ')} ${fraseRandom}`
 
-        await conn.sendMessage(m.chat, {
+        await sdk.sendMessage({
             text: texto,
             mentions,
             // contextInfo propio para evitar que simple.ts inyecte el banner "Ver canal".
             contextInfo: {mentionedJid: mentions},
-        }, {quoted: m})
+        })
     } catch (e: unknown) {
         logError(e)
-        m.react('❌️')
+        sdk.reply.react('❌️')
     }
     }
 })

@@ -16,8 +16,13 @@ import {logError, logInfo, logWarn} from './logger.js';
 import type {BotMessage} from '../types/message.js';
 import type {ExtendedConn} from '../types/context.js';
 import {isOtherBotKey} from '../utils/message-filter.js';
+import {
+    getSubbotConnections,
+    registerSubbotConnection,
+    unregisterSubbotConnection,
+} from '../core/runtime-state.js';
 
-if (!(globalThis.conns instanceof Array)) globalThis.conns = []
+getSubbotConnections()
 
 type BotSocket = WASocket & {
     groupCache?: NodeCache;
@@ -56,8 +61,6 @@ export async function startSubBot(
     const {state, saveCreds} = await useMultiFileAuthState(sessionFolder);
     const {version} = await fetchLatestBaileysVersion();
 
-    console.info = () => {
-    }
     const sock = makeWASocket({
         logger: createPino({level: 'silent'}),
         printQRInTerminal: false,
@@ -91,8 +94,7 @@ export async function startSubBot(
             reintentos[sock.userId] = 0;
             // Si quedó un socket previo con el mismo userId (reconexión), se reemplaza
             // por el nuevo para que conns nunca apunte a un socket muerto.
-            removeConnByUserId(sock.userId);
-            globalThis.conns.push(sock);
+            registerSubbotConnection(sock);
 
             // Precarga de metadata de grupos para evitar IQs lentos en el primer comando.
             void (async () => {
@@ -225,9 +227,7 @@ export async function startSubBot(
 }
 
 function removeConnByUserId(userId: string | undefined): void {
-    if (!userId) return;
-    const index = globalThis.conns.findIndex((c) => c.userId === userId);
-    if (index >= 0) globalThis.conns.splice(index, 1);
+    unregisterSubbotConnection(userId);
 }
 
 function setupGroupEvents(sock: BotSocket): void {

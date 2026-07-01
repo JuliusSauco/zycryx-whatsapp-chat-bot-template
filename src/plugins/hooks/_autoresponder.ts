@@ -4,16 +4,12 @@ import {logDebug, logError, logWarn} from '../../lib/logger.js';
 import {ensureSystemPrompt, getAiMemory, getAiPromptSettings, saveAiMemory} from '../../services/chat-memory.service.js';
 import type {ExtendedConn} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
-import {httpJson} from '../../lib/http-client.js';
 import type {BeforePluginContext} from '../../types/context.js';
 import {isGroupCreator} from '../../utils/group-creator.js';
 import type {AccessMode, AutoresponderTrigger} from '../../types/config.js';
+import {requestPublicPromptCompletion} from '../../services/public-ai-fallback.service.js';
 
 const MAX_TURNS = 12;
-
-interface TextApiResponse {
-    data?: string;
-}
 
 interface MessageContextInfo {
     participant?: string;
@@ -96,8 +92,7 @@ export async function before(m: BotMessage, ctx: BeforePluginContext & {conn: Ex
         logWarn('[AUTORESP] ninguna IA con key respondió, usando fallback público');
         try {
             // Pasar el texto del usuario (string), NO el array `memory` (daba [object Object]).
-            let res = await httpJson<TextApiResponse>(`${info.apis}/ia/gptprompt?text=${encodeURIComponent(query)}&prompt=${encodeURIComponent(systemPrompt)}`);
-            result = res.data || '';
+            result = await requestPublicPromptCompletion(query, systemPrompt);
         } catch (err: unknown) {
             logWarn('[AUTORESP] fallback gptprompt falló, usando exoml:', err instanceof Error ? err.message : err);
             try {

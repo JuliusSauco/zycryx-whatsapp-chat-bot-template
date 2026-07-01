@@ -1,14 +1,13 @@
 import {logError} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {getDatabaseInfo, vacuumDatabase} from '../../services/database.service.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['db info', 'db optimizar', 'db borrar', 'db crear'],
     tags: ['owner'],
     command: /^(db)$/i,
     rowner: true,
-    async execute(m, {args}) {
+    async execute(_m, {args, sdk}) {
         const subcmd = args[0]?.toLowerCase();
 
         switch (subcmd) {
@@ -17,23 +16,23 @@ export default definePlugin({
                     const info = await getDatabaseInfo();
 
                     const text = [
-                        getRequiredPluginMessage('owner.db.infoHeader'),
-                        renderTemplate(getRequiredPluginMessage('owner.db.users'), {count: info.usuarios}),
-                        renderTemplate(getRequiredPluginMessage('owner.db.registered'), {count: info.registrados}),
-                        renderTemplate(getRequiredPluginMessage('owner.db.chats'), {count: info.chats}),
-                        renderTemplate(getRequiredPluginMessage('owner.db.totalSize'), {size: info.totalSize ?? getRequiredPluginMessage('owner.db.zeroBytes')}),
-                        getRequiredPluginMessage('owner.db.tableHeader'),
-                        ...info.tablas.map(r => renderTemplate(getRequiredPluginMessage('owner.db.tableRow'), {
+                        sdk.content.message('owner.db.infoHeader'),
+                        sdk.content.renderMessage('owner.db.users', {count: info.usuarios}),
+                        sdk.content.renderMessage('owner.db.registered', {count: info.registrados}),
+                        sdk.content.renderMessage('owner.db.chats', {count: info.chats}),
+                        sdk.content.renderMessage('owner.db.totalSize', {size: info.totalSize ?? sdk.content.message('owner.db.zeroBytes')}),
+                        sdk.content.message('owner.db.tableHeader'),
+                        ...info.tablas.map(r => sdk.content.renderMessage('owner.db.tableRow', {
                             table: r.tabla,
                             rows: r.filas,
                             size: r.tamano
                         }))
                     ].join('\n');
 
-                    await m.reply(text);
+                    await sdk.reply.text(text);
                 } catch (e: unknown) {
                     logError('[❌] /db info error:', e);
-                    await m.reply(getRequiredPluginMessage('owner.db.queryError'));
+                    await sdk.reply.message('owner.db.queryError');
                 }
                 break;
             }
@@ -43,16 +42,16 @@ export default definePlugin({
                     const inicio = Date.now();
                     await vacuumDatabase();
                     const tiempo = ((Date.now() - inicio) / 1000).toFixed(2);
-                    await m.reply(renderTemplate(getRequiredPluginMessage('owner.db.optimized'), {seconds: tiempo}));
+                    await sdk.reply.message('owner.db.optimized', {seconds: tiempo});
                 } catch (e: unknown) {
                     logError('[❌] Error en optimizar:', e);
-                    await m.reply(getRequiredPluginMessage('owner.db.optimizeError'));
+                    await sdk.reply.message('owner.db.optimizeError');
                 }
                 break;
             }
 
             default:
-                await m.reply(getRequiredPluginMessage('owner.db.usage'));
+                await sdk.reply.message('owner.db.usage');
         }
     }
 });

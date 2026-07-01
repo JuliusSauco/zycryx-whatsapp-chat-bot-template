@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import {isSubbotConnection} from '../core/runtime-state.js';
 
 interface LoggerConnection {
     user?: {
@@ -58,7 +59,7 @@ function formatBotLabel(conn: LoggerConnection): string {
     const jidRaw = conn.user?.id || "";
     const jidClean = jidRaw.replace(/:\d+/, "").split("@")[0];
     const name = conn.user?.name?.trim() || jidClean;
-    const isSubbot = globalThis.conns?.some((c) => c.user?.id === conn.user?.id);
+    const isSubbot = isSubbotConnection(conn);
     const label = `${chalk.yellowBright("+" + jidClean)} ${chalk.cyanBright("-")} ${chalk.bold(name)}${isSubbot ? chalk.magenta(" (sub bot)") : ""}`;
     return label;
 }

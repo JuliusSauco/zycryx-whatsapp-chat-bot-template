@@ -1,25 +1,24 @@
-import {definePlugin} from '../../core/define-plugin.js'
-import {getRequiredPluginMessage} from '../../lib/message-template.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 //import Presence from '@adiwajshing/baileys'
 //let Presence = (await import(global.baileys)).default
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['setname'],
     tags: ['group'],
     command: /^(setname|newnombre|nuevonombre)$/i,
     admin: true,
     botAdmin: true,
     group: true,
-    async execute(m, {conn, args, text}) {
-    if (!text) throw getRequiredPluginMessage('group.setName.missing')
+    async execute(m, {sdk}) {
+    if (!sdk.text) throw sdk.content.message('group.setName.missing')
     try {
-        let text = args.join(' ')
-        if (!args || !args[0]) {
+        let text = sdk.args.join(' ')
+        if (!sdk.args || !sdk.args[0]) {
         } else {
-            conn.groupUpdateSubject(m.chat, text)
+            sdk.conn.groupUpdateSubject(sdk.chatId, text)
         }
-        m.react("✅️")
+        await sdk.reply.react("✅️")
     } catch (e: unknown) {
-        throw getRequiredPluginMessage('group.setName.error')
+        throw sdk.content.message('group.setName.error')
     }
     }
 })

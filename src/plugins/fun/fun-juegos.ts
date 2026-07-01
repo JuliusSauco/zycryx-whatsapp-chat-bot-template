@@ -1,5 +1,5 @@
 import {logInfo} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {
     isDoxxeoCommand,
     isPercentageCommand,
@@ -16,12 +16,12 @@ import {
     replyTopCommand,
 } from './fun-juegos.helpers.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ["love", "gay2", "lesbiana", "pajero", "pajera", "puto", "puta", "manco", "manca", "rata", "prostituta", "prostituto", "amigorandom", "amistad", "formarpareja", "gay", "personalidad", "ship", "topgays", "top", "topputos", "toplindos", "toppajer@s", "topshipost", "toppanafresco", "topgrasa", "topintegrantes", "topfamos@s", "topsostero", "top5parejas", "Doxxeo", "doxxeo", "follar"],
     tags: ['game'],
     command: /^(love|gay2|lesbiana|pajero|pajera|puto|puta|manco|manca|rata|prostituta|prostituto|amigorandom|amistad|formarpareja|formarparejas|gay|personalidad|ship|shippear|topgays|top|topput@s|topputos|toplindos|toplind@s|toppajer@s|toppajeros|topshipost|topshiposters|toppanafresco|topgrasa|toppanafrescos|toplagrasa|topintegrante|topintegrantes|topotakus|topfamosos|topfamos@s|topsostero|topparejas|top5parejas|Doxxeo|doxxeo|doxxear|Doxxear|doxeo|doxear|doxxeame|doxeame|violar|follar)$/i,
     register: true,
-    async execute(m, {conn, metadata, command, text, usedPrefix}) {
+    async execute(m, {conn, metadata, command, text, usedPrefix, sdk}) {
         try {
             if (command === 'amistad' || command === 'amigorandom') {
                 await replyRandomPair(m, metadata.participants, 'friendship');
@@ -48,7 +48,7 @@ export default definePlugin({
             }
 
             if (command === 'gay') {
-                await replyGayCanvas(conn, m);
+                await replyGayCanvas(conn, m, sdk.http.buffer);
             }
 
             if (isPercentageCommand(command)) {

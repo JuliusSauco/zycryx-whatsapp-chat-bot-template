@@ -1,15 +1,14 @@
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {setGroupBanned} from '../../services/group-settings.service.js';
-import {getRequiredPluginMessage} from '../../lib/message-template.js';
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['unbanchat'],
     tags: ['owner'],
     command: /^unbanchat$/i,
     owner: true,
-    async execute(m) {
+    async execute(m, {sdk}) {
         await setGroupBanned(m.chat, false);
 
-        m.reply(getRequiredPluginMessage('owner.unbanChat.success'));
+        await sdk.reply.message('owner.unbanChat.success');
     },
 });

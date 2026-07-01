@@ -20,7 +20,7 @@ export default defineSdkPlugin({
     const pp = getCachedBuffer('./resources/media/menus/Menu2.jpg') || Buffer.alloc(0);
     const txt = sdk.content.renderMessage('info.donate.response', {
         name: m.pushName || sdk.sender.split('@')[0],
-        watermark: info.wm,
+        watermark: sdk.branding.watermark,
         youtube: info.yt,
         repositoryUrl: info.md,
         facebook: info.fb,
@@ -35,7 +35,7 @@ export default defineSdkPlugin({
                 showAdAttribution: false,
                 renderLargerThumbnail: false,
                 title: 'ᴾᵘᵉᵈᵉ ᵃᵖᵒʸᵃʳ ⁿᵘᵉˢᵗʳᵒ ʳᵉᵖᵒˢᶦᵗᵒʳᶦᵒ ᶜᵒⁿ ᵘⁿᵃ ᵉˢᵗʳᵉˡˡᶦᵗᵃˢ ⭐',
-                body: info.wm,
+                body: sdk.branding.watermark,
                 mediaType: 2,
                 thumbnailUrl: m.pp,
                 mediaUrl: info.md,
