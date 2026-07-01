@@ -4,7 +4,7 @@ import {getGroupSettings, setGroupAutoAcceptMode, setGroupAutoresponderMode, set
 import {getSubbotConfig, setSubbotBooleanFlag} from '../../services/subbot.service.js'
 import {isGroupCreator} from '../../utils/group-creator.js'
 import {getToggleSectionKey, renderToggleMenu} from './config-toggle-menu.js'
-import type {ConfigurableFeatureKey} from '../../ports/repositories.js'
+import type {ConfigurableFeatureKey} from '../../domain/groups.js'
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode, GroupSettings} from '../../types/config.js'
 
 function getAutoAcceptModeLabel(mode?: AutoAcceptMode | null): string {

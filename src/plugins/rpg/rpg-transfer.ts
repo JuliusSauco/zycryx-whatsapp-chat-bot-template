@@ -2,7 +2,7 @@ import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import {createPendingActionStore} from '../../lib/ephemeral-state.js'
 import {getWallet, isWalletResource, transferWalletResource} from '../../services/wallet.service.js'
 import type {BotMessage} from '../../types/message.js'
-import type {WalletResource} from '../../ports/repositories.js'
+import type {WalletResource} from '../../domain/users.js'
 import {content} from '../../services/content.service.js';
 
 interface TransferConfirmation {

@@ -52,7 +52,6 @@ NODE_ENV=prod npm run ops:check
 
 | Variable | Default | Uso |
 |---|---|---|
-| `DATA_SOURCE` | `local` | `local` = Drizzle + PostgreSQL (estable). `backend` = scaffold REST/GraphQL futuro, falla explicitamente. |
 | `LOG_LEVEL` | `command` | `error`, `warn`, `info`, `command`, `debug`, `trace`. Ver README seccion Observabilidad. |
 | `PERF_LOG_THRESHOLD_MS` | `750` | Umbral para logs `[PERF]` de pipeline lento. |
 | `HTTP_TIMEOUT_MS` | `15000` | Timeout por defecto del HTTP client centralizado. |
@@ -71,17 +70,6 @@ NODE_ENV=prod npm run ops:check
 | `DB_PASSWORD` | vacio | Password. |
 | `DB_SCHEMA` | `public` | Schema usado via `search_path`, aplicado al pool y a drizzle-kit. Solo acepta identificadores válidos (`[a-zA-Z_][a-zA-Z0-9_]*`); si no, cae a `public`. |
 | `DATABASE_URL` | vacio | Alternativa a los parametros individuales. Tiene prioridad si esta definida. |
-
-## Backend futuro (scaffold)
-
-Solo aplican si `DATA_SOURCE=backend`, que hoy no es el camino activo:
-
-| Variable | Default | Uso |
-|---|---|---|
-| `BACKEND_PROTOCOL` | `rest` | Protocolo previsto. |
-| `BACKEND_BASE_URL` | vacio | URL base del backend. |
-| `BACKEND_API_TOKEN` | vacio | Token de autenticacion. |
-| `BACKEND_TIMEOUT_MS` | `10000` | Timeout de requests al backend. |
 
 ## APIs externas
 

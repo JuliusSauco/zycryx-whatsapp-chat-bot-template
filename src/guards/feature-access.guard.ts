@@ -3,7 +3,7 @@ import type {Guard} from '../types/guard.js';
 import {SILENT_REJECT} from '../types/guard.js';
 import {canUseAccessMode} from '../utils/access-mode.js';
 
-import type {ConfigurableFeatureKey} from '../ports/repositories.js';
+import type {ConfigurableFeatureKey} from '../domain/groups.js';
 
 const FEATURE_TAGS: Record<ConfigurableFeatureKey, string[]> = {
     games: ['game'],

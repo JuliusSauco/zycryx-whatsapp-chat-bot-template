@@ -2,15 +2,18 @@ import {inArray} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {audioResponses} from '../../db/schema.js';
 import type {AudioResponseRepository} from '../../ports/repositories.js';
+import {mapAudioResponseRecord} from './audio-response.mapper.js';
 
 export const audioResponseRepository: AudioResponseRepository = {
     async listByScopes(scopes) {
         if (!scopes.length) return [];
-        return orm.select().from(audioResponses).where(inArray(audioResponses.scope, scopes));
+        const rows = await orm.select().from(audioResponses).where(inArray(audioResponses.scope, scopes));
+        return rows.map(mapAudioResponseRecord);
     },
 
     async listAll() {
-        return orm.select().from(audioResponses);
+        const rows = await orm.select().from(audioResponses);
+        return rows.map(mapAudioResponseRecord);
     },
 
     async upsert(input) {

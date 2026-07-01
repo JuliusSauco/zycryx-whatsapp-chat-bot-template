@@ -1,5 +1,5 @@
 import {defineSdkPlugin} from '../../core/plugin-sdk.js';
-import type {UserWallet} from '../../ports/repositories.js'
+import type {UserWallet} from '../../domain/users.js'
 import {listWallets} from '../../services/wallet.service.js'
 import {formatCompactNumber} from '../../utils/format.js'
 import {createExpiringMap} from '../../lib/ephemeral-state.js'

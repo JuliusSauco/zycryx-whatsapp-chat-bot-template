@@ -7,7 +7,7 @@ Esta lista se mantiene fuera del README para separar la documentacion publica de
 - Avance general estimado del backlog interno: 78%.
 - Roadmap v1: 100%, cerrado.
 - Roadmap v2: 100%, cerrado.
-- Roadmap v3: 80%, cerrado en pruebas/seguridad; backend queda desestimado hasta tener contrato real.
+- Roadmap v3: cerrado en pruebas/seguridad; backend cancelado por decision arquitectonica.
 - Roadmap v4: 100%, cerrado para migracion SDK legacy; i18n queda como bloque futuro.
 - Bloque operativo 2026-07-01: 100%, cerrado; concentra hardening de produccion, runbook, preflight, backups, dependencias y recuperacion.
 - Revision externa 2026-06-10: se agrego el bloque "Higiene de runtime y conexion" con hallazgos de `main.ts`/`subbot.ts` (detalle en `docs/architecture-analysis.md`).
@@ -38,7 +38,7 @@ Hallazgos de la auditoria de conexion/reconexion. Hoy los enmascara el reinicio 
 8. 25% - Preparar i18n sobre `content.service` y `resources/data/messages.json` cuando se retome P6.
 9. 100% - Mantener P5 cerrado: estado efimero nuevo debe usar helpers y excepciones documentadas.
 10. 100% - Mantener P7 cerrado: catalogo editable, ayuda `--help`, subcomandos y auditoria.
-11. 0% - Mantener P3 desestimado hasta que exista backend real y contrato versionado.
+11. Cancelado - P3 backend REST/GraphQL queda fuera del roadmap; usar PostgreSQL directo.
 
 Ver tambien `docs/architecture-roadmap.md`.
 
@@ -89,15 +89,15 @@ Estado: cerrado. Se mantiene solo como registro historico.
 
 ## Roadmaps Activos o Condicionados
 
-### Roadmap v3 - 80%
+### Roadmap v3 - cerrado
 
-Estado: casi cerrado. La parte pendiente de backend queda condicionada al P3 arquitectonico y no debe bloquear mejoras locales.
+Estado: cerrado. La parte de backend fue cancelada; la persistencia oficial es PostgreSQL directo con Drizzle.
 
 - [x] 100% - Endurecer permisos de comandos owner con red arbitraria: `owner-fetch.ts`.
 - [x] 100% - Eliminar uso directo de `Math.random()` en plugins y pasar por `src/utils/random.ts`.
 - [x] 100% - Ampliar pruebas unitarias para router, guards y context builder.
 - [x] 100% - Agregar pruebas de servicios con repositorios mockeados.
-- [ ] 0% - Definir contrato REST/GraphQL real para `DATA_SOURCE=backend`.
+- [x] Cancelado - Definir persistencia remota alternativa.
 - [x] 100% - Auditar comandos owner que ejecutan codigo, procesos o red.
 - [x] 100% - Revisar nuevos candidatos a refactor: `_virustotal.ts`, `config-on-y-off.ts`, `rpg-reg.ts` y `rpg-rw.ts` ya fueron migrados fuera de legacy.
 
@@ -135,7 +135,7 @@ Estado: activo. Es el roadmap operativo actual y debe seguir alineado con `docs/
 - [x] 100% - Agregar auditoria `catalogaudit` para comparar plugins cargados contra el catalogo.
 - [x] 100% - Completar metadata del catalogo por familias; primera pasada estatica hecha en `downloads`, `group`, `rpg`, `stickers`, `owner`, `tools`, `games`, `info`, `search`, `subbots`, `audio`, `converters`, `fun`, `random`, `nsfw`, `messages` y `menus`.
 - [x] 100% - Resolver colisiones legacy de comandos compartidos en la superficie documental, especialmente `top`, reacciones GIF/sticker y acciones random/anime.
-- [ ] 0% - Definir contrato REST/GraphQL real para `DATA_SOURCE=backend` solo cuando exista backend.
+- [x] Cancelado - Definir persistencia remota alternativa.
 
 ## Mejoras De Base De Datos - 100%
 

@@ -9,7 +9,7 @@ import {
     findCharacterByUrl,
 } from '../../services/character.service.js'
 import {addWalletResource, addWalletResourcesAndSetFields, getWallet} from '../../services/wallet.service.js'
-import type {CharacterRecord} from '../../ports/repositories.js'
+import type {CharacterRecord} from '../../domain/characters.js'
 import {pickRandom, randomChance, randomInt} from '../../utils/random.js'
 import {formatDurationPaddedMinutesSeconds} from '../../utils/time.js'
 import {createPendingActionStore} from '../../lib/ephemeral-state.js'

@@ -1,0 +1,58 @@
+import type {AccessMode, AutoresponderTrigger, GroupSettings} from '../types/config.js';
+
+export type GroupSettingsRecord = GroupSettings;
+
+export interface ContextGroupSettings {
+    banned: boolean;
+    primary_bot: string | null;
+    modoadmin: boolean;
+    botAccessMode: AccessMode;
+    antifake: boolean;
+    message_logging: boolean;
+    antilink: boolean;
+    antilink2: boolean;
+    virusTotal: boolean;
+    autoresponder: boolean;
+    autoresponderMode: AccessMode;
+    autoresponderTrigger: AutoresponderTrigger;
+    gamesAccessMode: AccessMode;
+    toolsAccessMode: AccessMode;
+    rpgAccessMode: AccessMode;
+    downloadsAccessMode: AccessMode;
+    searchAccessMode: AccessMode;
+    stickersAccessMode: AccessMode;
+    convertersAccessMode: AccessMode;
+    funAccessMode: AccessMode;
+    modohorny: boolean;
+    nsfwAccessMode: AccessMode;
+    audios: boolean;
+    autolevelup: boolean;
+}
+
+export interface NsfwGroupSettings {
+    modohorny: boolean;
+    nsfwAccessMode: AccessMode;
+    nsfw_horario: string | null;
+}
+
+export interface ExpiredGroup {
+    group_id: string;
+    expired: number;
+}
+
+export interface UserGroupRoleRecord {
+    group_id: string;
+    user_id: string;
+    role: string;
+    role_description: string | null;
+}
+
+export type ConfigurableFeatureKey =
+    | 'games'
+    | 'tools'
+    | 'rpg'
+    | 'downloads'
+    | 'search'
+    | 'stickers'
+    | 'converters'
+    | 'fun';

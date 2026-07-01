@@ -1,4 +1,4 @@
-import type {CharacterRecord} from '../ports/repositories.js';
+import type {CharacterClaimOwner, CharacterRecord, CreateCharacterInput} from '../domain/characters.js';
 import {repositories} from './data-source.js';
 
 export async function findCharacterByUrl(url: string): Promise<CharacterRecord | null> {
@@ -17,11 +17,11 @@ export async function listCharactersByOwner(ownerId: string): Promise<CharacterR
     return repositories.characters.listByOwner(ownerId);
 }
 
-export async function listCharacterClaimOwners(): Promise<Array<{claimed_by: string | null}>> {
+export async function listCharacterClaimOwners(): Promise<CharacterClaimOwner[]> {
     return repositories.characters.listClaimOwners();
 }
 
-export async function createCharacter(input: Omit<CharacterRecord, 'id'>): Promise<CharacterRecord> {
+export async function createCharacter(input: CreateCharacterInput): Promise<CharacterRecord> {
     return repositories.characters.create(input);
 }
 

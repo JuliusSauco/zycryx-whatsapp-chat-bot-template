@@ -4,7 +4,11 @@ import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 
 import {completeCharacterSale, listCharactersByOwner, putCharacterForSale} from '../../services/character.service.js';
 import {addWalletResource, getWallet} from '../../services/wallet.service.js';
-import type {CharacterRecord} from '../../ports/repositories.js';
+import {
+    calculateCharacterMaxSalePrice,
+    calculateCharacterMinSalePrice,
+    type CharacterRecord,
+} from '../../domain/characters.js';
 import {createPendingActionStore} from '../../lib/ephemeral-state.js';
 import {content} from '../../services/content.service.js';
 
@@ -23,19 +27,6 @@ const pendingSales = createPendingActionStore<PendingSale>({
     },
 });
 const cooldownTime = 3600000; // 1 hora
-
-function calculateMaxPrice(basePrice: number, votes: number) {
-    if (votes === 0) {
-        return Math.round(basePrice * 1.05);
-    }
-    const maxIncreasePercentage = 0.3;
-    const maxPrice = basePrice * (1 + maxIncreasePercentage * votes);
-    return Math.round(maxPrice);
-}
-
-function calculateMinPrice(basePrice: number) {
-    return Math.round(basePrice * 0.95);
-}
 
 export default defineSdkPlugin({
     help: ['rw-vender'],
@@ -130,8 +121,8 @@ export default defineSdkPlugin({
             }
         }
 
-        const minPrice = calculateMinPrice(characterToSell.price);
-        const maxPrice = calculateMaxPrice(characterToSell.price, characterToSell.votes || 0);
+        const minPrice = calculateCharacterMinSalePrice(characterToSell.price);
+        const maxPrice = calculateCharacterMaxSalePrice(characterToSell.price, characterToSell.votes || 0);
         if (price < minPrice) return sdk.reply.message('rpg.rw.minPrice', {name: characterToSell.name, price: minPrice});
         if (price > maxPrice) return sdk.reply.message('rpg.rw.maxPrice', {name: characterToSell.name, price: maxPrice});
 

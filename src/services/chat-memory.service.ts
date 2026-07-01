@@ -1,22 +1,6 @@
 import {repositories} from './data-source.js';
-
-export interface AiMemoryMessage {
-    role: 'system' | 'user' | 'assistant';
-    content: string;
-}
-
-export const DEFAULT_IA_PROMPT = 'Eres Bot, un asistente virtual integrado en un bot de WhatsApp. Responde de forma clara, breve y amable, en el mismo idioma del usuario.';
-
-function normalizeHistory(history: unknown): AiMemoryMessage[] {
-    if (!Array.isArray(history)) return [];
-
-    return history.filter((item): item is AiMemoryMessage => {
-        return item
-            && typeof item === 'object'
-            && ['system', 'user', 'assistant'].includes((item as AiMemoryMessage).role)
-            && typeof (item as AiMemoryMessage).content === 'string';
-    });
-}
+import type {AiMemoryMessage} from '../domain/operations.js';
+import {DEFAULT_IA_PROMPT, normalizeAiHistory} from '../domain/operations.js';
 
 export async function getAiPromptSettings(chatId: string): Promise<{
     systemPrompt: string;
@@ -35,7 +19,7 @@ export async function getAiMemory(chatId: string, ttl: number): Promise<AiMemory
 
     const updatedAt = record.updated_at ? new Date(record.updated_at).getTime() : 0;
     const expired = !ttl || (updatedAt > 0 && Date.now() - updatedAt > ttl * 1000);
-    return expired ? [] : normalizeHistory(record.history);
+    return expired ? [] : normalizeAiHistory(record.history);
 }
 
 export async function saveAiMemory(chatId: string, memory: AiMemoryMessage[]): Promise<void> {

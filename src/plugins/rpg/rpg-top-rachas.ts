@@ -1,6 +1,6 @@
 import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import {listWallets} from '../../services/wallet.service.js';
-import type {UserWallet} from '../../ports/repositories.js';
+import type {UserWallet} from '../../domain/users.js';
 
 export default defineSdkPlugin({
     help: ['topstreak [página]'],

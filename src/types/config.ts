@@ -24,19 +24,7 @@ export interface BotInfo {
     nna2: string;
 }
 
-export interface SubbotConfig {
-    id?: string;
-    tipo?: string | null;
-    name?: string | null;
-    logo_url?: string | null;
-    prefix: string[];
-    mode: string;
-    owners: string[];
-    anti_private: boolean;
-    anti_call: boolean;
-    privacy?: boolean | null;
-    prestar?: boolean | null;
-}
+export type {SubbotConfig} from '../domain/subbots.js';
 
 export interface GroupSettings {
     group_id?: string;

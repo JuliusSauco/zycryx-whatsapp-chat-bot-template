@@ -7,8 +7,8 @@ Este documento resume el estado arquitectonico actual despues de cerrar P0, inic
 ## Estado actual
 
 - El core esta separado por responsabilidades: arranque, handler, parser, router, context builder, guards, eventos de grupo, observabilidad y tareas programadas.
-- La persistencia estable es `DATA_SOURCE=local` con Drizzle ORM y PostgreSQL.
-- `DATA_SOURCE=backend` sigue como scaffold. No debe condicionar el trabajo de providers hasta tener contrato real.
+- La persistencia oficial es Drizzle ORM con conexion directa a PostgreSQL.
+- El adapter backend REST/GraphQL fue descartado; no forma parte del roadmap.
 - Existe un SDK interno para plugins en `src/core/plugin-sdk.ts` y `src/core/sdk-plugin.ts`.
 - Existe `src/services/content.service.ts` como API oficial de mensajes, listas y templates.
 - `src/lib/message-template.ts` queda como fachada legacy mientras se migra el resto de plugins.
@@ -79,7 +79,7 @@ Recomendacion:
 - `src/plugins/downloads/youtube-download.helpers.ts` queda como re-export de compatibilidad.
 - AppleMusic, ModAPK, Pinterest, InstagramStalk y TikTokStalk ya viven en `src/providers/downloads`; IA de texto/imagen vive en `src/providers/ai`; conversores base y stickers avanzados viven en `src/providers/media-conversion`.
 - P1 queda cerrado. Las mejoras futuras de timeout/retry o nuevos proveedores se tratan como mantenimiento incremental.
-- Evitar por ahora providers dependientes de backend; P1 debe funcionar con librerias locales y HTTP centralizado.
+- Evitar providers dependientes de un backend propio; P1 debe funcionar con librerias locales y HTTP centralizado.
 
 Pendientes de diseno:
 
@@ -117,7 +117,7 @@ Recomendacion:
 
 - Mantener estado efimero en memoria mientras el bot sea single-process.
 - Para nuevos cooldowns, pending actions, locks o expiraciones, usar `src/lib/ephemeral-state.ts` o `src/lib/user-request-locks.ts`.
-- Tratar juegos/retos como no multi-replica hasta tener backend o cache externa.
+- Tratar juegos/retos como no multi-replica hasta tener cache externa.
 - `new Map` queda reservado para caches internas, infraestructura o indices locales puros dentro de una ejecucion.
 - `setTimeout` queda reservado para timeouts HTTP/scraper, reconexion, borrados diferidos, tareas programadas, colas y expiraciones encapsuladas.
 
@@ -167,19 +167,20 @@ Estado aplicado:
 - `catalogaudit` agregado para validar consistencia entre catalogo y plugins cargados.
 - P7 cerrado: subcomandos (`db info`, `setprompt delete`, `enable welcome`) y colisiones documentales (`top`, GIF/sticker/random) resueltas.
 
-### Backend adapter pendiente
+### Backend adapter cancelado
 
-`DATA_SOURCE=backend` esta bien como scaffold, pero no debe avanzar sin contrato.
+El adapter backend REST/GraphQL fue descartado. El bot se conectara directamente a PostgreSQL mediante Drizzle y no habra contrato REST/GraphQL de persistencia.
 
 Riesgo:
 
-- Duplicar logica sin API real.
-- Diseñar providers dependientes de un backend que aun no existe.
+- Reintroducir un segundo camino de persistencia sin necesidad operativa.
+- Duplicar logica de repositorios y pruebas para una arquitectura que el proyecto no usara.
 
 Recomendacion:
 
-- Dejar P3 desestimado hasta tener backend versionado.
-- Providers P1 deben ser locales/libreria, no backend-first.
+- Mantener una sola implementacion de repositorios: `src/adapters/drizzle`.
+- Conservar puertos y servicios para separar capas, testear con mocks y evitar SQL directo en plugins.
+- Si algun dia se necesita panel administrativo, tratarlo como proyecto aparte que lea/escriba la misma base o use contratos nuevos, no como selector alternativo de persistencia dentro del bot.
 
 ### Hallazgos de runtime y conexion (revision 2026-06-10)
 

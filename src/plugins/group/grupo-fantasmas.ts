@@ -208,8 +208,7 @@ export default defineSdkPlugin({
                 });
 
                 // Silenciar el welcome durante la purga (el ?? evita el bug de '|| true').
-                const chatSettings = await getGroupSettings(sdk.chatId) || {};
-                const originalWelcome = chatSettings.welcome ?? true;
+                const originalWelcome = (await getGroupSettings(sdk.chatId))?.welcome ?? true;
                 await setGroupBooleanFlag(sdk.chatId, 'welcome', false);
                 await delay(20000);
                 try {

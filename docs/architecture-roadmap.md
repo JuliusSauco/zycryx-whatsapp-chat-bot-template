@@ -9,7 +9,7 @@ Este roadmap prioriza cambios estructurales que reducen acoplamiento y preparan 
 - La compuerta `tests/p0-architecture.test.ts` protege a los plugins migrados para que no vuelvan a importar `message-template` ni `http-client` directamente.
 - La deuda legacy de plugins queda cerrada: 157 plugins usan `defineSdkPlugin`, 0 siguen en `definePlugin`, 0 archivos de plugins importan `message-template.js` y 0 importan `http-client.js`.
 - La deuda legacy de plugins ya no bloquea P0; las nuevas mejoras deben conservar la compuerta P0 en verde.
-- P3 sigue desestimado hasta que exista backend real. P1 debe avanzar con providers locales por dominio, no con un adapter backend.
+- P3 queda cancelado: no se usara backend REST/GraphQL y el bot se conectara directamente a PostgreSQL mediante Drizzle.
 - P1 ya tiene providers reales para YouTube, Spotify, TikTok, Threads, Instagram, Facebook, MediaFire y Drive en `src/providers/downloads`.
 - Los scripts de base de datos estan alineados: migraciones registradas en journal y `database/schema.sql` limpio para bootstrap manual desde cero.
 
@@ -18,7 +18,7 @@ Este roadmap prioriza cambios estructurales que reducen acoplamiento y preparan 
 | P0 - SDK/contenido | 100% | Cerrado como contrato base; queda deuda legacy fuera de P0. |
 | P1 - Providers | 100% | Cerrado: descargas, IA, conversores, stalkers y stickers avanzados tienen providers por dominio. |
 | P2 - Testing nucleo | 100% | Cerrado para router, guards, context builder y servicios. |
-| P3 - Backend adapter | 0% | Desestimado hasta tener backend real. |
+| P3 - Backend adapter | Cancelado | Descartado por decision arquitectonica; PostgreSQL directo es la persistencia oficial. |
 | P4 - Seguridad owner | 100% | Cerrado para comandos sensibles auditados. |
 | P5 - Runtime/escalabilidad | 100% | Cerrado para modo single-process: runtime, branding y estado efimero tienen fachadas, helpers, reglas y excepciones documentadas. |
 | P6 - i18n/contenido | 25% | Base de mensajes lista; falta locales/fallback. |
@@ -96,16 +96,15 @@ Objetivo: blindar router, guards, context builder y servicios antes de refactors
 - [x] Pruebas de context builder con sender, owners, admins, metadata/cache/settings y restricciones simuladas.
 - [x] Pruebas de servicios con repositorios mockeados: chats, group settings, subbots, runtime tasks, wallet y API tokens.
 
-## P3 - Backend adapter real - 0%
+## P3 - Backend adapter real - cancelado
 
-Objetivo: que `DATA_SOURCE=backend` deje de ser scaffold y tenga contrato REST/GraphQL verificable.
+Objetivo anterior: crear un adapter REST/GraphQL alternativo para persistencia.
 
-Estado: desestimado por ahora. No avanzar providers o adapters que dependan del backend hasta que exista un backend real y versionado.
+Estado: cancelado. El proyecto no usara backend administrativo ni adapter REST/GraphQL; el bot se conectara directamente a PostgreSQL usando Drizzle. Se mantienen puertos y servicios para testabilidad, separacion de capas y evitar SQL directo en plugins.
 
-- [ ] 0% - Definir OpenAPI/GraphQL schema minimo por repositorio.
-- [ ] 0% - Implementar adapter REST inicial para agregados prioritarios.
-- [ ] 0% - Agregar contract tests compartidos entre Drizzle y backend.
-- [ ] 0% - Documentar migracion operativa entre local DB y backend.
+- [x] Cancelado - Eliminar el scaffold backend del runtime.
+- [x] Cancelado - Remover variables de selector/backend del contrato publico.
+- [x] Cancelado - Documentar PostgreSQL directo como decision arquitectonica.
 
 ## P4 - Seguridad operativa owner - 100%
 
@@ -122,7 +121,7 @@ Objetivo: preparar el bot para crecer sin depender de estado disperso en memoria
 
 - [x] 100% - Inventariar mapas locales de cooldowns, juegos, retos, pending actions y caches por plugin.
 - [x] 100% - Crear helpers compartidos para cooldowns y acciones pendientes con expiracion.
-- [x] 100% - Documentar que juegos/retos son single-process hasta tener backend/cache externa.
+- [x] 100% - Documentar que juegos/retos son single-process hasta tener cache externa.
 - [x] 100% - Crear fachada de runtime para `globalThis.conn`, `globalThis.conns` y `globalThis.plugins`.
 - [x] 100% - Revisar locks por usuario existentes y reemplazar mapas locales equivalentes cuando el flujo sea de proceso largo.
 - [x] 100% - Migrar mapas/timers restantes cuando representen estado efimero de usuario, chat o juego.
