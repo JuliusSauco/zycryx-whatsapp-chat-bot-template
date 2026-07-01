@@ -1,14 +1,14 @@
 import {logError} from '../../lib/logger.js';
 import fs from 'fs'
-import {definePlugin} from '../../core/define-plugin.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
+import {getMainConnection} from '../../core/runtime-state.js'
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['backup'],
     tags: ['owner'],
     command: /^(backup|respaldo|copia)$/i,
     owner: true,
-    async execute(m, {conn}) {
+    async execute(m, {conn, sdk}) {
         try {
             const d = new Date()
             const date = d.toLocaleDateString('es', {
@@ -18,12 +18,12 @@ export default definePlugin({
             })
             const jid = conn.user?.id || ''
             const idClean = jid.replace(/:\d+/, '').split('@')[0]
-            const isMainBot = jid === global.conn?.user?.id
+            const isMainBot = jid === getMainConnection()?.user?.id
             const sessionPath = isMainBot ? './BotSession/creds.json' : `./jadibot/${idClean}/creds.json`
 
-            if (!fs.existsSync(sessionPath)) return await m.reply(renderTemplate(getRequiredPluginMessage('owner.backup.missingCreds'), {path: sessionPath}))
+            if (!fs.existsSync(sessionPath)) return await sdk.reply.message('owner.backup.missingCreds', {path: sessionPath})
             const creds = fs.readFileSync(sessionPath)
-            await m.reply(renderTemplate(getRequiredPluginMessage('owner.backup.heading'), {id: idClean, date}))
+            await sdk.reply.message('owner.backup.heading', {id: idClean, date})
             await conn.sendMessage(m.sender, {
                 document: creds,
                 mimetype: 'application/json',
@@ -32,7 +32,7 @@ export default definePlugin({
         } catch (e: unknown) {
             logError(e)
             await m.react('❌')
-            await m.reply(getRequiredPluginMessage('owner.backup.error'))
+            await sdk.reply.message('owner.backup.error')
         }
     }
 })

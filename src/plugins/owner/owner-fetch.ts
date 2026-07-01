@@ -1,20 +1,18 @@
 import {format} from 'util'
-import {definePlugin} from '../../core/define-plugin.js'
-import {httpRequest} from '../../lib/http-client.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['fetch'].map(v => v + ' *<url>*'),
     tags: ['owner'],
     command: /^(fetch|get)$/i,
     rowner: true,
     register: true,
-    async execute(m, {conn, text, usedPrefix, command}) {
+    async execute(m, {conn, text, usedPrefix, command, sdk}) {
         if (m.fromMe) return
-        if (!/^https?:\/\//.test(text)) return m.reply(renderTemplate(getRequiredPluginMessage('owner.fetch.usage'), {command: usedPrefix + command}))
-        m.react("💻")
+        if (!/^https?:\/\//.test(text)) return sdk.reply.message('owner.fetch.usage', {command: usedPrefix + command})
+        await sdk.reply.react("💻")
         let url = text
-        let res = await httpRequest(url)
+        let res = await sdk.http.request(url)
         const contentLength = Number(res.headers.get('content-length') || 0)
         if (contentLength > 100 * 1024 * 1024 * 1024) {
             throw `Content-Length: ${contentLength}`
@@ -29,7 +27,7 @@ export default definePlugin({
         } catch (e: unknown) {
             txt = body.toString()
         } finally {
-            m.reply(txt.slice(0, 65536) + '')
+            await sdk.reply.text(txt.slice(0, 65536) + '')
         }
     }
 })

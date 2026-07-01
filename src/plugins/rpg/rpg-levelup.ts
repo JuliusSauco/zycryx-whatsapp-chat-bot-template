@@ -1,33 +1,31 @@
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import {canLevelUp, xpRange} from '../../lib/levelling.js'
 import {getRole} from '../hooks/_autolevelup.js'
 import {getWallet, setUserLevelRole} from '../../services/wallet.service.js'
-import {httpBuffer} from '../../lib/http-client.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
 const multiplier = 650
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['nivel', 'levelup'],
     tags: ['econ'],
     command: ['nivel', 'lvl', 'levelup', 'level'],
     register: true,
-    async execute(m, {conn}) {
+    async execute(m, {conn, sdk}) {
     const name = m.pushName || m.sender.split('@')[0]
     let user = await getWallet(m.sender)
-    if (!user) return m.reply(getRequiredPluginMessage('rpg.shared.missingUser'))
+    if (!user) return sdk.reply.message('rpg.shared.missingUser')
     const {exp, level, role, money} = user
 
     if (!canLevelUp(level, exp, multiplier)) {
         const {min, xp, max} = xpRange(level, multiplier)
-        return m.reply(renderTemplate(getRequiredPluginMessage('rpg.level.stats'), {
+        return sdk.reply.message('rpg.level.stats', {
             name,
             xpProgress: exp - min,
             xpRequired: xp,
             level,
             role,
             missingXp: max - exp
-        }))
+        })
     }
 
     const before = level
@@ -36,7 +34,7 @@ export default definePlugin({
     const newRole = getRole(newLevel).name
     await setUserLevelRole(m.sender, newLevel, newRole)
 
-    const str = renderTemplate(getRequiredPluginMessage('rpg.level.up'), {
+    const str = sdk.content.renderMessage('rpg.level.up', {
         before,
         after: newLevel,
         role: newRole
@@ -44,11 +42,11 @@ export default definePlugin({
 
     try {
         const apiURL = `${info.apis}/canvas/balcard?url=${encodeURIComponent(m.pp)}&background=https://telegra.ph/file/66c5ede2293ccf9e53efa.jpg&username=${encodeURIComponent(name)}&discriminator=${m.sender.replace(/[^0-9]/g, '')}&money=${money}&xp=${exp}&level=${newLevel}`
-        const buffer = await httpBuffer(apiURL)
+        const buffer = await sdk.http.buffer(apiURL)
         await conn.sendFile(m.chat, buffer, 'levelup.jpg', str, m)
     } catch (e: unknown) {
-        await conn.fakeReply(m.chat, str, '13135550002@s.whatsapp.net', getRequiredPluginMessage('rpg.level.quoted'), 'status@broadcast')
+        await conn.fakeReply(m.chat, str, '13135550002@s.whatsapp.net', sdk.content.message('rpg.level.quoted'), 'status@broadcast')
     }
     }
-})
+})
 

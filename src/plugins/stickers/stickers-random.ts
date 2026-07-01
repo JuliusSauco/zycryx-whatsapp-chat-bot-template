@@ -1,8 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
-import {definePlugin} from '../../core/define-plugin.js'
-import {httpBuffer, httpJson} from '../../lib/http-client.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
+import {getRemoteMediaBuffer, getWaifuActionUrl} from '../../providers/media-conversion/sticker.provider.js';
 
 interface ActionConfig {
     e: string;
@@ -12,10 +11,6 @@ interface ActionConfig {
 }
 
 type ActionEntry = ActionConfig & {main: string};
-
-interface WaifuPicsResponse {
-    url?: string;
-}
 
 const actions = {
     lick: {e: '👅', v: 'lamió a', nsfw: false, aliases: []},
@@ -35,37 +30,38 @@ const actions = {
     blowjob: {e: '😳', v: 'le hizo oral a', nsfw: true, aliases: ['oral']}
 } satisfies Record<string, ActionConfig>
 
+const documentedStickerActions = ['blush', 'highfive', 'smile', 'wave', 'smug'];
+
 const actionByCommand = Object.entries(actions).reduce<Record<string, ActionEntry>>((map, [k, v]) => {
     map[k] = {...v, main: k}
     if (v.aliases) for (const a of v.aliases) map[a] = {...v, main: k}
     return map
 }, {})
 
-export default definePlugin({
-    help: Object.entries(actions).flatMap(([k, action]) => [k, ...action.aliases]),
+export default defineSdkPlugin({
+    help: documentedStickerActions,
     tags: ['sticker'],
     command: new RegExp(`^(${Object.keys(actionByCommand).join('|')})$`, 'i'),
     register: true,
-    async execute(m, {conn, command}) {
+    async execute(m, {sdk}) {
     try {
         if (m.quoted?.sender) m.mentionedJid.push(m.quoted.sender)
-        if (!m.mentionedJid.length) m.mentionedJid.push(m.sender)
-        const getName = async (jid: string) => (await conn.getName(jid).catch(() => null)) || `+${jid.split('@')[0]}`
-        const senderName = await getName(m.sender)
+        if (!m.mentionedJid.length) m.mentionedJid.push(sdk.sender)
+        const getName = async (jid: string) => (await sdk.conn.getName(jid).catch(() => null)) || `+${jid.split('@')[0]}`
+        const senderName = await getName(sdk.sender)
 
-        const mentionedNames = await Promise.all(m.mentionedJid.map(async u => u === m.sender ? 'alguien' : await getName(u)))
+        const mentionedNames = await Promise.all(m.mentionedJid.map(async u => u === sdk.sender ? 'alguien' : await getName(u)))
 
-        const act = actionByCommand[command.toLowerCase()] || {
+        const act = actionByCommand[sdk.command.toLowerCase()] || {
             e: '✨',
             v: 'hizo magia con',
             nsfw: false,
-            main: command.toLowerCase()
+            main: sdk.command.toLowerCase()
         }
         const texto = `${act.e} ${senderName} ${act.v} ${mentionedNames.join(', ')}`
-        const tipo = act.nsfw ? 'nsfw' : 'sfw'
         const endpoint = act.main
-        const {url} = await httpJson<WaifuPicsResponse>(`https://api.waifu.pics/${tipo}/${endpoint}`)
-        if (!url) return m.reply(getRequiredPluginMessage('stickers.common.apiNoSticker'))
+        const url = await getWaifuActionUrl(endpoint, act.nsfw)
+        if (!url) return sdk.reply.message('stickers.common.apiNoSticker')
 
         let stiker
         try {
@@ -73,7 +69,7 @@ export default definePlugin({
         } catch (e: unknown) {
         }
         if (stiker) {
-            await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, {
+            await sdk.sendFile(stiker, 'sticker.webp', '', m, true, {
                 contextInfo: {
                     forwardingScore: 200,
                     isForwarded: false,
@@ -90,16 +86,16 @@ export default definePlugin({
             return
         }
 
-        const gifBuffer = await httpBuffer(url)
-        await conn.sendMessage(m.chat, {
+        const gifBuffer = await getRemoteMediaBuffer(url)
+        await sdk.sendMessage({
             video: gifBuffer,
             gifPlayback: true,
             caption: texto,
             mentions: m.mentionedJid
-        }, {quoted: m})
+        })
     } catch (e: unknown) {
-        logError(`[❌ ERROR ${command}]`, e)
-        await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('stickers.common.actionError'), {command}), m)
+        logError(`[❌ ERROR ${sdk.command}]`, e)
+        await sdk.reply.message('stickers.common.actionError', {command: sdk.command})
     }
     }
 })

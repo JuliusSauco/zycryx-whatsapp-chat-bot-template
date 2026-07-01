@@ -9,6 +9,7 @@ dist/
 bin/
 coverage/
 logs/
+backups/
 .idea/
 .claude/
 

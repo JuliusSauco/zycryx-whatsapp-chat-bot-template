@@ -6,6 +6,7 @@ Guia operativa para correr el bot en produccion (VPS Linux o Windows). Fecha de 
 
 - Node.js 18+ (recomendado 20 LTS o superior).
 - PostgreSQL 14+ accesible desde el servidor.
+- Cliente PostgreSQL en PATH (`pg_dump`, `pg_restore`, `createdb`) para backups y recuperacion.
 - FFmpeg en el PATH (stickers, conversiones, audios).
 - git (lo usa el comando owner `update` / `git pull`).
 - Python 3 con el alias `python3` (opcional, solo para el comando `speedtest`).
@@ -20,6 +21,7 @@ cd zycryx-whatsapp-chat-bot-template
 npm install
 cp .env.example .env.prod        # completar valores reales
 npm run build
+npm run ops:check
 npm run db:migrate               # con NODE_ENV=prod si la DB depende del env
 ```
 
@@ -37,6 +39,16 @@ Cuando la sesion quede guardada en `BotSession/`, detén el proceso y arranca ba
 
 ## PM2 (recomendado)
 
+Con la plantilla incluida:
+
+```bash
+pm2 start ecosystem.config.cjs
+pm2 save
+pm2 startup
+```
+
+Comando equivalente manual:
+
 ```bash
 npm install -g pm2
 pm2 start dist/core/index.js --name zycryx-bot \
@@ -51,6 +63,7 @@ Claves:
 - `autorestart` (default de PM2) cubre el `process.exit(0)` periodico del bot.
 - Logs: `pm2 logs zycryx-bot`. Considera `pm2 install pm2-logrotate` porque el bot loguea bastante en niveles altos.
 - Variables: PM2 no lee `.env.prod` por si mismo; el bot la carga solo segun `NODE_ENV`. Basta con exportar `NODE_ENV=prod`.
+- La plantilla `ecosystem.config.cjs` fija `instances: 1`; no escales horizontalmente el mismo numero de WhatsApp.
 
 Equivalente con systemd: unit con `Restart=always`, `Environment=NODE_ENV=prod` y `ExecStart=/usr/bin/node --max-old-space-size=512 dist/core/index.js` desde el directorio del repo.
 
@@ -61,24 +74,95 @@ git pull
 npm install
 npm run build
 npm run db:migrate    # solo si hay migraciones nuevas
+NODE_ENV=prod npm run ops:check
 pm2 restart zycryx-bot
 ```
 
 Las migraciones nunca corren automaticamente al arrancar; ejecutalas siempre como paso explicito y controlado.
 
+## Preflight operativo
+
+El comando `npm run ops:check` revisa prerequisitos locales sin iniciar el bot: version de Node, archivo `.env`, owners, configuracion de PostgreSQL, herramientas externas, build y sesion principal.
+
+Usalo antes de dejar un servidor en produccion y despues de cambios en `.env.prod`, migraciones o actualizaciones del sistema. Ver tambien `docs/operations-runbook.md` y `docs/operational-dependencies.md`.
+
 ## Backups
+
+El camino recomendado es usar el script operativo:
+
+```bash
+NODE_ENV=prod npm run ops:backup
+```
+
+Esto crea una carpeta local en `backups/<fecha>/` con:
+
+- `database.dump` en formato custom de PostgreSQL, si `pg_dump` esta disponible y existe configuracion de DB.
+- `BotSession/`.
+- `jadibot/`.
+- `resources/media/audio/custom/`.
+- `manifest.json` con lo que se copio, omitio o fallo.
+
+Por seguridad, el script no copia `.env.prod` por defecto. Si necesitas incluirlo en un respaldo offline y cifrado:
+
+```bash
+NODE_ENV=prod npm run ops:backup -- --include-env
+```
+
+Opciones utiles:
+
+```bash
+NODE_ENV=prod npm run ops:backup:db
+NODE_ENV=prod npm run ops:backup:sessions
+npx tsx scripts/ops-backup.ts --output /var/backups/zycryx
+```
 
 Que respaldar y con que frecuencia:
 
 | Que | Donde | Frecuencia | Nota |
 |---|---|---|---|
-| Base de datos | `pg_dump zycryx_bot` | Diario | Contiene usuarios, settings, RPG, warns, roles, audios dinamicos. |
+| Base de datos | `npm run ops:backup` o `pg_dump` | Diario | Contiene usuarios, settings, RPG, warns, roles y audios dinamicos. |
 | Sesion principal | `BotSession/` | Tras vincular y ante cambios importantes | Copiar con el bot detenido. Tratar como secreto. |
 | Sesiones subbots | `jadibot/` | Opcional | Los duenos pueden re-vincular si se pierden. |
 | Audios custom | `resources/media/audio/custom/` | Semanal | Archivos subidos con `addaudios`. |
 | Config | `.env.prod` | Ante cambios | Guardar en gestor de secretos, no en el repo. |
 
-Restaurar sesion: detener bot, restaurar carpeta `BotSession/`, arrancar. Si WhatsApp invalido la sesion (codigo 401/440), no sirve restaurar: hay que borrar `BotSession/` y re-vincular.
+Backup manual equivalente de la DB:
+
+```bash
+pg_dump --format=custom --no-owner --no-privileges \
+  --file backups/manual/database.dump "$DATABASE_URL"
+```
+
+Si usas variables separadas:
+
+```bash
+PGPASSWORD="$DB_PASSWORD" pg_dump --host "$DB_HOST" --port "$DB_PORT" \
+  --username "$DB_USER" --dbname "$DB_NAME" \
+  --format=custom --no-owner --no-privileges \
+  --file backups/manual/database.dump
+```
+
+Restaurar DB:
+
+```bash
+pm2 stop zycryx-bot
+createdb "$DB_NAME"   # solo si la base no existe
+pg_restore --clean --if-exists --dbname "$DATABASE_URL" backups/<fecha>/database.dump
+NODE_ENV=prod npm run db:migrate
+NODE_ENV=prod npm run ops:check
+pm2 start zycryx-bot
+```
+
+Restaurar sesion:
+
+```bash
+pm2 stop zycryx-bot
+cp -a backups/<fecha>/BotSession ./BotSession
+chmod -R 700 BotSession jadibot 2>/dev/null || true
+pm2 restart zycryx-bot
+```
+
+Si WhatsApp invalido la sesion (401/403/500), restaurar archivos antiguos no ayuda: hay que borrar `BotSession/` y re-vincular.
 
 ## Operacion
 
@@ -87,6 +171,7 @@ Restaurar sesion: detener bot, restaurar carpeta `BotSession/`, arrancar. Si Wha
 - **Reinicio manual**: comando owner `restart` (requiere process manager) o `pm2 restart zycryx-bot`.
 - **Sesion invalida en logs** (`Sesión inválida (código 401/403/500)`): el bot deja de reintentar por si solo. Detener proceso, borrar `BotSession/`, re-vincular.
 - **Multiples replicas**: NO soportado. El estado de juegos, cooldowns y locks vive en memoria del proceso y la sesion de WhatsApp es por dispositivo. Una instancia por numero.
+- **Preflight**: `NODE_ENV=prod npm run ops:check` para revisar prerequisitos antes de reiniciar.
 
 ## Checklist de seguridad en produccion
 

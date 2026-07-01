@@ -4,7 +4,7 @@ import {format} from 'util'
 import {fileURLToPath} from 'url'
 import {dirname} from 'path'
 import {createRequire} from 'module'
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {auditSensitiveCommand, limitOutput, sanitizeCommandError, withTimeout} from '../../lib/sensitive-command.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -13,7 +13,7 @@ const AsyncFunction = Object.getPrototypeOf(async function () {
 }).constructor as new (...args: string[]) => (...args: unknown[]) => Promise<unknown>
 const OWNER_EVAL_TIMEOUT_MS = 10_000;
 
-const plugin = definePlugin({
+const plugin = defineSdkPlugin({
     help: ['> ', '=> ', '='],
     tags: ['owner'],
     customPrefix: /^=?>\s?/,
@@ -22,7 +22,7 @@ const plugin = definePlugin({
     async execute(m, _2) {
 
 //if (m.fromMe) return
-        const {conn, isOwner, args, metadata} = _2
+        const {conn, isOwner, args, metadata, sdk} = _2
         if (!isOwner) return
 
         let prefixMatch = (m.originalText || m.text)?.match(/^=?>\s?/)
@@ -50,7 +50,7 @@ const plugin = definePlugin({
                 (...args: unknown[]) => {
                     if (--i < 1) return
                     logInfo(format(...args))
-                    return conn.reply(m.chat, limitOutput(format(...args)), m)
+                    return sdk.reply.text(limitOutput(format(...args)))
                 },
                 m, plugin, require, conn, CustomArray, process, args, metadata, f, f.exports, [conn, _2]
             )), OWNER_EVAL_TIMEOUT_MS, 'owner eval')
@@ -64,7 +64,7 @@ const plugin = definePlugin({
             if (err) _syntax = '```' + err + '```\n\n'
             _return = sanitizeCommandError(e)
         } finally {
-            await conn.reply(m.chat, limitOutput(_syntax + format(_return)), m)
+            await sdk.reply.text(limitOutput(_syntax + format(_return)))
             m.exp = old
         }
     }

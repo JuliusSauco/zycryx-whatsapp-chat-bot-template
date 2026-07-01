@@ -1,9 +1,9 @@
 import {startSubBot} from '../../lib/subbot.js';
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 
 const commandFlags: Record<string, boolean> = {};
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['jadibot', 'serbot', 'code'],
     tags: ['jadibot'],
     command: /^(serbot|code|jadibot|qr)$/i,

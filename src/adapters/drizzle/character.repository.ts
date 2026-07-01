@@ -2,24 +2,7 @@ import {and, eq, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {characters} from '../../db/schema.js';
 import type {CharacterRepository} from '../../ports/repositories.js';
-
-function mapCharacter(row: typeof characters.$inferSelect) {
-    return {
-        id: row.id,
-        name: row.name,
-        url: row.url,
-        tipo: row.tipo,
-        anime: row.anime,
-        rareza: row.rareza,
-        price: row.price,
-        previous_price: row.previousPrice,
-        claimed_by: row.claimedBy,
-        for_sale: row.forSale ?? false,
-        seller: row.seller,
-        votes: row.votes ?? 0,
-        last_removed_time: row.lastRemovedTime,
-    };
-}
+import {mapCharacter} from './character.mapper.js';
 
 export const charactersRepository: CharacterRepository = {
     async findByUrl(url) {

@@ -1,51 +1,50 @@
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin, type PluginContentSdk} from '../../core/sdk-plugin.js'
 import {setGroupTextMessage} from '../../services/group-settings.service.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['setwelcome <texto>', 'setbye <texto>'],
     tags: ['group'],
     command: ['setwelcome', 'setbye', 'setpromote', 'setdemote'],
     admin: true,
     group: true,
     register: true,
-    async execute(m, {command, text}) {
-    if (!text) {
-        const tipo = command === 'setwelcome'
-            ? getRequiredPluginMessage('group.setConfig.typeWelcome')
-            : command === 'setbye'
-                ? getRequiredPluginMessage('group.setConfig.typeBye')
-                : command === 'setpromote'
-                    ? getRequiredPluginMessage('group.setConfig.typePromote')
-                    : getRequiredPluginMessage('group.setConfig.typeDemote')
+    async execute(m, {sdk}) {
+    if (!sdk.text) {
+        const tipo = sdk.command === 'setwelcome'
+            ? sdk.content.message('group.setConfig.typeWelcome')
+            : sdk.command === 'setbye'
+                ? sdk.content.message('group.setConfig.typeBye')
+                : sdk.command === 'setpromote'
+                    ? sdk.content.message('group.setConfig.typePromote')
+                    : sdk.content.message('group.setConfig.typeDemote')
 
-        const variables = [getRequiredPluginMessage('group.setConfig.varUser'),
-            ...(command !== 'setpromote' && command !== 'setdemote' ? [getRequiredPluginMessage('group.setConfig.varGroup')] : []),
-            ...(command === 'setwelcome' ? [getRequiredPluginMessage('group.setConfig.varDesc')] : []),
-            ...(command === 'setpromote' || command === 'setdemote' ? [getRequiredPluginMessage('group.setConfig.varAuthor')] : [])
+        const variables = [sdk.content.message('group.setConfig.varUser'),
+            ...(sdk.command !== 'setpromote' && sdk.command !== 'setdemote' ? [sdk.content.message('group.setConfig.varGroup')] : []),
+            ...(sdk.command === 'setwelcome' ? [sdk.content.message('group.setConfig.varDesc')] : []),
+            ...(sdk.command === 'setpromote' || sdk.command === 'setdemote' ? [sdk.content.message('group.setConfig.varAuthor')] : [])
         ].join('\n• ')
 
-        const opciones = (command === 'setwelcome' || command === 'setbye') ? getRequiredPluginMessage('group.setConfig.options') : ''
+        const opciones = (sdk.command === 'setwelcome' || sdk.command === 'setbye') ? sdk.content.message('group.setConfig.options') : ''
 
-        const ejemplo = command === 'setwelcome' ? getRequiredPluginMessage('group.setConfig.exampleWelcome')
-            : command === 'setbye' ? getRequiredPluginMessage('group.setConfig.exampleBye')
-                : command === 'setpromote' ? getRequiredPluginMessage('group.setConfig.examplePromote')
-                    : getRequiredPluginMessage('group.setConfig.exampleDemote')
+        const ejemplo = sdk.command === 'setwelcome' ? sdk.content.message('group.setConfig.exampleWelcome')
+            : sdk.command === 'setbye' ? sdk.content.message('group.setConfig.exampleBye')
+                : sdk.command === 'setpromote' ? sdk.content.message('group.setConfig.examplePromote')
+                    : sdk.content.message('group.setConfig.exampleDemote')
 
-        return m.reply(renderTemplate(getRequiredPluginMessage('group.setConfig.usage'), {
+        return sdk.reply.message('group.setConfig.usage', {
             type: tipo,
             variables,
             options: opciones,
-            command,
+            command: sdk.command,
             example: ejemplo,
-        }))
+        })
     }
 
-    const hasFoto = text.includes('--foto')
-    const hasNoFoto = text.includes('--nofoto')
-    const hasGroupFoto = text.includes('--groupfoto')
-    const hasNoGroupFoto = text.includes('--nogroupfoto')
-    const cleanText = text
+    const hasFoto = sdk.text.includes('--foto')
+    const hasNoFoto = sdk.text.includes('--nofoto')
+    const hasGroupFoto = sdk.text.includes('--groupfoto')
+    const hasNoGroupFoto = sdk.text.includes('--nogroupfoto')
+    const cleanText = sdk.text
         .replace('--foto', '')
         .replace('--nofoto', '')
         .replace('--groupfoto', '')
@@ -54,38 +53,38 @@ export default definePlugin({
     const photoMode = hasFoto ? true : hasNoFoto ? false : undefined
     const groupPhoto = hasGroupFoto ? true : hasNoGroupFoto ? false : undefined
 
-    if (command === 'setwelcome') {
-        await setGroupTextMessage(m.chat, 'welcome', cleanText, photoMode, {
-            registeredBy: m.lid || m.sender,
+    if (sdk.command === 'setwelcome') {
+        await setGroupTextMessage(sdk.chatId, 'welcome', cleanText, photoMode, {
+            registeredBy: m.lid || sdk.sender,
             groupPhoto,
         })
-        return m.reply(renderSavedMessage('group.setConfig.savedWelcome', hasFoto, hasNoFoto, hasGroupFoto, hasNoGroupFoto))
+        return sdk.reply.text(renderSavedMessage(sdk.content, 'group.setConfig.savedWelcome', hasFoto, hasNoFoto, hasGroupFoto, hasNoGroupFoto))
     }
 
-    if (command === 'setbye') {
-        await setGroupTextMessage(m.chat, 'bye', cleanText, photoMode, {
-            registeredBy: m.lid || m.sender,
+    if (sdk.command === 'setbye') {
+        await setGroupTextMessage(sdk.chatId, 'bye', cleanText, photoMode, {
+            registeredBy: m.lid || sdk.sender,
             groupPhoto,
         })
-        return m.reply(renderSavedMessage('group.setConfig.savedBye', hasFoto, hasNoFoto, hasGroupFoto, hasNoGroupFoto))
+        return sdk.reply.text(renderSavedMessage(sdk.content, 'group.setConfig.savedBye', hasFoto, hasNoFoto, hasGroupFoto, hasNoGroupFoto))
     }
 
-    if (command === 'setpromote') {
-        await setGroupTextMessage(m.chat, 'promote', cleanText)
-        return m.reply(getRequiredPluginMessage('group.setConfig.savedPromote'))
+    if (sdk.command === 'setpromote') {
+        await setGroupTextMessage(sdk.chatId, 'promote', cleanText)
+        return sdk.reply.message('group.setConfig.savedPromote')
     }
 
-    if (command === 'setdemote') {
-        await setGroupTextMessage(m.chat, 'demote', cleanText)
-        return m.reply(getRequiredPluginMessage('group.setConfig.savedDemote'))
+    if (sdk.command === 'setdemote') {
+        await setGroupTextMessage(sdk.chatId, 'demote', cleanText)
+        return sdk.reply.message('group.setConfig.savedDemote')
     }
     }
 })
 
-function renderSavedMessage(templatePath: string, hasFoto: boolean, hasNoFoto: boolean, hasGroupFoto: boolean, hasNoGroupFoto: boolean): string {
-    return renderTemplate(getRequiredPluginMessage(templatePath), {
-        photo: hasFoto ? getRequiredPluginMessage('group.setConfig.withImage') : hasNoFoto ? getRequiredPluginMessage('group.setConfig.withoutImage') : '',
-        groupPhoto: hasGroupFoto ? getRequiredPluginMessage('group.setConfig.withGroupPhoto') : hasNoGroupFoto ? getRequiredPluginMessage('group.setConfig.withUserPhoto') : '',
+function renderSavedMessage(content: PluginContentSdk, templatePath: string, hasFoto: boolean, hasNoFoto: boolean, hasGroupFoto: boolean, hasNoGroupFoto: boolean): string {
+    return content.renderMessage(templatePath, {
+        photo: hasFoto ? content.message('group.setConfig.withImage') : hasNoFoto ? content.message('group.setConfig.withoutImage') : '',
+        groupPhoto: hasGroupFoto ? content.message('group.setConfig.withGroupPhoto') : hasNoGroupFoto ? content.message('group.setConfig.withUserPhoto') : '',
     })
 }
 

@@ -110,6 +110,7 @@ export const messages = pgTable('messages', {
     userId: text('user_id').notNull(),
     groupId: text('group_id').notNull(),
     messageCount: integer('message_count').default(0),
+    lastMessageAt: timestamp('last_message_at').defaultNow(),
 }, table => ({
     pk: primaryKey({columns: [table.userId, table.groupId]}),
 }));

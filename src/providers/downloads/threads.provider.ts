@@ -1,5 +1,5 @@
 import {httpJson} from '../../lib/http-client.js';
-import {runProviderCandidates, type ProviderCandidate, type ProviderResult} from '../provider.types.js';
+import {DEFAULT_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
 interface ThreadsAgatzResponse {
     data?: {
@@ -30,7 +30,7 @@ export function inferThreadsMediaType(url: string, fallbackType?: string): 'vide
 }
 
 export function buildThreadsDownloadProviders(postUrl: string): ProviderCandidate<ThreadsProviderMedia>[] {
-    return [
+    return withProviderPolicy([
         {
             name: 'agatz-threads',
             run: async () => {
@@ -51,7 +51,7 @@ export function buildThreadsDownloadProviders(postUrl: string): ProviderCandidat
                 return {url: media.url, type, fileName: type === 'image' ? 'threads_image.jpg' : 'threads_video.mp4'};
             },
         },
-    ];
+    ], {timeoutMs: DEFAULT_PROVIDER_TIMEOUT_MS, retries: 1});
 }
 
 export function downloadThreadsMedia(postUrl: string): Promise<ProviderResult<ThreadsProviderMedia>> {

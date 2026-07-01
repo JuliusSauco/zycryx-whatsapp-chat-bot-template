@@ -15,7 +15,7 @@ export default defineSdkPlugin({
         text: texto,
         contextInfo: {
             externalAdReply: {
-                title: info.wm,
+                title: sdk.branding.watermark,
                 body: "Video tutorial",
                 thumbnailUrl: m.pp,
                 mediaUrl: 'https://youtu.be/z2kHwbu8e8s?si=2z3Fur9U4ccN7EwA',

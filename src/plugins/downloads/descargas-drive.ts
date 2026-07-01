@@ -1,52 +1,52 @@
-import {definePlugin} from '../../core/define-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {logInfo} from '../../lib/logger.js';
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
-import {replyReportableError} from '../../lib/reply-helpers.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
+import {createExpiringMap} from '../../lib/ephemeral-state.js';
 import {downloadDriveFile} from '../../providers/downloads/drive.provider.js';
 import type {QuotedMessage} from '../../types/context.js';
+import {renderDownloadFailure} from './download-error.js';
 
-const userCaptions = new Map<string, QuotedMessage>();
+const userCaptions = createExpiringMap<QuotedMessage>({ttlMs: 10 * 60 * 1000});
 const userRequests = createUserRequestLocks();
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['drive'].map(v => v + ' <url>'),
     tags: ['downloader'],
     command: /^(drive|drivedl|dldrive|gdrive)$/i,
     register: true,
     limit: 3,
-    async execute(m, {conn, args, usedPrefix, command}) {
-        if (!args[0]) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.drive.missingUrl'), {
-            command: usedPrefix + command,
-        }));
+    async execute(m, {sdk}) {
+        if (!sdk.args[0]) return sdk.reply.message('downloads.drive.missingUrl', {
+            command: sdk.usedPrefix + sdk.command,
+        });
 
-        if (!userRequests.acquire(m.sender)) {
-            await conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('downloads.drive.locked'), {
-                user: m.sender.split('@')[0],
-            }), userCaptions.get(m.sender) || m);
+        if (!userRequests.acquire(sdk.sender)) {
+            await sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.drive.locked', {
+                user: sdk.sender.split('@')[0],
+            }), userCaptions.get(sdk.sender) || m);
             return;
         }
 
-        await m.react('📥');
+        await sdk.reply.react('📥');
         try {
-            const waitMessageSent = await conn.reply(m.chat, getRequiredPluginMessage('downloads.drive.progress'), m);
-            userCaptions.set(m.sender, waitMessageSent);
-            const fileResult = await downloadDriveFile(args[0]);
-            if (!fileResult.data) throw new Error('No se pudo descargar el archivo desde ninguna API');
+            const waitMessageSent = await sdk.reply.message('downloads.drive.progress');
+            userCaptions.set(sdk.sender, waitMessageSent);
+            const fileResult = await downloadDriveFile(sdk.args[0]);
+            if (!fileResult.data) return sdk.reply.text(renderDownloadFailure('drive', fileResult.failures));
 
-            await conn.sendMessage(m.chat, {
+            await sdk.sendMessage({
                 document: {url: fileResult.data.url},
                 mimetype: fileResult.data.mimetype,
                 fileName: fileResult.data.filename,
                 caption: undefined,
-            }, {quoted: m});
-            await m.react('✅');
+            });
+            await sdk.reply.react('✅');
         } catch (e: unknown) {
-            await m.react('❌');
-            await replyReportableError(m, e);
+            await sdk.reply.react('❌');
+            await sdk.reply.reportableError(e);
             logInfo(e);
         } finally {
-            userRequests.release(m.sender);
+            userRequests.release(sdk.sender);
         }
     },
 });

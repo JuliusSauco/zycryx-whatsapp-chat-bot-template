@@ -2,6 +2,14 @@
 
 Problemas comunes y como resolverlos. Fecha de referencia: 2026-06-10.
 
+Antes de cambios grandes o diagnosticos largos, ejecuta:
+
+```bash
+NODE_ENV=prod npm run ops:check
+```
+
+Si marca errores, corrige eso primero. Si solo marca advertencias, revisalas segun el incidente.
+
 ## Conexion y vinculacion
 
 ### No aparece el QR en la terminal
@@ -40,6 +48,7 @@ El detector integrado reinicia el proceso (exit 1) si hay mas de 50 en un minuto
 
 - Verifica `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` en el `.env.<NODE_ENV>` correcto (el bot solo carga el archivo que corresponde a `NODE_ENV`).
 - Si usas `DATABASE_URL`, tiene prioridad sobre los parametros individuales.
+- Ejecuta `NODE_ENV=prod npm run ops:check` para detectar variables faltantes antes de reiniciar.
 
 ### `relation "..." does not exist`
 
@@ -68,6 +77,8 @@ Las APIs publicas de descarga son inestables por naturaleza. Los providers (`src
 ### Stickers o conversiones fallan
 
 FFmpeg no esta instalado o no esta en el PATH. Verifica con `ffmpeg -version` en la misma terminal/usuario que corre el bot. Algunos flujos de stickers usan tambien ImageMagick (`convert`).
+
+Ejecuta `NODE_ENV=prod npm run ops:check` para ver exactamente que funcionalidades quedan afectadas por cada dependencia faltante. La matriz completa esta en `docs/operational-dependencies.md`.
 
 ### `speedtest` falla
 

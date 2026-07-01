@@ -27,7 +27,9 @@ interface ToggleItem {
 
 interface ToggleSection {
     key: ToggleSectionKey;
+    navKey?: string;
     title: string;
+    description: string;
     summary: (state: ToggleMenuState) => string;
     items: (state: ToggleMenuState) => ToggleItem[];
 }
@@ -69,6 +71,7 @@ export function getToggleSectionKey(rawType?: string): ToggleSectionKey | null {
         case 'inteligencia':
             return 'ia';
         case 'adulto':
+        case 'nsfw':
         case 'nsfwmenu':
         case 'horny':
             return 'adulto';
@@ -89,16 +92,17 @@ export function renderToggleMenu(state: ToggleMenuState, sectionKey?: ToggleSect
 function renderSummary(state: ToggleMenuState): string {
     const sectionLines = sections
         .filter(section => getVisibleItems(section, state).length > 0)
-        .map(section => `• *${section.title}:* ${section.summary(state)}\n  ${state.prefix}enable ${section.key}`);
+        .map(section => `${sectionIcon(section.key)} *${section.title}*\n${section.description}\n${state.prefix}config ${section.navKey || section.key}\nEstado: ${section.summary(state)}`);
     return [
-        '*『 CONFIGURACION ON/OFF 』*',
+        '*『 CONFIGURACION DEL BOT 』*',
         '',
-        '✅ activado | ❌ desactivado | ⚠️ no aplica',
+        '✅ activo | ❌ apagado | ⚠️ no aplica',
         '',
-        '*Secciones*',
-        sectionLines.length ? sectionLines.join('\n') : 'No tienes configuraciones disponibles.',
+        '*Secciones disponibles*',
+        sectionLines.length ? sectionLines.join('\n\n') : 'No tienes configuraciones disponibles.',
         '',
-        `Ejemplo: ${state.prefix}enable ia`,
+        `Ver detalle: ${state.prefix}config seguridad`,
+        `Cambiar algo: ${state.prefix}enable antilink`,
     ].join('\n').trim();
 }
 
@@ -110,10 +114,13 @@ function renderSection(state: ToggleMenuState, section: ToggleSection): string {
 
     return [
         `*『 ${section.title.toUpperCase()} 』*`,
+        section.description,
+        '',
+        'Usa enable/disable para cambiar opciones.',
         '',
         itemText || 'No tienes configuraciones disponibles en esta seccion.',
         '',
-        `${state.prefix}enable`,
+        `Volver: ${state.prefix}config`,
     ].join('\n').trim();
 }
 
@@ -197,10 +204,30 @@ function autoresponderTriggerLabel(trigger?: AutoresponderTrigger | null): strin
     return trigger === 'all' ? 'todos los mensajes' : 'mencion/gatillo';
 }
 
+function sectionIcon(key: ToggleSectionKey): string {
+    switch (key) {
+        case 'saludos':
+            return '👋';
+        case 'moderacion':
+            return '🛡️';
+        case 'acceso':
+            return '🔐';
+        case 'familias':
+            return '🗂️';
+        case 'ia':
+            return '🧠';
+        case 'adulto':
+            return '🔞';
+        case 'subbot':
+            return '✨';
+    }
+}
+
 const sections: ToggleSection[] = [
     {
         key: 'saludos',
         title: 'Saludos',
+        description: 'Bienvenida, despedida e hidetag.',
         summary: state => `welcome ${getStatus(state, 'welcome')} | bye ${getStatus(state, 'bye')}`,
         items: state => [
             {
@@ -231,15 +258,17 @@ const sections: ToggleSection[] = [
     },
     {
         key: 'moderacion',
-        title: 'Moderacion',
+        navKey: 'seguridad',
+        title: 'Seguridad',
+        description: 'Antilink, antifake, avisos, registros y solicitudes.',
         summary: state => `links ${getStatus(state, 'antilink')}/${getStatus(state, 'antilink2')} | seguridad ${getStatus(state, 'antifake')}`,
         items: state => [
-            {label: 'Detectar avisos', status: getStatus(state, 'detect'), minimumRole: 'admin', commands: [`${state.prefix}${state.command} detect`]},
-            {label: 'Antilink', status: getStatus(state, 'antilink'), minimumRole: 'admin', commands: [`${state.prefix}${state.command} antilink`]},
-            {label: 'Antilink2', status: getStatus(state, 'antilink2'), minimumRole: 'admin', commands: [`${state.prefix}${state.command} antilink2`]},
-            {label: 'Antifake', status: getStatus(state, 'antifake'), minimumRole: 'admin', commands: [`${state.prefix}${state.command} antifake`]},
-            {label: 'VirusTotal', status: getStatus(state, 'virusTotal'), minimumRole: 'admin', commands: [`${state.prefix}${state.command} virustotal`]},
-            {label: 'Registro mensajes', status: getStatus(state, 'messageLogging'), minimumRole: 'admin', commands: [`${state.prefix}${state.command} registromsg`]},
+            switchItem(state, 'Detectar avisos', 'detect', getStatus(state, 'detect')),
+            switchItem(state, 'Antilink', 'antilink', getStatus(state, 'antilink')),
+            switchItem(state, 'Antilink2', 'antilink2', getStatus(state, 'antilink2')),
+            switchItem(state, 'Antifake', 'antifake', getStatus(state, 'antifake')),
+            switchItem(state, 'VirusTotal', 'virustotal', getStatus(state, 'virusTotal')),
+            switchItem(state, 'Registro mensajes', 'registromsg', getStatus(state, 'messageLogging')),
             {
                 label: 'Autoaceptar',
                 status: state.isGroup ? autoAcceptModeLabel(state.group.autoAcceptMode) : state.notGroupIcon,
@@ -256,6 +285,7 @@ const sections: ToggleSection[] = [
     {
         key: 'acceso',
         title: 'Acceso del bot',
+        description: 'Define quienes pueden usar comandos del bot.',
         summary: state => state.isGroup ? accessModeLabel(state.group.botAccessMode, state.group.modoadmin) : state.notGroupIcon,
         items: state => [
             {
@@ -274,6 +304,7 @@ const sections: ToggleSection[] = [
     {
         key: 'ia',
         title: 'IA y autoresponder',
+        description: 'Autoresponder, trigger, prompt y memoria.',
         summary: state => `${getStatus(state, 'autoresponder')} | ${accessModeLabel(state.group.autoresponderMode)} | ${autoresponderTriggerLabel(state.group.autoresponderTrigger)}`,
         items: state => [
             {
@@ -311,7 +342,9 @@ const sections: ToggleSection[] = [
     },
     {
         key: 'familias',
-        title: 'Familias de comandos',
+        navKey: 'comandos',
+        title: 'Comandos',
+        description: 'Permisos por familia: juegos, descargas, RPG y mas.',
         summary: state => `juegos ${accessModeLabel(state.group.gamesAccessMode)} | descargas ${accessModeLabel(state.group.downloadsAccessMode)} | rpg ${accessModeLabel(state.group.rpgAccessMode)}`,
         items: state => [
             featureItem(state, 'Juegos', 'juegos', state.group.gamesAccessMode),
@@ -327,6 +360,7 @@ const sections: ToggleSection[] = [
     {
         key: 'adulto',
         title: 'Adulto',
+        description: 'NSFW, permisos adultos y horario.',
         summary: state => `NSFW ${getStatus(state, 'modohorny')} | ${accessModeLabel(state.group.nsfwAccessMode)}`,
         items: state => [
             {
@@ -347,13 +381,26 @@ const sections: ToggleSection[] = [
     {
         key: 'subbot',
         title: 'Subbot y owner',
+        description: 'Privado y llamadas del subbot.',
         summary: state => `privado ${getSubbotStatus(state, state.subbot?.anti_private)} | llamadas ${getSubbotStatus(state, state.subbot?.anti_call)}`,
         items: state => [
-            {label: 'Antiprivado', status: getSubbotStatus(state, state.subbot?.anti_private), minimumRole: 'owner', commands: [`${state.prefix}${state.command} antiprivate`]},
-            {label: 'Antillamadas', status: getSubbotStatus(state, state.subbot?.anti_call), minimumRole: 'owner', commands: [`${state.prefix}${state.command} anticall`]},
+            switchItem(state, 'Antiprivado', 'antiprivate', getSubbotStatus(state, state.subbot?.anti_private), 'owner'),
+            switchItem(state, 'Antillamadas', 'anticall', getSubbotStatus(state, state.subbot?.anti_call), 'owner'),
         ],
     },
 ];
+
+function switchItem(state: ToggleMenuState, label: string, command: string, status: string, minimumRole: TogglePermission = 'admin'): ToggleItem {
+    return {
+        label,
+        status,
+        minimumRole,
+        commands: [
+            `${state.prefix}enable ${command}`,
+            `${state.prefix}disable ${command}`,
+        ],
+    };
+}
 
 function featureItem(state: ToggleMenuState, label: string, command: string, mode?: AccessMode | null): ToggleItem {
     return {

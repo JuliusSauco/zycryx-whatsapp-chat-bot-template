@@ -1,62 +1,43 @@
 import {logError, logInfo} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js'
-import {definePlugin} from '../../core/define-plugin.js'
-import {httpJson} from '../../lib/http-client.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {pickRandom} from '../../utils/random.js'
+import {searchStickerlyPacks} from '../../providers/media-conversion/sticker.provider.js'
 
-interface StickerlyPack {
-    name: string;
-    author: string;
-    stickerCount: number;
-    viewCount: number;
-    exportCount: number;
-    url: string;
-    thumbnailUrl: string;
-}
-
-interface StickerlyResponse {
-    success?: boolean;
-    data?: StickerlyPack[];
-}
-
-export default definePlugin({
+export default defineSdkPlugin({
     command: ['stickerly'],
     help: ['stickerly <texto>'],
     tags: ['sticker'],
     register: true,
-    async execute(m, {text, conn, usedPrefix, command}) {
-    if (!text) return m.reply(renderTemplate(getRequiredPluginMessage('stickers.pack.usage'), {command: usedPrefix + command}))
+    async execute(m, {sdk}) {
+    if (!sdk.text) return sdk.reply.message('stickers.pack.usage', {command: sdk.usedPrefix + sdk.command})
 
     try {
-        const json = await httpJson<StickerlyResponse>(`https://api.dorratz.com/v3/stickerly?query=${encodeURIComponent(text)}`)
+        const packs = await searchStickerlyPacks(sdk.text, 30)
+        if (!packs.length) return sdk.reply.message('stickers.pack.notFound', {query: sdk.text})
 
-        if (!json.success || !json.data?.length) return m.reply(renderTemplate(getRequiredPluginMessage('stickers.pack.notFound'), {query: text}))
-
-        const packs = json.data.slice(0, 30)
-
-        const {packname, author} = await getStickerExif(m.sender)
+        const {packname, author} = await getStickerExif(sdk.sender)
         const total = packs.length
         const max = Math.min(total, 30)
 
-        m.reply(renderTemplate(getRequiredPluginMessage('stickers.pack.sending'), {
-            query: text,
+        await sdk.reply.message('stickers.pack.sending', {
+            query: sdk.text,
             count: String(max),
-        }))
+        })
 
         let enviados = 0
         for (const pack of packs) {
             try {
                 const stkr = await sticker(false, pack.thumbnailUrl, packname, author)
                 if (stkr) {
-                    await conn.sendFile(m.chat, stkr, 'sticker.webp', '', m, true, {
+                    await sdk.sendFile(stkr, 'sticker.webp', '', m, true, {
                         contextInfo: {
                             'forwardingScore': 200,
                             'isForwarded': false,
                             externalAdReply: {
                                 showAdAttribution: false,
-                                title: info.wm,
+                                title: sdk.branding.watermark,
                                 body: pack.name,
                                 mediaType: 2,
                                 sourceUrl: pickRandom([info.nna, info.nna2, info.md, info.yt]),
@@ -72,13 +53,11 @@ export default definePlugin({
             }
         }
 
-        if (enviados === 0) return m.reply(getRequiredPluginMessage('stickers.pack.noneSent'))
-        else return m.react("✅")
-        // m.reply(`✅ *${enviados} stickers enviados.*`)
-
+        if (enviados === 0) return sdk.reply.message('stickers.pack.noneSent')
+        else return sdk.reply.react("✅")
     } catch (e: unknown) {
         logError(e)
-        m.reply(getRequiredPluginMessage('stickers.pack.searchError'))
+        await sdk.reply.message('stickers.pack.searchError')
     }
     }
 })

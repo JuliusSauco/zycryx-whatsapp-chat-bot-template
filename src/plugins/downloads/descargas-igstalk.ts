@@ -1,73 +1,53 @@
 import {logInfo} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
-import fg from 'api-dylux'
-import {httpJson} from '../../lib/http-client.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {defineSdkPlugin, type PluginContentSdk} from '../../core/sdk-plugin.js'
+import {getInstagramStalkProfile, type InstagramStalkProfile} from '../../providers/downloads/instagram-stalk.provider.js';
 
-interface InstagramStalkResponse {
-    data?: {
-        username?: string
-        full_name?: string
-        biography?: string
-        verified?: boolean
-        private?: boolean
-        followers?: number
-        following?: number
-        posts?: number
-        url?: string
-        profile_picture?: string
-    }
-}
-
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['igstalk'],
     tags: ['downloader'],
     command: ['igstalk', 'igsearch', 'instagramsearch'],
     register: true,
     limit: 1,
-    async execute(m, {conn, args, usedPrefix, command}) {
-    if (!args[0]) return m.reply(renderTemplate(getRequiredPluginMessage('downloads.instagramStalk.missingUsername'), {
-        command: usedPrefix + command
-    }))
-    m.react("⌛");
+    async execute(m, {sdk}) {
+    if (!sdk.args[0]) return sdk.reply.message('downloads.instagramStalk.missingUsername', {
+        command: sdk.usedPrefix + sdk.command
+    })
+    await sdk.reply.react("⌛");
     try {
-        const apiUrl = `${info.apis}/tools/igstalk?username=${encodeURIComponent(args[0])}`;
-        const delius = await httpJson<InstagramStalkResponse>(apiUrl);
-        if (!delius || !delius.data) return m.react("❌");
-        const profile = delius.data;
-        const txt = renderTemplate(getRequiredPluginMessage('downloads.instagramStalk.profile'), {
+        const result = await getInstagramStalkProfile(sdk.args[0]);
+        if (!result.data) return sdk.reply.react("❌");
+        await sdk.sendFile(result.data.profilePicture, 'insta_profile.jpg', renderInstagramProfile(sdk.content, result.data));
+        await sdk.reply.react("✅");
+    } catch (e: unknown) {
+        await sdk.reply.react(`❌`)
+        await sdk.reply.message('downloads.instagramStalk.error', {error: String(e)})
+        logInfo(e)
+    }
+    }
+})
+
+function renderInstagramProfile(content: PluginContentSdk, profile: InstagramStalkProfile): string {
+    if (profile.source === 'main') {
+        return content.renderMessage('downloads.instagramStalk.profile', {
             username: profile.username,
-            fullName: profile.full_name,
+            fullName: profile.fullName,
             bio: profile.biography,
-            verified: profile.verified ? getRequiredPluginMessage('downloads.instagramStalk.yes') : getRequiredPluginMessage('downloads.instagramStalk.no'),
-            private: profile.private ? getRequiredPluginMessage('downloads.instagramStalk.yes') : getRequiredPluginMessage('downloads.instagramStalk.no'),
+            verified: profile.verified ? content.message('downloads.instagramStalk.yes') : content.message('downloads.instagramStalk.no'),
+            private: profile.private ? content.message('downloads.instagramStalk.yes') : content.message('downloads.instagramStalk.no'),
             followers: profile.followers,
             following: profile.following,
             posts: profile.posts,
             url: profile.url
         });
+    }
 
-        await conn.sendFile(m.chat, profile.profile_picture, 'insta_profile.jpg', txt, m);
-        m.react("✅");
-    } catch (e2) {
-        try {
-            let res = await fg.igStalk(args[0])
-            let te = renderTemplate(getRequiredPluginMessage('downloads.instagramStalk.fallbackProfile'), {
-                name: res.name,
-                username: res.username,
-                followers: res.followersH,
-                following: res.followingH,
-                bio: res.description,
-                posts: res.postsH,
-                usernameClean: res.username.replace(/^@/, '')
-            })
-            await conn.sendFile(m.chat, res.profilePic, 'igstalk.png', te, m)
-            m.react("⌛");
-        } catch (e: unknown) {
-            await m.react(`❌`)
-            m.reply(renderTemplate(getRequiredPluginMessage('downloads.instagramStalk.error'), {error: String(e)}))
-            logInfo(e)
-        }
-    }
-    }
-})
+    return content.renderMessage('downloads.instagramStalk.fallbackProfile', {
+        name: profile.name,
+        username: profile.username,
+        followers: profile.followers,
+        following: profile.following,
+        bio: profile.description,
+        posts: profile.posts,
+        usernameClean: profile.username.replace(/^@/, '')
+    });
+}

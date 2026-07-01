@@ -1,5 +1,5 @@
 import {httpJson} from '../../lib/http-client.js';
-import {runProviderCandidates, type ProviderCandidate, type ProviderResult} from '../provider.types.js';
+import {LONG_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
 interface SiputzDriveResponse {
     data?: {
@@ -20,7 +20,7 @@ export interface DriveProviderFile {
 }
 
 export function buildDriveDownloadProviders(fileUrl: string): ProviderCandidate<Omit<DriveProviderFile, 'mimetype'>>[] {
-    return [
+    return withProviderPolicy([
         {
             name: 'siputz-gdrive',
             run: async () => {
@@ -39,7 +39,7 @@ export function buildDriveDownloadProviders(fileUrl: string): ProviderCandidate<
                     : null;
             },
         },
-    ];
+    ], {timeoutMs: LONG_PROVIDER_TIMEOUT_MS, retries: 1});
 }
 
 export async function downloadDriveFile(fileUrl: string): Promise<ProviderResult<DriveProviderFile>> {

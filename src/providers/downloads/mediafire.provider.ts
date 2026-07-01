@@ -1,5 +1,5 @@
 import {httpJson} from '../../lib/http-client.js';
-import {runProviderCandidates, type ProviderCandidate, type ProviderResult} from '../provider.types.js';
+import {LONG_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
 interface MediafireArrayResponse {
     data?: Array<{
@@ -29,7 +29,7 @@ export interface MediafireProviderFile {
 }
 
 export function buildMediafireDownloadProviders(fileUrl: string): ProviderCandidate<MediafireProviderFile>[] {
-    return [
+    return withProviderPolicy([
         {
             name: 'delirius-mediafire',
             run: async () => {
@@ -64,7 +64,7 @@ export function buildMediafireDownloadProviders(fileUrl: string): ProviderCandid
                 return mapMediafireArrayItem(data.data?.[0], 'filename');
             },
         },
-    ];
+    ], {timeoutMs: LONG_PROVIDER_TIMEOUT_MS, retries: 1});
 }
 
 export function downloadMediafireFile(fileUrl: string): Promise<ProviderResult<MediafireProviderFile>> {

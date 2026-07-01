@@ -1,7 +1,7 @@
 import fg from 'api-dylux';
 import cheerio from 'cheerio';
 import {httpJson, httpText} from '../../lib/http-client.js';
-import {runProviderCandidates, type ProviderCandidate, type ProviderResult} from '../provider.types.js';
+import {DEFAULT_PROVIDER_TIMEOUT_MS, LONG_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
 interface TikTokMedia {
     type?: string;
@@ -36,9 +36,10 @@ export function isTikTokUrl(input: string): boolean {
 }
 
 export function buildTikTokDownloadProviders(videoUrl: string): ProviderCandidate<string>[] {
-    return [
+    return withProviderPolicy([
         {
             name: 'tikdown',
+            timeoutMs: LONG_PROVIDER_TIMEOUT_MS,
             run: async () => {
                 const media = await downloadWithTikdown(videoUrl);
                 return media.video;
@@ -66,7 +67,7 @@ export function buildTikTokDownloadProviders(videoUrl: string): ProviderCandidat
                 return data.nowm;
             },
         },
-    ];
+    ], {timeoutMs: DEFAULT_PROVIDER_TIMEOUT_MS, retries: 1});
 }
 
 export async function resolveTikTokDownloadUrl(videoUrl: string): Promise<ProviderResult<string>> {

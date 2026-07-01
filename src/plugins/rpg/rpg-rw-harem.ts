@@ -1,15 +1,14 @@
-import {definePlugin} from '../../core/define-plugin.js'
+import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 //Código elaborado por: https://github.com/elrebelde21
 
 import {listCharactersByOwner} from '../../services/character.service.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['harem @tag'],
     tags: ['gacha'],
     command: ['harem'],
     register: true,
-    async execute(m, {conn, args}) {
+    async execute(m, {conn, args, sdk}) {
 
     try {
         let targetUser = m.sender;
@@ -20,8 +19,8 @@ export default definePlugin({
         const userCharacters = await listCharactersByOwner(targetUser);
 
         if (userCharacters.length === 0) {
-            const targetUsername = targetUser === m.sender ? getRequiredPluginMessage('rpg.rw.haremSelf') : `@${targetUser.split('@')[0]}`;
-            return conn.reply(m.chat, renderTemplate(getRequiredPluginMessage('rpg.rw.haremEmpty'), {target: targetUsername}), m, {mentions: [targetUser]});
+            const targetUsername = targetUser === m.sender ? sdk.content.message('rpg.rw.haremSelf') : `@${targetUser.split('@')[0]}`;
+            return conn.reply(m.chat, sdk.content.renderMessage('rpg.rw.haremEmpty', {target: targetUsername}), m, {mentions: [targetUser]});
         }
 
         const itemsPerPage = 6;
@@ -35,21 +34,21 @@ export default definePlugin({
         const endIndex = startIndex + itemsPerPage;
         const currentPageCharacters = userCharacters.slice(startIndex, endIndex);
 
-        let message = renderTemplate(getRequiredPluginMessage('rpg.rw.haremHeader'), {
+        let message = sdk.content.renderMessage('rpg.rw.haremHeader', {
             user: targetUser.split('@')[0],
             count: userCharacters.length
         });
         currentPageCharacters.forEach((character, index) => {
-            message += renderTemplate(getRequiredPluginMessage('rpg.rw.haremLine'), {
+            message += sdk.content.renderMessage('rpg.rw.haremLine', {
                 position: index + 1,
                 name: character.name,
                 price: character.price.toLocaleString()
             });
         });
-        message += renderTemplate(getRequiredPluginMessage('rpg.rw.haremFooter'), {page, totalPages});
+        message += sdk.content.renderMessage('rpg.rw.haremFooter', {page, totalPages});
         return conn.reply(m.chat, message, m, {mentions: [targetUser]});
     } catch (e: unknown) {
-        return conn.reply(m.chat, getRequiredPluginMessage('rpg.rw.haremError'), m);
+        return sdk.reply.message('rpg.rw.haremError');
     }
     }
 })

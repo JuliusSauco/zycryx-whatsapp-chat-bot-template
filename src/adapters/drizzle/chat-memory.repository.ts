@@ -2,6 +2,7 @@ import {eq, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {chatMemory, groupSettings} from '../../db/schema.js';
 import type {ChatMemoryRepository} from '../../ports/repositories.js';
+import {mapChatMemoryRecord, mapExpirableChatMemory} from './chat-memory.mapper.js';
 
 export const chatMemoryRepository: ChatMemoryRepository = {
     async listExpirable() {
@@ -15,11 +16,7 @@ export const chatMemoryRepository: ChatMemoryRepository = {
             .innerJoin(groupSettings, eq(chatMemory.chatId, groupSettings.groupId))
             .where(sql`${groupSettings.memoryTtl} > 0`);
 
-        return rows.map(row => ({
-            chat_id: row.chat_id,
-            updated_at: row.updated_at ?? new Date(0),
-            memory_ttl: row.memory_ttl ?? 86400,
-        }));
+        return rows.map(mapExpirableChatMemory);
     },
 
     async findByChatId(chatId) {
@@ -32,7 +29,7 @@ export const chatMemoryRepository: ChatMemoryRepository = {
             .where(eq(chatMemory.chatId, chatId))
             .limit(1);
 
-        return row ?? null;
+        return row ? mapChatMemoryRecord(row) : null;
     },
 
     async upsert(chatId, history) {

@@ -16,11 +16,12 @@ import {getSubbotConfig, updateSubbotTipo} from '../services/subbot.service.js';
 import {clearPrimaryBot, getContextGroupSettings} from '../services/group-settings.service.js';
 import type {SubbotConfig} from '../types/config.js';
 import type {AccessMode, AutoresponderTrigger} from '../types/config.js';
-import type {ExtendedConn} from '../types/context.js';
+import type {BotBranding, ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
 import {cleanJid, isGroupJid, resolveSenderInfo} from '../utils/jid.js';
 import {FIXED_OWNERS, GROUP_META_CACHE_TTL} from '../utils/constants.js';
 import {isGroupCreator} from '../utils/group-creator.js';
+import {isMainConnection} from './runtime-state.js';
 
 // --- Cache de metadata de grupos ---
 const groupMetaCache = new Map<string, GroupMetadata>();
@@ -68,6 +69,7 @@ export interface HandlerContext {
     participants: GroupParticipant[];
     adminIds: string[];
     botConfig: SubbotConfig;
+    branding: BotBranding;
     botJid: string;
     modoAdminActivo: boolean;
     botAccessMode: AccessMode;
@@ -127,12 +129,13 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
         isGroup ? getContextGroupSettings(chatId) : Promise.resolve(EMPTY_GROUP_SETTINGS),
     ]);
 
-    // Aplicar nombre y logo del subbot
-    info.wm = botConfig.name ?? info.wm;
-    info.img2 = botConfig.logo_url ?? info.img2;
+    const branding: BotBranding = {
+        watermark: botConfig.name ?? info.wm,
+        logoUrl: botConfig.logo_url ?? info.img2,
+    };
 
     // Actualizar tipo de bot si cambió (fire-and-forget)
-    const isMainBot = conn === globalThis.conn;
+    const isMainBot = isMainConnection(conn);
     const botType = isMainBot ? "oficial" : "subbot";
     if (botConfig.tipo !== botType) {
         updateSubbotTipo(cleanJid(botId), botType);
@@ -181,6 +184,7 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
         participants,
         adminIds,
         botConfig,
+        branding,
         botJid,
         modoAdminActivo: groupSettings.modoadmin,
         botAccessMode: groupSettings.botAccessMode,

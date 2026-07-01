@@ -1,4 +1,4 @@
-import type {RewardTimestampField, UserWallet, WalletResource} from '../ports/repositories.js';
+import type {RewardTimestampField, UserWallet, WalletResource} from '../domain/users.js';
 import {repositories} from './data-source.js';
 
 export const WALLET_RESOURCES: WalletResource[] = ['limite', 'exp', 'money', 'banco'];

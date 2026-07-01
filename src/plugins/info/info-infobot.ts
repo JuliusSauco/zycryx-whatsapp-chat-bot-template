@@ -4,6 +4,7 @@ import {countUsers} from '../../services/user.service.js'
 import {sumCommandUsage} from '../../services/stats.service.js'
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {pickRandom} from '../../utils/random.js'
+import {getLoadedPlugins, getSubbotConnections} from '../../core/runtime-state.js'
 import os from 'os'
 import speed from 'performance-now'
 
@@ -39,7 +40,7 @@ export default defineSdkPlugin({
     register: true,
     async execute(_m, {sdk}) {
     const start = speed();
-    const subbotsCount = (global.conns || []).filter(sock => {
+    const subbotsCount = getSubbotConnections().filter(sock => {
         const id = sock?.userId || sock?.user?.id?.split('@')[0]
         const isAlive = sock?.userId && typeof sock?.uptime === 'number'
         const mainId = sdk.conn.user?.id?.split('@')[0]?.split(':')[0]
@@ -52,7 +53,7 @@ export default defineSdkPlugin({
     const gruposSalidos = totalGrupos - gruposUnidos;
     const privates = botChats.privateChats;
     const chatsTotales = totalGrupos + privates;
-    const totalPlugins = Object.values(global.plugins).filter((p) => p.help && p.tags).length;
+    const totalPlugins = Object.values(getLoadedPlugins()).filter((p) => p.help && p.tags).length;
     const latencia = speed() - start;
     const uptime = process.uptime() * 1000;
     const config = await getSubbotConfig(sdk.conn.user?.id || '');

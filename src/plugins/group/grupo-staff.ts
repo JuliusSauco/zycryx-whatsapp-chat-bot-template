@@ -1,38 +1,37 @@
 import {logError} from '../../lib/logger.js';
-import {definePlugin} from '../../core/define-plugin.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
+import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {getGroupParticipantRole} from '../../services/group-role.service.js'
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['staff'],
     tags: ['group'],
     command: ['staff', 'admins', 'listadmin'],
     group: true,
     register: true,
-    async execute(m, {conn, text, metadata}) {
+    async execute(m, {sdk}) {
     try {
-        const admins = metadata.participants.filter(p => p.admin)
-        if (!admins.length) return m.reply(getRequiredPluginMessage('group.staff.emptyAdmins'))
+        const admins = sdk.metadata.participants.filter(p => p.admin)
+        if (!admins.length) return sdk.reply.message('group.staff.emptyAdmins')
 
         const users = admins.map(p => p.phoneNumber || p.id)
         const total = users.length
-        await m.react("📣")
+        await sdk.reply.react("📣")
 
-        const roles = await Promise.all(admins.map(admin => getGroupParticipantRole(m.chat, admin)))
-        const adminList = users.map((u, index) => renderTemplate(getRequiredPluginMessage('group.staff.item'), {
+        const roles = await Promise.all(admins.map(admin => getGroupParticipantRole(sdk.chatId, admin)))
+        const adminList = users.map((u, index) => sdk.content.renderMessage('group.staff.item', {
             user: u.replace(/@s\.whatsapp\.net|@lid/g, "").replace(/[^0-9]/g, ""),
-            roleLine: roles[index]?.role ? renderTemplate(getRequiredPluginMessage('group.roles.roleLine'), {role: roles[index].role}) : '',
+            roleLine: roles[index]?.role ? sdk.content.renderMessage('group.roles.roleLine', {role: roles[index].role}) : '',
         })).join(" \n ")
-        const cleanText = (text || '').trim()
-        const mensaje = renderTemplate(getRequiredPluginMessage('group.staff.message'), {
-            message: cleanText || getRequiredPluginMessage('group.staff.defaultMessage'),
+        const cleanText = (sdk.text || '').trim()
+        const mensaje = sdk.content.renderMessage('group.staff.message', {
+            message: cleanText || sdk.content.message('group.staff.defaultMessage'),
             total,
             admins: adminList,
         })
 
-        await conn.sendMessage(m.chat, {
+        await sdk.sendMessage({
             text: mensaje,
             mentions: users
-        }, {quoted: m})
+        })
     } catch (e: unknown) {
         logError("❌ Error en /admins:", e)
     }

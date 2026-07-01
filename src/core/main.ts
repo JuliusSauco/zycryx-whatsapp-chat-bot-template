@@ -17,6 +17,12 @@ import {syncStartupGroupAdmins} from './startup-admin-sync.js';
 import {logDebug, logError, logInfo, logWarn} from '../lib/logger.js';
 import type {ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
+import {
+    getSubbotConnections,
+    hasSubbotConnection,
+    isRuntimeSessionActive,
+    setMainConnection,
+} from './runtime-state.js';
 
 type BotSocket = baileys.WASocket & {
     groupCache?: NodeCache;
@@ -37,7 +43,7 @@ const BOT_SESSION_FOLDER = "./BotSession";
 const BOT_CREDS_PATH = path.join(BOT_SESSION_FOLDER, "creds.json");
 if (!fs.existsSync(BOT_SESSION_FOLDER)) fs.mkdirSync(BOT_SESSION_FOLDER);
 
-if (!globalThis.conns || !(globalThis.conns instanceof Array)) globalThis.conns = [];
+getSubbotConnections();
 const reconectando = new Set();
 let usarCodigo = false;
 let numero = "";
@@ -135,7 +141,7 @@ async function cargarSubbots() {
         const sessionPath = path.join(folder, userId);
         const credsPath = path.join(sessionPath, "creds.json");
         if (!fs.existsSync(credsPath)) continue;
-        if (globalThis.conns?.some(conn => conn.userId === userId)) continue;
+        if (hasSubbotConnection(userId)) continue;
         if (reconectando.has(userId)) continue;
 
         try {
@@ -160,10 +166,6 @@ async function startBot() {
     const groupCache = new NodeCache({stdTTL: 3600, checkperiod: 300});
     const {version} = await baileys.fetchLatestBaileysVersion();
 
-    console.info = () => {
-    };
-    console.debug = () => {
-    };
     const sock = baileys.makeWASocket({
         logger: createPino({level: 'silent'}),
         browser: ['Windows', 'Chrome', ''] as [string, string, string],
@@ -185,7 +187,7 @@ async function startBot() {
 
     const botSock = sock as BotSocket;
     botSock.groupCache = groupCache;
-    globalThis.conn = sock;
+    setMainConnection(sock);
     setupGroupEvents(botSock);
     sock.ev.on("creds.update", saveCreds);
 
@@ -342,7 +344,7 @@ function startMaintenanceTasks(): void {
             for (const folder of subfolders) {
                 const sessionPath = path.join(basePath, folder);
                 if (!fs.statSync(sessionPath).isDirectory()) continue;
-                const isActive = globalThis.conns?.some(c => c.userId === folder || c.user?.id?.includes(folder));
+                const isActive = isRuntimeSessionActive(folder);
                 const files = fs.readdirSync(sessionPath);
 
                 // 🔧 limitar cantidad de pre-keys

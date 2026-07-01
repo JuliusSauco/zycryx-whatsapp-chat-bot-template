@@ -35,12 +35,30 @@
       "mediafire": {
         "missingUrl": "⚠️ 𝙄𝙣𝙜𝙧𝙚𝙨𝙚 𝙪𝙣 𝙀𝙣𝙡𝙖𝙘𝙚 𝙫𝙖𝙡𝙞𝙙𝙤 𝙙𝙚𝙡 𝙢𝙚𝙙𝙞𝙖𝙛𝙞𝙧𝙚 𝙀𝙟:*\n{command} https://www.mediafire.com/file/sd9hl31vhhzf76v/EvolutionV1.1-beta_%2528Recomendado%2529.apk/file",
         "locked": "⚠️ Hey @{user} pendejo, ya estás descargando algo 🙄\nEspera a que termine tu solicitud actual antes de hacer otra...",
+        "downloadFailed": "❌ No pude descargar el archivo de MediaFire.\n\n*Motivo:* {reason}",
+        "failureReason": {
+          "timeout": "los proveedores tardaron demasiado en responder.",
+          "rate_limit": "los proveedores limitaron temporalmente las solicitudes.",
+          "not_found": "el archivo no está disponible o fue eliminado.",
+          "invalid_response": "los proveedores respondieron sin un enlace válido.",
+          "network": "hubo un problema de conexión con los proveedores.",
+          "unsupported": "el enlace no es compatible."
+        },
         "caption": "┏━━『 𝐌𝐄𝐃𝐈𝐀𝐅𝐈𝐑𝐄 』━━•\n┃❥ 𝐍𝐨𝐦𝐛𝐫𝐞 : {filename}\n┃❥ 𝐏𝐞𝐬𝐨 : {filesize}\n┃❥ 𝐓𝐢𝐩𝐨 : {mimetype}\n╰━━━⊰ 𓃠 {version} ⊱━━━━•\n> ⏳ ᴱˢᵖᵉʳᵉ ᵘⁿ ᵐᵒᵐᵉⁿᵗᵒ ᵉⁿ ˡᵒˢ ᵠᵘᵉ ᵉⁿᵛᶦᵒˢ ˢᵘˢ ᵃʳᶜʰᶦᵛᵒˢ"
       },
       "play": {
         "missingQuery": "*🤔Que está buscando? 🤔*\n*Ingrese el nombre de la canción*\n\n*Ejemplo:*\n{command} emilia 420",
         "locked": "⏳ Hey @{user} espera pendejo, ya estás descargando algo 🙄\nEspera a que termine tu solicitud actual antes de hacer otra...",
         "noResults": "❌ No se encontraron resultados.",
+        "downloadFailed": "❌ No pude obtener el archivo.\n\n*Motivo:* {reason}",
+        "failureReason": {
+          "timeout": "los proveedores tardaron demasiado en responder.",
+          "rate_limit": "los proveedores limitaron temporalmente las solicitudes.",
+          "not_found": "el video no está disponible o fue eliminado.",
+          "invalid_response": "los proveedores respondieron sin un enlace válido.",
+          "network": "hubo un problema de conexión con los proveedores.",
+          "unsupported": "el enlace o formato no es compatible."
+        },
         "progress": "{title}\n*⇄ㅤ     ◁   ㅤ  ❚❚ㅤ     ▷ㅤ     ↻*\n\n*⏰ Duración:* {duration}\n*👉🏻Aguarde un momento en lo que envío su {downloadType}*",
         "adBody": "LoliBot",
         "videoCaption": "🔰 Aquí está tu video \n🔥 Título: {title}",
@@ -49,6 +67,15 @@
       "facebook": {
         "missingUrl": "⚠️ 𝙄𝙣𝙜𝙧𝙚𝙨𝙚 𝙪𝙣 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚 𝙁𝙖𝙘𝙚𝙗𝙤𝙤𝙠 𝙥𝙖𝙧𝙖 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙧 𝙚𝙡 𝙑𝙞𝙙𝙚𝙤\n• *𝙀𝙟 :* {command} https://www.facebook.com/share/r/1E1RojVvdJ/",
         "locked": "⚠️ Hey @{user} Calmao, ya estás bajando un video 🙄\nEspera a que termine tu descarga actual antes de pedir otra...",
+        "downloadFailed": "❌ No pude descargar el contenido de Facebook.\n\n*Motivo:* {reason}",
+        "failureReason": {
+          "timeout": "los proveedores tardaron demasiado en responder.",
+          "rate_limit": "los proveedores limitaron temporalmente las solicitudes.",
+          "not_found": "la publicación no está disponible o fue eliminada.",
+          "invalid_response": "los proveedores respondieron sin un enlace válido.",
+          "network": "hubo un problema de conexión con los proveedores.",
+          "unsupported": "el enlace no es compatible."
+        },
         "videoCaption": "✅ Aquí está tu video de Facebook",
         "imageCaption": "✅ Aquí está la imagen de Facebook",
         "videoCaptionBold": "✅ 𝐀𝐐𝐔𝐈 𝐄𝐒𝐓𝐀 𝐓𝐔 𝐕𝐈𝐃𝐄𝐎 𝐃𝐄 𝐅𝐀𝐂𝐄𝐁𝐎𝐎𝐊\n\n"
@@ -56,6 +83,15 @@
       "instagram": {
         "missingUrl": "⚠️ Ingresa el enlace del vídeo de Instagram junto al comando.\n\nEjemplo: *{command}* https://www.instagram.com/p/C60xXk3J-sb/?igsh=YzljYTk1ODg3Zg==",
         "locked": "Oye @{user}, calma, ya estás descargando algo 😒\nEspera a que termine tu solicitud actual antes de hacer otra...",
+        "downloadFailed": "❌ No pude descargar el contenido de Instagram.\n\n*Motivo:* {reason}",
+        "failureReason": {
+          "timeout": "los proveedores tardaron demasiado en responder.",
+          "rate_limit": "los proveedores limitaron temporalmente las solicitudes.",
+          "not_found": "la publicación no está disponible o fue eliminada.",
+          "invalid_response": "los proveedores respondieron sin un enlace válido.",
+          "network": "hubo un problema de conexión con los proveedores.",
+          "unsupported": "el enlace no es compatible."
+        },
         "imageCaption": "_*Aqui tiene tu imagen de Instagram*_",
         "videoCaption": "*Aqui esta el video de Instagram*"
       },
@@ -63,6 +99,15 @@
         "missingUrl": "⚠️ *Que tiktok buscar? 🤔*\n\n⚡ *Ingrese un enlace de tiktok para descarga el video*\n*Ej:* {command} https://vm.tiktok.com/ZM6T4X1RY/",
         "invalidUrl": "❌ Error",
         "locked": "Oye @{user}, calma bro, ya estás descargando algo 😒\n> Espera a que termine tu solicitud actual antes de hacer otra...",
+        "downloadFailed": "❌ No pude descargar ese TikTok.\n\n*Motivo:* {reason}",
+        "failureReason": {
+          "timeout": "los proveedores tardaron demasiado en responder.",
+          "rate_limit": "los proveedores limitaron temporalmente las solicitudes.",
+          "not_found": "el video no está disponible o fue eliminado.",
+          "invalid_response": "los proveedores respondieron sin un enlace válido.",
+          "network": "hubo un problema de conexión con los proveedores.",
+          "unsupported": "el enlace no es compatible."
+        },
         "downloading": "⌛ Descargando video de TikTok...",
         "caption": "*🔰 Aqui esta tu video de tiktok*",
         "completed": "✅ 𝘾𝙤𝙢𝙥𝙡𝙚𝙩𝙖𝙙𝙤\n▰▰▰▰▰▰▰▰▰"
@@ -71,6 +116,15 @@
         "missingQuery": "*🤔 ¿Que esta buscando? ingresa el nombre para descargar sus música de Spotify, Ejemplo:* {command} ozuna",
         "locked": "⚠️ Hey @{user} pendejo, ya estás descargando una canción 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆",
         "noResults": "⚠️ No se encontraron resultados para esa búsqueda.",
+        "downloadFailed": "❌ No pude descargar esa canción.\n\n*Motivo:* {reason}",
+        "failureReason": {
+          "timeout": "los proveedores tardaron demasiado en responder.",
+          "rate_limit": "los proveedores limitaron temporalmente las solicitudes.",
+          "not_found": "la canción no está disponible.",
+          "invalid_response": "los proveedores respondieron sin un enlace válido.",
+          "network": "hubo un problema de conexión con los proveedores.",
+          "unsupported": "el enlace o formato no es compatible."
+        },
         "trackMessage": "*• Título:* {title}\n*• Artista:* {artist}\n*• Álbum:* {album}\n*• Duración:* {duration}\n*• Publicado:* {publish}\n\n> 🚀 *ᴱⁿᵛᶦᵃⁿᵈᵒ ᶜᵃⁿᶜᶦᵒ́ⁿ ᵃᵍᵘᵃʳᵈᵉ ᵘⁿ ᵐᵒᵐᵉⁿᵗᵒ....*",
         "adBody": "ᴱⁿᵛᶦᵃⁿᵈᵒ ᶜᵃⁿᶜᶦᵒ́ⁿ ᵃᵍᵘᵃʳᵈᵉ ᵘⁿ ᵐᵒᵐᵉⁿᵗᵒ 🚀"
       },
@@ -83,6 +137,15 @@
       "drive": {
         "missingUrl": "⚠️ Ingrese una Url de Drive\n• Ejemplo: {command} https://drive.google.com/file/d/1-8BSwPSAycKYMqveGm_JTu2c_wIDkJIt/view?usp=drivesdk",
         "locked": "⏳ *Hey @{user} Espera...* Ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra...",
+        "downloadFailed": "❌ No pude descargar el archivo de Drive.\n\n*Motivo:* {reason}",
+        "failureReason": {
+          "timeout": "los proveedores tardaron demasiado en responder.",
+          "rate_limit": "los proveedores limitaron temporalmente las solicitudes.",
+          "not_found": "el archivo no está disponible o fue eliminado.",
+          "invalid_response": "los proveedores respondieron sin un enlace válido.",
+          "network": "hubo un problema de conexión con los proveedores.",
+          "unsupported": "el enlace no es compatible."
+        },
         "progress": "*⌛ 𝐂𝐚𝐥𝐦𝐚 ✋ 𝐂𝐥𝐚𝐜𝐤, 𝐘𝐚 𝐞𝐬𝐭𝐨𝐲 𝐄𝐧𝐯𝐢𝐚𝐝𝐨 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 🚀*\n*𝐒𝐢 𝐧𝐨 𝐥𝐞 𝐥𝐥𝐞𝐠𝐚 𝐞𝐥 𝐚𝐫𝐜𝐡𝐢𝐯𝐨 𝐞𝐬 𝐝𝐞𝐛𝐢𝐝𝐨 𝐚 𝐪𝐮𝐞 𝐞𝐬 𝐦𝐮𝐲 𝐩𝐞𝐬𝐚𝐝𝐨*"
       },
       "pinterest": {
@@ -93,6 +156,15 @@
         "authorStats": "*🔸️Autor:* {author}\n*🔸️ Seguidores:* {followers}",
         "authorHandle": "🔎 Autor: {name} (@{username})",
         "noResults": "❌ No se encontraron resultados para \"{query}\".",
+        "downloadFailed": "❌ No pude obtener resultados de Pinterest.\n\n*Motivo:* {reason}",
+        "failureReason": {
+          "timeout": "los proveedores tardaron demasiado en responder.",
+          "rate_limit": "los proveedores limitaron temporalmente las solicitudes.",
+          "not_found": "no encontré resultados disponibles.",
+          "invalid_response": "los proveedores respondieron sin imágenes válidas.",
+          "network": "hubo un problema de conexión con los proveedores.",
+          "unsupported": "la búsqueda no es compatible."
+        },
         "albumCaption": "✅ Resultados para: {query}"
       },
       "image": {
@@ -125,6 +197,15 @@
       "modApk": {
         "missingQuery": "⚠️ *𝙀𝙨𝙘𝙧𝙞𝙗𝙖 𝙚𝙡 𝙣𝙤𝙢𝙗𝙧𝙚 𝙙𝙚𝙡 𝘼𝙋𝙆*",
         "locked": "⚠️ Hey @{user} pendejo, ya estás descargando un APK 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆",
+        "downloadFailed": "❌ No pude descargar ese APK.\n\n*Motivo:* {reason}",
+        "failureReason": {
+          "timeout": "los proveedores tardaron demasiado en responder.",
+          "rate_limit": "los proveedores limitaron temporalmente las solicitudes.",
+          "not_found": "no encontré ese APK disponible.",
+          "invalid_response": "los proveedores respondieron sin un enlace válido.",
+          "network": "hubo un problema de conexión con los proveedores.",
+          "unsupported": "la búsqueda o formato no es compatible."
+        },
         "developerLine": "┃👤 𝘿𝙀𝙎𝘼𝙍𝙍𝙊𝙇𝙇𝙊: {developer}",
         "packageLine": "┃📦 𝙋𝘼𝘾𝙆𝘼𝙂𝙀: {package}",
         "response": "≪ＤＥＳＣＡＲＧＡＤＯ ＡＰＫＳ🚀≫\n\n┏━━━━━━━━━━━━━━━━━━━━━━• \n┃💫 𝙉𝙊𝙈𝘽𝙍𝙀: {name}\n{developerOrPackage}\n┃🕒 𝙐𝙇𝙏𝙄𝙈𝘼 𝘼𝘾𝙏𝙐𝘼𝙇𝙄𝙕𝘼𝘾𝙄𝙊𝙉: {updatedAt}\n┃💪 𝙋𝙀𝙎𝙊: {size}\n┗━━━━━━━━━━━━━━━━━━━━━━━•\n\n> *⏳ ᴱˢᵖᵉʳᵉ ᵘⁿ ᵐᵒᵐᵉⁿᵗᵒ ˢᵘˢ ᵃᵖᵏ ˢᵉ ᵉˢᵗᵃ ᵉⁿᵛᶦᵃⁿᵈᵒ...*",
@@ -134,6 +215,15 @@
         "missingUrl": "*⚠️ ¿Qué estás buscando? Ingresa el link de algún video de Threads!!*\n*• Ejemplo:*\n{command} https://www.threads.net/@adri_leclerc_/post/C_dSNIOOlpy?xmt=AQGzxbmyveDB91QgFo_KQWzqL6PT2yCy2eg8BkhPTO-6Kw",
         "locked": "⏳ Hey @{user} pendejo, ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra",
         "downloading": "⌛ Descargando contenido de Threads...",
+        "downloadFailed": "❌ No pude descargar el contenido de Threads.\n\n*Motivo:* {reason}",
+        "failureReason": {
+          "timeout": "los proveedores tardaron demasiado en responder.",
+          "rate_limit": "los proveedores limitaron temporalmente las solicitudes.",
+          "not_found": "la publicación no está disponible o fue eliminada.",
+          "invalid_response": "los proveedores respondieron sin un enlace válido.",
+          "network": "hubo un problema de conexión con los proveedores.",
+          "unsupported": "el enlace no es compatible."
+        },
         "imageCaption": "_*Aquí tienes la imagen de Threads*_",
         "videoCaption": "_*Aquí tienes el video de Threads*_",
         "completed": "✅ 𝘾𝙤𝙢𝙥𝙡𝙚𝙩𝙖𝙙𝙤\n▰▰▰▰▰▰▰▰▰",
@@ -142,6 +232,15 @@
       "appleMusic": {
         "missingUrl": "Ejemplo de uso: {command} https://music.apple.com/us/album/glimpse-of-us/1625328890?i=1625328892",
         "locked": "⚠️ Hey @{user} pendejo, ya estás descargando una canción 🙄\nEspera a que termine tu descarga actual antes de pedir otra. 👆",
+        "downloadFailed": "❌ No pude descargar esa canción de Apple Music.\n\n*Motivo:* {reason}",
+        "failureReason": {
+          "timeout": "los proveedores tardaron demasiado en responder.",
+          "rate_limit": "los proveedores limitaron temporalmente las solicitudes.",
+          "not_found": "la canción no está disponible.",
+          "invalid_response": "los proveedores respondieron sin un enlace válido.",
+          "network": "hubo un problema de conexión con los proveedores.",
+          "unsupported": "el enlace no es compatible."
+        },
         "trackMessage": "*• Titulo:* {title}\n*• Artistas:* {artists}\n*• Duración:* {duration}{urlLine}",
         "urlLine": "\n*• URL:* {url}",
         "error": "Ocurrió un error al intentar obtener el enlace de descarga."
@@ -149,6 +248,15 @@
       "play2": {
         "missingUrl": "*𝙌𝙪𝙚 𝙚𝙨𝙩𝙖 𝙗𝙪𝙨𝙘𝙖𝙙𝙤🤔 𝙄𝙣𝙜𝙧𝙚𝙨𝙚 𝙚𝙡 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚 𝙔𝙤𝙪𝙏𝙪𝙗𝙚 𝙥𝙖𝙧𝙖 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙧 𝙚𝙡 𝙖𝙪𝙙𝙞𝙤*",
         "locked": "⏳ *Espera...* Ya hay una solicitud en proceso. Por favor, espera a que termine antes de hacer otra.",
+        "downloadFailed": "❌ No pude descargar ese contenido.\n\n*Motivo:* {reason}",
+        "failureReason": {
+          "timeout": "los proveedores tardaron demasiado en responder.",
+          "rate_limit": "los proveedores limitaron temporalmente las solicitudes.",
+          "not_found": "el video no está disponible o fue eliminado.",
+          "invalid_response": "los proveedores respondieron sin un enlace válido.",
+          "network": "hubo un problema de conexión con los proveedores.",
+          "unsupported": "el enlace o formato no es compatible."
+        },
         "videoCaption": "🔰 Aquí está tu video \n🔥 Título: {title}",
         "videoCaptionCompact": "🔰 Aquí está tu video\n🔥 Título: {title}",
         "videoCaptionQuality": "🔰 Aquí está tu video \n🔥 Título: {title} ({quality}p)",
@@ -839,6 +947,14 @@
         "listHeader": "⚠️ REVISIÓN DE INACTIVOS ⚠️\n\nGrupo: {group}\n*Miembros del grupo:* {members}\n*Miembros inactivos (0-1 msg):* {inactive}\n\n[ 👻 LISTA DE FANTASMAS 👻 ]\n",
         "listItem": "  👉🏻 {tag} ({messages} msg)",
         "listFooter": "\n\n*Nota:* El bot cuenta mensajes desde que se activó en este grupo.",
+        "topInactive": {
+          "header": "⚠️ TOP DE INACTIVOS ⚠️\n\nGrupo: {group}\nPágina: {page}/{totalPages}\nInactivos: {inactive}\nSiguiente: {nextCommand}\n\n[ 👻 RANKING 👻 ]\n",
+          "item": "{position}. {identity} - {detail}",
+          "fullDetail": "{messages} msg - desde {date}",
+          "dateDetail": "desde {date}",
+          "emptyPage": "⚠️ Esa página no existe. Páginas disponibles: 1-{totalPages}.",
+          "footer": "\n\n*Nota:* El ranking usa la última actividad registrada por el bot."
+        },
         "kickHeader": "⚠️ ELIMINACIÓN DE INACTIVOS ⚠️\n\nGrupo: {group}\n*Miembros del grupo:* {members}\n*Miembros inactivos (0-1 msg):* {inactive}\n\n[ 👻 FANTASMAS A ELIMINAR 👻 ]\n",
         "kickFooter": "\n\n*El bot eliminará la lista mencionada, empezando en 20 segundos, con 10 segundos entre cada expulsión.*",
         "completed": "✅ Eliminación de fantasmas completada.",
@@ -1218,8 +1334,8 @@
           },
           {
             "emoji": "⚙️",
-            "command": "enable",
-            "description": "Configuración on/off por secciones, permisos y familias.",
+            "command": "config",
+            "description": "Ajustes del grupo: seguridad, accesos, IA y funciones.",
             "restricted": "según permisos"
           },
           {

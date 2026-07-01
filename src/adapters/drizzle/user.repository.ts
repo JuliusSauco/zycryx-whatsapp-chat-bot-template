@@ -4,11 +4,12 @@ import {usuarios} from '../../db/schema.js';
 import type {UserRepository} from '../../ports/repositories.js';
 
 import {walletUserRepositoryMethods} from './user-wallet.repository.js';
+import {mapUserRecord} from './user.mapper.js';
 
 export const userRepository: UserRepository = {
     async findById(userId) {
         const [row] = await orm.select().from(usuarios).where(eq(usuarios.id, userId)).limit(1);
-        return row ?? null;
+        return row ? mapUserRecord(row) : null;
     },
 
     async findNameById(userId) {

@@ -1,7 +1,7 @@
 import {getPrivateWarn, setPrivateWarn} from '../../services/user.service.js'
 import type {BeforePluginContext} from '../../types/context.js'
 import type {BotMessage} from '../../types/message.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js'
+import {content} from '../../services/content.service.js'
 import {pickRandom} from '../../utils/random.js'
 
 const comandosPermitidos = ['code', 'serbot', 'jadibot', 'bots', 'piedra', 'tijera', 'papel']
@@ -11,7 +11,7 @@ function pickOfficialGroupLink(): string {
 }
 
 function privateBlockedMessage(): string {
-    return renderTemplate(getRequiredPluginMessage('hooks.antiPrivate.blocked'), {
+    return content.renderMessage('hooks.antiPrivate.blocked', {
         groupLink: pickOfficialGroupLink()
     })
 }

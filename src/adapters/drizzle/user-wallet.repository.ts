@@ -2,6 +2,7 @@ import {eq, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {usuarios} from '../../db/schema.js';
 import type {RewardTimestampField, UserRepository, WalletResource} from '../../ports/repositories.js';
+import {mapUserResources, mapUserWallet} from './user.mapper.js';
 
 function walletColumn(resource: WalletResource) {
     const columns = {
@@ -70,29 +71,7 @@ export const walletUserRepositoryMethods: Pick<UserRepository, 'findWallet' | 'l
             .where(eq(usuarios.id, userId))
             .limit(1);
 
-        return row
-            ? {
-                id: row.id,
-                nombre: row.nombre,
-                limite: row.limite ?? 0,
-                exp: row.exp ?? 0,
-                money: row.money ?? 0,
-                banco: row.banco ?? 0,
-                level: row.level ?? 0,
-                role: row.role ?? 'novato',
-                wait: row.wait ?? 0,
-                lastclaim: row.lastclaim ?? 0,
-                dailystreak: row.dailystreak ?? 0,
-                lastcofre: row.lastcofre ?? 0,
-                lastmiming: row.lastmiming ?? 0,
-                lastwork: row.lastwork ?? 0,
-                crime: row.crime ?? 0,
-                lastrob: row.lastrob ?? 0,
-                lastslut: row.lastslut ?? 0,
-                timevot: row.timevot ?? 0,
-                ryTime: row.ryTime ?? 0,
-            }
-            : null;
+        return row ? mapUserWallet(row) : null;
     },
 
     async listWallets() {
@@ -120,27 +99,7 @@ export const walletUserRepositoryMethods: Pick<UserRepository, 'findWallet' | 'l
             })
             .from(usuarios);
 
-        return rows.map(row => ({
-            id: row.id,
-            nombre: row.nombre,
-            limite: row.limite ?? 0,
-            exp: row.exp ?? 0,
-            money: row.money ?? 0,
-            banco: row.banco ?? 0,
-            level: row.level ?? 0,
-            role: row.role ?? 'novato',
-            wait: row.wait ?? 0,
-            lastclaim: row.lastclaim ?? 0,
-            dailystreak: row.dailystreak ?? 0,
-            lastcofre: row.lastcofre ?? 0,
-            lastmiming: row.lastmiming ?? 0,
-            lastwork: row.lastwork ?? 0,
-            crime: row.crime ?? 0,
-            lastrob: row.lastrob ?? 0,
-            lastslut: row.lastslut ?? 0,
-            timevot: row.timevot ?? 0,
-            ryTime: row.ryTime ?? 0,
-        }));
+        return rows.map(mapUserWallet);
     },
 
     async getResources(userId) {
@@ -154,11 +113,7 @@ export const walletUserRepositoryMethods: Pick<UserRepository, 'findWallet' | 'l
             .where(eq(usuarios.id, userId))
             .limit(1);
 
-        return {
-            limite: row?.limite ?? 0,
-            money: row?.money ?? 0,
-            level: row?.level ?? 0,
-        };
+        return mapUserResources(row);
     },
 
     async addWalletResource(userId, resource, amount) {

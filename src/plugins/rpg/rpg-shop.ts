@@ -1,17 +1,16 @@
-import {definePlugin} from '../../core/define-plugin.js'
-import {getRequiredPluginMessage, renderTemplate} from '../../lib/message-template.js';
+import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import {exchangeWalletResources, getWallet} from '../../services/wallet.service.js';
 
 const xpperlimit = 750;
 
-export default definePlugin({
+export default defineSdkPlugin({
     help: ['buy [cantidad]', 'buyall', 'buy all'],
     tags: ['econ'],
     command: /^buy(all)?$/i,
     register: true,
-    async execute(m, {command, args}) {
+    async execute(m, {command, args, sdk}) {
     let user = await getWallet(m.sender);
-    if (!user) return m.reply(getRequiredPluginMessage('rpg.shared.missingUser'));
+    if (!user) return sdk.reply.message('rpg.shared.missingUser');
     let count = 1;
 
     if (/all/i.test(command) || (args[0] && /all/i.test(args[0]))) {
@@ -22,13 +21,13 @@ export default definePlugin({
 
     count = Math.max(1, count);
     const totalCost = xpperlimit * count;
-    if (user.exp < totalCost) return m.reply(renderTemplate(getRequiredPluginMessage('rpg.shop.notEnoughExp'), {count}));
+    if (user.exp < totalCost) return sdk.reply.message('rpg.shop.notEnoughExp', {count});
     await exchangeWalletResources({userId: m.sender, from: 'exp', to: 'limite', fromAmount: totalCost, toAmount: count});
-    await m.reply(renderTemplate(getRequiredPluginMessage('rpg.shop.receipt'), {
+    await sdk.reply.message('rpg.shop.receipt', {
         count,
         cost: totalCost
-    }));
+    });
     }
-});
+});
 
 ;
