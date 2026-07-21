@@ -33,6 +33,8 @@ const ADULTO: GifEntry[] = [
     {emoji: '🐶', cmd: 'doggystyle', desc: 'Sexo de a perrito'},
     {emoji: '🍑', cmd: 'cogeranal', desc: 'Sexo anal'},
     {emoji: '🤤', cmd: 'oral', desc: 'Sexo oral'},
+    {emoji: '🫴', cmd: 'dedeo', desc: 'Dedea a alguien (solo NSFW)'},
+    {emoji: '💦', cmd: 'venirse', desc: 'Venirse sobre alguien (solo NSFW)'},
     {emoji: '👯', cmd: 'trio', desc: 'Trío'},
     {emoji: '🥂', cmd: 'orgia', desc: 'Remitente + 3 personas (solo NSFW)'},
     {emoji: '👩‍❤️‍👩', cmd: 'lesbian', desc: 'Sexo lésbico'},
@@ -57,8 +59,8 @@ export default defineSdkPlugin({
     const adultHint = nsfwEnabled
         ? '> Modo horny activo para ti: estos comandos usan los GIFs explícitos de `nsfw`.'
         : nsfwSettings.modohorny
-            ? `> Modo horny activo para: ${accessModeLabel(nsfwSettings.nsfwAccessMode)}. Para ti usa los GIFs normales; *orgia* requiere acceso NSFW.`
-            : '> Modo horny apagado: estos comandos usan los GIFs normales; *orgia* requiere activar NSFW.';
+            ? `> Modo horny activo para: ${accessModeLabel(nsfwSettings.nsfwAccessMode)}. Para ti usa los GIFs normales; *orgia*, *dedeo* y *venirse* requieren acceso NSFW.`
+            : '> Modo horny apagado: estos comandos usan los GIFs normales; *orgia*, *dedeo* y *venirse* requieren activar NSFW.';
 
     const str = `\`Hola ${taguser} 💖彡\`
 

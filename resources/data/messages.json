@@ -1441,6 +1441,14 @@
       "gifOrgia": {
         "notEnoughPeople": "🥀🍷 *Muy poca gente para la orgía, llamen a sus hermanas* 😏📣",
         "caption": "🥂🔥 *{sender}* reunió a *{targets}* para una noche de orgía inolvidable, salvaje, todos contra todos y sin reglas, solo disfrutar de nuestros instintos mas bajos y agresivos, metele el pene y tu liquido de vida a las mujeres que siempre quisiste coger. Dejate coger por los hombres que te pone la punta de las tetas duras, al mismo tiempo todos dentro de ti, entregale tu hueco bien mojado 😈🍷💋"
+      },
+      "gifDedeo": {
+        "missingTarget": "🫴😏 Etiqueta a otra persona o responde a su mensaje para usar *dedeo*.",
+        "caption": "🫴💦🔥 *{sender}* está dedeando con pasión, lujuria y mucha fuerza a *{target}* 😈🥵💋"
+      },
+      "gifVenirse": {
+        "missingTarget": "💦😏 Etiqueta a otra persona o responde a su mensaje para usar *venirse*.",
+        "caption": "💦🔥 *{sender}* ¡NO SE AGUANTA MÁS! Se está viniendo con mucha intensidad en *{target}* 😈🥵💥"
       }
     },
     "random": {
