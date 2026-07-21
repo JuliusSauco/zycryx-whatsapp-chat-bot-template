@@ -5,34 +5,16 @@ import {canUseAccessMode} from '../utils/access-mode.js';
 
 import type {ConfigurableFeatureKey} from '../domain/groups.js';
 
-const FEATURE_TAGS: Record<ConfigurableFeatureKey, string[]> = {
-    games: ['game'],
-    tools: ['tools'],
-    rpg: ['econ', 'gacha', 'rg', 'rpg', 'hot'],
-    downloads: ['downloader'],
-    search: ['buscadores'],
-    stickers: ['sticker'],
-    converters: ['convertidor'],
-    fun: ['fun', 'randow'],
-};
-
 export const featureAccessGuard: Guard = async ({ctx, plugin}) => {
     if (!ctx.isGroup) return null;
 
-    const feature = getPluginFeature(plugin.tags || []);
-    if (!feature) return null;
+    const feature = plugin.feature;
+    if (!feature || feature === 'nsfw') return null;
 
     const mode = getFeatureMode(ctx.groupSettings, feature);
     if (canUseAccessMode(mode, ctx)) return null;
     return SILENT_REJECT;
 };
-
-function getPluginFeature(tags: string[]): ConfigurableFeatureKey | null {
-    for (const [feature, featureTags] of Object.entries(FEATURE_TAGS) as Array<[ConfigurableFeatureKey, string[]]>) {
-        if (tags.some(tag => featureTags.includes(tag))) return feature;
-    }
-    return null;
-}
 
 function getFeatureMode(settings: {
     gamesAccessMode?: AccessMode;

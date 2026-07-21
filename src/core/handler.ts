@@ -20,6 +20,16 @@ import {
 } from '../services/chat.service.js';
 import {upsertUser as upsertUserService} from '../services/user.service.js';
 import {incrementCommandUsage} from '../services/stats.service.js';
+import {
+    commandResourceChargeMessage,
+    commandResourceDecisionMessage,
+    commitCommandResources,
+    releaseCommandResources,
+    reserveCommandResources,
+} from '../services/resource.service.js';
+import type {CommandResourceReservation} from '../domain/command-resources.js';
+import {executePluginWithTimeout, PluginTimeoutError} from './plugin-execution.js';
+import {runPluginInterceptors} from './plugin-interceptors.js';
 import type {ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
 import type {HandlerContext} from './context-builder.js';
@@ -70,7 +80,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     if (await antifakeCheck(conn, m, ctx)) return;
 
     // 7. Upsert user data (fire-and-forget — m.sender/m.lid ya resueltos en buildContext)
-    enqueueBackgroundTask('upsert-user', () => upsertUser(m));
+    enqueueBackgroundTask('upsert-user', () => upsertUser(m), {key: `upsert-user:${ctx.sender}`, maxRetries: 1});
 
     // 8. Parse message (antes de before hooks para que m.originalText y m.text estén disponibles)
     const prefixes = Array.isArray(ctx.botConfig.prefix) ? ctx.botConfig.prefix : [ctx.botConfig.prefix];
@@ -83,35 +93,32 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     const isPrefixedCommand = !!parsed.usedPrefix && !!parsed.command;
     const beforePlugins = router.getBeforePluginsFor(isPrefixedCommand);
     const hookGroupSettings = ctx.isGroup ? ctx.groupSettings : {};
-    for (const plugin of beforePlugins) {
-        const hookStart = performance.now();
-        let result: boolean | void | unknown;
-        try {
-            result = await plugin.before!(m, {
-                conn,
-                isOwner: ctx.isOwner,
-                isAdmin: ctx.isAdmin,
-                isBotAdmin: ctx.isBotAdmin,
-                isGroup: ctx.isGroup,
-                chatId: ctx.chatId,
-                sender: ctx.sender,
-                participants: ctx.participants,
-                metadata: ctx.metadata,
-                botConfig: ctx.botConfig,
-                branding: ctx.branding,
-                groupSettings: hookGroupSettings,
-            });
-        } catch (e: unknown) {
-            logError(chalk.red(e));
-        } finally {
-            addPerfDetail(perfDetails, `before:${getPluginLogName(plugin)}`, hookStart);
-        }
-
-        if (result === false) {
-            markPerf(marks, 'before', perfStart);
-            logPerfIfSlow(marks, perfStart, parsed.command || 'before-abort', chatId, perfDetails);
-            return;
-        }
+    const interceptorContext = {
+        conn,
+        isOwner: ctx.isOwner,
+        isAdmin: ctx.isAdmin,
+        isBotAdmin: ctx.isBotAdmin,
+        isGroup: ctx.isGroup,
+        chatId: ctx.chatId,
+        sender: ctx.sender,
+        participants: ctx.participants,
+        metadata: ctx.metadata,
+        botConfig: ctx.botConfig,
+        branding: ctx.branding,
+        groupSettings: hookGroupSettings,
+    };
+    const interceptorResult = await runPluginInterceptors({
+        plugins: beforePlugins,
+        message: m,
+        isCommand: isPrefixedCommand,
+        context: interceptorContext,
+        onDuration: (label, start) => addPerfDetail(perfDetails, label, start),
+    });
+    if (interceptorResult.rejectionMessage) await m.reply(interceptorResult.rejectionMessage);
+    if (interceptorResult.handled) {
+        markPerf(marks, 'before', perfStart);
+        logPerfIfSlow(marks, perfStart, parsed.command || 'interceptor-abort', chatId, perfDetails);
+        return;
     }
     markPerf(marks, 'before', perfStart);
 
@@ -146,10 +153,29 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
 
     // 12. Execute plugin
     const pluginStart = performance.now();
+    let resourceReservation: CommandResourceReservation | null = null;
     try {
         const pluginGroupSettings = ctx.isGroup && plugin.needsFullGroupSettings
             ? await getEventGroupSettings(ctx.chatId)
             : hookGroupSettings;
+
+        const pluginId = plugin.manifest?.id ?? getPluginLogName(plugin);
+        const correlationId = m.key.id || `${ctx.chatId}:${Date.now()}`;
+        const resourceDecision = await reserveCommandResources({
+            sender: ctx.sender,
+            plugin,
+            pluginId,
+            messageId: m.key.id || `${ctx.chatId}:${parsed.command}`,
+        });
+        const resourceError = commandResourceDecisionMessage(resourceDecision);
+        if (resourceError) {
+            await m.reply(resourceError);
+            return;
+        }
+        if (resourceDecision.kind === 'reserved') {
+            if (resourceDecision.duplicate) return;
+            resourceReservation = resourceDecision.reservation;
+        }
 
         logCommand({
             conn,
@@ -157,28 +183,52 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
             chatId: ctx.chatId,
             isGroup: ctx.isGroup,
             command: parsed.command,
+            pluginId,
+            correlationId,
             timestamp: new Date()
         });
 
-        await plugin(m, {
-            conn,
-            text: parsed.text,
-            args: parsed.args,
-            usedPrefix: parsed.usedPrefix,
-            command: parsed.command,
-            participants: ctx.participants,
-            metadata: ctx.metadata,
-            isOwner: ctx.isOwner,
-            isROwner: ctx.isROwner,
-            isAdmin: ctx.isAdmin,
-            isGroupCreator: ctx.isGroupCreator,
-            isBotAdmin: ctx.isBotAdmin,
-            isGroup: ctx.isGroup,
-            botConfig: ctx.botConfig,
-            branding: ctx.branding,
-            chatId: ctx.chatId,
-            sender: ctx.sender,
-            groupSettings: pluginGroupSettings,
+        const controller = new AbortController();
+        await executePluginWithTimeout({
+            plugin,
+            pluginId,
+            controller,
+            execute: () => plugin(m, {
+                conn,
+                text: parsed.text,
+                args: parsed.args,
+                usedPrefix: parsed.usedPrefix,
+                command: parsed.command,
+                participants: ctx.participants,
+                metadata: ctx.metadata,
+                isOwner: ctx.isOwner,
+                isROwner: ctx.isROwner,
+                isAdmin: ctx.isAdmin,
+                isGroupCreator: ctx.isGroupCreator,
+                isBotAdmin: ctx.isBotAdmin,
+                isGroup: ctx.isGroup,
+                botConfig: ctx.botConfig,
+                branding: ctx.branding,
+                chatId: ctx.chatId,
+                sender: ctx.sender,
+                groupSettings: pluginGroupSettings,
+                pluginId,
+                correlationId,
+                signal: controller.signal,
+            }),
+        });
+        if (resourceReservation) {
+            await commitCommandResources(resourceReservation);
+            const chargeMessage = commandResourceChargeMessage(resourceReservation);
+            if (chargeMessage) await m.reply(chargeMessage);
+        }
+        await runPluginInterceptors({
+            plugins: router.getBeforePlugins(),
+            message: m,
+            isCommand: true,
+            context: interceptorContext,
+            phases: ['post'],
+            onDuration: (label, start) => addPerfDetail(perfDetails, label, start),
         });
         addPerfDetail(perfDetails, `plugin:${getPluginLogName(plugin)}`, pluginStart);
 
@@ -187,6 +237,13 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
         logPerfIfSlow(marks, perfStart, parsed.command, chatId, perfDetails);
 
     } catch (e: unknown) {
+        if (resourceReservation) {
+            try {
+                await releaseCommandResources(resourceReservation, e instanceof PluginTimeoutError ? 'timeout' : 'execution_error');
+            } catch (releaseError: unknown) {
+                logError('No se pudo liberar la reserva del comando:', releaseError);
+            }
+        }
         addPerfDetail(perfDetails, `plugin:${getPluginLogName(plugin)}`, pluginStart);
         markPerf(marks, 'plugin', perfStart);
         logPerfIfSlow(marks, perfStart, parsed.command, chatId, perfDetails);
@@ -209,7 +266,7 @@ function upsertChat(chatId: string, conn: ExtendedConn): void {
         isGroup: chatId.endsWith('@g.us'),
         timestamp: Date.now(),
         botId: jidToPhone(cleanJid(conn.user?.id || '')),
-    }));
+    }), {key: `upsert-active-chat:${chatId}`, maxRetries: 1});
 }
 
 async function antifakeCheck(conn: ExtendedConn, m: BotMessage, ctx: Pick<HandlerContext, 'chatId' | 'isGroup' | 'isAdmin' | 'isBotAdmin' | 'botJid' | 'groupSettings'>): Promise<boolean> {

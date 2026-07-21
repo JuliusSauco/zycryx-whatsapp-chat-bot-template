@@ -1,5 +1,6 @@
 import type {AppRepositories} from '../../ports/repositories.js';
 import {audioResponseRepository} from './audio-response.repository.js';
+import {commandResourceRepository} from './command-resource.repository.js';
 import {apiTokenRepository} from './api-token.repository.js';
 import {charactersRepository} from './character.repository.js';
 import {chatMemoryRepository} from './chat-memory.repository.js';
@@ -17,6 +18,7 @@ import {userGroupRoleRepository} from './user-group-role.repository.js';
 export function createDrizzleRepositories(): AppRepositories {
     return {
         users: userRepository,
+        commandResources: commandResourceRepository,
         userGroupRoles: userGroupRoleRepository,
         chats: chatsRepository,
         messages: messagesRepository,

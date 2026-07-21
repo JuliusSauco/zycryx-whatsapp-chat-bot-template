@@ -10,7 +10,8 @@ import NodeCache from 'node-cache';
 import {startSubBot} from "../lib/subbot.js";
 import "./config.js";
 import {callUpdate, groupJoinRequest, groupsUpdate, handler, messageUpdate, participantsUpdate} from "./handler.js";
-import {loadPlugins} from '../lib/plugins.js';
+import {loadPlugins, stopPluginWatchers} from '../lib/plugins.js';
+import {drainBackgroundTasks} from '../lib/background-task-queue.js';
 import {isOtherBotKey} from '../utils/message-filter.js';
 import {startScheduledTasks} from './scheduled-tasks.js';
 import {syncStartupGroupAdmins} from './startup-admin-sync.js';
@@ -62,7 +63,7 @@ console.error = (...args) => {
         spamCount++;
         if (spamCount > 50) {
             logWarn("⚠️ Detectado loop de sesiones, reiniciando bot...");
-            process.exit(1);
+            void shutdown(1);
         }
     }
     origError(...args);
@@ -80,6 +81,8 @@ const SESSION_TERMINAL_CODES: number[] = [
 // de módulo. Antes vivían dentro de startBot() y se duplicaban en cada reconexión.
 process.on('uncaughtException', logError);
 process.on('unhandledRejection', logError);
+process.once('SIGINT', () => void shutdown(0));
+process.once('SIGTERM', () => void shutdown(0));
 startMaintenanceTasks();
 
 main();
@@ -330,7 +333,7 @@ function startMaintenanceTasks(): void {
     // Reinicio periódico de higiene de memoria; requiere process manager (PM2/systemd).
     setInterval(() => {
         logWarn('♻️ Reiniciando bot automáticamente...');
-        process.exit(0);
+        void shutdown(0);
     }, 10800000) //3hs
 
     // Limpieza de sesiones: recorte de pre-keys y archivos viejos en BotSession/jadibot.
@@ -379,6 +382,17 @@ function startMaintenanceTasks(): void {
         }
         logDebug(chalk.bold.cyanBright(`\n╭» 🟠 ARCHIVOS 🟠\n│→ Sesiones y pre-keys viejas limpiadas\n╰―――――――――――――――――――――――――――――― 🗑️♻️`));
     }, 10 * 60 * 1000); // cada 10 minutos
+}
+
+let shuttingDown = false;
+
+async function shutdown(exitCode: number): Promise<void> {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    stopPluginWatchers();
+    const drained = await drainBackgroundTasks(10_000);
+    if (!drained) logWarn('⚠️ Cierre con tareas background pendientes tras 10 segundos.');
+    process.exit(exitCode);
 }
 
 function enqueueMessage(sock: baileys.WASocket, msg: baileys.WAMessage): void {

@@ -16,13 +16,14 @@
  */
 import type {BeforePluginContext, PluginContext} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
-import type {Plugin} from '../types/plugin.js';
+import type {ExecutionPolicy, Plugin, PluginFeature, PluginInterceptor} from '../types/plugin.js';
 
 export interface PluginDefinition {
     /** Comando(s) que activan el plugin. */
     command?: string | string[] | RegExp;
     /** Prefijo custom (para comandos como `=> code`). */
     customPrefix?: RegExp | ((input: string) => boolean);
+    customPrefixPriority?: number;
     /** Textos de ayuda mostrados en el menú. */
     help?: string[];
     /** Categorías/tags para el menú. */
@@ -47,6 +48,9 @@ export interface PluginDefinition {
     money?: number;
     /** Nivel mínimo requerido. */
     level?: number;
+    feature?: PluginFeature;
+    executionPolicy?: ExecutionPolicy;
+    interceptors?: PluginInterceptor[];
     /** Permite que `before` corra también cuando el mensaje es un comando con prefijo. */
     runBeforeOnCommand?: boolean;
     /** Solicita `groupSettings` completas en execute. Usar solo si el comando consume campos fuera del contexto mínimo. */
@@ -69,6 +73,7 @@ export function definePlugin(def: PluginDefinition): Plugin {
     // Copiar todas las propiedades de metadata al objeto función
     if (def.command !== undefined) fn.command = def.command;
     if (def.customPrefix !== undefined) fn.customPrefix = def.customPrefix;
+    if (def.customPrefixPriority !== undefined) fn.customPrefixPriority = def.customPrefixPriority;
     if (def.help !== undefined) fn.help = def.help;
     if (def.tags !== undefined) fn.tags = def.tags;
     if (def.owner !== undefined) fn.owner = def.owner;
@@ -81,9 +86,21 @@ export function definePlugin(def: PluginDefinition): Plugin {
     if (def.limit !== undefined) fn.limit = def.limit;
     if (def.money !== undefined) fn.money = def.money;
     if (def.level !== undefined) fn.level = def.level;
+    fn.feature = def.feature ?? inferLegacyFeature(def.tags);
+    fn.executionPolicy = {...def.executionPolicy};
+    fn.interceptors = [...(def.interceptors ?? [])];
     if (def.runBeforeOnCommand !== undefined) fn.runBeforeOnCommand = def.runBeforeOnCommand;
     if (def.needsFullGroupSettings !== undefined) fn.needsFullGroupSettings = def.needsFullGroupSettings;
     if (def.before) fn.before = def.before;
 
     return fn;
+}
+
+function inferLegacyFeature(tags?: string[]): PluginFeature | undefined {
+    const mappings: Array<[PluginFeature, string[]]> = [
+        ['games', ['game']], ['tools', ['tools']], ['rpg', ['econ', 'gacha', 'rg', 'rpg', 'hot']],
+        ['downloads', ['downloader']], ['search', ['buscadores']], ['stickers', ['sticker']],
+        ['converters', ['convertidor']], ['fun', ['fun', 'randow']], ['nsfw', ['nsfw']],
+    ];
+    return mappings.find(([, values]) => tags?.some(tag => values.includes(tag)))?.[0];
 }

@@ -17,6 +17,7 @@ const plugin = defineSdkPlugin({
     help: ['> ', '=> ', '='],
     tags: ['owner'],
     customPrefix: /^=?>\s?/,
+    customPrefixPriority: 100,
     rowner: true,
     register: true,
     async execute(m, _2) {

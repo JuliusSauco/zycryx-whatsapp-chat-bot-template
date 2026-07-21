@@ -168,15 +168,19 @@ export const userRepository: UserRepository = {
     },
 
     async setGender(userId, gender) {
-        await orm.update(usuarios)
+        const [updated] = await orm.update(usuarios)
             .set({gender})
-            .where(eq(usuarios.id, userId));
+            .where(eq(usuarios.id, userId))
+            .returning({id: usuarios.id});
+        return !!updated;
     },
 
     async setBirthday(userId, birthday) {
-        await orm.update(usuarios)
+        const [updated] = await orm.update(usuarios)
             .set({birthday})
-            .where(eq(usuarios.id, userId));
+            .where(eq(usuarios.id, userId))
+            .returning({id: usuarios.id});
+        return !!updated;
     },
 
     async countUsers() {

@@ -148,6 +148,18 @@ Estado: cerrado como mantenimiento actual.
 
 ## Notas tecnicas
 
+### Bloque de robustecimiento de plugins - 2026-07-21
+
+- [x] Separar validacion y consumo de recursos.
+- [x] Agregar reservas atomicas, confirmacion, liberacion e idempotencia.
+- [x] Recuperar reservas pendientes vencidas mediante tarea programada.
+- [x] Validar colisiones exactas/regex antes de publicar el registro.
+- [x] Incorporar manifiesto compatible, feature tipada e interceptores.
+- [x] Agregar timeouts por perfil, `AbortSignal` y locks compartidos.
+- [x] Acotar/coalescer la cola background y limitar hot reload a desarrollo.
+- [ ] Migrar gradualmente imports legacy de locks y hooks al contrato nuevo.
+- [ ] Extraer casos de uso de los plugins grandes de configuracion, RPG, grupos y VirusTotal.
+
 - Los plugins ya no usan `fetch`, `node-fetch`, `axios` ni `src/lib/http-client.ts` directamente; usan `sdk.http`, providers o servicios.
 - Los plugins nuevos deben usar `defineSdkPlugin` desde `src/core/sdk-plugin.ts` para acceder a `sdk.reply`, `sdk.content`, `sdk.http`, `sdk.providers` y locks por usuario sin importar helpers sueltos.
 - Los plugins ya migrados al SDK no deben importar `src/lib/message-template.ts` ni `src/lib/http-client.ts`; `npm run test:p0` lo valida.

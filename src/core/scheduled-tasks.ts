@@ -1,6 +1,7 @@
 import {ENV} from './env.js';
 import {
     cleanExpiredChatMemories,
+    cleanExpiredCommandResourceReservations,
     clearGroupExpiration,
     deleteReport,
     listExpiredGroups,
@@ -21,6 +22,16 @@ export function startScheduledTasks(): void {
     setInterval(handleExpiredGroups, 60_000).unref?.();
     setInterval(forwardPendingReports, 120_000).unref?.();
     setInterval(cleanExpiredChatMemory, 300_000).unref?.();
+    setInterval(cleanExpiredResourceReservations, 300_000).unref?.();
+}
+
+async function cleanExpiredResourceReservations(): Promise<void> {
+    try {
+        const released = await cleanExpiredCommandResourceReservations();
+        if (released) logInfo(`[RESOURCES] Reservas vencidas liberadas: ${released}`);
+    } catch (err) {
+        logError('[RESOURCES] Error liberando reservas vencidas:', err);
+    }
 }
 
 async function handleExpiredGroups(): Promise<void> {

@@ -1,12 +1,12 @@
 import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import moment from 'moment-timezone'
-import {getUserById, getUserName} from '../../services/user.service.js'
+import {getUserName} from '../../services/user.service.js'
 import {getGroupParticipantRole} from '../../services/group-role.service.js'
-import {getParticipantIdentityJids} from '../../utils/group-creator.js'
-import {cleanJid} from '../../utils/jid.js'
-import {getParticipantsFast, resolveMention} from '../../utils/mention.js'
-import type {GroupParticipant} from '@whiskeysockets/baileys'
+import {getParticipantsFast} from '../../utils/mention.js'
 import {content} from '../../services/content.service.js';
+import {resolveProfileUser} from '../../services/profile-user.service.js';
+import {loadProfileMedia} from './rpg-profile.helpers.js';
+import {logWarn} from '../../lib/logger.js';
 
 interface CountryResponse {
     result?: {
@@ -22,64 +22,30 @@ const formatPhoneNumber = (jid: string) => {
     return `+${number}`;
 };
 
-const formatVisibleMention = (tag: string, mentionJid: string) => {
-    const cleanMentionJid = cleanJid(mentionJid);
-    if (cleanMentionJid.endsWith('@s.whatsapp.net')) return tag;
-    return '@usuario';
-};
-
-function findParticipantByJid(participants: GroupParticipant[], jid: string): GroupParticipant | null {
-    const target = cleanJid(jid);
-    return participants.find(participant =>
-        getParticipantIdentityJids(participant).some(candidate => cleanJid(candidate) === target)
-    ) || null;
-}
-
-async function resolveProfileUser(rawJid: string, participants: GroupParticipant[]): Promise<{
-    userId: string;
-    mentionJid: string;
-    tag: string;
-    participant: GroupParticipant | null;
-    user: NonNullable<Awaited<ReturnType<typeof getUserById>>>;
-} | null> {
-    const participant = findParticipantByJid(participants, rawJid);
-    const resolved = resolveMention(rawJid, participants);
-    const candidateIds = [...new Set([
-        resolved.mentionJid,
-        rawJid,
-        ...(participant ? getParticipantIdentityJids(participant) : []),
-    ].filter(Boolean).map(cleanJid))];
-
-    for (const userId of candidateIds) {
-        const user = await getUserById(userId);
-        if (user) {
-            return {
-                userId,
-                mentionJid: resolved.mentionJid,
-                tag: formatVisibleMention(resolved.tag, resolved.mentionJid),
-                participant,
-                user,
-            };
-        }
-    }
-    return null;
-}
-
 export default defineSdkPlugin({
     help: ['perfil', 'perfil *@user*'],
     tags: ['rg'],
     command: /^(perfil|profile)$/i,
-    register: true,
     async execute(m, {conn, participants, isGroup, chatId, sdk}) {
     const rawWho = m.mentionedJid?.[0] || m.quoted?.sender || (m.fromMe ? conn.user?.id || m.sender : m.sender)
     const groupParticipants = getParticipantsFast(conn, m.chat, participants)
 
-    const profileTarget = await resolveProfileUser(rawWho, groupParticipants)
+    const profileTarget = await resolveProfileUser({
+        rawJid: rawWho,
+        participants: groupParticipants,
+        aliases: rawWho === m.sender ? [m.lid] : [],
+        displayName: rawWho === m.sender ? m.pushName : null,
+        createIfMissing: true,
+    })
     if (!profileTarget) return sdk.reply.message('rpg.shared.missingUser')
 
     const {userId: who, mentionJid, tag: userTag, participant, user} = profileTarget
-    const profilePic = await conn.profilePictureUrl(mentionJid, 'image').catch(() => 'https://telegra.ph/file/9d38415096b6c46bf03f8.jpg') as string
-    const buffer = await sdk.http.buffer(profilePic)
+    const profileMedia = await loadProfileMedia({
+        conn,
+        mentionJid,
+        fetchBuffer: sdk.http.buffer,
+        onFallback: reason => logWarn(`[RPG PROFILE] Foto no disponible (${reason}); se usara el avatar local.`),
+    })
     const {limite, nombre, registered, edad, marry, gender, birthday} = user
     const level = user.level ?? 0
     const phone = formatPhoneNumber(mentionJid)
@@ -89,6 +55,7 @@ export default defineSdkPlugin({
         const data = await sdk.http.json<CountryResponse>(`${info.apis}/tools/country?text=${phone}`)
         if (data?.result?.name) nacionalidad = `${data.result.name} ${data.result.emoji}`
     } catch (_) {
+        logWarn('[RPG PROFILE] No se pudo resolver la nacionalidad; se usara el valor por defecto.')
     }
 
     let relacion = sdk.content.message('rpg.profile.noRelationship')
@@ -96,7 +63,7 @@ export default defineSdkPlugin({
         const nombrePareja = await getUserName(marry) || sdk.content.message('rpg.shared.unknown')
         relacion = sdk.content.renderMessage('rpg.profile.relationship', {spouseName: nombrePareja})
     }
-    const targetParticipant = isGroup ? participant || findParticipantByJid(groupParticipants, who) : null
+    const targetParticipant = isGroup ? participant : null
     const groupRole = targetParticipant?.admin ? await getGroupParticipantRole(chatId || m.chat, targetParticipant) : null
     const roleBlock = groupRole?.role
         ? sdk.content.renderMessage('rpg.profile.roleBlock', {
@@ -120,7 +87,7 @@ export default defineSdkPlugin({
         relationship: relacion,
         roleBlock,
     })
-    await conn.sendFile(m.chat, buffer, 'perfil.jpg', texto, m, false, {
+    await conn.sendFile(m.chat, profileMedia, 'perfil.jpg', texto, m, false, {
         contextInfo: {mentionedJid: [mentionJid]},
     })
     }

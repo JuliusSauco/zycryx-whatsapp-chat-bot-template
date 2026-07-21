@@ -169,6 +169,13 @@
       "when": 1782864000000,
       "tag": "0023_message_last_activity",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1784592000000,
+      "tag": "0024_command_resource_reservations",
+      "breakpoints": true
     }
   ]
 }

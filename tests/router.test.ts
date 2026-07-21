@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {definePlugin} from '../src/core/define-plugin.js';
 import {CommandRouter} from '../src/core/router.js';
 import type {Plugin} from '../src/types/plugin.js';
+import {PluginRegistryError} from '../src/core/plugin-registry.js';
 
 function plugin(name: string, options: Partial<Plugin> = {}): Plugin {
     const item = definePlugin({
@@ -48,9 +49,10 @@ function testRegexCommands(): void {
 }
 
 function testCustomPrefix(): void {
-    const evalPlugin = plugin('eval', {customPrefix: /^=>\s+/g});
+    const evalPlugin = plugin('eval', {customPrefix: /^=>\s+/g, customPrefixPriority: 100});
     const functionPrefix = plugin('functionPrefix', {
         customPrefix: input => input.startsWith('$'),
+        customPrefixPriority: 100,
     });
     const router = new CommandRouter();
 
@@ -96,10 +98,28 @@ function testRegisterAllClearsPreviousState(): void {
     assert.equal(router.getBeforePlugins().length, 0);
 }
 
+function testRejectsDuplicateExactCommands(): void {
+    const router = new CommandRouter();
+    assert.throws(() => router.registerAll({
+        first: plugin('first', {command: 'same'}),
+        second: plugin('second', {command: 'SAME'}),
+    }), PluginRegistryError);
+}
+
+function testRejectsDuplicateRegexCommands(): void {
+    const router = new CommandRouter();
+    assert.throws(() => router.registerAll({
+        first: plugin('first', {command: /^same$/i}),
+        second: plugin('second', {command: /^same$/i}),
+    }), PluginRegistryError);
+}
+
 testExactAndArrayCommands();
 testRegexCommands();
 testCustomPrefix();
 testBeforeHooks();
 testRegisterAllClearsPreviousState();
+testRejectsDuplicateExactCommands();
+testRejectsDuplicateRegexCommands();
 
 console.log('router.test.ts OK');

@@ -178,9 +178,9 @@ async function testResourceGuard(): Promise<void> {
     installRepositoryMocks(calls, {resources: {limite: 5, money: 10, level: 3}});
     try {
         assert.equal(await resourceGuard(createContext(calls, {}, {limit: 2, money: 4, level: 3})), null);
-        assert.deepEqual(calls.decrementedLimits, [{userId: 'user-1@s.whatsapp.net', amount: 2}]);
-        assert.deepEqual(calls.decrementedMoney, [{userId: 'user-1@s.whatsapp.net', amount: 4}]);
-        assert.equal(calls.replies.length, 2);
+        assert.deepEqual(calls.decrementedLimits, []);
+        assert.deepEqual(calls.decrementedMoney, []);
+        assert.equal(calls.replies.length, 0);
 
         assert.match(String(await resourceGuard(createContext(calls, {}, {limit: 6}))), /#buy/);
         assert.match(String(await resourceGuard(createContext(calls, {}, {money: 11}))), /LOLICOINS/);

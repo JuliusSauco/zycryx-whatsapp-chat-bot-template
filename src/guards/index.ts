@@ -23,8 +23,8 @@ const guards: Guard[] = [
     adminGuard,
     scopeGuard,
     featureAccessGuard,
-    resourceGuard,
     adminModeGuard,
+    resourceGuard,
 ];
 
 export interface GuardResult {

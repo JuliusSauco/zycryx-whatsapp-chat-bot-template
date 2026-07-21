@@ -43,6 +43,24 @@ export const usuarios = pgTable('usuarios', {
     marryRequest: text('marry_request'),
 });
 
+export const commandResourceReservations = pgTable('command_resource_reservations', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    pluginId: text('plugin_id').notNull(),
+    messageId: text('message_id').notNull(),
+    limitAmount: integer('limit_amount').notNull().default(0),
+    moneyAmount: integer('money_amount').notNull().default(0),
+    requiredLevel: integer('required_level').notNull().default(0),
+    status: text('status').notNull().default('pending'),
+    releaseReason: text('release_reason'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    expiresAt: timestamp('expires_at').notNull(),
+}, table => ({
+    pendingExpiryIdx: index('command_resource_reservations_pending_expiry_idx').on(table.status, table.expiresAt),
+    userIdx: index('command_resource_reservations_user_idx').on(table.userId),
+}));
+
 export const groupSettings = pgTable('group_settings', {
     groupId: text('group_id').primaryKey(),
     welcomeConfigId: serial('welcome_config_id'),

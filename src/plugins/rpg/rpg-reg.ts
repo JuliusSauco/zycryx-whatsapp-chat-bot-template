@@ -11,6 +11,8 @@ import {
 } from '../../services/user.service.js';
 import type {SendMessageOptions} from '../../types/context.js';
 import {content} from '../../services/content.service.js';
+import {resolveProfileUser} from '../../services/profile-user.service.js';
+import {getParticipantsFast} from '../../utils/mention.js';
 
 const Reg = /\|?(.*)([.|] *?)([0-9]*)$/i;
 
@@ -21,6 +23,7 @@ interface RegistrationState {
     genero?: 'hombre' | 'mujer' | 'otro';
     usedPrefix: string;
     userNationality?: string | null;
+    userId: string;
 }
 
 interface CountryApiResponse {
@@ -81,12 +84,12 @@ export default defineSdkPlugin({
             }
             const pref = estados[who]?.usedPrefix || '.'
             const userNationality = estados[who]?.userNationality || ''
-            const {nombre, edad, genero} = estados[who]
+            const {nombre, edad, genero, userId} = estados[who]
             if (!genero) return m.reply(content.message('rpg.registration.invalidGenderRestart'))
-            const serial = createHash('md5').update(who).digest('hex')
+            const serial = createHash('md5').update(userId).digest('hex')
             const reg_time = new Date()
             await completeRegistration({
-                id: who,
+                id: userId,
                 nombre: nombre + '✓',
                 edad,
                 gender: genero,
@@ -133,8 +136,17 @@ export default defineSdkPlugin({
         }
     }
     },
-    async execute(m, {conn, text, args, usedPrefix, command, sdk}) {
-    let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user?.id || m.sender : m.sender;
+    async execute(m, {conn, text, args, usedPrefix, command, sdk, participants}) {
+    const rawWho = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user?.id || m.sender : m.sender;
+    const profileIdentity = await resolveProfileUser({
+        rawJid: rawWho,
+        participants: getParticipantsFast(conn, m.chat, participants),
+        aliases: rawWho === m.sender ? [m.lid] : [],
+        displayName: rawWho === m.sender ? m.pushName : null,
+        createIfMissing: true,
+    });
+    if (!profileIdentity) return sdk.reply.message('rpg.registration.profileUpdateFailed');
+    const who = profileIdentity.userId;
     let userNationality = null;
     try {
         const phone = formatPhoneNumber(who);
@@ -146,12 +158,12 @@ export default defineSdkPlugin({
         userNationality = null;
     }
 
-    const user = await getUserById(who);
+    const user = profileIdentity.user;
     let name2 = m.pushName || 'loli'
 
     if (command === 'reg' || command === 'verify' || command === 'verificar') {
         if (user?.registered) return sdk.reply.message('rpg.registration.alreadyRegistered')
-        if (estados[who]?.step) return sdk.reply.message('rpg.registration.alreadyInProgress')
+        if (estados[m.sender]?.step) return sdk.reply.message('rpg.registration.alreadyInProgress')
         if (!Reg.test(text)) return sdk.reply.message('rpg.registration.usage', {
             command: usedPrefix + command,
             name: name2
@@ -170,30 +182,31 @@ export default defineSdkPlugin({
         if (ageNumber > 100) return sdk.reply.message('rpg.registration.tooOld')
         if (ageNumber < 5) return sdk.reply.message('rpg.registration.tooYoung')
 
-        estados[who] = {step: 1, nombre: name, edad: ageNumber, usedPrefix, userNationality}
+        estados[m.sender] = {step: 1, nombre: name, edad: ageNumber, usedPrefix, userNationality, userId: who}
 
         return sdk.reply.message('rpg.registration.genderStep')
     }
 
     if (command == 'nserie' || command == 'myns' || command == 'sn') {
-        const sn = user?.serialNumber || user?.serial_number || createHash('md5').update(m.sender).digest('hex');
+        const sn = user?.serialNumber || user?.serial_number || createHash('md5').update(who).digest('hex');
         await conn.fakeReply(m.chat, sn, '0@s.whatsapp.net', sdk.content.message('rpg.registration.serialQuoted'), 'status@broadcast')
 //m.reply(sn);
     }
 
     if (command == 'unreg') {
         if (!args[0]) return sdk.reply.message('rpg.registration.unregMissingSerial', {prefix: usedPrefix})
-        const user2 = await getUserById(m.sender);
-        const sn = user2?.serialNumber || user2?.serial_number || createHash('md5').update(m.sender).digest('hex');
+        const user2 = await getUserById(who);
+        const sn = user2?.serialNumber || user2?.serial_number || createHash('md5').update(who).digest('hex');
         if (args[0] !== sn) return sdk.reply.message('rpg.registration.unregInvalidSerial')
-        await unregisterUser(m.sender);
+        await unregisterUser(who);
         await conn.fakeReply(m.chat, sdk.content.message('rpg.registration.unregSuccess'), '0@s.whatsapp.net', sdk.content.message('rpg.registration.unregQuoted'), 'status@broadcast')
     }
 
     if (command === 'setgenero') {
         const genero = (args[0] || '').toLowerCase()
         if (!['hombre', 'mujer', 'otro'].includes(genero)) return sdk.reply.message('rpg.registration.setGenderUsage', {prefix: usedPrefix})
-        await setUserGender(who, genero)
+        const updated = await setUserGender(who, genero)
+        if (!updated) return sdk.reply.message('rpg.registration.profileUpdateFailed')
         return sdk.reply.message('rpg.registration.setGenderSuccess', {gender: genero})
     }
 
@@ -201,17 +214,15 @@ export default defineSdkPlugin({
         let birthday = args.join(' ').trim()
         if (!birthday) return sdk.reply.message('rpg.registration.setBirthdayUsage', {prefix: usedPrefix})
         if (birthday.toLowerCase() === 'borrar') {
-            await setUserBirthday(who, null)
+            const updated = await setUserBirthday(who, null)
+            if (!updated) return sdk.reply.message('rpg.registration.profileUpdateFailed')
             return sdk.reply.message('rpg.registration.setBirthdayDeleted')
         }
-        try {
-            const fecha = moment(birthday, ['DD/MM/YYYY', 'D [de] MMMM [de] YYYY'], true)
-            if (!fecha.isValid()) throw new Error('formato')
-            await setUserBirthday(who, fecha.format('YYYY-MM-DD'))
-            return sdk.reply.message('rpg.registration.setBirthdaySuccess', {birthday})
-        } catch (e: unknown) {
-            return sdk.reply.message('rpg.registration.invalidBirthday')
-        }
+        const fecha = moment(birthday, ['DD/MM/YYYY', 'D [de] MMMM [de] YYYY'], true)
+        if (!fecha.isValid()) return sdk.reply.message('rpg.registration.invalidBirthday')
+        const updated = await setUserBirthday(who, fecha.format('YYYY-MM-DD'))
+        if (!updated) return sdk.reply.message('rpg.registration.profileUpdateFailed')
+        return sdk.reply.message('rpg.registration.setBirthdaySuccess', {birthday})
     }
     },
 })

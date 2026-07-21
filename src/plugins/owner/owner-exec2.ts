@@ -11,6 +11,7 @@ export default defineSdkPlugin({
     help: ['$'],
     tags: ['owner'],
     customPrefix: /^[$]\s?/,
+    customPrefixPriority: 100,
     rowner: true,
     async execute(m, {isROwner, sdk}) {
         if (!isROwner) return;

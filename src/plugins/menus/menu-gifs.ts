@@ -20,6 +20,7 @@ const CARINIO: GifEntry[] = [
 
 const AGRESIVO: GifEntry[] = [
     {emoji: '🔪', cmd: 'kill', desc: 'Asesina a alguien'},
+    {emoji: '🪢', cmd: 'ahorcar', desc: 'Ahorca a alguien'},
     {emoji: '🦷', cmd: 'bt', desc: 'Muerde a alguien'},
     {emoji: '👋', cmd: 'slap', desc: 'Cachetada / golpear'},
     {emoji: '😱', cmd: 'ap', desc: 'Agarra los cachetes'},
@@ -33,6 +34,7 @@ const ADULTO: GifEntry[] = [
     {emoji: '🍑', cmd: 'cogeranal', desc: 'Sexo anal'},
     {emoji: '🤤', cmd: 'oral', desc: 'Sexo oral'},
     {emoji: '👯', cmd: 'trio', desc: 'Trío'},
+    {emoji: '🥂', cmd: 'orgia', desc: 'Remitente + 3 personas (solo NSFW)'},
     {emoji: '👩‍❤️‍👩', cmd: 'lesbian', desc: 'Sexo lésbico'},
 ];
 
@@ -55,8 +57,8 @@ export default defineSdkPlugin({
     const adultHint = nsfwEnabled
         ? '> Modo horny activo para ti: estos comandos usan los GIFs explícitos de `nsfw`.'
         : nsfwSettings.modohorny
-            ? `> Modo horny activo para: ${accessModeLabel(nsfwSettings.nsfwAccessMode)}. Para ti usa los GIFs normales.`
-            : '> Modo horny apagado: estos comandos usan los GIFs normales.';
+            ? `> Modo horny activo para: ${accessModeLabel(nsfwSettings.nsfwAccessMode)}. Para ti usa los GIFs normales; *orgia* requiere acceso NSFW.`
+            : '> Modo horny apagado: estos comandos usan los GIFs normales; *orgia* requiere activar NSFW.';
 
     const str = `\`Hola ${taguser} 💖彡\`
 

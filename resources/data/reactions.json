@@ -5,6 +5,15 @@
     "folder": "resources/media/reaction-gifs/ab",
     "caption": "🫣🫣 {sender} le abrazo fuertemente a {targets} 😄😄"
   },
+  "ah": {
+    "help": "msg-gif-ah",
+    "commands": ["ahorcar"],
+    "adult": true,
+    "folder": "resources/media/reaction-gifs/ah",
+    "nsfwFolder": "resources/media/reaction-gifs/ah/nsfw",
+    "caption": "🪢😵 *¡Escena dramática!* {sender} atrapó a {targets} con una cuerda y montó un ahorcamiento de película 🎭💥",
+    "nsfwCaption": "🖤⛓️ *¡El juego se puso intenso!* {sender} tomó el control y sometió a {targets} en una atrevida escena de rol consensuado 😈🔥🪢"
+  },
   "an": {
     "help": "msg-gif-cog",
     "commands": ["cogeranal", "anal", "por-el-culo", "sexo-anal", "anosex"],

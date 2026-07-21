@@ -55,6 +55,9 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - Repositorios Drizzle separados por agregado.
 - Puertos de repositorio para desacoplar servicios de la implementacion Drizzle.
 - Modelos y reglas de dominio independientes de Drizzle en `src/domain` para usuarios, grupos, subbots, audios, personajes y estado operativo.
+- Reservas transaccionales e idempotentes para comandos que consumen diamantes o LoliCoins.
+- Registro validado de plugins con deteccion de aliases y regex duplicadas.
+- Interceptores tipados, timeouts por perfil, cancelacion cooperativa y locks con namespace por plugin.
 - Conexion directa a PostgreSQL como decision arquitectonica; no hay adapter backend REST/GraphQL.
 - Migraciones versionadas y script `db:ensure-schema`.
 - Soporte para `DB_SCHEMA` usando `search_path`.
@@ -269,6 +272,9 @@ BOT_FIXED_OWNER_JIDS=573001112233,51999888777
 | `npm run typecheck` | Valida tipos sin emitir archivos. |
 | `npm test` | Ejecuta helpers, dominios de usuarios/grupos/subbots/audios/operacion/personajes, estado efimero, router, guards, context builder, servicios, seguridad, providers, catalogo, ayuda y P0. |
 | `npm run test:helpers` | Pruebas de helpers compartidos. |
+| `npm run test:plugin-pipeline` | Pruebas de interceptores, timeouts y locks del pipeline de plugins. |
+| `npm run test:command-resources` | Pruebas de validacion, reservas idempotentes y mensajes de cobro. |
+| `npm run test:profile-user` | Pruebas de resolucion JID/LID, alta basica y fallback de foto de perfil. |
 | `npm run test:user-domain` | Pruebas de mappers y defaults del dominio de usuarios. |
 | `npm run test:group-domain` | Pruebas de mappers y defaults del dominio de grupos. |
 | `npm run test:subbot-domain` | Pruebas de mappers y defaults del dominio de subbots. |
@@ -477,6 +483,19 @@ Componentes principales:
 
 Los comandos viven como modulos independientes dentro de `src/plugins/<familia>`. Esto permite copiar la plantilla a otros bots y cambiar solo las familias necesarias.
 
+`defineSdkPlugin` conserva la API compatible y genera metadata para el registro validado. Cada plugin obtiene un ID estable derivado de su ruta, una `feature` tipada y una politica de ejecucion. El registro candidato se valida completo antes de sustituir al activo; un hot reload invalido conserva la version anterior.
+
+Perfiles de ejecucion disponibles:
+
+| Perfil | Timeout base | Uso |
+|---|---:|---|
+| `fast` | 15 s | Comandos locales y respuestas simples. |
+| `network` | 60 s | Consultas HTTP y APIs. |
+| `owner-operation` | 2 min | Operaciones administrativas controladas. |
+| `media` | 5 min | Descargas y conversion multimedia. |
+
+El contexto incluye `pluginId`, `correlationId` y `signal`. La cancelacion es cooperativa: providers, HTTP o procesos largos deben observar el `AbortSignal` para detener trabajo subyacente.
+
 ### 🎯 Command Pattern
 
 Cada plugin representa una accion ejecutable. El router traduce un mensaje en un comando y el handler delega la ejecucion.
@@ -498,6 +517,14 @@ Los guards validan antes del plugin:
 - NSFW y horario;
 - limites, dinero y nivel;
 - modo admin del grupo.
+
+Los guards de acceso se ejecutan antes del guard de recursos. Este ultimo solo valida; no descuenta saldos. Tras aprobar todas las restricciones, el handler crea una reserva atomica en PostgreSQL, ejecuta el plugin y confirma el cobro al completar. Los fallos y timeouts liberan la reserva, y una tarea programada recupera reservas vencidas tras reinicios abruptos.
+
+### 🔗 Interceptor Pipeline
+
+Los hooks legacy `before` siguen soportados mediante un adaptador. El contrato nuevo usa interceptores con fase (`security`, `conversation`, `post`), prioridad, aplicabilidad y politica de error (`fail-open`, `fail-closed`, `report-only`). Los resultados son tipados: `continue`, `handled`, `reject` o `error`.
+
+El orden general es: normalizacion, seguridad/conversacion, routing, autorizacion, reserva de recursos, ejecucion, confirmacion y telemetria.
 
 ### 🔄 Ports & Adapters
 
@@ -999,6 +1026,9 @@ Resumen actual:
 - Observabilidad configurable con `LOG_LEVEL`.
 - VirusTotal integrado como hook configurable.
 - `src/**/*.ts` sin `any` ni `@ts-ignore`.
+- Recursos de comandos protegidos por reservas atomicas, confirmacion en exito y recuperacion de pendientes vencidas.
+- Registry de plugins validado y hot reload con rollback, debounce y desactivado en produccion.
+- Pipeline compatible con interceptores tipados, perfiles de timeout, `AbortSignal` y locks por namespace.
 - Build, typecheck y suite de pruebas pasan.
 - Scripts de base de datos alineados: migraciones registradas, `schema.ts` actualizado y `database/schema.sql` listo para bootstrap manual limpio desde cero.
 

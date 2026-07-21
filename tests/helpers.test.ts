@@ -9,6 +9,10 @@ import {getMessage, getMessageList, renderMessage, renderTemplate} from '../src/
 import {createPluginSdk} from '../src/core/plugin-sdk.js';
 import type {PluginContext} from '../src/types/context.js';
 import type {BotMessage} from '../src/types/message.js';
+import type {ExtendedConn} from '../src/types/context.js';
+import type {GroupParticipant} from '@whiskeysockets/baileys';
+import {replyActionTarget} from '../src/plugins/fun/fun-juegos.helpers.js';
+import {resolveOrgiaTargets, selectRandomOrgiaTargets} from '../src/plugins/messages/msg-gif-orgia.js';
 
 function testRandomHelpers(): void {
     const values = ['a', 'b', 'c'] as const;
@@ -156,6 +160,65 @@ async function testPluginSdk(): Promise<void> {
     assert.deepEqual(sent[0], {text: 'hola'});
 }
 
+async function testActionTargetMentionResolution(): Promise<void> {
+    let sentContent: Record<string, unknown> | undefined;
+    let sentOptions: Record<string, unknown> | undefined;
+    const lid = '123456789012345@lid';
+    const phoneJid = '573001112233@s.whatsapp.net';
+    const m = {
+        chat: 'group@g.us',
+        mentionedJid: [lid],
+        reply: async () => ({} as never),
+    } as unknown as BotMessage;
+    const conn = {
+        sendMessage: async (_chatId: string, message: Record<string, unknown>, options: Record<string, unknown>) => {
+            sentContent = message;
+            sentOptions = options;
+            return {} as never;
+        },
+    } as unknown as ExtendedConn;
+    const participants = [{id: lid, participantAlt: phoneJid}] as GroupParticipant[];
+
+    await replyActionTarget(conn, m, 'follar', '@123456789012345', participants);
+
+    assert.ok((sentContent?.text as string).includes('@573001112233'));
+    assert.equal((sentContent?.text as string).includes('@123456789012345'), false);
+    assert.deepEqual(sentContent?.mentions, [phoneJid]);
+    assert.deepEqual(sentContent?.contextInfo, {mentionedJid: [phoneJid]});
+    assert.equal(sentOptions?.quoted, m);
+}
+
+function testOrgiaTargetResolution(): void {
+    const participants = [
+        {id: 'sender-lid@lid', participantAlt: '573000000000@s.whatsapp.net'},
+        {id: 'target-1@lid', participantAlt: '573000000001@s.whatsapp.net'},
+        {id: 'target-2@lid', participantAlt: '573000000002@s.whatsapp.net'},
+        {id: 'target-3@lid', participantAlt: '573000000003@s.whatsapp.net'},
+        {id: 'target-4@lid', participantAlt: '573000000004@s.whatsapp.net'},
+    ] as GroupParticipant[];
+
+    const targets = resolveOrgiaTargets([
+        'target-1@lid',
+        '573000000001@s.whatsapp.net',
+        'target-2@lid',
+        'target-3@lid',
+        'target-4@lid',
+        'sender-lid@lid',
+    ], 'sender-lid@lid', participants);
+
+    assert.deepEqual(targets.map(target => target.mentionJid), [
+        '573000000001@s.whatsapp.net',
+        '573000000002@s.whatsapp.net',
+        '573000000003@s.whatsapp.net',
+        '573000000004@s.whatsapp.net',
+    ]);
+
+    const randomTargets = selectRandomOrgiaTargets(participants, 'sender-lid@lid', 3, () => 0);
+    assert.equal(randomTargets.length, 3);
+    assert.equal(randomTargets.some(target => target.mentionJid === '573000000000@s.whatsapp.net'), false);
+    assert.equal(new Set(randomTargets.map(target => target.mentionJid)).size, 3);
+}
+
 testRandomHelpers();
 testCommandAliases();
 testFixedOwnerNormalization();
@@ -164,5 +227,7 @@ await testProviderFallback();
 testLegacyArrayRandom();
 testContentService();
 await testPluginSdk();
+await testActionTargetMentionResolution();
+testOrgiaTargetResolution();
 
 console.log('helpers.test.ts OK');

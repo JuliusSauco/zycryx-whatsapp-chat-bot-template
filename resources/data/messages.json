@@ -643,6 +643,7 @@
         "unregQuoted": "ᴿᵉᵍᶦˢᵗʳᵒ ᵉˡᶦᵐᶦⁿᵃᵈᵒ",
         "setGenderUsage": "✳️ *Usa:*\n{prefix}setgenero <hombre|mujer|otro>\n📌 Ej: *{prefix}setgenero hombre*",
         "setGenderSuccess": "✅ *Género guardado:* {gender}",
+        "profileUpdateFailed": "⚠️ No pude guardar los datos del perfil. Inténtalo nuevamente.",
         "setBirthdayUsage": "✳️ *Usa:*\n{prefix}setbirthday <fecha>\n📌 Ej: *{prefix}setbirthday 30/10/2000*",
         "setBirthdayDeleted": "✅ *Cumpleaños eliminado correctamente.*",
         "setBirthdaySuccess": "✅ *Cumpleaños guardado:* {birthday}",
@@ -1436,6 +1437,10 @@
         "ffmpegHint": "⚠️ Para enviarlo como “mensaje” (inline), convierte los GIFs a MP4 y guárdalos en `resources/media/reaction-gifs/dp`.\n\nEjemplo ffmpeg:\nffmpeg -i input.gif -vf \"fps=15,scale=320:-2:flags=lanczos\" -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart -crf 30 -preset veryfast output.mp4",
         "alone": "🥲 *{sender}* quiso hacer un trío... pero está solito 😏",
         "trio": "🔥💦 *{sender}* está teniendo un trío con *{targets}* 🍑🔥"
+      },
+      "gifOrgia": {
+        "notEnoughPeople": "🥀🍷 *Muy poca gente para la orgía, llamen a sus hermanas* 😏📣",
+        "caption": "🥂🔥 *{sender}* reunió a *{targets}* para una noche de orgía inolvidable, salvaje, todos contra todos y sin reglas, solo disfrutar de nuestros instintos mas bajos y agresivos, metele el pene y tu liquido de vida a las mujeres que siempre quisiste coger. Dejate coger por los hombres que te pone la punta de las tetas duras, al mismo tiempo todos dentro de ti, entregale tu hueco bien mojado 😈🍷💋"
       }
     },
     "random": {

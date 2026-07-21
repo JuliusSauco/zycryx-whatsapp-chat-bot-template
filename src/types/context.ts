@@ -68,6 +68,9 @@ export interface PluginContext {
     chatId?: string;
     sender?: string;
     groupSettings?: Partial<GroupSettings>;
+    pluginId: string;
+    correlationId: string;
+    signal: AbortSignal;
 }
 
 export interface BeforePluginContext {

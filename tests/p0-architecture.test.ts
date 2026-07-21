@@ -55,11 +55,18 @@ const migratedEphemeralFiles = [
     'src/plugins/rpg/rpg-rw-vender.ts',
     'src/plugins/rpg/rpg-rw.ts',
 ].map(file => path.join(ROOT, file));
+const featureAccessGuard = path.join(ROOT, 'src/guards/feature-access.guard.ts');
 
 assertNoPattern(
     sdkPlugins,
     /from\s+['"][^'"]*lib\/message-template\.js['"]|(?<!\.)\bgetRequiredPluginMessage(?:List|ObjectList)?\b|(?<!\.)\brenderTemplate\b/,
     'SDK plugins must use sdk.content instead of message-template helpers',
+);
+
+assertNoPattern(
+    [featureAccessGuard],
+    /plugin\.tags|FEATURE_TAGS/,
+    'Feature authorization must use typed plugin.feature instead of documentation tags',
 );
 
 assertNoPattern(

@@ -119,8 +119,8 @@ export interface UserRepository {
     upsertRegisteredAdmin(input: UpsertRegisteredAdminInput): Promise<void>;
     completeRegistration(input: CompleteRegistrationInput): Promise<void>;
     unregister(userId: string): Promise<void>;
-    setGender(userId: string, gender: string): Promise<void>;
-    setBirthday(userId: string, birthday: string | null): Promise<void>;
+    setGender(userId: string, gender: string): Promise<boolean>;
+    setBirthday(userId: string, birthday: string | null): Promise<boolean>;
     countUsers(): Promise<{total: number; registered: number}>;
     findStickerSettings(userId: string): Promise<UserStickerSettings | null>;
     setStickerSettings(userId: string, packname: string, author: string | null): Promise<void>;
@@ -138,6 +138,22 @@ export interface UserRepository {
     getMarriageRequest(userId: string): Promise<string | null>;
     marryUsers(userA: string, userB: string): Promise<void>;
     divorceUsers(userA: string, userB: string): Promise<void>;
+}
+
+export interface CommandResourceRepository {
+    reserve(input: {
+        id: string;
+        userId: string;
+        pluginId: string;
+        messageId: string;
+        limit: number;
+        money: number;
+        level: number;
+        expiresAt: Date;
+    }): Promise<import('../domain/command-resources.js').CommandResourceDecision>;
+    commit(id: string): Promise<import('../domain/command-resources.js').CommandResourceReservation | null>;
+    release(id: string, reason: string): Promise<import('../domain/command-resources.js').CommandResourceReservation | null>;
+    releaseExpired(now: Date): Promise<number>;
 }
 
 export interface UserGroupRoleRepository {
@@ -314,6 +330,7 @@ export interface DatabaseRepository {
 
 export interface AppRepositories {
     users: UserRepository;
+    commandResources: CommandResourceRepository;
     userGroupRoles: UserGroupRoleRepository;
     chats: ChatRepository;
     messages: MessageRepository;

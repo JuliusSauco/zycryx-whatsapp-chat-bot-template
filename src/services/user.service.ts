@@ -118,12 +118,12 @@ export async function unregisterUser(userId: string): Promise<void> {
     await repositories.users.unregister(userId);
 }
 
-export async function setUserGender(userId: string, gender: string): Promise<void> {
-    await repositories.users.setGender(userId, gender);
+export async function setUserGender(userId: string, gender: string): Promise<boolean> {
+    return repositories.users.setGender(userId, gender);
 }
 
-export async function setUserBirthday(userId: string, birthday: string | null): Promise<void> {
-    await repositories.users.setBirthday(userId, birthday);
+export async function setUserBirthday(userId: string, birthday: string | null): Promise<boolean> {
+    return repositories.users.setBirthday(userId, birthday);
 }
 
 export async function upsertUser(input: UpsertUserInput): Promise<void> {
