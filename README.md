@@ -54,6 +54,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - Persistencia con Drizzle ORM sobre PostgreSQL.
 - Repositorios Drizzle separados por agregado.
 - Puertos de repositorio para desacoplar servicios de la implementacion Drizzle.
+- Modelos y reglas de dominio independientes de Drizzle en `src/domain` para usuarios, grupos, subbots, audios, personajes y estado operativo.
 - Conexion directa a PostgreSQL como decision arquitectonica; no hay adapter backend REST/GraphQL.
 - Migraciones versionadas y script `db:ensure-schema`.
 - Soporte para `DB_SCHEMA` usando `search_path`.
@@ -358,6 +359,7 @@ zycryx-whatsapp-chat-bot-template/
 │   ├── core/
 │   ├── db/
 │   │   └── migrations/
+│   ├── domain/
 │   ├── guards/
 │   ├── lib/
 │   ├── plugins/
@@ -402,6 +404,7 @@ zycryx-whatsapp-chat-bot-template/
 | `src/adapters/drizzle/` | Implementacion local de repositorios con Drizzle. |
 | `src/core/` | Arranque, entorno, router, parser, handler, contexto y tareas. |
 | `src/db/` | Cliente, schema y migraciones Drizzle. |
+| `src/domain/` | Modelos, defaults, mappers puros y reglas de negocio independientes de la persistencia. |
 | `src/guards/` | Validaciones previas a ejecutar comandos. |
 | `src/lib/` | Integraciones, loader de plugins, subbots, multimedia, logs y scraping. |
 | `src/plugins/` | Comandos y hooks agrupados por familia. |
@@ -427,7 +430,9 @@ flowchart TD
     I --> J["guards"]
     J --> K["plugins por familia"]
     K --> L["services"]
+    L --> Q["domain"]
     L --> M["ports/repositories.ts"]
+    M --> Q
     M --> N["adapters/drizzle"]
     N --> P["PostgreSQL"]
     K --> R["lib/utils/apis"]
@@ -460,9 +465,10 @@ Componentes principales:
 | `lib/simple.ts` | Normalizacion de mensajes y helpers custom de `conn`. |
 | `services/` | Capa de aplicacion usada por core/plugins. |
 | `services/content.service.ts` | API oficial de mensajes, listas y templates. |
+| `domain/` | Entidades, defaults y reglas puras compartidas por servicios, puertos y mappers. |
 | `ports/repositories.ts` | Contratos de persistencia. |
 | `adapters/drizzle/` | Repositorios PostgreSQL con Drizzle. |
-| `providers/downloads/youtube.provider.ts` | Provider inicial de YouTube: busqueda, descarga, calidad y fallbacks. |
+| `providers/` | Integraciones por dominio para descargas, IA y conversion multimedia, con errores tipados y fallbacks. |
 
 <a id="patrones"></a>
 ## 🧩 Patrones
@@ -505,6 +511,7 @@ Actualmente:
 
 - Drizzle + PostgreSQL es la unica implementacion soportada.
 - Los puertos siguen existiendo para mantener servicios testeables y evitar SQL directo en plugins.
+- Los tipos persistidos se convierten mediante mappers de adapter hacia modelos de `src/domain`; las reglas de negocio no dependen del schema Drizzle.
 
 ### 🧬 Repository Pattern
 
@@ -519,14 +526,18 @@ src/adapters/drizzle/
 ├── chat.repository.ts
 ├── database.repository.ts
 ├── group-settings.repository.ts
+├── message-log.repository.ts
 ├── message.repository.ts
 ├── report.repository.ts
 ├── stats.repository.ts
 ├── subbot.repository.ts
+├── user-group-role.repository.ts
 ├── user-wallet.repository.ts
 ├── user.repository.ts
 └── repositories.ts
 ```
+
+Los agregados que necesitan transformar filas de Drizzle usan archivos `*.mapper.ts` junto a su repositorio. Los contratos de entrada y salida se concentran en `src/ports/repositories.ts` y reutilizan los modelos de `src/domain`.
 
 ### 🧱 Context Builder
 
@@ -959,6 +970,7 @@ Resumen actual:
 
 - Persistencia migrada a Drizzle ORM.
 - Repositorios Drizzle separados por agregado.
+- Capa `src/domain` separada para modelos y reglas de usuarios, grupos, subbots, audios, personajes y operaciones.
 - Plugins y core consumen servicios/puertos, no SQL directo.
 - `api_tokens` migrado a Drizzle.
 - `audio_responses` almacena audios dinamicos.
