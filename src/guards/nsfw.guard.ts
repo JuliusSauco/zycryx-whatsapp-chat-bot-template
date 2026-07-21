@@ -15,7 +15,10 @@ export const nsfwGuard: Guard = async ({m, conn, ctx, plugin}) => {
     const [ini = '00:00', fin = '23:59'] = (nsfw_horario || '').split('-');
     const dentro = ini <= fin ? (hhmm >= ini && hhmm <= fin) : (hhmm >= ini || hhmm <= fin);
 
-    const hasAccess = canUseAccessMode(nsfwAccessMode, ctx);
+    // Los GIFs adultos de menu3 forman parte del modo NSFW general y quedan
+    // disponibles para todos. El nivel configurable se aplica únicamente a la
+    // familia de contenido NSFW dedicada (boobs, girls, packs, videos, etc.).
+    const hasAccess = plugin.feature === 'nsfw' || canUseAccessMode(nsfwAccessMode, ctx);
     if (!modohorny || !hasAccess || !dentro) {
         const title = !modohorny
             ? `ᴸᵒˢ ᶜᵒᵐᵃⁿᵈᵒ ˢ ʰᵒʳⁿʸ ᵉˢᵗᵃⁿ ᵈᵉˢᵃᶜᵗᶦᵛᵃᵈᵒˢ:`
@@ -23,7 +26,7 @@ export const nsfwGuard: Guard = async ({m, conn, ctx, plugin}) => {
                 ? `ᴱˢᵗᵉ ᶜᵒᵐᵃⁿᵈᵒ ᴺˢᶠʷ ᵗᶦᵉⁿᵉ ᵃᶜᶜᵉˢᵒ ʳᵉˢᵗʳᶦⁿᵍᶦᵈᵒ:`
                 : `ᴱˢᵗᵉ ᶜᵒᵐᵃⁿᵈᵒ ˢᵒˡᵒ ᶠᵘⁿᶜᶦᵒⁿᵃ ᵉⁿ ʰᵒʳᵃʳᶦᵒ ʰᵃᵇᶦˡᶦᵗᵃᵈᵒ:`;
         const body = !modohorny
-            ? '#enable nsfw --admin'
+            ? '#enable nsfw --owner'
             : !hasAccess
                 ? accessModeLabel(nsfwAccessMode)
                 : `${ini} a ${fin}`;
@@ -51,7 +54,7 @@ export const nsfwGuard: Guard = async ({m, conn, ctx, plugin}) => {
                     ? hasAccess
                         ? `🔞 NSFW fuera del horario permitido (${ini} a ${fin})`
                         : `🔞 NSFW está habilitado solo para: *${accessModeLabel(nsfwAccessMode)}*.`
-                    : '🔞 El NSFW está desactivado.\nUsa *#enable nsfw --admin* para activarlo.',
+                    : '🔞 El NSFW está desactivado.\nUn owner puede usar *#enable nsfw --owner* para activarlo.',
                 contextInfo: {
                     externalAdReply: {
                         title: 'NSFW Desactivado',

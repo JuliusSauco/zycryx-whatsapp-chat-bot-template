@@ -360,19 +360,19 @@ const sections: ToggleSection[] = [
     {
         key: 'adulto',
         title: 'Adulto',
-        description: 'NSFW, permisos adultos y horario.',
-        summary: state => `NSFW ${getStatus(state, 'modohorny')} | ${accessModeLabel(state.group.nsfwAccessMode)}`,
+        description: 'GIFs adultos para todos y contenido explícito configurable por el owner.',
+        summary: state => `NSFW ${getStatus(state, 'modohorny')} | contenido: ${accessModeLabel(state.group.nsfwAccessMode || 'owner')}`,
         items: state => [
             {
-                label: 'Modo horny / NSFW',
-                status: `${getStatus(state, 'modohorny')} (${accessModeLabel(state.group.nsfwAccessMode)})`,
-                minimumRole: 'superadmin',
+                label: 'NSFW / acceso a contenido explícito',
+                status: `${getStatus(state, 'modohorny')} (${accessModeLabel(state.group.nsfwAccessMode || 'owner')})`,
+                minimumRole: 'owner',
                 commands: [
-                    `${state.prefix}enable nsfw --all`,
-                    `${state.prefix}enable nsfw --admin`,
-                    `${state.prefix}enable nsfw --superadmin`,
+                    {text: `${state.prefix}enable nsfw --all`, minimumRole: 'owner'},
+                    {text: `${state.prefix}enable nsfw --admin`, minimumRole: 'owner'},
+                    {text: `${state.prefix}enable nsfw --superadmin`, minimumRole: 'owner'},
                     {text: `${state.prefix}enable nsfw --owner`, minimumRole: 'owner'},
-                    `${state.prefix}disable nsfw`,
+                    {text: `${state.prefix}disable nsfw`, minimumRole: 'owner'},
                 ],
             },
             {label: 'Horario NSFW', status: '', minimumRole: 'superadmin', commands: [`${state.prefix}sethorario 23:00-06:00`]},

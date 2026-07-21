@@ -100,7 +100,7 @@ export default defineSdkPlugin({
         'config ia',
         'config adulto',
         'config subbot',
-        'enable nsfw --admin',
+        'enable nsfw --owner',
         'enable bot --admin',
         'enable autoresponder --triggerall',
         'enable juegos --admin',
@@ -313,12 +313,8 @@ export default defineSdkPlugin({
         case 'modohorny':
         case 'modocaliente':
             if (!m.isGroup) throw groupOnly
-            selectedNsfwMode = {enabled: isEnable, mode: isEnable ? resolveAccessMode(args, 'all') : 'all'}
-            if (selectedNsfwMode.mode === 'owner') {
-                if (!isOwner) throw content.message('config.toggle.ownerOnly')
-            } else if (!isOwner && !isFounder) {
-                throw ownerOrGroupCreatorOnly
-            }
+            if (!isOwner) throw content.message('config.toggle.ownerOnly')
+            selectedNsfwMode = {enabled: isEnable, mode: isEnable ? resolveAccessMode(args, 'owner') : 'owner'}
             await setGroupNsfwMode(chatId, selectedNsfwMode.enabled, selectedNsfwMode.mode)
             break
 

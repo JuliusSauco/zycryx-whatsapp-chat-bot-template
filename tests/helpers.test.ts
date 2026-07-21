@@ -13,6 +13,7 @@ import type {ExtendedConn} from '../src/types/context.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
 import {replyActionTarget} from '../src/plugins/fun/fun-juegos.helpers.js';
 import {resolveOrgiaTargets, selectRandomOrgiaTargets} from '../src/plugins/messages/msg-gif-orgia.js';
+import {getTargetJid, parseRoleInput} from '../src/plugins/group/grupo-setrole.js';
 
 function testRandomHelpers(): void {
     const values = ['a', 'b', 'c'] as const;
@@ -51,6 +52,17 @@ function testFixedOwnerNormalization(): void {
     assert.equal(normalizeFixedOwnerId('573001112233@s.whatsapp.net'), '573001112233@s.whatsapp.net');
     assert.equal(normalizeFixedOwnerId('573001112233:1@s.whatsapp.net'), '573001112233@s.whatsapp.net');
     assert.equal(normalizeFixedOwnerId(''), null);
+}
+
+function testSetRoleHelpers(): void {
+    assert.equal(getTargetJid({mentionedJid: ['573001112233@s.whatsapp.net']}), '573001112233@s.whatsapp.net');
+    assert.equal(getTargetJid({quoted: {sender: '573009998888:2@s.whatsapp.net'}}), '573009998888@s.whatsapp.net');
+    assert.deepEqual(parseRoleInput('@573001112233 Moderador|Modera el grupo | turno noche'), {
+        role: 'Moderador',
+        roleDescription: 'Modera el grupo | turno noche',
+    });
+    assert.deepEqual(parseRoleInput('Administrador'), {role: 'Administrador', roleDescription: null});
+    assert.equal(parseRoleInput('@573001112233'), null);
 }
 
 function testUserRequestLocks(): void {
@@ -222,6 +234,7 @@ function testOrgiaTargetResolution(): void {
 testRandomHelpers();
 testCommandAliases();
 testFixedOwnerNormalization();
+testSetRoleHelpers();
 testUserRequestLocks();
 await testProviderFallback();
 testLegacyArrayRandom();

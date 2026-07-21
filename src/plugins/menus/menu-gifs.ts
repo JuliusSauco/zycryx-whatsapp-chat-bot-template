@@ -1,6 +1,5 @@
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {getNsfwSettings} from '../../services/group-settings.service.js';
-import {accessModeLabel} from '../../utils/access-mode.js';
 import {canUseNsfw} from '../../utils/nsfw-access.js';
 
 /**
@@ -58,9 +57,7 @@ export default defineSdkPlugin({
     const adultTitle = nsfwEnabled ? 'ADULTO 🔞 ACTIVO' : 'ADULTO 🔞';
     const adultHint = nsfwEnabled
         ? '> Modo horny activo para ti: estos comandos usan los GIFs explícitos de `nsfw`.'
-        : nsfwSettings.modohorny
-            ? `> Modo horny activo para: ${accessModeLabel(nsfwSettings.nsfwAccessMode)}. Para ti usa los GIFs normales; *orgia*, *dedeo* y *venirse* requieren acceso NSFW.`
-            : '> Modo horny apagado: estos comandos usan los GIFs normales; *orgia*, *dedeo* y *venirse* requieren activar NSFW.';
+        : '> Modo horny apagado: estos comandos usan los GIFs normales; *orgia*, *dedeo* y *venirse* requieren activar NSFW.';
 
     const str = `\`Hola ${taguser} 💖彡\`
 

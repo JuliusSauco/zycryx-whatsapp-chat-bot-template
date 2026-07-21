@@ -82,7 +82,7 @@ export const groupSettings = pgTable('group_settings', {
     convertersAccessMode: text('converters_access_mode').default('all'),
     funAccessMode: text('fun_access_mode').default('all'),
     modohorny: boolean('modohorny').default(false),
-    nsfwAccessMode: text('nsfw_access_mode').default('all'),
+    nsfwAccessMode: text('nsfw_access_mode').default('owner'),
     audios: boolean('audios').default(false),
     antiStatus: boolean('antistatus').default(false),
     modoadmin: boolean('modoadmin').default(false),

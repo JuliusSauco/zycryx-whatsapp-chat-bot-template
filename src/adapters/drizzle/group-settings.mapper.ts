@@ -89,7 +89,7 @@ export function mapGroupSettings(row: GroupSettingsRow): GroupSettingsRecord {
         convertersAccessMode: normalizeAccessMode(row.convertersAccessMode),
         funAccessMode: normalizeAccessMode(row.funAccessMode),
         modohorny: row.modohorny ?? false,
-        nsfwAccessMode: normalizeAccessMode(row.nsfwAccessMode),
+        nsfwAccessMode: row.nsfwAccessMode ? normalizeAccessMode(row.nsfwAccessMode) : 'owner',
         audios: row.audios ?? false,
         antiStatus: row.antiStatus ?? false,
         modoadmin: row.modoadmin ?? false,
@@ -145,7 +145,7 @@ export function mapContextGroupSettings(row: ContextGroupSettingsRow): ContextGr
         convertersAccessMode: normalizeAccessMode(row.convertersAccessMode),
         funAccessMode: normalizeAccessMode(row.funAccessMode),
         modohorny: row.modohorny ?? false,
-        nsfwAccessMode: normalizeAccessMode(row.nsfwAccessMode),
+        nsfwAccessMode: row.nsfwAccessMode ? normalizeAccessMode(row.nsfwAccessMode) : 'owner',
         audios: row.audios ?? false,
         autolevelup: row.autolevelup ?? true,
     };
@@ -154,7 +154,7 @@ export function mapContextGroupSettings(row: ContextGroupSettingsRow): ContextGr
 export function mapNsfwGroupSettings(row: NsfwGroupSettingsRow): NsfwGroupSettings {
     return {
         modohorny: row.modohorny ?? false,
-        nsfwAccessMode: normalizeAccessMode(row.nsfwAccessMode),
+        nsfwAccessMode: row.nsfwAccessMode ? normalizeAccessMode(row.nsfwAccessMode) : 'owner',
         nsfw_horario: row.nsfwHorario ?? null,
     };
 }

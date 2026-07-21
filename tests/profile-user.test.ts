@@ -68,14 +68,25 @@ try {
         mentionJid: '573001112233@s.whatsapp.net',
         fetchBuffer: async () => media,
     }), media);
+    const groupFallback = Buffer.from('group-image');
+    const requestedJids: string[] = [];
     assert.equal(await loadProfileMedia({
-        conn: {profilePictureUrl: async () => { throw new Error('private'); }} as never,
+        conn: {profilePictureUrl: async (jid: string) => {
+            requestedJids.push(jid);
+            if (jid.endsWith('@s.whatsapp.net')) throw new Error('private');
+            return 'https://example.test/group.jpg';
+        }} as never,
         mentionJid: '573001112233@s.whatsapp.net',
-        fetchBuffer: async () => media,
-    }), DEFAULT_PROFILE_AVATAR);
+        groupJid: '120363000000@g.us',
+        fetchBuffer: async () => groupFallback,
+    }), groupFallback);
+    assert.deepEqual(requestedJids, ['573001112233@s.whatsapp.net', '120363000000@g.us']);
     assert.equal(await loadProfileMedia({
-        conn: {profilePictureUrl: async () => 'https://example.test/expired.jpg'} as never,
+        conn: {profilePictureUrl: async (jid: string) => jid.endsWith('@g.us')
+            ? 'https://example.test/group-expired.jpg'
+            : 'https://example.test/user-expired.jpg'} as never,
         mentionJid: '573001112233@s.whatsapp.net',
+        groupJid: '120363000000@g.us',
         fetchBuffer: async () => { throw new Error('expired'); },
     }), DEFAULT_PROFILE_AVATAR);
 } finally {

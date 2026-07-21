@@ -7,6 +7,7 @@ import {content} from '../../services/content.service.js';
 import {resolveProfileUser} from '../../services/profile-user.service.js';
 import {loadProfileMedia} from './rpg-profile.helpers.js';
 import {logWarn} from '../../lib/logger.js';
+import type {GroupParticipant} from '@whiskeysockets/baileys';
 
 interface CountryResponse {
     result?: {
@@ -21,6 +22,15 @@ const formatPhoneNumber = (jid: string) => {
     if (!/^\d{8,15}$/.test(number)) return content.message('rpg.shared.unknown');
     return `+${number}`;
 };
+
+const formatNumber = (value: number): string => new Intl.NumberFormat('es-CO').format(value);
+
+function getGroupHierarchy(participant: GroupParticipant | null): string {
+    if (!participant) return 'No disponible ❔';
+    if (participant.admin === 'superadmin' || participant.isSuperAdmin) return 'Fundador/a 👑';
+    if (participant.admin === 'admin' || participant.isAdmin) return 'Administrador/a 🛡️';
+    return 'Miembro/a 👤';
+}
 
 export default defineSdkPlugin({
     help: ['perfil', 'perfil *@user*'],
@@ -43,10 +53,11 @@ export default defineSdkPlugin({
     const profileMedia = await loadProfileMedia({
         conn,
         mentionJid,
+        groupJid: isGroup ? chatId || m.chat : null,
         fetchBuffer: sdk.http.buffer,
-        onFallback: reason => logWarn(`[RPG PROFILE] Foto no disponible (${reason}); se usara el avatar local.`),
+        onFallback: reason => logWarn(`[RPG PROFILE] Imagen no disponible (${reason}); se intentara el siguiente fallback.`),
     })
-    const {limite, nombre, registered, edad, marry, gender, birthday} = user
+    const {limite, nombre, registered, edad, marry, gender, birthday, exp, money, banco, role: levelRole, dailystreak, regTime} = user
     const level = user.level ?? 0
     const phone = formatPhoneNumber(mentionJid)
 
@@ -64,13 +75,26 @@ export default defineSdkPlugin({
         relacion = sdk.content.renderMessage('rpg.profile.relationship', {spouseName: nombrePareja})
     }
     const targetParticipant = isGroup ? participant : null
-    const groupRole = targetParticipant?.admin ? await getGroupParticipantRole(chatId || m.chat, targetParticipant) : null
-    const roleBlock = groupRole?.role
-        ? sdk.content.renderMessage('rpg.profile.roleBlock', {
+    const isGroupAdmin = Boolean(targetParticipant && (
+        targetParticipant.admin === 'admin'
+        || targetParticipant.admin === 'superadmin'
+        || targetParticipant.isAdmin
+        || targetParticipant.isSuperAdmin
+    ))
+    const groupRole = targetParticipant && isGroupAdmin ? await getGroupParticipantRole(chatId || m.chat, targetParticipant) : null
+    const assignedRoleBlock = groupRole?.role
+        ? sdk.content.renderMessage('rpg.profile.assignedRoleBlock', {
             role: groupRole.role,
             descriptionLine: groupRole.role_description
                 ? sdk.content.renderMessage('rpg.profile.roleDescriptionLine', {description: groupRole.role_description})
                 : '',
+        })
+        : ''
+    const groupBlock = isGroup
+        ? sdk.content.renderMessage('rpg.profile.groupBlock', {
+            group: sdk.metadata.subject || sdk.content.message('rpg.shared.unknown'),
+            hierarchy: getGroupHierarchy(targetParticipant),
+            assignedRoleBlock,
         })
         : ''
 
@@ -81,11 +105,17 @@ export default defineSdkPlugin({
         ageLine: edad ? sdk.content.renderMessage('rpg.profile.ageLine', {age: edad}) : '',
         genderLine: gender ? sdk.content.renderMessage('rpg.profile.genderLine', {gender}) : '',
         birthdayLine: birthday ? sdk.content.renderMessage('rpg.profile.birthdayLine', {birthday: moment(birthday).format('DD/MM/YYYY')}) : '',
-        limit: limite ?? 0,
-        level,
+        registrationDateLine: regTime ? sdk.content.renderMessage('rpg.profile.registrationDateLine', {date: moment(regTime).format('DD/MM/YYYY')}) : '',
+        limit: formatNumber(limite ?? 0),
+        level: formatNumber(level),
+        experience: formatNumber(exp ?? 0),
+        levelRole,
+        money: formatNumber(money ?? 0),
+        bank: formatNumber(banco ?? 0),
+        streak: formatNumber(dailystreak ?? 0),
         registered: registered ? sdk.content.message('rpg.profile.registeredYes') : sdk.content.message('rpg.profile.registeredNo'),
         relationship: relacion,
-        roleBlock,
+        groupBlock,
     })
     await conn.sendFile(m.chat, profileMedia, 'perfil.jpg', texto, m, false, {
         contextInfo: {mentionedJid: [mentionJid]},

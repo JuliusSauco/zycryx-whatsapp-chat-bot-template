@@ -101,7 +101,7 @@ const EMPTY_GROUP_SETTINGS: GroupSettings = {
     convertersAccessMode: 'all',
     funAccessMode: 'all',
     modohorny: false,
-    nsfwAccessMode: 'all',
+    nsfwAccessMode: 'owner',
     audios: false,
     autolevelup: true,
 };

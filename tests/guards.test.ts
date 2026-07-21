@@ -119,7 +119,7 @@ function createContext(calls: Calls, overrides: Partial<GuardContext['ctx']> = {
 function installRepositoryMocks(calls: Calls, options: {
     resources?: {limite: number; money: number; level: number};
     banInfo?: {banned: boolean; razon_ban: string | null; avisos_ban: number} | null;
-    nsfwSettings?: {modohorny: boolean; nsfw_horario: string | null} | null;
+    nsfwSettings?: {modohorny: boolean; nsfwAccessMode?: 'all' | 'admin' | 'superadmin' | 'owner'; nsfw_horario: string | null} | null;
 } = {}): void {
     repositories.users = {
         ...originalUsers,
@@ -235,6 +235,17 @@ async function testNsfwGuard(): Promise<void> {
     try {
         assert.equal(await nsfwGuard(createContext(enabledCalls, {isGroup: true}, {tags: ['nsfw']})), null);
         assert.equal(enabledCalls.sendFiles.length, 0);
+    } finally {
+        restoreRepositories();
+    }
+
+    const restrictedCalls = createCalls();
+    installRepositoryMocks(restrictedCalls, {
+        nsfwSettings: {modohorny: true, nsfwAccessMode: 'owner', nsfw_horario: '00:00-23:59'},
+    });
+    try {
+        assert.equal(await nsfwGuard(createContext(restrictedCalls, {isGroup: true}, {tags: ['nsfw']})), SILENT_REJECT);
+        assert.equal(await nsfwGuard(createContext(restrictedCalls, {isGroup: true}, {tags: ['nsfw'], feature: 'nsfw'})), null);
     } finally {
         restoreRepositories();
     }

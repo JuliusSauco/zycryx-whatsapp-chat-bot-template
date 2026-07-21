@@ -33,7 +33,7 @@ const EMPTY_CONTEXT_SETTINGS: ContextGroupSettings = {
     convertersAccessMode: 'all',
     funAccessMode: 'all',
     modohorny: false,
-    nsfwAccessMode: 'all',
+    nsfwAccessMode: 'owner',
     audios: false,
     autolevelup: true,
 };
@@ -59,7 +59,7 @@ export async function getNsfwSettings(chatId: string): Promise<{
     nsfw_horario: string | null;
 }> {
     const row = await repositories.groupSettings.findNsfwSettings(chatId);
-    return row ?? {modohorny: false, nsfwAccessMode: 'all', nsfw_horario: null};
+    return row ?? {modohorny: false, nsfwAccessMode: 'owner', nsfw_horario: null};
 }
 
 export async function getGroupSettings(chatId: string): Promise<GroupSettingsRecord | null> {

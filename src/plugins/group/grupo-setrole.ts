@@ -9,8 +9,29 @@ type ParticipantWithAliases = GroupParticipant & {
     participantAlt?: string | null;
 };
 
-function getTargetJid(m: {mentionedJid?: string[]; quoted?: {sender?: string | null} | null}): string | null {
+const MAX_ROLE_LENGTH = 60;
+const MAX_DESCRIPTION_LENGTH = 240;
+
+export function getTargetJid(m: {mentionedJid?: string[]; quoted?: {sender?: string | null} | null}): string | null {
     return cleanJid(m.mentionedJid?.[0] || m.quoted?.sender || '');
+}
+
+export function parseRoleInput(text: string): {role: string; roleDescription: string | null} | null {
+    const cleanText = text.replace(/@\d+/g, '').trim();
+    if (!cleanText) return null;
+
+    const separatorIndex = cleanText.indexOf('|');
+    const role = (separatorIndex >= 0 ? cleanText.slice(0, separatorIndex) : cleanText).trim();
+    const roleDescription = (separatorIndex >= 0 ? cleanText.slice(separatorIndex + 1) : '').trim() || null;
+    if (!role) return null;
+    return {role, roleDescription};
+}
+
+function isAdminParticipant(participant: ParticipantWithAliases): boolean {
+    return participant.admin === 'admin'
+        || participant.admin === 'superadmin'
+        || participant.isAdmin === true
+        || participant.isSuperAdmin === true;
 }
 
 function findParticipantByJid(participants: GroupParticipant[], jid: string): ParticipantWithAliases | null {
@@ -35,20 +56,17 @@ export default defineSdkPlugin({
     if (!targetJid) return sdk.reply.message('group.setRole.missingUser');
 
     const target = findParticipantByJid(sdk.participants, targetJid);
-    if (!target?.admin) {
+    if (!target || !isAdminParticipant(target)) {
         return sdk.reply.message('group.setRole.targetNotAdmin');
     }
-    const roleUserId = getParticipantIdentityJids(target).find(jid => jid.endsWith('@s.whatsapp.net')) || targetJid;
+    const roleUserId = cleanJid(getParticipantIdentityJids(target).find(jid => jid.endsWith('@s.whatsapp.net')) || targetJid);
 
-    const cleanText = sdk.text
-        .replace(/@\d+/g, '')
-        .trim();
-    if (!cleanText) return sdk.reply.message('group.setRole.missingRole');
-
-    const [rawRole, rawDescription] = cleanText.split('|');
-    const role = rawRole?.trim();
-    const roleDescription = rawDescription?.trim() || null;
-    if (!role) return sdk.reply.message('group.setRole.missingRole');
+    const parsed = parseRoleInput(sdk.text);
+    if (!parsed) return sdk.reply.message('group.setRole.missingRole');
+    if (parsed.role.length > MAX_ROLE_LENGTH || (parsed.roleDescription?.length || 0) > MAX_DESCRIPTION_LENGTH) {
+        return sdk.reply.message('group.setRole.tooLong', {roleMax: MAX_ROLE_LENGTH, descriptionMax: MAX_DESCRIPTION_LENGTH});
+    }
+    const {role, roleDescription} = parsed;
 
     await setGroupUserRole({
         groupId: sdk.chatId,
@@ -61,6 +79,7 @@ export default defineSdkPlugin({
     return sdk.sendMessage({text: sdk.content.renderMessage(roleDescription ? 'group.setRole.saved' : 'group.setRole.savedWithoutDescription', {
         user: roleUserId.split('@')[0],
         role,
+        description: roleDescription || '',
     }), mentions: [roleUserId]});
     }
 });

@@ -87,7 +87,7 @@ const groupRow: GroupSettingsRow = {
 
 {
     const nsfw = mapNsfwGroupSettings(groupRow);
-    assert.deepEqual(nsfw, {modohorny: false, nsfwAccessMode: 'all', nsfw_horario: null});
+    assert.deepEqual(nsfw, {modohorny: false, nsfwAccessMode: 'owner', nsfw_horario: null});
 }
 
 {
