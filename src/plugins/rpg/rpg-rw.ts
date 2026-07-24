@@ -35,8 +35,9 @@ type TemporaryCharacter = CharacterRecord & {
 const tempCharacters = createPendingActionStore<TemporaryCharacter>({ttlMs: 5 * 60 * 1000})
 
 async function getAniListCharacter(http: PluginHttpSdk, pluginContent: PluginContentSdk): Promise<Omit<CharacterRecord, 'id' | 'last_removed_time'>> {
-    const id = randomInt(200000)
-    const query = `query {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+        const id = randomInt(200000)
+        const query = `query {
       Character(id: ${id}) {
         name { full }
         image { large }
@@ -50,34 +51,37 @@ async function getAniListCharacter(http: PluginHttpSdk, pluginContent: PluginCon
       }
     }`
 
-    const json = await http.json<AniListCharacterResponse>('https://graphql.anilist.co', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({query}),
-    })
+        const json = await http.json<AniListCharacterResponse>('https://graphql.anilist.co', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({query}),
+        })
 
-    const c = json.data?.Character
-    if (!c || !c.image?.large || !c.name?.full) return await getAniListCharacter(http, pluginContent)
+        const c = json.data?.Character
+        if (!c || !c.image?.large || !c.name?.full) continue
 
-    const rarezas = pluginContent.messageList('rpg.rw.rarities')
-    const rareza = pickRandom(rarezas)
-    const favs = c.favourites || 0
-    let price = Math.floor(favs * 0.5)
-    if (price < 6500) price = 6500
-    if (rareza === 'Legendario' && price < 50000) price = 50000 + randomInt(10000)
-    return {
-        name: c.name.full,
-        url: c.image.large,
-        tipo: c.gender || pluginContent.message('rpg.rw.defaultType'),
-        anime: c.media?.nodes?.[0]?.title?.romaji || pluginContent.message('rpg.rw.defaultAnime'),
-        rareza,
-        price,
-        previous_price: null,
-        claimed_by: null,
-        for_sale: false,
-        seller: null,
-        votes: 0,
+        const rarezas = pluginContent.messageList('rpg.rw.rarities')
+        const rareza = pickRandom(rarezas)
+        const favs = c.favourites || 0
+        let price = Math.floor(favs * 0.5)
+        if (price < 6500) price = 6500
+        if (rareza === 'Legendario' && price < 50000) price = 50000 + randomInt(10000)
+        return {
+            name: c.name.full,
+            url: c.image.large,
+            tipo: c.gender || pluginContent.message('rpg.rw.defaultType'),
+            anime: c.media?.nodes?.[0]?.title?.romaji || pluginContent.message('rpg.rw.defaultAnime'),
+            rareza,
+            price,
+            previous_price: null,
+            claimed_by: null,
+            for_sale: false,
+            seller: null,
+            votes: 0,
+        }
     }
+
+    throw new Error('AniList no devolvio un personaje valido despues de 10 intentos')
 }
 
 export default defineSdkPlugin({
@@ -88,7 +92,7 @@ export default defineSdkPlugin({
     async before(m, {conn}) {
     const quotedId = m.quoted?.key?.id || m.quoted?.id
     const character = quotedId ? tempCharacters.get(quotedId) : null
-    if (m.quoted && quotedId && /^[\/]?c$/i.test(m.originalText) && character && character.messageId === quotedId) {
+    if (m.quoted && quotedId && /^[./#!]?c$/i.test(m.originalText.trim()) && character && character.messageId === quotedId) {
         try {
             const user = await getWallet(m.sender)
             const claimedCharacter = await findCharacterByUrl(character.url)
@@ -212,6 +216,8 @@ export default defineSdkPlugin({
         if (messageId) tempCharacters.start(messageId, {...claimedCharacter, esGratis, messageId})
         await addWalletResourcesAndSetFields({userId: m.sender, resources: {}, fields: {ryTime: now}})
     } catch (e: unknown) {
+        logError(e)
+        return sdk.reply.message('rpg.rw.loadError')
     }
     },
 })
