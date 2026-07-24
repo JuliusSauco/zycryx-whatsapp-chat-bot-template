@@ -52,11 +52,23 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     markPerf(marks, 'skip', perfStart);
 
     // 2. Setup reply helper + smsg (enriquece m con .db, .quoted, .download, etc.)
-    m.reply = async (text: string) => {
+    m.reply = async (text, chatIdOrOptions, options = {}) => {
+        const targetChatId = typeof chatIdOrOptions === 'string' ? chatIdOrOptions : chatId;
+        const firstOptions = chatIdOrOptions && typeof chatIdOrOptions === 'object' ? chatIdOrOptions : {};
+        const mergedOptions = {...firstOptions, ...options};
+        const explicitMentions = Array.isArray(mergedOptions.mentions)
+            ? mergedOptions.mentions.filter((jid): jid is string => typeof jid === 'string')
+            : [];
+        const parsedMentions = await conn.parseMention(text);
+        const customContextInfo = mergedOptions.contextInfo && typeof mergedOptions.contextInfo === 'object'
+            ? mergedOptions.contextInfo
+            : {};
         const contextInfo = {
-            mentionedJid: await conn.parseMention(text)
+            ...customContextInfo,
+            mentionedJid: [...new Set([...parsedMentions, ...explicitMentions])],
         };
-        return await conn.sendMessage(chatId, {text, contextInfo}, {quoted: m});
+        const {mentions: _mentions, contextInfo: _contextInfo, quoted, ...sendOptions} = mergedOptions;
+        return await conn.sendMessage(targetChatId, {text, contextInfo}, {quoted: quoted || m, ...sendOptions});
     };
     await smsg(conn, m);
     markPerf(marks, 'smsg', perfStart);

@@ -24,6 +24,7 @@ import {GROUP_META_CACHE_TTL} from '../utils/constants.js';
 import {isGroupCreator} from '../utils/group-creator.js';
 import {isMainConnection} from './runtime-state.js';
 import {createDefaultFamilyAccessMap} from '../utils/family-access.js';
+import {resolveMention} from '../utils/mention-identity.js';
 
 // --- Cache de metadata de grupos ---
 const groupMetaCache = new Map<string, GroupMetadata>();
@@ -157,6 +158,7 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
     const isOwner = isCreator || senderJid === botJid || (botConfig.owners || []).includes(senderJid);
 
     const participants = metadata.participants || [];
+    normalizeMessageMentions(m, participants);
     const adminIds = buildAdminIds(participants);
 
     // --- isAdmin del sender ---
@@ -199,6 +201,23 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
         groupSettings,
         shouldAbort,
     };
+}
+
+/**
+ * Baileys puede entregar las menciones como LID. Los plugins y la persistencia
+ * trabajan preferentemente con el JID telefónico, así que resolvemos la pareja
+ * LID/participantAlt una sola vez antes de ejecutar hooks y comandos.
+ */
+function normalizeMessageMentions(m: BotMessage, participants: GroupParticipant[]): void {
+    const originalMentions = Array.isArray(m.mentionedJid) ? m.mentionedJid : [];
+    m.mentionedJid = [...new Set(originalMentions
+        .map(jid => resolveMention(jid, participants).mentionJid)
+        .filter(Boolean))];
+
+    if (m.quoted?.sender) {
+        m.quoted.sender = resolveMention(m.quoted.sender, participants).mentionJid;
+    }
+    if (m.mentionedJid[0]) m.who = m.mentionedJid[0];
 }
 
 // ---- Funciones internas ----

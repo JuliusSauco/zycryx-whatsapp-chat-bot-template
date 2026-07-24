@@ -129,6 +129,46 @@ export function renderConfigOnboarding(prefix: string): string {
     ].join('\n');
 }
 
+export function renderConfigView(state: ToggleMenuState): string {
+    const scope = state.isGroup ? 'GRUPO ACTUAL' : 'CONFIGURACIÓN OWNER';
+    const sectionLines = sections
+        .filter(section => state.isGroup || section.key === 'subbot')
+        .map(section => {
+            const items = getVisibleItems(section, state)
+                .filter(item => item.status && item.status !== state.notGroupIcon)
+                .map(item => renderViewItem(item, state))
+                .join('\n');
+            return items ? `${sectionIcon(section.key)} *${section.title}*\n${items}` : '';
+        })
+        .filter(Boolean);
+
+    return [
+        `╭━━━〔 ⚙️ \`${scope}\` 〕━━━╮`,
+        '',
+        'Aquí tienes el estado real de lo que puedes administrar.',
+        `${state.enabledIcon} habilitado  |  ${state.disabledIcon} deshabilitado`,
+        '',
+        sectionLines.length ? sectionLines.join('\n\n') : 'No hay configuraciones disponibles en este contexto.',
+        '',
+        '🧭 *¿Necesitas todos los comandos?*',
+        `• Menú por secciones: *${state.prefix}config*`,
+        `• Guía de permisos: *${state.prefix}config --info*`,
+        '',
+        '╰━━━━━━━━━━━━━━━━━━━━╯',
+    ].join('\n').trim();
+}
+
+function renderViewItem(item: ToggleItem, state: ToggleMenuState): string {
+    const isDisabled = item.status.includes(state.disabledIcon) || /desactivad|apagado/i.test(item.status);
+    const command = item.commands
+        .map(value => typeof value === 'string' ? value : value.text)
+        .find(value => isDisabled ? /enable\s/i.test(value) : /disable\s/i.test(value));
+    const action = command
+        ? `\n   ↳ ${isDisabled ? 'Habilitar' : 'Deshabilitar'}: *${command}*`
+        : '';
+    return `• *${item.label}:* ${item.status}${action}`;
+}
+
 function renderSummary(state: ToggleMenuState): string {
     const sectionLines = sections
         .filter(section => getVisibleItems(section, state).length > 0)

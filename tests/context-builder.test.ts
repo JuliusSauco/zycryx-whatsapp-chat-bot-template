@@ -7,7 +7,7 @@ import type {SubbotConfig} from '../src/types/config.js';
 import type {ExtendedConn} from '../src/types/context.js';
 import type {BotMessage} from '../src/types/message.js';
 
-type Participant = {id: string; admin?: 'admin' | 'superadmin' | null};
+type Participant = {id: string; participantAlt?: string; admin?: 'admin' | 'superadmin' | null};
 
 type Calls = {
     groupMetadata: string[];
@@ -258,6 +258,25 @@ async function testGroupMetadataAdminsAndCachedMetadata(): Promise<void> {
     });
 }
 
+async function testNormalizesLidMentionsFromCachedParticipants(): Promise<void> {
+    await withMocks({subbotConfig: createSubbotConfig()}, async () => {
+        const conn = createConn({groupMetadata: [], updateTipo: [], clearPrimaryBot: []}, {
+            cachedParticipants: [
+                {id: '987654321@lid', participantAlt: '573001112233@s.whatsapp.net'},
+            ],
+        });
+        const msg = createMessage({
+            mentionedJid: ['987654321@lid'],
+            who: '987654321@lid',
+        });
+
+        await buildContext(conn, msg);
+
+        assert.deepEqual(msg.mentionedJid, ['573001112233@s.whatsapp.net']);
+        assert.equal(msg.who, '573001112233@s.whatsapp.net');
+    });
+}
+
 async function testFetchesMetadataWhenCacheMisses(): Promise<void> {
     await withMocks({
         subbotConfig: createSubbotConfig(),
@@ -331,6 +350,7 @@ await testPrivateChatSenderAndOwnerResolution();
 await testCreatorFromGlobalOwnerAndFromMeSender();
 await testPersistedSubbotOwnerResolution();
 await testGroupMetadataAdminsAndCachedMetadata();
+await testNormalizesLidMentionsFromCachedParticipants();
 await testFetchesMetadataWhenCacheMisses();
 await testGroupRestrictions();
 

@@ -4,7 +4,7 @@ import {featureAccessGuard} from '../src/guards/feature-access.guard.js';
 import type {GuardContext} from '../src/types/guard.js';
 import {createDefaultFamilyAccessMap, defaultFamilyAccess, mergeFamilyAccessRules} from '../src/utils/family-access.js';
 import {getFamilyManagerLevel, getRequiredFamilyManagerLevel} from '../src/utils/family-access-authority.js';
-import {renderConfigOnboarding} from '../src/plugins/config/config-toggle-menu.js';
+import {renderConfigOnboarding, renderConfigView} from '../src/plugins/config/config-toggle-menu.js';
 
 function context(overrides: Record<string, unknown> = {}, plugin: Record<string, unknown> = {}): GuardContext {
     return {
@@ -30,6 +30,47 @@ assert.match(onboarding, /\.enable juegos --all/);
 assert.match(onboarding, /\.enable nsfwgif --owner/);
 assert.match(onboarding, /\.config comandos/);
 assert.match(onboarding, /--superadmin/);
+
+const configView = renderConfigView({
+    prefix: '.',
+    command: 'config',
+    isGroup: true,
+    enabledIcon: '✅',
+    disabledIcon: '❌',
+    notGroupIcon: '⚠️',
+    group: {welcome: true, bye: false, antilink: true},
+    familyAccess: createDefaultFamilyAccessMap(),
+    subbot: null,
+    isSubbot: false,
+    isAdmin: true,
+    isOwner: true,
+    isGroupCreator: true,
+});
+assert.match(configView, /`GRUPO ACTUAL`/);
+assert.match(configView, /Bienvenida.*✅/);
+assert.match(configView, /Deshabilitar: \*\.disable welcome\*/);
+assert.match(configView, /Despedida.*❌/);
+assert.match(configView, /Habilitar: \*\.enable bye\*/);
+assert.match(configView, /Juegos.*todos/);
+
+const ownerView = renderConfigView({
+    prefix: '.',
+    command: 'config',
+    isGroup: false,
+    enabledIcon: '✅',
+    disabledIcon: '❌',
+    notGroupIcon: '⚠️',
+    group: {},
+    familyAccess: createDefaultFamilyAccessMap(),
+    subbot: {prefix: ['.'], mode: 'public', owners: [], anti_private: true, anti_call: false},
+    isSubbot: true,
+    isAdmin: false,
+    isOwner: true,
+    isGroupCreator: false,
+});
+assert.match(ownerView, /`CONFIGURACIÓN OWNER`/);
+assert.match(ownerView, /Antiprivado.*✅/);
+assert.doesNotMatch(ownerView, /Juegos/);
 
 const merged = mergeFamilyAccessRules([{target: 'games', rule: {enabled: false, accessMode: 'admin'}}]);
 assert.deepEqual(merged.games, {enabled: false, accessMode: 'admin'});

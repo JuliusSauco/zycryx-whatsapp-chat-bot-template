@@ -3,7 +3,7 @@ import {content} from '../../services/content.service.js'
 import {getContextGroupSettings, getGroupFamilyAccessRule, getGroupSettings, setGroupAutoAcceptMode, setGroupAutoresponderMode, setGroupAutoresponderTrigger, setGroupBooleanFlag, setGroupBotAccessMode, setGroupFamilyAccessRule, setGroupGreetingHidetagMode, setGroupNsfwGifMode, setGroupNsfwMode} from '../../services/group-settings.service.js'
 import {getSubbotConfig, setSubbotBooleanFlag} from '../../services/subbot.service.js'
 import {isGroupCreator} from '../../utils/group-creator.js'
-import {getToggleSectionKey, renderConfigOnboarding, renderToggleMenu} from './config-toggle-menu.js'
+import {getToggleSectionKey, renderConfigOnboarding, renderConfigView, renderToggleMenu} from './config-toggle-menu.js'
 import type {ConfigurableFeatureKey} from '../../domain/groups.js'
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode, GroupSettings} from '../../types/config.js'
 import {getFamilyManagerLevel, getRequiredFamilyManagerLevel} from '../../utils/family-access-authority.js'
@@ -95,6 +95,7 @@ export default defineSdkPlugin({
     help: [
         'config',
         'config --info',
+        'config view',
         'config saludos',
         'config seguridad',
         'config acceso',
@@ -169,6 +170,9 @@ export default defineSdkPlugin({
     const menu = renderToggleMenu(menuState, sectionKey)
     if (isConfigMenu && (type === '--info' || type === 'info' || type === 'ayuda' || type === 'help')) {
         return m.reply(renderConfigOnboarding(usedPrefix))
+    }
+    if (isConfigMenu && (type === 'view' || type === 'ver' || type === 'estado' || type === 'status')) {
+        return m.reply(renderConfigView(menuState))
     }
     // Los alias de secciones (nsfwmenu, ia, etc.) también pueden ser toggles.
     // Solo deben abrir la sección cuando el comando invocado es `config`.
