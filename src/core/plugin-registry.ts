@@ -62,7 +62,6 @@ export function buildPluginRegistry(plugins: Record<string, Plugin>): PluginRegi
             customPrefixPriority: plugin.customPrefixPriority ?? 0,
             permissions: Object.freeze({
                 owner: !!plugin.owner,
-                rowner: !!plugin.rowner,
                 admin: !!plugin.admin,
                 botAdmin: !!plugin.botAdmin,
                 register: !!plugin.register,

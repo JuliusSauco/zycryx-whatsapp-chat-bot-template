@@ -48,6 +48,8 @@ export interface GroupSettings {
     funAccessMode?: AccessMode | null;
     modohorny: boolean;
     nsfwAccessMode?: AccessMode | null;
+    nsfwGifEnabled?: boolean | null;
+    nsfwGifAccessMode?: AccessMode | null;
     audios: boolean;
     nsfw_horario?: string | null;
     antiStatus: boolean;
@@ -77,6 +79,7 @@ export interface GroupSettings {
     autoAcceptMode?: AutoAcceptMode | null;
     botAccessMode?: AccessMode | null;
     messageLogging: boolean;
+    familyAccess?: import('../domain/groups.js').FamilyAccessMap;
     // allow custom welcome/bye texts
     swelcome?: string | null;
     sbye?: string | null;

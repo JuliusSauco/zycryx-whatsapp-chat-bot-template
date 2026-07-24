@@ -386,7 +386,7 @@ Avance aplicado sobre el orden inmediato:
   - `help` legacy de stickers/RPG apunta ahora a comandos alcanzables por el router.
 - [x] Migracion SDK legacy aplicada al primer bloque pequeno:
   - `src/plugins/messages/msg-text-ins.ts`
-  - `src/plugins/messages/msg-gif-dp.ts`
+  - `src/plugins/messages/msg-gif-tr.ts`
   - `src/plugins/messages/msg-gif-reactions.ts`
   - `src/plugins/random/random-anime.ts`
   - `src/plugins/nsfw/nsfw-contenido.ts`

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
+import {mergeOwnerNumbers} from '../src/utils/owner-numbers.js';
 import {buildAliasMap, buildAliasRegex} from '../src/utils/command-alias.js';
-import {normalizeFixedOwnerId} from '../src/utils/constants.js';
 import {pickRandom, randomChance, randomInt} from '../src/utils/random.js';
 import {createUserRequestLocks} from '../src/lib/user-request-locks.js';
 import {runFirstProvider} from '../src/lib/provider-fallback.js';
@@ -12,7 +12,9 @@ import type {BotMessage} from '../src/types/message.js';
 import type {ExtendedConn} from '../src/types/context.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
 import {replyActionTarget} from '../src/plugins/fun/fun-juegos.helpers.js';
-import {resolveOrgiaTargets, selectRandomOrgiaTargets} from '../src/plugins/messages/msg-gif-orgia.js';
+import {resolveOgiTargets, selectRandomOgiTargets} from '../src/plugins/messages/msg-gif-ogi.js';
+import {selectReactionMedia} from '../src/plugins/messages/gif-media.js';
+import path from 'node:path';
 import {getTargetJid, parseRoleInput} from '../src/plugins/group/grupo-setrole.js';
 
 function testRandomHelpers(): void {
@@ -46,12 +48,11 @@ function testCommandAliases(): void {
     assert.equal(regex.test('missing'), false);
 }
 
-function testFixedOwnerNormalization(): void {
-    assert.equal(normalizeFixedOwnerId('573001112233'), '573001112233@s.whatsapp.net');
-    assert.equal(normalizeFixedOwnerId('+57 300 111 2233'), '573001112233@s.whatsapp.net');
-    assert.equal(normalizeFixedOwnerId('573001112233@s.whatsapp.net'), '573001112233@s.whatsapp.net');
-    assert.equal(normalizeFixedOwnerId('573001112233:1@s.whatsapp.net'), '573001112233@s.whatsapp.net');
-    assert.equal(normalizeFixedOwnerId(''), null);
+function testOwnerNumberMerge(): void {
+    assert.deepEqual(
+        mergeOwnerNumbers('573001112233,51999888777', '573001112233@s.whatsapp.net,+57 300 444 5566,573009998888:4@s.whatsapp.net'),
+        [['573001112233'], ['51999888777'], ['573004445566'], ['573009998888']],
+    );
 }
 
 function testSetRoleHelpers(): void {
@@ -151,7 +152,6 @@ async function testPluginSdk(): Promise<void> {
         participants: [],
         metadata: {participants: []},
         isOwner: false,
-        isROwner: false,
         isAdmin: false,
         isBotAdmin: false,
         isGroup: false,
@@ -200,7 +200,7 @@ async function testActionTargetMentionResolution(): Promise<void> {
     assert.equal(sentOptions?.quoted, m);
 }
 
-function testOrgiaTargetResolution(): void {
+function testOgiTargetResolution(): void {
     const participants = [
         {id: 'sender-lid@lid', participantAlt: '573000000000@s.whatsapp.net'},
         {id: 'target-1@lid', participantAlt: '573000000001@s.whatsapp.net'},
@@ -209,7 +209,7 @@ function testOrgiaTargetResolution(): void {
         {id: 'target-4@lid', participantAlt: '573000000004@s.whatsapp.net'},
     ] as GroupParticipant[];
 
-    const targets = resolveOrgiaTargets([
+    const targets = resolveOgiTargets([
         'target-1@lid',
         '573000000001@s.whatsapp.net',
         'target-2@lid',
@@ -225,15 +225,100 @@ function testOrgiaTargetResolution(): void {
         '573000000004@s.whatsapp.net',
     ]);
 
-    const randomTargets = selectRandomOrgiaTargets(participants, 'sender-lid@lid', 3, () => 0);
+    const randomTargets = selectRandomOgiTargets(participants, 'sender-lid@lid', 3, () => 0);
     assert.equal(randomTargets.length, 3);
     assert.equal(randomTargets.some(target => target.mentionJid === '573000000000@s.whatsapp.net'), false);
     assert.equal(new Set(randomTargets.map(target => target.mentionJid)).size, 3);
 }
 
+function testReactionMediaFallback(): void {
+    const root = path.resolve('resources/media/reaction-gifs');
+    const trio = selectReactionMedia({
+        publicFolder: path.join(root, 'tr'),
+        nsfwFolder: path.join(root, 'tr', 'nsfw'),
+        nsfwEnabled: false,
+    });
+    assert.equal(trio.fallbackReason, null);
+    assert.match(trio.filePath || '', /reaction-gifs[\\/]tr[\\/]tr-1\.mp4$/);
+
+    const dedeo = selectReactionMedia({
+        publicFolder: path.join(root, 'dd'),
+        nsfwFolder: path.join(root, 'dd', 'nsfw'),
+        nsfwEnabled: false,
+    });
+    assert.equal(dedeo.fallbackReason, 'nsfw-required');
+    assert.equal(dedeo.filePath, null);
+
+    const deepthroat = selectReactionMedia({
+        publicFolder: path.join(root, 'dt'),
+        nsfwFolder: path.join(root, 'dt', 'nsfw'),
+        nsfwEnabled: false,
+    });
+    assert.equal(deepthroat.fallbackReason, null);
+    assert.ok(deepthroat.filePath?.includes(`${path.sep}dt${path.sep}`));
+    assert.ok(!deepthroat.filePath?.includes(`${path.sep}nsfw${path.sep}`));
+
+    const sixtyNine = selectReactionMedia({
+        publicFolder: path.join(root, '69'),
+        nsfwFolder: path.join(root, '69', 'nsfw'),
+        nsfwEnabled: false,
+    });
+    assert.equal(sixtyNine.fallbackReason, 'nsfw-required');
+    assert.equal(sixtyNine.filePath, null);
+
+    const sixtyNineNsfw = selectReactionMedia({
+        publicFolder: path.join(root, '69'),
+        nsfwFolder: path.join(root, '69', 'nsfw'),
+        nsfwEnabled: true,
+    });
+    assert.equal(sixtyNineNsfw.fallbackReason, null);
+    assert.ok(sixtyNineNsfw.filePath?.includes(`${path.sep}69${path.sep}nsfw${path.sep}`));
+
+    const espadasos = selectReactionMedia({
+        publicFolder: path.join(root, 'espn'),
+        nsfwFolder: path.join(root, 'espn', 'nsfw'),
+        nsfwEnabled: false,
+    });
+    assert.equal(espadasos.fallbackReason, 'nsfw-required');
+    assert.equal(espadasos.filePath, null);
+
+    const espadasosNsfw = selectReactionMedia({
+        publicFolder: path.join(root, 'espn'),
+        nsfwFolder: path.join(root, 'espn', 'nsfw'),
+        nsfwEnabled: true,
+    });
+    assert.equal(espadasosNsfw.fallbackReason, null);
+    assert.ok(espadasosNsfw.filePath?.includes(`${path.sep}espn${path.sep}nsfw${path.sep}`));
+
+    const titfuckPublic = selectReactionMedia({
+        publicFolder: path.join(root, 'rs'),
+        nsfwFolder: path.join(root, 'rs', 'nsfw'),
+        nsfwEnabled: false,
+    });
+    assert.equal(titfuckPublic.fallbackReason, null);
+    assert.ok(titfuckPublic.filePath?.includes(`${path.sep}rs${path.sep}`));
+    assert.ok(!titfuckPublic.filePath?.includes(`${path.sep}nsfw${path.sep}`));
+
+    const titfuckNsfw = selectReactionMedia({
+        publicFolder: path.join(root, 'rs'),
+        nsfwFolder: path.join(root, 'rs', 'nsfw'),
+        nsfwEnabled: true,
+    });
+    assert.equal(titfuckNsfw.fallbackReason, null);
+    assert.ok(titfuckNsfw.filePath?.includes(`${path.sep}rs${path.sep}nsfw${path.sep}`));
+
+    const ogi = selectReactionMedia({
+        publicFolder: path.join(root, 'ogi'),
+        nsfwFolder: path.join(root, 'ogi', 'nsfw'),
+        nsfwEnabled: true,
+    });
+    assert.equal(ogi.fallbackReason, null);
+    assert.ok(ogi.filePath?.includes(`${path.sep}ogi${path.sep}nsfw${path.sep}`));
+}
+
 testRandomHelpers();
 testCommandAliases();
-testFixedOwnerNormalization();
+testOwnerNumberMerge();
 testSetRoleHelpers();
 testUserRequestLocks();
 await testProviderFallback();
@@ -241,6 +326,7 @@ testLegacyArrayRandom();
 testContentService();
 await testPluginSdk();
 await testActionTargetMentionResolution();
-testOrgiaTargetResolution();
+testOgiTargetResolution();
+testReactionMediaFallback();
 
 console.log('helpers.test.ts OK');

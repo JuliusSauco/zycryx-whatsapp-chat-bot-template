@@ -93,7 +93,7 @@ Estado: cerrado. Se mantiene solo como registro historico.
 
 Estado: cerrado. La parte de backend fue cancelada; la persistencia oficial es PostgreSQL directo con Drizzle.
 
-- [x] 100% - Endurecer permisos de comandos owner con red arbitraria: `owner-fetch.ts`.
+- [x] 100% - Retirar los comandos owner con acceso de red arbitrario.
 - [x] 100% - Eliminar uso directo de `Math.random()` en plugins y pasar por `src/utils/random.ts`.
 - [x] 100% - Ampliar pruebas unitarias para router, guards y context builder.
 - [x] 100% - Agregar pruebas de servicios con repositorios mockeados.

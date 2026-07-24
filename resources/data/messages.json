@@ -992,18 +992,6 @@
         "publicStatus": "🌐 *Público*",
         "success": "✅ Modo cambiado a: {status}"
       },
-      "restart": {
-        "loading": "*Reiniciando...*",
-        "steps": [
-          "10%",
-          "30%",
-          "50%",
-          "80%",
-          "100%"
-        ],
-        "final": "🚀 Reiniciando Bot...\nPor favor espere un momento",
-        "missingConnection": "eh"
-      },
       "leave": {
         "notice": "*𝐄𝐥 𝐁𝐨𝐭 𝐚𝐛𝐚𝐧𝐝𝐨𝐧𝐚 𝐞𝐥 𝐠𝐫𝐮𝐩𝐨, 𝐜𝐡𝐚𝐮 👋*"
       },
@@ -1021,13 +1009,6 @@
       "unbanChat": {
         "success": "✅ Este grupo ha sido *desbaneado*. El bot volverá a responder aquí."
       },
-      "owners": {
-        "missingTarget": "❌ Debes etiquetar a alguien o escribir un número válido.\nEjemplo: {command} +522257888 o {command} @{sender}",
-        "alreadyOwner": "⚠️ @{user} ya es owner.",
-        "added": "✅ Agregado como owner: @{user}",
-        "notOwner": "⚠️ @{user} no es owner.",
-        "removed": "✅ Removido como owner: @{user}"
-      },
       "banUser": {
         "missingTarget": "🤓 Etiqueta al usuario boludito",
         "unknownUser": "❌ Ese usuario no está registrado en la base de datos.",
@@ -1038,13 +1019,6 @@
         "reason": "\n\n📌 *Razón:* {reason}",
         "unbanned": "✅ El usuario @{user} ha sido *desbaneado* y puede volver a usar el bot.",
         "error": "❌ Ocurrió un error al ejecutar el comando."
-      },
-      "update": {
-        "alreadyUpdated": "⚠️ 𝙔𝘼 𝙀𝙎𝙏𝘼 𝘼𝘾𝙏𝙐𝘼𝙇𝙄𝙕𝘼𝘿𝙊 𝘼 𝙇𝘼 𝙑𝙀𝙍𝙎𝙄𝙊́𝙉 𝙍𝙀𝘾𝙄𝙀𝙉𝙏𝙀.",
-        "updateHeader": "*[ UPDATE ]*\n\n{output}",
-        "conflict": "⚠️ Error\n> *Se han encontrado cambios locales en los archivos del bot que entran en conficto con las nuevas actualizaciones del repositorio. para actualizar, reinstalar el bot o realizar las actualizaciones manualmente.*\n\n*`ARCHIVO EN CONFLICTO :`*\n\n{files}.*",
-        "conflictItem": "*→ {file}*",
-        "unknownError": "⚠️ ERROR NOSE QUE PASO?, Editarte desde puto servidor idiota 🙄"
       },
       "testSubbots": {
         "missingBotId": "❌ No se pudo identificar este bot.",
@@ -1082,14 +1056,6 @@
         "joinFailed": "❌ No pude unirme al grupo. Verifica el enlace e inténtalo de nuevo.",
         "joined": "*El Bot se ha unido al grupo ✅* por *{time} {unit}{plural}*"
       },
-      "getPlugin": {
-        "missingQuery": "*¿Qué buscar?*\nEjemplo:\n{command} sticker",
-        "notFoundSuggestions": "'{query}' no encontrado.\n\nSugerencias:\n{suggestions}",
-        "notFound": "'{query}' no encontrado."
-      },
-      "fetch": {
-        "usage": "Ejemplo:\n{command} https://skyultraplus.com"
-      },
       "db": {
         "infoHeader": "📊 *`ESTADÍSTICAS DE BASE DE DATOS`*",
         "users": "> 👤 Usuarios: *{count}*",
@@ -1100,14 +1066,7 @@
         "tableRow": "• *{table}*: {rows} filas — {size}",
         "zeroBytes": "0 bytes",
         "queryError": "❌ Error al consultar la base de datos.",
-        "optimized": "✅ *Optimización completada.*\n📉 Se ejecutó *VACUUM FULL*\n⏱️ Duración: *{seconds} segundos*",
-        "optimizeError": "❌ No se pudo optimizar.",
-        "usage": "❓ Usa uno de estos subcomandos:\n\n• /db info — ver estadísticas\n• /db optimizar — VACUUM FULL"
-      },
-      "backup": {
-        "missingCreds": "❌ No se encontró el archivo *creds.json* en:\n{path}",
-        "heading": "_📂 *Respaldo de sesión de {id}* ({date})_",
-        "error": "❌ Error al generar el respaldo de la sesión."
+        "usage": "❓ Usa: /db info — ver estadísticas"
       },
       "autoAdmin": {
         "alreadyAdmin": "Ya eres admin del grupo mi creador 🫡"
@@ -1187,12 +1146,6 @@
       }
     },
     "subbots": {
-      "stop": {
-        "onlySubbot": "⚠️ Este comando solo puede ser usado desde una instancia de *SubBot*.",
-        "goodbye": "Adios te voy a extrañar :(",
-        "success": "✅ *Sesión del SubBot finalizada correctamente.*\nPuedes volver a conectarte usando `/jadibot` o `/serbot`.",
-        "error": "❌ Ocurrió un error al cerrar la sesión del SubBot."
-      },
       "primary": {
         "cleared": "✅ El bot primario ha sido eliminado de este grupo. Ahora cualquier subbot puede responder.",
         "selected": "✅ El bot @{bot} ha sido establecido como *BOT PRINCIPAL* de este grupo.",
@@ -1239,6 +1192,7 @@
         "autoresponderConfigured": "🤖 Autoresponder quedó *{status}* para: *{access}*",
         "autoresponderTriggerConfigured": "🤖 Autoresponder ahora responde por: *{trigger}*",
         "nsfwConfigured": "🔞 NSFW quedó *{status}* para: *{access}*",
+        "nsfwGifConfigured": "🎞️ GIFs NSFW quedaron *{status}* para: *{access}*",
         "featureAccessConfigured": "🧩 *{feature}* quedó configurado para: *{access}*",
         "targetAll": "todo el bot",
         "targetUser": "este usuario",
@@ -1432,26 +1386,16 @@
     },
     "messages": {
       "gifReactions": {
-        "missingReaction": "❌ Reacción no configurada.",
-        "ffmpegHint": "⚠️ Para enviarlo como “mensaje” (inline), convierte los GIFs a MP4 y guárdalos en `{folder}`.\n\nEjemplo ffmpeg:\nffmpeg -i input.gif -vf \"fps=15,scale=320:-2:flags=lanczos\" -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart -crf 30 -preset veryfast output.mp4"
+        "missingReaction": "❌ Reacción no configurada."
       },
-      "gifDp": {
+      "gifTr": {
         "needOneMore": "🙋 *{sender}*, para formar el trío necesitas *1 persona más*.\nYa tienes a *{target}* — etiqueta a alguien más para completar.",
-        "ffmpegHint": "⚠️ Para enviarlo como “mensaje” (inline), convierte los GIFs a MP4 y guárdalos en `resources/media/reaction-gifs/dp`.\n\nEjemplo ffmpeg:\nffmpeg -i input.gif -vf \"fps=15,scale=320:-2:flags=lanczos\" -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart -crf 30 -preset veryfast output.mp4",
         "alone": "🥲 *{sender}* quiso hacer un trío... pero está solito 😏",
         "trio": "🔥💦 *{sender}* está teniendo un trío con *{targets}* 🍑🔥"
       },
-      "gifOrgia": {
+      "gifOgi": {
         "notEnoughPeople": "🥀🍷 *Muy poca gente para la orgía, llamen a sus hermanas* 😏📣",
         "caption": "🥂🔥 *{sender}* reunió a *{targets}* para una noche de orgía inolvidable, salvaje, todos contra todos y sin reglas, solo disfrutar de nuestros instintos mas bajos y agresivos, metele el pene y tu liquido de vida a las mujeres que siempre quisiste coger. Dejate coger por los hombres que te pone la punta de las tetas duras, al mismo tiempo todos dentro de ti, entregale tu hueco bien mojado 😈🍷💋"
-      },
-      "gifDedeo": {
-        "missingTarget": "🫴😏 Etiqueta a otra persona o responde a su mensaje para usar *dedeo*.",
-        "caption": "🫴💦🔥 *{sender}* está dedeando con pasión, lujuria y mucha fuerza a *{target}* 😈🥵💋"
-      },
-      "gifVenirse": {
-        "missingTarget": "💦😏 Etiqueta a otra persona o responde a su mensaje para usar *venirse*.",
-        "caption": "💦🔥 *{sender}* ¡NO SE AGUANTA MÁS! Se está viniendo con mucha intensidad en *{target}* 😈🥵💥"
       }
     },
     "random": {

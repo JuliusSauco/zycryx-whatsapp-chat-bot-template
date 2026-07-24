@@ -8,5 +8,5 @@ export default createMenuPlugin({
     owner: true,
     intro: 'Comandos privados para mantenimiento global, seguridad y administración del bot.',
     pluginTags: ['owner'],
-    include: (entry) => entry.owner || entry.rowner || entry.tags.includes('owner'),
+    include: (entry) => entry.owner || entry.tags.includes('owner'),
 });

@@ -1,5 +1,5 @@
 import {sql} from 'drizzle-orm';
-import {bigint, boolean, date, index, integer, jsonb, pgTable, primaryKey, serial, text, timestamp} from 'drizzle-orm/pg-core';
+import {bigint, boolean, check, date, index, integer, jsonb, pgTable, primaryKey, serial, text, timestamp} from 'drizzle-orm/pg-core';
 
 export const usuarios = pgTable('usuarios', {
     id: text('id').primaryKey(),
@@ -83,6 +83,8 @@ export const groupSettings = pgTable('group_settings', {
     funAccessMode: text('fun_access_mode').default('all'),
     modohorny: boolean('modohorny').default(false),
     nsfwAccessMode: text('nsfw_access_mode').default('owner'),
+    nsfwGifEnabled: boolean('nsfw_gif_enabled').default(false),
+    nsfwGifAccessMode: text('nsfw_gif_access_mode').default('owner'),
     audios: boolean('audios').default(false),
     antiStatus: boolean('antistatus').default(false),
     modoadmin: boolean('modoadmin').default(false),
@@ -114,6 +116,20 @@ export const groupSettings = pgTable('group_settings', {
     botAccessMode: text('bot_access_mode').default('all'),
     messageLogging: boolean('message_logging').default(false),
 });
+
+export const groupCommandAccessRules = pgTable('group_command_access_rules', {
+    groupId: text('group_id').notNull(),
+    scope: text('scope').notNull(),
+    target: text('target').notNull(),
+    enabled: boolean('enabled').notNull().default(true),
+    accessMode: text('access_mode').notNull().default('all'),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, table => ({
+    pk: primaryKey({columns: [table.groupId, table.scope, table.target]}),
+    groupScopeIdx: index('group_command_access_rules_group_scope_idx').on(table.groupId, table.scope),
+    scopeCheck: check('group_command_access_rules_scope_check', sql`${table.scope} in ('family', 'command')`),
+    accessModeCheck: check('group_command_access_rules_access_mode_check', sql`${table.accessMode} in ('all', 'admin', 'superadmin', 'owner')`),
+}));
 
 export const chats = pgTable('chats', {
     id: text('id').primaryKey(),

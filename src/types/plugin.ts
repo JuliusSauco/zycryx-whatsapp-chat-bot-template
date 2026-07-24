@@ -1,7 +1,7 @@
 import type {BotMessage} from './message.js';
 import type {BeforePluginContext, PluginContext} from './context.js';
 
-export type PluginFeature = 'games' | 'tools' | 'rpg' | 'downloads' | 'search' | 'stickers' | 'converters' | 'fun' | 'nsfw';
+export type PluginFeature = import('../domain/groups.js').ConfigurableFeatureKey;
 export type ExecutionProfile = 'fast' | 'network' | 'media' | 'owner-operation';
 export interface ExecutionPolicy {
     profile?: ExecutionProfile;
@@ -27,7 +27,7 @@ export interface PluginManifest {
     commands?: string | readonly string[] | RegExp;
     customPrefix?: RegExp | ((input: string) => boolean);
     customPrefixPriority: number;
-    permissions: Readonly<{owner: boolean; rowner: boolean; admin: boolean; botAdmin: boolean; register: boolean}>;
+    permissions: Readonly<{owner: boolean; admin: boolean; botAdmin: boolean; register: boolean}>;
     scope: 'group' | 'private' | 'both';
     resources: Readonly<{limit: number; money: number; level: number}>;
     feature?: PluginFeature;
@@ -42,7 +42,6 @@ export interface Plugin {
     help?: string[];
     tags?: string[];
     owner?: boolean;
-    rowner?: boolean;
     admin?: boolean;
     botAdmin?: boolean;
     group?: boolean;

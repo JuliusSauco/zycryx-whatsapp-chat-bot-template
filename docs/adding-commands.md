@@ -41,7 +41,7 @@ export default defineSdkPlugin({
 | `help` / `tags` | Texto y categoria para menus y ayuda. |
 | `feature` | Familia tipada usada por el access mode del grupo. |
 | `executionPolicy` | Perfil `fast`, `network`, `media`, `owner-operation` o timeout explicito. |
-| `owner` / `rowner` | Requiere owner del bot / owner fijo. |
+| `owner` | Requiere owner global o owner persistido del subbot. |
 | `admin` / `botAdmin` | Requiere admin del grupo / que el bot sea admin. |
 | `group` / `private` | Restringe a grupos o privado. |
 | `register` | Requiere usuario registrado (RPG). |
@@ -77,7 +77,7 @@ Reglas adicionales del proyecto:
 
 ## 4. Access modes por familia
 
-El guard `feature-access.guard.ts` usa la propiedad tipada `feature` para las familias configurables por grupo (`all` / `admins` / `off`):
+El guard `feature-access.guard.ts` usa la propiedad tipada `feature` para familias configurables por grupo. Cada regla persiste `enabled` y uno de los modos `all`, `admin`, `superadmin` u `owner`.
 
 | Familia configurable | Valor de `feature` |
 |---|---|
@@ -89,8 +89,12 @@ El guard `feature-access.guard.ts` usa la propiedad tipada `feature` para las fa
 | `stickers` | `stickers` |
 | `converters` | `converters` |
 | `fun` | `fun` |
+| Audios automáticos | `audio` |
+| GIFs y reacciones normales | `gifs` |
+| Contenido NSFW | `nsfw` |
+| GIFs NSFW dedicados | `nsfw-gifs` |
 
-Si tu comando debe respetar el toggle de su familia, declara `feature`. Los tags no controlan autorizacion.
+Si tu comando debe respetar el toggle de su familia, declara `feature`. Los tags no controlan autorizacion. Los comandos estructurales marcados `owner`, `admin` o `botAdmin` conservan su guard fijo y no quedan sujetos a estas reglas.
 
 ## 5. Registrar en menus
 

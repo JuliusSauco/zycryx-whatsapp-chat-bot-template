@@ -1,6 +1,6 @@
 import {and, eq, lt, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
-import {groupSettings} from '../../db/schema.js';
+import {groupCommandAccessRules, groupSettings} from '../../db/schema.js';
 import type {GroupSettingsRepository} from '../../ports/repositories.js';
 import {
     mapContextGroupSettings,
@@ -10,6 +10,31 @@ import {
     normalizeAutoresponderTrigger,
     normalizeBotAccessMode,
 } from './group-settings.mapper.js';
+import {isConfigurableFeature, mergeFamilyAccessRules, normalizeFamilyAccessMode} from '../../utils/family-access.js';
+
+async function listFamilyRules(groupId: string) {
+    const rows = await orm.select({
+        target: groupCommandAccessRules.target,
+        enabled: groupCommandAccessRules.enabled,
+        accessMode: groupCommandAccessRules.accessMode,
+    }).from(groupCommandAccessRules).where(and(
+        eq(groupCommandAccessRules.groupId, groupId),
+        eq(groupCommandAccessRules.scope, 'family'),
+    ));
+    return rows.filter(row => isConfigurableFeature(row.target)).map(row => ({
+        target: row.target as import('../../domain/groups.js').ConfigurableFeatureKey,
+        rule: {enabled: row.enabled, accessMode: normalizeFamilyAccessMode(row.accessMode)},
+    }));
+}
+
+async function upsertFamilyRule(groupId: string, feature: import('../../domain/groups.js').ConfigurableFeatureKey, enabled: boolean, accessMode: import('../../types/config.js').AccessMode) {
+    const updatedAt = new Date();
+    await orm.insert(groupCommandAccessRules).values({groupId, scope: 'family', target: feature, enabled, accessMode, updatedAt})
+        .onConflictDoUpdate({
+            target: [groupCommandAccessRules.groupId, groupCommandAccessRules.scope, groupCommandAccessRules.target],
+            set: {enabled, accessMode, updatedAt},
+        });
+}
 
 export const groupSettingsRepository: GroupSettingsRepository = {
     async findByGroupId(groupId) {
@@ -18,7 +43,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
     },
 
     async findContextSettings(groupId) {
-        const [row] = await orm
+        const [[row], familyRules] = await Promise.all([orm
             .select({
                 banned: groupSettings.banned,
                 primaryBot: groupSettings.primaryBot,
@@ -42,28 +67,41 @@ export const groupSettingsRepository: GroupSettingsRepository = {
                 funAccessMode: groupSettings.funAccessMode,
                 modohorny: groupSettings.modohorny,
                 nsfwAccessMode: groupSettings.nsfwAccessMode,
+                nsfwGifEnabled: groupSettings.nsfwGifEnabled,
+                nsfwGifAccessMode: groupSettings.nsfwGifAccessMode,
+                nsfwHorario: groupSettings.nsfwHorario,
                 audios: groupSettings.audios,
                 autolevelup: groupSettings.autolevelup,
             })
             .from(groupSettings)
             .where(eq(groupSettings.groupId, groupId))
-            .limit(1);
+            .limit(1), listFamilyRules(groupId)]);
 
-        return row ? mapContextGroupSettings(row) : null;
+        return row ? {...mapContextGroupSettings(row), familyAccess: mergeFamilyAccessRules(familyRules)} : null;
     },
 
     async findNsfwSettings(groupId) {
-        const [row] = await orm
+        const [[row], familyRules] = await Promise.all([orm
             .select({
                 modohorny: groupSettings.modohorny,
                 nsfwAccessMode: groupSettings.nsfwAccessMode,
+                nsfwGifEnabled: groupSettings.nsfwGifEnabled,
+                nsfwGifAccessMode: groupSettings.nsfwGifAccessMode,
                 nsfwHorario: groupSettings.nsfwHorario,
             })
             .from(groupSettings)
             .where(eq(groupSettings.groupId, groupId))
-            .limit(1);
+            .limit(1), listFamilyRules(groupId)]);
 
-        return row ? mapNsfwGroupSettings(row) : null;
+        if (!row) return null;
+        const mapped = mapNsfwGroupSettings(row);
+        const access = mergeFamilyAccessRules(familyRules);
+        return {...mapped,
+            modohorny: access.nsfw.enabled,
+            nsfwAccessMode: access.nsfw.accessMode,
+            nsfwGifEnabled: access['nsfw-gifs'].enabled,
+            nsfwGifAccessMode: access['nsfw-gifs'].accessMode,
+        };
     },
 
     async setBooleanFlag(groupId, flag, value) {
@@ -142,27 +180,26 @@ export const groupSettingsRepository: GroupSettingsRepository = {
                 target: groupSettings.groupId,
                 set: {modohorny: enabled, nsfwAccessMode: normalizedMode},
             });
+        await upsertFamilyRule(groupId, 'nsfw', enabled, normalizedMode);
     },
 
-    async setFeatureAccessMode(groupId, feature, mode) {
-        const normalizedMode = normalizeAccessMode(mode || null);
-        const propertyByFeature = {
-            games: 'gamesAccessMode',
-            tools: 'toolsAccessMode',
-            rpg: 'rpgAccessMode',
-            downloads: 'downloadsAccessMode',
-            search: 'searchAccessMode',
-            stickers: 'stickersAccessMode',
-            converters: 'convertersAccessMode',
-            fun: 'funAccessMode',
-        } as const;
-        const property = propertyByFeature[feature];
+    async setNsfwGifMode(groupId, enabled, mode) {
+        const normalizedMode = normalizeAccessMode(mode || null, 'owner');
         await orm.insert(groupSettings)
-            .values({groupId, [property]: normalizedMode})
+            .values({groupId, nsfwGifEnabled: enabled, nsfwGifAccessMode: normalizedMode})
             .onConflictDoUpdate({
                 target: groupSettings.groupId,
-                set: {[property]: normalizedMode},
+                set: {nsfwGifEnabled: enabled, nsfwGifAccessMode: normalizedMode},
             });
+        await upsertFamilyRule(groupId, 'nsfw-gifs', enabled, normalizedMode);
+    },
+
+    async listFamilyAccessRules(groupId) {
+        return listFamilyRules(groupId);
+    },
+
+    async upsertFamilyAccessRule(groupId, feature, rule) {
+        await upsertFamilyRule(groupId, feature, rule.enabled, rule.accessMode);
     },
 
     async setGreetingHidetagMode(groupId, type, mode) {

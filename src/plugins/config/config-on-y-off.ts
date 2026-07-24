@@ -1,11 +1,12 @@
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {content} from '../../services/content.service.js'
-import {getGroupSettings, setGroupAutoAcceptMode, setGroupAutoresponderMode, setGroupAutoresponderTrigger, setGroupBooleanFlag, setGroupBotAccessMode, setGroupFeatureAccessMode, setGroupGreetingHidetagMode, setGroupNsfwMode} from '../../services/group-settings.service.js'
+import {getContextGroupSettings, getGroupFamilyAccessRule, getGroupSettings, setGroupAutoAcceptMode, setGroupAutoresponderMode, setGroupAutoresponderTrigger, setGroupBooleanFlag, setGroupBotAccessMode, setGroupFamilyAccessRule, setGroupGreetingHidetagMode, setGroupNsfwGifMode, setGroupNsfwMode} from '../../services/group-settings.service.js'
 import {getSubbotConfig, setSubbotBooleanFlag} from '../../services/subbot.service.js'
 import {isGroupCreator} from '../../utils/group-creator.js'
-import {getToggleSectionKey, renderToggleMenu} from './config-toggle-menu.js'
+import {getToggleSectionKey, renderConfigOnboarding, renderToggleMenu} from './config-toggle-menu.js'
 import type {ConfigurableFeatureKey} from '../../domain/groups.js'
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode, GroupSettings} from '../../types/config.js'
+import {getFamilyManagerLevel, getRequiredFamilyManagerLevel} from '../../utils/family-access-authority.js'
 
 function getAutoAcceptModeLabel(mode?: AutoAcceptMode | null): string {
     switch (mode || 'off') {
@@ -93,6 +94,7 @@ function getCurrentGreetingHidetagMode(mode?: GreetingHidetagMode | null, legacy
 export default defineSdkPlugin({
     help: [
         'config',
+        'config --info',
         'config saludos',
         'config seguridad',
         'config acceso',
@@ -100,7 +102,8 @@ export default defineSdkPlugin({
         'config ia',
         'config adulto',
         'config subbot',
-        'enable nsfw --owner',
+        'enable nsfwmenu --owner',
+        'enable nsfwgif --owner',
         'enable bot --admin',
         'enable autoresponder --triggerall',
         'enable juegos --admin',
@@ -111,6 +114,8 @@ export default defineSdkPlugin({
         'enable stickers --admin',
         'enable convertidores --admin',
         'enable diversion --admin',
+        'enable audios --admin',
+        'enable gifs --admin',
         'disable <opcion>',
     ],
     tags: ['nable'],
@@ -128,12 +133,14 @@ export default defineSdkPlugin({
     let isAll = false, isUser = false
     let selectedAutoAcceptMode: AutoAcceptMode | null = null
     let selectedBotAccessMode: AccessMode | null = null
-    let selectedFeatureAccessMode: {feature: string; key: ConfigurableFeatureKey; mode: AccessMode} | null = null
+    let selectedFeatureAccessMode: {feature: string; key: ConfigurableFeatureKey; enabled: boolean; mode: AccessMode} | null = null
     let selectedAutoresponderMode: {enabled: boolean; mode: AccessMode} | null = null
     let selectedAutoresponderTrigger: AutoresponderTrigger | null = null
     let selectedNsfwMode: {enabled: boolean; mode: AccessMode} | null = null
+    let selectedNsfwGifMode: {enabled: boolean; mode: AccessMode} | null = null
     let selectedGreetingConfig: {type: 'welcome' | 'bye'; enabled: boolean; hidetagMode: GreetingHidetagMode} | null = null
     const chat: Partial<GroupSettings> = await getGroupSettings(chatId) || {}
+    const familyAccess = (await getContextGroupSettings(chatId)).familyAccess
     const enabledIcon = content.message('config.toggle.enabledIcon')
     const disabledIcon = content.message('config.toggle.disabledIcon')
     const notGroupIcon = content.message('config.toggle.notGroupIcon')
@@ -151,6 +158,7 @@ export default defineSdkPlugin({
         disabledIcon,
         notGroupIcon,
         group: chat,
+        familyAccess,
         subbot: botConfig,
         isSubbot,
         isAdmin,
@@ -159,20 +167,26 @@ export default defineSdkPlugin({
     }
     const sectionKey = getToggleSectionKey(type)
     const menu = renderToggleMenu(menuState, sectionKey)
-    if (isConfigMenu || !type || sectionKey) return m.reply(menu)
+    if (isConfigMenu && (type === '--info' || type === 'info' || type === 'ayuda' || type === 'help')) {
+        return m.reply(renderConfigOnboarding(usedPrefix))
+    }
+    // Los alias de secciones (nsfwmenu, ia, etc.) también pueden ser toggles.
+    // Solo deben abrir la sección cuando el comando invocado es `config`.
+    if (isConfigMenu || !type) return m.reply(menu)
 
     const configureFeatureAccess = async (input: FeatureAccessInput) => {
         if (!m.isGroup) throw groupOnly
-        const mode = isEnable ? resolveAccessMode(args, 'all') : 'all'
-        if (mode === 'owner') {
-            if (!isOwner) throw content.message('config.toggle.ownerOnly')
-        } else if (mode === 'superadmin') {
-            if (!isOwner && !isFounder) throw ownerOrGroupCreatorOnly
-        } else if (!isAdmin) {
+        const current = await getGroupFamilyAccessRule(chatId, input.key)
+        const mode = isEnable ? resolveAccessMode(args, current.accessMode) : current.accessMode
+        const actorLevel = getFamilyManagerLevel({isOwner, isGroupCreator: isFounder, isAdmin})
+        const requiredLevel = getRequiredFamilyManagerLevel(current, {enabled: isEnable, accessMode: mode})
+        if (actorLevel < requiredLevel) {
+            if (requiredLevel === 3) throw content.message('config.toggle.ownerOnly')
+            if (requiredLevel === 2) throw ownerOrGroupCreatorOnly
             throw adminOnly
         }
-        await setGroupFeatureAccessMode(chatId, input.key, mode)
-        return {feature: input.label, key: input.key, mode}
+        await setGroupFamilyAccessRule(chatId, input.key, {enabled: isEnable, accessMode: mode})
+        return {feature: input.label, key: input.key, enabled: isEnable, mode}
     }
 
     switch (type) {
@@ -298,9 +312,16 @@ export default defineSdkPlugin({
             break
 
         case 'audios':
-            if (!m.isGroup) throw groupOnly
-            if (!isAdmin) throw adminOnly
-            await setGroupBooleanFlag(chatId, 'audios', isEnable)
+        case 'audio': {
+            selectedFeatureAccessMode = await configureFeatureAccess({key: 'audio', label: 'audios'})
+            await setGroupBooleanFlag(chatId, 'audios', selectedFeatureAccessMode.enabled)
+            break
+        }
+
+        case 'gifs':
+        case 'gif':
+        case 'reacciones':
+            selectedFeatureAccessMode = await configureFeatureAccess({key: 'gifs', label: 'gifs/reacciones'})
             break
 
         case 'antifake':
@@ -310,13 +331,26 @@ export default defineSdkPlugin({
             break
 
         case 'nsfw':
+        case 'nsfwmenu':
+        case 'menu-nsfw':
+        case 'contenidonsfw':
         case 'modohorny':
-        case 'modocaliente':
-            if (!m.isGroup) throw groupOnly
-            if (!isOwner) throw content.message('config.toggle.ownerOnly')
-            selectedNsfwMode = {enabled: isEnable, mode: isEnable ? resolveAccessMode(args, 'owner') : 'owner'}
+        case 'modocaliente': {
+            const configured = await configureFeatureAccess({key: 'nsfw', label: 'contenido NSFW'})
+            selectedNsfwMode = {enabled: configured.enabled, mode: configured.mode}
             await setGroupNsfwMode(chatId, selectedNsfwMode.enabled, selectedNsfwMode.mode)
             break
+        }
+
+        case 'nsfwgif':
+        case 'nsfwgifs':
+        case 'gifnsfw':
+        case 'gifsnsfw': {
+            const configured = await configureFeatureAccess({key: 'nsfw-gifs', label: 'gifs NSFW'})
+            selectedNsfwGifMode = {enabled: configured.enabled, mode: configured.mode}
+            await setGroupNsfwGifMode(chatId, selectedNsfwGifMode.enabled, selectedNsfwGifMode.mode)
+            break
+        }
 
         case 'modoadmin':
         case 'onlyadmin':
@@ -481,10 +515,19 @@ export default defineSdkPlugin({
         }))
     }
 
+    if (selectedNsfwGifMode) {
+        return m.reply(content.renderMessage('config.toggle.nsfwGifConfigured', {
+            status: selectedNsfwGifMode.enabled ? content.message('config.toggle.enabledLabel') : content.message('config.toggle.disabledLabel'),
+            access: getAccessModeLabel(selectedNsfwGifMode.mode),
+        }))
+    }
+
     if (selectedFeatureAccessMode) {
         return m.reply(content.renderMessage('config.toggle.featureAccessConfigured', {
             feature: selectedFeatureAccessMode.feature,
-            access: getAccessModeLabel(selectedFeatureAccessMode.mode),
+            access: selectedFeatureAccessMode.enabled
+                ? getAccessModeLabel(selectedFeatureAccessMode.mode)
+                : content.message('config.toggle.disabledLabel'),
         }))
     }
 

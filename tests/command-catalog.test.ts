@@ -28,6 +28,8 @@ for (const [key, entry] of entries) {
 
 assert.equal(normalizeCommandCatalogKey('.topinactive2 --date'), 'topinactive');
 assert.equal(normalizeCommandCatalogKey('#config accesos'), 'config acceso');
+assert.equal(normalizeCommandCatalogKey('.config ayuda'), 'config --info');
+assert.equal(getCommandCatalogEntry('config --info')?.usage, 'config --info');
 assert.equal(normalizeCommandCatalogKey('/enable autoresponder --triggerall'), 'enable autoresponder --triggerall');
 assert.equal(getCommandCatalogEntry('help')?.usage, 'menu');
 assert.equal(getCommandCatalogEntry('ayuda')?.usage, 'menu');
@@ -39,8 +41,8 @@ assert.equal(getCommandCatalogEntry('s')?.usage, 'sticker');
 assert.equal(getCommandCatalogEntry('apkmod')?.usage, 'apk <app>');
 assert.equal(getCommandCatalogEntry('gimage')?.usage, 'image <busqueda>');
 assert.equal(getCommandCatalogEntry('ttsearch')?.usage, 'tiktoksearch <texto>');
-assert.equal(getCommandCatalogEntry('gitpull')?.usage, 'update');
-assert.equal(getCommandCatalogEntry('gp')?.usage, 'getplugin <nombre>');
+assert.equal(getCommandCatalogEntry('gitpull'), undefined);
+assert.equal(getCommandCatalogEntry('gp'), undefined);
 assert.equal(getCommandCatalogEntry('googlef')?.usage, 'google <busqueda>');
 assert.equal(getCommandCatalogEntry('lirik')?.usage, 'lyrics <cancion>');
 assert.equal(getCommandCatalogEntry('inspect')?.usage, 'superinspect <url>');
@@ -81,7 +83,13 @@ assert.equal(getCommandMetadata('topinactive2 --date', ['group']).usage, 'topina
 assert.equal(getCommandMetadata('db info', ['owner']).usage, 'db info');
 assert.equal(getCommandCatalogMatch('db info')?.source, 'exact');
 assert.equal(getMenuCommandDedupeKey('play2'), getMenuCommandDedupeKey('play'));
-assert.notEqual(getMenuCommandDedupeKey('db info'), getMenuCommandDedupeKey('db optimizar'));
+assert.equal(getCommandCatalogEntry('db optimizar'), undefined);
+for (const removedCommand of [
+    'backup', 'restart', 'update', 'fetch', 'get', 'getplugin', 'gp',
+    'addowner', 'delowner', 'stop', '$', '>', '=>', '=',
+]) {
+    assert.equal(getCommandCatalogEntry(removedCommand), undefined, `removed command remains catalogued: ${removedCommand}`);
+}
 assert.equal(getFallbackCommandEmoji(['missing', 'game']), '🎮');
 
 console.log('command-catalog.test.ts OK');

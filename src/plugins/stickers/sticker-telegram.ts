@@ -7,6 +7,7 @@ import {getTelegramStickerFiles, parseTelegramPackName} from '../../providers/me
 export default defineSdkPlugin({
     help: ['stikertele *<url>*'],
     tags: ['sticker', 'downloader'],
+    feature: 'stickers',
     command: /^(stic?kertele(gram)?)$/i,
     limit: 1,
     register: true,

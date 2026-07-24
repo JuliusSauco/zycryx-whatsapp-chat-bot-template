@@ -24,6 +24,9 @@ await runPluginInterceptors({plugins: [plugin], message, context: baseContext, i
 assert.deepEqual(order, ['security', 'conversation']);
 
 const timeoutPlugin = definePlugin({executionPolicy: {timeoutMs: 5}, async execute() {}});
+assert.equal(definePlugin({tags: ['game'], async execute() {}}).feature, 'games');
+assert.equal(definePlugin({tags: ['downloader'], async execute() {}}).feature, 'downloads');
+assert.equal(definePlugin({tags: ['nsfw'], feature: 'nsfw-gifs', async execute() {}}).feature, 'nsfw-gifs');
 await assert.rejects(executePluginWithTimeout({
     plugin: timeoutPlugin,
     pluginId: 'timeout',

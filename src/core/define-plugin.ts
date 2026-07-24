@@ -30,8 +30,6 @@ export interface PluginDefinition {
     tags?: string[];
     /** Requiere ser owner del bot. */
     owner?: boolean;
-    /** Requiere ser owner real (fixed owners). */
-    rowner?: boolean;
     /** Requiere ser admin del grupo. */
     admin?: boolean;
     /** Requiere que el bot sea admin del grupo. */
@@ -77,7 +75,6 @@ export function definePlugin(def: PluginDefinition): Plugin {
     if (def.help !== undefined) fn.help = def.help;
     if (def.tags !== undefined) fn.tags = def.tags;
     if (def.owner !== undefined) fn.owner = def.owner;
-    if (def.rowner !== undefined) fn.rowner = def.rowner;
     if (def.admin !== undefined) fn.admin = def.admin;
     if (def.botAdmin !== undefined) fn.botAdmin = def.botAdmin;
     if (def.group !== undefined) fn.group = def.group;

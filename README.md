@@ -62,7 +62,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - Migraciones versionadas y script `db:ensure-schema`.
 - Soporte para `DB_SCHEMA` usando `search_path`.
 - Subbots con sesiones independientes.
-- Modos de acceso por familia de comandos (`all`/`admins`/`off`) configurables por grupo: juegos, herramientas, RPG, descargas, busquedas, stickers, convertidores, fun y NSFW.
+- Reglas persistentes por familia con activación independiente y modos `all`, `admin`, `superadmin` y `owner`: juegos, herramientas, RPG, descargas, búsquedas, stickers, convertidores, diversión, audios, GIFs y NSFW.
 - Roles de admins por grupo persistidos en `user_group_roles`, sincronizados al iniciar y en eventos promote/demote.
 - Autoresponder configurable por grupo (trigger por mencion o texto) y registro opcional de mensajes (`message_logs`).
 - Tareas programadas para reportes, expiracion de grupos y limpieza de memoria.
@@ -132,7 +132,7 @@ Prepara la base de datos:
 npm run db:migrate
 ```
 
-Las migraciones no se ejecutan automaticamente al iniciar el bot. En deploys y ambientes compartidos ejecuta `npm run db:migrate` como paso previo controlado.
+Las migraciones se aplican automáticamente al iniciar mediante la plantilla PM2 (`npm run serve:migrate`). Si arrancas el proceso directamente, ejecuta `npm run db:migrate` como paso previo o usa `npm run start:migrate`.
 
 Si necesitas crear manualmente una base desde cero sin reproducir migraciones historicas, usa el script limpio:
 
@@ -193,7 +193,6 @@ BOT_INSTAGRAM_URL=
 BOT_GROUP_LINKS=
 BOT_CHANNEL_LINKS=
 BOT_OWNER_NUMBERS=573001112233,51999888777
-BOT_FIXED_OWNER_JIDS=573001112233,51999888777
 BOT_MOD_GROUP_ID=
 DEFAULT_MENU_IMAGE=./resources/media/menus/Menu2.jpg
 
@@ -254,12 +253,6 @@ DB_SCHEMA=bot_dev
 
 ```env
 BOT_OWNER_NUMBERS=573001112233,51999888777
-```
-
-`BOT_FIXED_OWNER_JIDS` recibe numeros internacionales sin `+` o JIDs completos. Estos owners pueden usar comandos marcados como `rowner`:
-
-```env
-BOT_FIXED_OWNER_JIDS=573001112233,51999888777
 ```
 
 <a id="scripts"></a>
@@ -335,7 +328,7 @@ Puntos clave:
 
 - Un process manager (PM2, systemd o restart policy de Docker) es **obligatorio**: el bot se reinicia solo cada 3 horas (`process.exit(0)`) como higiene de memoria y espera que el supervisor lo levante.
 - La vinculacion inicial es interactiva (pide QR o codigo por consola); hazla fuera del supervisor y luego arranca bajo PM2.
-- Las migraciones nunca corren automaticamente al arrancar; ejecutalas como paso explicito en cada deploy.
+- Con la plantilla PM2 las migraciones pendientes corren antes del bot; en arranques directos usa `db:migrate`, `serve:migrate` o `start:migrate`.
 - Una sola instancia por numero de WhatsApp: el estado de juegos/cooldowns vive en memoria y la sesion es por dispositivo.
 - Respalda `BotSession/` (con el bot detenido) y la base de datos con `NODE_ENV=prod npm run ops:backup`; ver politica de backups en `docs/deployment.md`.
 - Flujo de conexion, sesiones y reconexion documentado en `docs/baileys-connection.md`. Problemas comunes en `docs/troubleshooting.md`.
@@ -508,7 +501,7 @@ Cada plugin representa una accion ejecutable. El router traduce un mensaje en un
 
 Los guards validan antes del plugin:
 
-- owner o rowner;
+- owner global o persistido del subbot;
 - admin de grupo;
 - bot admin;
 - grupo o privado;
@@ -693,7 +686,6 @@ Metadata soportada:
 | `help` | Texto usado por menus. |
 | `tags` | Categoria del comando. |
 | `owner` | Requiere owner del bot/subbot. |
-| `rowner` | Requiere owner fijo. |
 | `admin` | Requiere admin de grupo. |
 | `botAdmin` | Requiere que el bot sea admin. |
 | `group` | Solo grupos. |
@@ -820,7 +812,9 @@ audio-response.service.ts -> merge de seed + DB
 
 Los comandos `addaudios` y `delaudios` persisten cambios en PostgreSQL mediante `audio_responses`.
 
-Los comandos de reacciones multimedia se describen en `resources/data/reactions.json`. El plugin generico `msg-gif-reactions.ts` resuelve aliases, carpeta y caption desde ese manifiesto; `msg-gif-dp.ts` se conserva aparte porque el comando `trio` necesita reglas especiales de dos objetivos.
+Los comandos de reacciones multimedia se describen en `resources/data/reactions.json`. El plugin genérico `msg-gif-reactions.ts` resuelve aliases, carpetas, captions y variantes públicas/NSFW. Solo `msg-gif-tr.ts` (tríos) y `msg-gif-ogi.ts` (orgías) se conservan aparte por sus reglas especiales de múltiples objetivos.
+
+Cada reacción puede tener una carpeta pública y otra `nsfw/`. Los GIFs públicos están activos por defecto; la variante explícita solo se usa cuando `nsfw-gifs` está habilitado para el nivel del participante. Si una reacción no tiene versión pública y el acceso NSFW está desactivado, el comando no responde para evitar confundir a los participantes.
 
 <a id="observabilidad"></a>
 ## 📊 Observabilidad
@@ -866,7 +860,7 @@ Usa `.env.example` como contrato publico y `.env.local` para valores reales. Si 
 Recomendaciones operativas:
 
 - Trata `BotSession/` y `jadibot/` como credenciales: quien tenga esos archivos controla la cuenta de WhatsApp.
-- Manten `BOT_FIXED_OWNER_JIDS` al minimo: esos numeros pueden ejecutar codigo y shell en el servidor (`>`/`=>` y `$`). Los limites aplicados (timeouts, truncado, auditoria `[SENSITIVE]`) estan en `docs/owner-security.md`.
+- Manten `BOT_OWNER_NUMBERS` limitado a operadores de confianza. Los comandos de ejecucion remota, mantenimiento del proceso y respaldo de credenciales no se exponen por WhatsApp; consulta `docs/owner-security.md`.
 - Corre el bot con un usuario de sistema dedicado y sin privilegios; PostgreSQL sin exposicion publica.
 - Los guards de permisos (`owner`, `admin`, `group`, access modes por familia) deben declararse en la metadata del plugin, no re-implementarse a mano.
 - Checklist completo de produccion en `docs/deployment.md`.
@@ -1006,7 +1000,7 @@ Resumen actual:
 - Plugins organizados en 19 familias.
 - SDK interno disponible para plugins nuevos y migrados.
 - Todos los plugins usan `defineSdkPlugin`; `definePlugin`, `message-template` y HTTP directo quedaron fuera de `src/plugins`.
-- Modos de acceso por familia (`all`/`admins`/`off`) aplicados por `feature-access.guard.ts` y configurables con el menu de toggles.
+- Reglas normalizadas por familia (`enabled` y `all`/`admin`/`superadmin`/`owner`) aplicadas por `feature-access.guard.ts` y configurables con `enable`/`disable`.
 - Roles de admins por grupo en `user_group_roles`, sincronizados al arrancar (`startup-admin-sync.ts`) y en eventos de grupo.
 - `test:p0` evita que plugins migrados al SDK vuelvan a importar helpers legacy de mensajes o HTTP.
 - `content.service` centraliza mensajes, listas y templates desde `resources/data/messages.json`.

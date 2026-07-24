@@ -1,6 +1,7 @@
 import type {groupSettings, userGroupRoles} from '../../db/schema.js';
 import type {ContextGroupSettings, GroupSettingsRecord, NsfwGroupSettings, UserGroupRoleRecord} from '../../domain/groups.js';
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode} from '../../types/config.js';
+import {createDefaultFamilyAccessMap} from '../../utils/family-access.js';
 
 export type GroupSettingsRow = typeof groupSettings.$inferSelect;
 export type UserGroupRoleRow = typeof userGroupRoles.$inferSelect;
@@ -29,11 +30,14 @@ export type ContextGroupSettingsRow = Pick<
     | 'funAccessMode'
     | 'modohorny'
     | 'nsfwAccessMode'
+    | 'nsfwGifEnabled'
+    | 'nsfwGifAccessMode'
+    | 'nsfwHorario'
     | 'audios'
     | 'autolevelup'
 >;
 
-export type NsfwGroupSettingsRow = Pick<GroupSettingsRow, 'modohorny' | 'nsfwAccessMode' | 'nsfwHorario'>;
+export type NsfwGroupSettingsRow = Pick<GroupSettingsRow, 'modohorny' | 'nsfwAccessMode' | 'nsfwGifEnabled' | 'nsfwGifAccessMode' | 'nsfwHorario'>;
 
 export function normalizeGreetingHidetagMode(
     mode: string | null,
@@ -90,6 +94,9 @@ export function mapGroupSettings(row: GroupSettingsRow): GroupSettingsRecord {
         funAccessMode: normalizeAccessMode(row.funAccessMode),
         modohorny: row.modohorny ?? false,
         nsfwAccessMode: row.nsfwAccessMode ? normalizeAccessMode(row.nsfwAccessMode) : 'owner',
+        nsfwGifEnabled: row.nsfwGifEnabled ?? false,
+        nsfwGifAccessMode: row.nsfwGifAccessMode ? normalizeAccessMode(row.nsfwGifAccessMode) : 'owner',
+        nsfw_horario: row.nsfwHorario ?? null,
         audios: row.audios ?? false,
         antiStatus: row.antiStatus ?? false,
         modoadmin: row.modoadmin ?? false,
@@ -106,7 +113,6 @@ export function mapGroupSettings(row: GroupSettingsRow): GroupSettingsRecord {
         byeGroupPhoto: row.byeGroupPhoto ?? false,
         photobye: row.photobye ?? true,
         autolevelup: row.autolevelup ?? true,
-        nsfw_horario: row.nsfwHorario,
         sWelcome: row.sWelcome,
         sBye: row.sBye,
         sPromote: row.sPromote,
@@ -146,8 +152,12 @@ export function mapContextGroupSettings(row: ContextGroupSettingsRow): ContextGr
         funAccessMode: normalizeAccessMode(row.funAccessMode),
         modohorny: row.modohorny ?? false,
         nsfwAccessMode: row.nsfwAccessMode ? normalizeAccessMode(row.nsfwAccessMode) : 'owner',
+        nsfwGifEnabled: row.nsfwGifEnabled ?? false,
+        nsfwGifAccessMode: row.nsfwGifAccessMode ? normalizeAccessMode(row.nsfwGifAccessMode) : 'owner',
+        nsfw_horario: row.nsfwHorario ?? null,
         audios: row.audios ?? false,
         autolevelup: row.autolevelup ?? true,
+        familyAccess: createDefaultFamilyAccessMap(),
     };
 }
 
@@ -155,6 +165,8 @@ export function mapNsfwGroupSettings(row: NsfwGroupSettingsRow): NsfwGroupSettin
     return {
         modohorny: row.modohorny ?? false,
         nsfwAccessMode: row.nsfwAccessMode ? normalizeAccessMode(row.nsfwAccessMode) : 'owner',
+        nsfwGifEnabled: row.nsfwGifEnabled ?? false,
+        nsfwGifAccessMode: row.nsfwGifAccessMode ? normalizeAccessMode(row.nsfwGifAccessMode) : 'owner',
         nsfw_horario: row.nsfwHorario ?? null,
     };
 }

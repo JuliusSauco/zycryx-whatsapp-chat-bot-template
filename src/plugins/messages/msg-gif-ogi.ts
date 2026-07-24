@@ -3,14 +3,15 @@ import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {logError} from '../../lib/logger.js';
 import {cleanJid} from '../../utils/jid.js';
 import {getParticipantsFast, resolveMention, type ParticipantLike, type ResolvedMention} from '../../utils/mention.js';
-import {getAvailableMp4s, pickRandomFile} from './gif-media.js';
+import {formatReactionFallbackNotice, selectReactionMedia} from './gif-media.js';
+import {getNsfwSettings} from '../../services/group-settings.service.js';
+import {canUseNsfwGifs} from '../../utils/nsfw-access.js';
 
 const NSFW_GIF_FOLDER = path.join(process.cwd(), 'resources', 'media', 'reaction-gifs', 'ogi', 'nsfw');
-const NSFW_GIF_FOLDER_LABEL = 'resources/media/reaction-gifs/ogi/nsfw';
 const MINIMUM_EXPLICIT_TARGETS = 3;
 const RANDOM_TARGET_COUNT = 3;
 
-export function resolveOrgiaTargets(
+export function resolveOgiTargets(
     rawTargets: string[],
     senderJid: string,
     participants: ParticipantLike[],
@@ -30,13 +31,13 @@ export function resolveOrgiaTargets(
     return targets;
 }
 
-export function selectRandomOrgiaTargets(
+export function selectRandomOgiTargets(
     participants: ParticipantLike[],
     senderJid: string,
     count = RANDOM_TARGET_COUNT,
     random: () => number = Math.random,
 ): ResolvedMention[] {
-    const candidates = resolveOrgiaTargets(
+    const candidates = resolveOgiTargets(
         participants.map(participant => participant.id || '').filter(Boolean),
         senderJid,
         participants,
@@ -51,15 +52,20 @@ export function selectRandomOrgiaTargets(
 }
 
 export default defineSdkPlugin({
-    help: ['msg-gif-orgia'],
-    tags: ['fun', 'nsfw'],
-    feature: 'nsfw',
+    help: ['msg-gif-ogi'],
+    tags: ['fun'],
+    feature: 'gifs',
     command: /^orgia$/i,
     group: true,
     register: false,
     executionPolicy: {profile: 'media'},
-    async execute(m, {sdk}) {
+    async execute(m, {sdk, isGroupCreator}) {
         try {
+            const nsfwEnabled = canUseNsfwGifs(await getNsfwSettings(sdk.chatId), {
+                isAdmin: sdk.isAdmin,
+                isOwner: sdk.isOwner,
+                isGroupCreator,
+            });
             const rawTargets: string[] = [];
             if (m.quoted?.sender) rawTargets.push(m.quoted.sender);
             if (Array.isArray(m.mentionedJid)) rawTargets.push(...m.mentionedJid);
@@ -67,32 +73,38 @@ export default defineSdkPlugin({
             const participants = getParticipantsFast(sdk.conn, sdk.chatId, sdk.participants);
             const sender = resolveMention(sdk.sender, participants);
             const targets = rawTargets.length
-                ? resolveOrgiaTargets(rawTargets, sdk.sender, participants)
-                : selectRandomOrgiaTargets(participants, sdk.sender);
+                ? resolveOgiTargets(rawTargets, sdk.sender, participants)
+                : selectRandomOgiTargets(participants, sdk.sender);
             const minimumTargets = rawTargets.length ? MINIMUM_EXPLICIT_TARGETS : RANDOM_TARGET_COUNT;
 
             if (targets.length < minimumTargets) {
-                await sdk.reply.message('messages.gifOrgia.notEnoughPeople');
+                await sdk.reply.message('messages.gifOgi.notEnoughPeople');
                 return;
             }
 
-            const mp4s = getAvailableMp4s(NSFW_GIF_FOLDER);
-            if (!mp4s.length) {
-                await sdk.reply.message('messages.gifReactions.ffmpegHint', {folder: NSFW_GIF_FOLDER_LABEL});
-                return;
+            const publicFolder = path.join(process.cwd(), 'resources', 'media', 'reaction-gifs', 'ogi');
+            const media = selectReactionMedia({publicFolder, nsfwFolder: NSFW_GIF_FOLDER, nsfwEnabled});
+            const fallbackNotice = formatReactionFallbackNotice({
+                reason: media.fallbackReason,
+                requestedFolder: media.requestedFolder,
+            });
+            if (!media.filePath) {
+                if (media.fallbackReason === 'nsfw-required') return;
+                return sdk.reply.text(fallbackNotice);
             }
 
             const mentions = Array.from(new Set([
                 sender.mentionJid,
                 ...targets.map(target => target.mentionJid),
             ]));
-            const caption = sdk.content.renderMessage('messages.gifOrgia.caption', {
+            const baseCaption = sdk.content.renderMessage('messages.gifOgi.caption', {
                 sender: sender.tag,
                 targets: targets.map(target => target.tag).join(', '),
             });
+            const caption = [baseCaption, fallbackNotice].filter(Boolean).join('\n\n');
 
             await sdk.sendMessage({
-                video: {url: path.join(NSFW_GIF_FOLDER, pickRandomFile(mp4s))},
+                video: {url: media.filePath},
                 mimetype: 'video/mp4',
                 gifPlayback: true,
                 caption,

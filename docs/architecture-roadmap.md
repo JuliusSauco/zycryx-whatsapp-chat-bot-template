@@ -119,7 +119,7 @@ Estado: cancelado. El proyecto no usara backend administrativo ni adapter REST/G
 
 Objetivo: reducir riesgo en comandos con ejecucion, red, procesos o salida grande.
 
-- [x] Auditar `owner-exec.ts`, `owner-exec2.ts`, `owner-update.ts`, `info-speedtest.ts`.
+- [x] Retirar la ejecucion remota y conservar `info-speedtest.ts` con limites estrictos.
 - [x] Agregar timeouts, limites de salida y sanitizacion de errores.
 - [x] Registrar auditoria de comandos sensibles.
 - [x] Documentar permisos y variables necesarias.

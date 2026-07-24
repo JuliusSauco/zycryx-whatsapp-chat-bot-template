@@ -82,10 +82,8 @@ function checkEnv(): void {
         add('ok', 'BOT_OWNER_NUMBERS', 'configurado');
     }
 
-    if (!hasValue('BOT_FIXED_OWNER_JIDS')) {
-        add('warn', 'BOT_FIXED_OWNER_JIDS', 'sin rowners; comandos shell/eval no tendran operador fijo');
-    } else {
-        add('ok', 'BOT_FIXED_OWNER_JIDS', 'configurado; mantener esta lista minima');
+    if (hasValue('BOT_FIXED_OWNER_JIDS')) {
+        add('warn', 'BOT_FIXED_OWNER_JIDS', 'obsoleto; mueve sus valores a BOT_OWNER_NUMBERS');
     }
 }
 
@@ -109,7 +107,7 @@ function checkDatabase(): void {
 
 function checkTools(): void {
     const gitAvailable = commandExists('git');
-    add(gitAvailable ? 'ok' : 'warn', 'git', gitAvailable ? 'disponible; requerido por owner update y mantenimiento con git pull' : 'no encontrado; afecta owner update y despliegues con git pull');
+    add(gitAvailable ? 'ok' : 'warn', 'git', gitAvailable ? 'disponible para despliegues y mantenimiento del repositorio' : 'no encontrado; afecta despliegues basados en git');
 
     const ffmpegAvailable = commandExists('ffmpeg');
     add(ffmpegAvailable ? 'ok' : 'warn', 'ffmpeg', ffmpegAvailable ? 'disponible; requerido por stickers, audios, convertidores y reacciones GIF' : 'no encontrado; afecta stickers, audios, convertidores y reacciones GIF');

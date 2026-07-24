@@ -25,13 +25,19 @@ export interface ContextGroupSettings {
     funAccessMode: AccessMode;
     modohorny: boolean;
     nsfwAccessMode: AccessMode;
+    nsfwGifEnabled: boolean;
+    nsfwGifAccessMode: AccessMode;
+    nsfw_horario: string | null;
     audios: boolean;
     autolevelup: boolean;
+    familyAccess: FamilyAccessMap;
 }
 
 export interface NsfwGroupSettings {
     modohorny: boolean;
     nsfwAccessMode: AccessMode;
+    nsfwGifEnabled: boolean;
+    nsfwGifAccessMode: AccessMode;
     nsfw_horario: string | null;
 }
 
@@ -55,4 +61,15 @@ export type ConfigurableFeatureKey =
     | 'search'
     | 'stickers'
     | 'converters'
-    | 'fun';
+    | 'fun'
+    | 'audio'
+    | 'gifs'
+    | 'nsfw'
+    | 'nsfw-gifs';
+
+export interface FamilyAccessRule {
+    enabled: boolean;
+    accessMode: AccessMode;
+}
+
+export type FamilyAccessMap = Record<ConfigurableFeatureKey, FamilyAccessRule>;

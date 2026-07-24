@@ -8,5 +8,5 @@ export default createMenuPlugin({
     group: true,
     intro: 'Comandos visibles para miembros del grupo; para moderación usa el menú de admins.',
     pluginTags: ['group'],
-    include: (entry) => !entry.admin && !entry.botAdmin && !entry.owner && !entry.rowner,
+    include: (entry) => !entry.admin && !entry.botAdmin && !entry.owner,
 });

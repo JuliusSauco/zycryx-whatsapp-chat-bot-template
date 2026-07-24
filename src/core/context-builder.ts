@@ -16,12 +16,14 @@ import {getSubbotConfig, updateSubbotTipo} from '../services/subbot.service.js';
 import {clearPrimaryBot, getContextGroupSettings} from '../services/group-settings.service.js';
 import type {SubbotConfig} from '../types/config.js';
 import type {AccessMode, AutoresponderTrigger} from '../types/config.js';
+import type {FamilyAccessMap} from '../domain/groups.js';
 import type {BotBranding, ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
 import {cleanJid, isGroupJid, resolveSenderInfo} from '../utils/jid.js';
-import {FIXED_OWNERS, GROUP_META_CACHE_TTL} from '../utils/constants.js';
+import {GROUP_META_CACHE_TTL} from '../utils/constants.js';
 import {isGroupCreator} from '../utils/group-creator.js';
 import {isMainConnection} from './runtime-state.js';
+import {createDefaultFamilyAccessMap} from '../utils/family-access.js';
 
 // --- Cache de metadata de grupos ---
 const groupMetaCache = new Map<string, GroupMetadata>();
@@ -49,8 +51,12 @@ export interface GroupSettings {
     funAccessMode: AccessMode;
     modohorny: boolean;
     nsfwAccessMode: AccessMode;
+    nsfwGifEnabled: boolean;
+    nsfwGifAccessMode: AccessMode;
+    nsfw_horario: string | null;
     audios: boolean;
     autolevelup: boolean;
+    familyAccess: FamilyAccessMap;
 }
 
 export interface HandlerContext {
@@ -61,7 +67,6 @@ export interface HandlerContext {
     isGroup: boolean;
     isCreator: boolean;
     isOwner: boolean;
-    isROwner: boolean;
     isAdmin: boolean;
     isGroupCreator: boolean;
     isBotAdmin: boolean;
@@ -102,8 +107,12 @@ const EMPTY_GROUP_SETTINGS: GroupSettings = {
     funAccessMode: 'all',
     modohorny: false,
     nsfwAccessMode: 'owner',
+    nsfwGifEnabled: false,
+    nsfwGifAccessMode: 'owner',
+    nsfw_horario: null,
     audios: false,
     autolevelup: true,
+    familyAccess: createDefaultFamilyAccessMap(),
 };
 
 /**
@@ -142,9 +151,9 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
     }
 
     // --- Ownership ---
-    const isROwner = FIXED_OWNERS.includes(m.sender);
-    const isCreator = isROwner ||
-        global.owner.map(([v]: string[]) => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(m.sender);
+    const isCreator = global.owner
+        .map(([v]: string[]) => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
+        .includes(senderJid);
     const isOwner = isCreator || senderJid === botJid || (botConfig.owners || []).includes(senderJid);
 
     const participants = metadata.participants || [];
@@ -176,7 +185,6 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
         isGroup,
         isCreator,
         isOwner,
-        isROwner,
         isAdmin,
         isGroupCreator: groupCreator,
         isBotAdmin,

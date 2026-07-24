@@ -204,6 +204,24 @@ async function testCreatorFromGlobalOwnerAndFromMeSender(): Promise<void> {
     });
 }
 
+async function testPersistedSubbotOwnerResolution(): Promise<void> {
+    await withMocks({
+        subbotConfig: createSubbotConfig({owners: ['2222@s.whatsapp.net'], tipo: 'subbot'}),
+    }, async (calls) => {
+        const conn = createConn(calls, {botId: '5555:1@s.whatsapp.net'});
+        const msg = createMessage({
+            key: {remoteJid: '2222@s.whatsapp.net', remoteJidAlt: '2222@s.whatsapp.net'},
+            chat: '2222@s.whatsapp.net',
+        });
+
+        const ctx = await buildContext(conn, msg);
+
+        assert.equal(ctx.senderJid, '2222@s.whatsapp.net');
+        assert.equal(ctx.isCreator, false);
+        assert.equal(ctx.isOwner, true);
+    });
+}
+
 async function testGroupMetadataAdminsAndCachedMetadata(): Promise<void> {
     await withMocks({
         subbotConfig: createSubbotConfig(),
@@ -311,6 +329,7 @@ async function testGroupRestrictions(): Promise<void> {
 setupGlobals();
 await testPrivateChatSenderAndOwnerResolution();
 await testCreatorFromGlobalOwnerAndFromMeSender();
+await testPersistedSubbotOwnerResolution();
 await testGroupMetadataAdminsAndCachedMetadata();
 await testFetchesMetadataWhenCacheMisses();
 await testGroupRestrictions();

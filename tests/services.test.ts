@@ -16,14 +16,17 @@ import {
 import {invalidateGroupSettings, invalidateSubbotConfig} from '../src/lib/db-cache.js';
 import {
     getContextGroupSettings,
+    getGroupFamilyAccessRule,
     getGroupSettings,
     getNsfwSettings,
     setGroupAutoAcceptMode,
     setGroupBooleanFlag,
+    setGroupFamilyAccessRule,
     setGroupTextMessage,
     setMemoryTtl,
     setPrimaryBot,
 } from '../src/services/group-settings.service.js';
+import {createDefaultFamilyAccessMap} from '../src/utils/family-access.js';
 import {
     cleanExpiredChatMemories,
     createReport,
@@ -202,12 +205,15 @@ async function testGroupSettingsService(): Promise<void> {
                 virusTotal: false,
                 audios: true,
                 autolevelup: true,
+                familyAccess: createDefaultFamilyAccessMap(),
             };
         },
         findNsfwSettings: async groupId => {
             calls.push(['findNsfwSettings', groupId]);
             return null;
         },
+        listFamilyAccessRules: async () => [],
+        upsertFamilyAccessRule: async (groupId, feature, rule) => calls.push(['upsertFamilyAccessRule', groupId, feature, rule]),
         findByGroupId: async groupId => {
             fullReads++;
             calls.push(['findByGroupId', groupId]);
@@ -225,20 +231,23 @@ async function testGroupSettingsService(): Promise<void> {
         assert.equal((await getContextGroupSettings('group-1@g.us')).modoadmin, true);
         assert.equal((await getContextGroupSettings('group-1@g.us')).audios, true);
         assert.equal(contextReads, 1);
+        assert.deepEqual(await getGroupFamilyAccessRule('group-1@g.us', 'games'), {enabled: true, accessMode: 'all'});
 
-        assert.deepEqual(await getNsfwSettings('group-1@g.us'), {modohorny: false, nsfwAccessMode: 'owner', nsfw_horario: null});
+        assert.deepEqual(await getNsfwSettings('group-1@g.us'), {modohorny: false, nsfwAccessMode: 'owner', nsfwGifEnabled: false, nsfwGifAccessMode: 'owner', nsfw_horario: null});
 
         assert.deepEqual(await getGroupSettings('group-1@g.us'), {welcome: true, banned: false});
         assert.deepEqual(await getGroupSettings('group-1@g.us'), {welcome: true, banned: false});
         assert.equal(fullReads, 1);
 
         await setGroupBooleanFlag('group-1@g.us', 'antilink', true);
+        await setGroupFamilyAccessRule('group-1@g.us', 'games', {enabled: false, accessMode: 'admin'});
         await setGroupAutoAcceptMode('group-1@g.us', '' as never);
         await setGroupTextMessage('group-1@g.us', 'welcome', 'hola', true, {hidetag: true});
         await setMemoryTtl('group-1@g.us', 3600);
         await setPrimaryBot('group-1@g.us', 'bot@s.whatsapp.net');
 
         assert.equal(calls.some(call => Array.isArray(call) && call[0] === 'setBooleanFlag'), true);
+        assert.equal(calls.some(call => Array.isArray(call) && call[0] === 'upsertFamilyAccessRule'), true);
         assert.deepEqual(calls.find(call => Array.isArray(call) && call[0] === 'setAutoAcceptMode'), ['setAutoAcceptMode', 'group-1@g.us', 'off']);
         assert.equal(calls.some(call => Array.isArray(call) && call[0] === 'setTextMessage'), true);
     } finally {

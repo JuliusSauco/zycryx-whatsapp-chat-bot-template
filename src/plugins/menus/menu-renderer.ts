@@ -18,7 +18,6 @@ interface HelpEntry {
     limit?: number;
     premium?: boolean;
     owner?: boolean;
-    rowner?: boolean;
     admin?: boolean;
     botAdmin?: boolean;
     group?: boolean;
@@ -106,7 +105,6 @@ function getHelpEntries(tags: string[], include?: (entry: HelpEntry) => boolean)
             limit: plugin.limit,
             premium: plugin.premium,
             owner: plugin.owner,
-            rowner: plugin.rowner,
             admin: plugin.admin,
             botAdmin: plugin.botAdmin,
             group: plugin.group,
@@ -136,7 +134,7 @@ function renderEntry(entry: HelpEntry, usedPrefix: string): string {
     const markers = [
         entry.limit ? '💎' : '',
         entry.premium ? '💵' : '',
-        entry.owner || entry.rowner ? '👑' : '',
+        entry.owner ? '👑' : '',
         entry.admin || entry.botAdmin ? '🛡️' : '',
     ].filter(Boolean).join(' ');
     const suffix = markers ? ` ${markers}` : '';

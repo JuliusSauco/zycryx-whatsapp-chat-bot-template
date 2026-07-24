@@ -20,6 +20,7 @@ import type {
     ExpiredGroup,
     GroupSettingsRecord,
     NsfwGroupSettings,
+    FamilyAccessRule,
     UserGroupRoleRecord,
 } from '../domain/groups.js';
 import type {SubbotBooleanFlag, SubbotConfig, SubbotTypeCounts} from '../domain/subbots.js';
@@ -62,6 +63,7 @@ export type {
     GroupSettingsRecord,
     NsfwGroupSettings,
     UserGroupRoleRecord,
+    FamilyAccessRule,
 } from '../domain/groups.js';
 export type {SubbotBooleanFlag, SubbotConfig, SubbotTypeCounts} from '../domain/subbots.js';
 export type {AudioConfig, AudioEntry, AudioResponseRecord, UpsertAudioResponseInput} from '../domain/audio-responses.js';
@@ -220,7 +222,9 @@ export interface GroupSettingsRepository {
     setAutoresponderMode(groupId: string, enabled: boolean, mode: GroupSettings['autoresponderMode']): Promise<void>;
     setAutoresponderTrigger(groupId: string, trigger: GroupSettings['autoresponderTrigger']): Promise<void>;
     setNsfwMode(groupId: string, enabled: boolean, mode: GroupSettings['nsfwAccessMode']): Promise<void>;
-    setFeatureAccessMode(groupId: string, feature: ConfigurableFeatureKey, mode: GroupSettings['gamesAccessMode']): Promise<void>;
+    setNsfwGifMode(groupId: string, enabled: boolean, mode: GroupSettings['nsfwGifAccessMode']): Promise<void>;
+    listFamilyAccessRules(groupId: string): Promise<Array<{target: ConfigurableFeatureKey; rule: FamilyAccessRule}>>;
+    upsertFamilyAccessRule(groupId: string, feature: ConfigurableFeatureKey, rule: FamilyAccessRule): Promise<void>;
     setGreetingHidetagMode(groupId: string, type: 'welcome' | 'bye', mode: GroupSettings['welcomeHidetagMode']): Promise<void>;
     setTextMessage(input: {
         groupId: string;
@@ -325,7 +329,6 @@ export interface DatabaseInfo {
 
 export interface DatabaseRepository {
     getInfo(): Promise<DatabaseInfo>;
-    vacuumFull(): Promise<void>;
 }
 
 export interface AppRepositories {

@@ -1,15 +1,20 @@
-import {logInfo} from '../lib/logger.js';
+import {logInfo, logWarn} from '../lib/logger.js';
 import {unwatchFile, watchFile} from 'fs'
 import chalk from 'chalk'
 import {fileURLToPath} from 'url'
 import type {BotInfo} from '../types/config.js'
 import {ENV} from './env.js'
 import {getCachedBuffer} from '../lib/static-resource-cache.js';
+import {mergeOwnerNumbers} from '../utils/owner-numbers.js';
 
 const splitList = (value: string): string[] => value.split(',').map(v => v.trim()).filter(Boolean);
 const groupLinks = splitList(ENV.BOT_GROUP_LINKS);
 const channelLinks = splitList(ENV.BOT_CHANNEL_LINKS);
-const configuredOwners = splitList(ENV.BOT_OWNER_NUMBERS).map(v => [v.replace(/[^0-9]/g, '')]).filter(([v]) => v);
+const legacyOwners = splitList(ENV.BOT_FIXED_OWNER_JIDS);
+if (legacyOwners.length) {
+    logWarn('[DEPRECATION] BOT_FIXED_OWNER_JIDS ahora se interpreta como owner. Migra sus valores a BOT_OWNER_NUMBERS; la compatibilidad se retirará en una versión futura.');
+}
+const configuredOwners = mergeOwnerNumbers(ENV.BOT_OWNER_NUMBERS, ENV.BOT_FIXED_OWNER_JIDS);
 const menuImagePath = ENV.DEFAULT_MENU_IMAGE || './resources/media/menus/Menu2.jpg';
 const menuImage = getCachedBuffer(menuImagePath) || Buffer.alloc(0);
 

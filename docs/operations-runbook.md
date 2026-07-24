@@ -134,7 +134,7 @@ Si WhatsApp invalido la sesion, restaurar archivos antiguos no ayuda: hay que re
 
 ## Reglas de seguridad
 
-- Mantener `BOT_FIXED_OWNER_JIDS` al minimo.
+- Mantener `BOT_OWNER_NUMBERS` limitado a operadores de confianza.
 - Tratar `BotSession/`, `jadibot/` y `.env.prod` como secretos.
 - No correr el bot con usuario de sistema con sudo.
 - No exponer PostgreSQL publicamente salvo firewall estricto.

@@ -58,7 +58,6 @@ export interface PluginContext {
     participants: GroupParticipant[];
     metadata: GroupMetadata;
     isOwner: boolean;
-    isROwner: boolean;
     isAdmin: boolean;
     isGroupCreator?: boolean;
     isBotAdmin: boolean;
@@ -77,6 +76,7 @@ export interface BeforePluginContext {
     conn: ExtendedConn;
     isOwner: boolean;
     isAdmin: boolean;
+    isGroupCreator: boolean;
     isBotAdmin: boolean;
     isGroup: boolean;
     chatId: string;

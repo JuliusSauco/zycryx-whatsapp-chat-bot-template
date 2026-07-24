@@ -1,13 +1,13 @@
 import {logError} from '../../lib/logger.js';
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
-import {getAvailableMp4s, pickRandomFile} from './gif-media.js'
+import {formatReactionFallbackNotice, selectReactionMedia} from './gif-media.js'
 import path from 'path'
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js'
 import {cleanJid} from '../../utils/jid.js'
 import {getNsfwSettings} from '../../services/group-settings.service.js'
-import {canUseNsfw} from '../../utils/nsfw-access.js'
+import {canUseNsfwGifs} from '../../utils/nsfw-access.js'
 
-const GIF_FOLDER = path.join(process.cwd(), 'resources', 'media', 'reaction-gifs', 'dp')
+const GIF_FOLDER = path.join(process.cwd(), 'resources', 'media', 'reaction-gifs', 'tr')
 const NSFW_GIF_FOLDER = path.join(GIF_FOLDER, 'nsfw')
 
 /**
@@ -21,17 +21,14 @@ const NSFW_GIF_FOLDER = path.join(GIF_FOLDER, 'nsfw')
  *  5) Responde a un msg + etiqueta a 1 más    → bot manda el gif con ambos.
  */
 export default defineSdkPlugin({
-    help: ['msg-gif-dp'],
+    help: ['msg-gif-tr'],
     tags: ['fun'],
+    feature: 'gifs',
     command: /^(trio|trio-2h-1m|trio-hmh)$/i,
     register: false,
     async execute(m, {sdk, isGroupCreator}) {
     try {
-        const nsfwEnabled = canUseNsfw(await getNsfwSettings(sdk.chatId), {isAdmin: sdk.isAdmin, isOwner: sdk.isOwner, isGroupCreator})
-        const selectedFolder = nsfwEnabled ? NSFW_GIF_FOLDER : GIF_FOLDER
-        const selectedFolderLabel = nsfwEnabled
-            ? 'resources/media/reaction-gifs/dp/nsfw'
-            : 'resources/media/reaction-gifs/dp'
+        const nsfwEnabled = canUseNsfwGifs(await getNsfwSettings(sdk.chatId), {isAdmin: sdk.isAdmin, isOwner: sdk.isOwner, isGroupCreator})
 
         // 1. Recolectar targets (mención + quoted), excluyendo al sender y dedupeando.
         const rawTargets: string[] = []
@@ -65,7 +62,7 @@ export default defineSdkPlugin({
             const mentionsForReply = [senderResolved.mentionJid, partialResolved.mentionJid]
 
             await sdk.sendMessage({
-                text: sdk.content.renderMessage('messages.gifDp.needOneMore', {
+                text: sdk.content.renderMessage('messages.gifTr.needOneMore', {
                     sender: senderResolved.tag,
                     target: partialResolved.tag
                 }),
@@ -78,28 +75,28 @@ export default defineSdkPlugin({
             finalTargets = targets.slice(0, 2)
         }
 
-        // 3. Cargar mp4s disponibles.
-        const mp4s = getAvailableMp4s(selectedFolder)
-
-        if (!mp4s.length) {
-            await sdk.reply.text(sdk.content.renderMessage('messages.gifReactions.ffmpegHint', {
-                folder: selectedFolderLabel,
-            }))
-            return
+        // 3. Resolver la variante; las reacciones solo NSFW quedan en silencio si no están habilitadas.
+        const media = selectReactionMedia({publicFolder: GIF_FOLDER, nsfwFolder: NSFW_GIF_FOLDER, nsfwEnabled})
+        const fallbackNotice = formatReactionFallbackNotice({
+            reason: media.fallbackReason,
+            requestedFolder: media.requestedFolder,
+        })
+        if (!media.filePath) {
+            if (media.fallbackReason === 'nsfw-required') return
+            return sdk.reply.text(fallbackNotice)
         }
 
         // 4. Construir caption, mentions y enviar gif.
         const targetsResolved: ResolvedMention[] = finalTargets.map(j => resolveMention(j, groupParticipants))
         const targetTags = targetsResolved.map(x => x.tag)
-        const randomFile = pickRandomFile(mp4s)
-        const filePath = path.join(selectedFolder, randomFile)
-        const texto = senderAlone
-            ? sdk.content.renderMessage('messages.gifDp.alone', {sender: senderResolved.tag})
-            : sdk.content.renderMessage('messages.gifDp.trio', {sender: senderResolved.tag, targets: targetTags.join('* y *')})
+        const baseText = senderAlone
+            ? sdk.content.renderMessage('messages.gifTr.alone', {sender: senderResolved.tag})
+            : sdk.content.renderMessage('messages.gifTr.trio', {sender: senderResolved.tag, targets: targetTags.join('* y *')})
+        const texto = [baseText, fallbackNotice].filter(Boolean).join('\n\n')
         const mentions = Array.from(new Set([senderResolved.mentionJid, ...targetsResolved.map(x => x.mentionJid)]))
 
         await sdk.sendMessage({
-            video: {url: filePath},
+            video: {url: media.filePath},
             mimetype: 'video/mp4',
             gifPlayback: true,
             caption: texto,

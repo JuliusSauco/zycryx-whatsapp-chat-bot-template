@@ -9,7 +9,8 @@ import {
 } from '../lib/db-cache.js';
 import {repositories} from './data-source.js';
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode} from '../types/config.js';
-import type {ConfigurableFeatureKey, ContextGroupSettings, GroupSettingsRecord} from '../domain/groups.js';
+import type {ConfigurableFeatureKey, ContextGroupSettings, FamilyAccessRule, GroupSettingsRecord} from '../domain/groups.js';
+import {createDefaultFamilyAccessMap, defaultFamilyAccess, mergeFamilyAccessRules} from '../utils/family-access.js';
 
 const EMPTY_CONTEXT_SETTINGS: ContextGroupSettings = {
     banned: false,
@@ -34,8 +35,12 @@ const EMPTY_CONTEXT_SETTINGS: ContextGroupSettings = {
     funAccessMode: 'all',
     modohorny: false,
     nsfwAccessMode: 'owner',
+    nsfwGifEnabled: false,
+    nsfwGifAccessMode: 'owner',
+    nsfw_horario: null,
     audios: false,
     autolevelup: true,
+    familyAccess: createDefaultFamilyAccessMap(),
 };
 
 export async function getContextGroupSettings(chatId: string): Promise<ContextGroupSettings> {
@@ -44,7 +49,10 @@ export async function getContextGroupSettings(chatId: string): Promise<ContextGr
 
     try {
         const row = await repositories.groupSettings.findContextSettings(chatId);
-        const settings = row ?? EMPTY_CONTEXT_SETTINGS;
+        const settings = row ?? {
+            ...EMPTY_CONTEXT_SETTINGS,
+            familyAccess: mergeFamilyAccessRules(await repositories.groupSettings.listFamilyAccessRules(chatId)),
+        };
         setCachedGroupSettings(chatId, settings);
         return settings;
     } catch (err) {
@@ -56,10 +64,20 @@ export async function getContextGroupSettings(chatId: string): Promise<ContextGr
 export async function getNsfwSettings(chatId: string): Promise<{
     modohorny: boolean;
     nsfwAccessMode: AccessMode;
+    nsfwGifEnabled: boolean;
+    nsfwGifAccessMode: AccessMode;
     nsfw_horario: string | null;
 }> {
     const row = await repositories.groupSettings.findNsfwSettings(chatId);
-    return row ?? {modohorny: false, nsfwAccessMode: 'owner', nsfw_horario: null};
+    if (row) return row;
+    const access = mergeFamilyAccessRules(await repositories.groupSettings.listFamilyAccessRules(chatId));
+    return {
+        modohorny: access.nsfw.enabled,
+        nsfwAccessMode: access.nsfw.accessMode,
+        nsfwGifEnabled: access['nsfw-gifs'].enabled,
+        nsfwGifAccessMode: access['nsfw-gifs'].accessMode,
+        nsfw_horario: null,
+    };
 }
 
 export async function getGroupSettings(chatId: string): Promise<GroupSettingsRecord | null> {
@@ -101,8 +119,18 @@ export async function setGroupNsfwMode(chatId: string, enabled: boolean, mode: A
     invalidateGroupSettings(chatId);
 }
 
-export async function setGroupFeatureAccessMode(chatId: string, feature: ConfigurableFeatureKey, mode: AccessMode): Promise<void> {
-    await repositories.groupSettings.setFeatureAccessMode(chatId, feature, mode || 'all');
+export async function setGroupNsfwGifMode(chatId: string, enabled: boolean, mode: AccessMode): Promise<void> {
+    await repositories.groupSettings.setNsfwGifMode(chatId, enabled, mode || 'owner');
+    invalidateGroupSettings(chatId);
+}
+
+export async function getGroupFamilyAccessRule(chatId: string, feature: ConfigurableFeatureKey): Promise<FamilyAccessRule> {
+    const settings = await getContextGroupSettings(chatId);
+    return settings.familyAccess[feature] || defaultFamilyAccess(feature);
+}
+
+export async function setGroupFamilyAccessRule(chatId: string, feature: ConfigurableFeatureKey, rule: FamilyAccessRule): Promise<void> {
+    await repositories.groupSettings.upsertFamilyAccessRule(chatId, feature, rule);
     invalidateGroupSettings(chatId);
 }
 

@@ -1,11 +1,11 @@
 import {logError} from '../../lib/logger.js';
-import {defineSdkPlugin, type PluginSdk} from '../../core/sdk-plugin.js';
-import {getAvailableMp4s, pickRandomFile} from './gif-media.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
+import {formatReactionFallbackNotice, selectReactionMedia} from './gif-media.js';
 import path from 'path';
 import {getParticipantsFast, resolveMention, type ResolvedMention} from '../../utils/mention.js';
 import {loadCachedJsonResource} from '../../lib/local-json-resource.js';
 import {getNsfwSettings} from '../../services/group-settings.service.js';
-import {canUseNsfw} from '../../utils/nsfw-access.js';
+import {canUseNsfwGifs} from '../../utils/nsfw-access.js';
 
 interface ReactionResource {
     help: string;
@@ -26,25 +26,29 @@ const aliasMap = buildReactionAliasMap(reactions);
 export default defineSdkPlugin({
     help: Object.values(reactions).map(reaction => reaction.help),
     tags: ['fun'],
+    feature: 'gifs',
     command: buildCommandRegex(aliasMap),
     register: false,
     async execute(m, {sdk, isGroupCreator}) {
     try {
         const reaction = aliasMap[sdk.command.toLowerCase()];
         if (!reaction) return sdk.reply.message('messages.gifReactions.missingReaction');
-        const nsfwEnabled = reaction.adult ? canUseNsfw(await getNsfwSettings(sdk.chatId), {isAdmin: sdk.isAdmin, isOwner: sdk.isOwner, isGroupCreator}) : false;
+        const nsfwEnabled = reaction.adult ? canUseNsfwGifs(await getNsfwSettings(sdk.chatId), {isAdmin: sdk.isAdmin, isOwner: sdk.isOwner, isGroupCreator}) : false;
 
         const rawMentions: string[] = Array.isArray(m.mentionedJid) ? [...m.mentionedJid] : [];
         if (m.quoted?.sender) rawMentions.push(m.quoted.sender);
         if (!rawMentions.length) rawMentions.push(sdk.sender);
 
-        const selectedFolder = nsfwEnabled && reaction.nsfwFolder ? reaction.nsfwFolder : reaction.folder;
-        const folder = path.resolve(process.cwd(), selectedFolder);
-        const mp4s = getAvailableMp4s(folder);
-
-        if (!mp4s.length) {
-            await sdk.reply.text(buildFfmpegHint(sdk, selectedFolder));
-            return;
+        const publicFolder = path.resolve(process.cwd(), reaction.folder);
+        const nsfwFolder = reaction.nsfwFolder ? path.resolve(process.cwd(), reaction.nsfwFolder) : undefined;
+        const media = selectReactionMedia({publicFolder, nsfwFolder, nsfwEnabled});
+        const fallbackNotice = formatReactionFallbackNotice({
+            reason: media.fallbackReason,
+            requestedFolder: media.requestedFolder,
+        });
+        if (!media.filePath) {
+            if (media.fallbackReason === 'nsfw-required') return;
+            return sdk.reply.text(fallbackNotice);
         }
 
         const groupParticipants = getParticipantsFast(sdk.conn, sdk.chatId, sdk.participants);
@@ -56,10 +60,13 @@ export default defineSdkPlugin({
         ]));
 
         const captionTemplate = nsfwEnabled && reaction.nsfwCaption ? reaction.nsfwCaption : reaction.caption;
-        const caption = formatReactionCaption(captionTemplate, senderResolved.tag, mentionedResolved.map(mention => mention.tag));
+        const caption = [
+            formatReactionCaption(captionTemplate, senderResolved.tag, mentionedResolved.map(mention => mention.tag)),
+            fallbackNotice,
+        ].filter(Boolean).join('\n\n');
 
         await sdk.sendMessage({
-            video: {url: path.join(folder, pickRandomFile(mp4s))},
+            video: {url: media.filePath},
             mimetype: 'video/mp4',
             gifPlayback: true,
             caption,
@@ -94,9 +101,6 @@ function formatReactionCaption(template: string, senderTag: string, targetTags: 
         .replaceAll('{targets}', `*${targetTags.join(', ')}*`);
 }
 
-function buildFfmpegHint(sdk: PluginSdk, folder: string): string {
-    return sdk.content.renderMessage('messages.gifReactions.ffmpegHint', {folder});
-}
 
 function escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
