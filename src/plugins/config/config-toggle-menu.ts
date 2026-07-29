@@ -1,6 +1,7 @@
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode, GroupSettings, SubbotConfig} from '../../types/config.js';
-import type {ConfigurableFeatureKey, FamilyAccessMap} from '../../domain/groups.js';
+import type {CommandAccessMap, ConfigurableFeatureKey, FamilyAccessMap} from '../../domain/groups.js';
 import {defaultFamilyAccess} from '../../utils/family-access.js';
+import {CENSORED_COMMAND_ACCESS_KEY, defaultCommandAccess} from '../../utils/command-access.js';
 
 export type ToggleSectionKey = 'saludos' | 'moderacion' | 'acceso' | 'familias' | 'ia' | 'adulto' | 'subbot';
 
@@ -13,6 +14,7 @@ export interface ToggleMenuState {
     notGroupIcon: string;
     group: Partial<GroupSettings>;
     familyAccess: FamilyAccessMap;
+    commandAccess: CommandAccessMap;
     subbot: Partial<SubbotConfig> | null;
     isSubbot: boolean;
     isAdmin: boolean;
@@ -349,6 +351,7 @@ const sections: ToggleSection[] = [
             switchItem(state, 'Antilink2', 'antilink2', getStatus(state, 'antilink2')),
             switchItem(state, 'Antifake', 'antifake', getStatus(state, 'antifake')),
             switchItem(state, 'VirusTotal', 'virustotal', getStatus(state, 'virusTotal')),
+            commandAccessItem(state, 'Censura de usuarios', CENSORED_COMMAND_ACCESS_KEY),
             switchItem(state, 'Registro mensajes', 'registromsg', getStatus(state, 'messageLogging')),
             {
                 label: 'Autoaceptar',
@@ -486,6 +489,22 @@ function featureItem(state: ToggleMenuState, label: string, command: string, fea
     return {
         label,
         status: familyStatus(state, feature),
+        commands: [
+            {text: `${state.prefix}enable ${command} --all`, minimumRole: maxPermission(currentRole, 'admin')},
+            {text: `${state.prefix}enable ${command} --admin`, minimumRole: maxPermission(currentRole, 'admin')},
+            {text: `${state.prefix}enable ${command} --superadmin`, minimumRole: maxPermission(currentRole, 'superadmin')},
+            {text: `${state.prefix}enable ${command} --owner`, minimumRole: 'owner'},
+            {text: `${state.prefix}disable ${command}`, minimumRole: 'owner'},
+        ],
+    };
+}
+
+function commandAccessItem(state: ToggleMenuState, label: string, command: string): ToggleItem {
+    const rule = state.commandAccess?.[command] || defaultCommandAccess(command);
+    const currentRole: TogglePermission = !rule.enabled ? 'owner' : permissionForMode(rule.accessMode);
+    return {
+        label,
+        status: rule.enabled ? accessModeLabel(rule.accessMode) : 'desactivada',
         commands: [
             {text: `${state.prefix}enable ${command} --all`, minimumRole: maxPermission(currentRole, 'admin')},
             {text: `${state.prefix}enable ${command} --admin`, minimumRole: maxPermission(currentRole, 'admin')},

@@ -69,6 +69,10 @@ export function buildPluginRegistry(plugins: Record<string, Plugin>): PluginRegi
             scope: plugin.group ? 'group' : plugin.private ? 'private' : 'both',
             resources: Object.freeze({limit: plugin.limit ?? 0, money: plugin.money ?? 0, level: plugin.level ?? 0}),
             feature: plugin.feature,
+            commandAccess: plugin.commandAccess ? Object.freeze({
+                ...plugin.commandAccess,
+                defaultRule: Object.freeze({...plugin.commandAccess.defaultRule}),
+            }) : undefined,
             executionPolicy: Object.freeze({...plugin.executionPolicy}),
             interceptors: Object.freeze([...(plugin.interceptors ?? [])]),
         }) as Readonly<PluginManifest>;

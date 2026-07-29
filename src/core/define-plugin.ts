@@ -16,7 +16,7 @@
  */
 import type {BeforePluginContext, PluginContext} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
-import type {ExecutionPolicy, Plugin, PluginFeature, PluginInterceptor} from '../types/plugin.js';
+import type {ExecutionPolicy, Plugin, PluginCommandAccess, PluginFeature, PluginInterceptor} from '../types/plugin.js';
 
 export interface PluginDefinition {
     /** Comando(s) que activan el plugin. */
@@ -47,6 +47,7 @@ export interface PluginDefinition {
     /** Nivel mínimo requerido. */
     level?: number;
     feature?: PluginFeature;
+    commandAccess?: PluginCommandAccess;
     executionPolicy?: ExecutionPolicy;
     interceptors?: PluginInterceptor[];
     /** Permite que `before` corra también cuando el mensaje es un comando con prefijo. */
@@ -84,6 +85,7 @@ export function definePlugin(def: PluginDefinition): Plugin {
     if (def.money !== undefined) fn.money = def.money;
     if (def.level !== undefined) fn.level = def.level;
     fn.feature = def.feature ?? inferLegacyFeature(def.tags);
+    fn.commandAccess = def.commandAccess ? {...def.commandAccess, defaultRule: {...def.commandAccess.defaultRule}} : undefined;
     fn.executionPolicy = {...def.executionPolicy};
     fn.interceptors = [...(def.interceptors ?? [])];
     if (def.runBeforeOnCommand !== undefined) fn.runBeforeOnCommand = def.runBeforeOnCommand;

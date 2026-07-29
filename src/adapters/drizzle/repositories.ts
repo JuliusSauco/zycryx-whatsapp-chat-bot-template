@@ -14,6 +14,7 @@ import {statsRepository} from './stats.repository.js';
 import {subbotsRepository} from './subbot.repository.js';
 import {userRepository} from './user.repository.js';
 import {userGroupRoleRepository} from './user-group-role.repository.js';
+import {censoredUserRepository} from './censored-user.repository.js';
 
 export function createDrizzleRepositories(): AppRepositories {
     return {
@@ -29,6 +30,7 @@ export function createDrizzleRepositories(): AppRepositories {
         apiTokens: apiTokenRepository,
         audioResponses: audioResponseRepository,
         groupSettings: groupSettingsRepository,
+        censoredUsers: censoredUserRepository,
         reports: reportsRepository,
         chatMemory: chatMemoryRepository,
         database: databaseRepository,

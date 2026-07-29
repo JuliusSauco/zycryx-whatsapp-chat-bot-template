@@ -131,6 +131,17 @@ export const groupCommandAccessRules = pgTable('group_command_access_rules', {
     accessModeCheck: check('group_command_access_rules_access_mode_check', sql`${table.accessMode} in ('all', 'admin', 'superadmin', 'owner')`),
 }));
 
+export const groupCensoredUsers = pgTable('group_censored_users', {
+    groupId: text('group_id').notNull(),
+    userId: text('user_id').notNull(),
+    userLid: text('user_lid'),
+    censoredBy: text('censored_by').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+}, table => ({
+    pk: primaryKey({columns: [table.groupId, table.userId]}),
+    groupLidIdx: index('group_censored_users_group_lid_idx').on(table.groupId, table.userLid),
+}));
+
 export const chats = pgTable('chats', {
     id: text('id').primaryKey(),
     isGroup: boolean('is_group').default(true),

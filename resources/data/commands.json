@@ -78,6 +78,8 @@
     "tagall": {"emoji": "📣", "usage": "tagall <mensaje>", "description": "Menciona a todos los integrantes del grupo.", "aliases": ["invocar", "todos", "contador"], "requiredRole": "admin", "scope": "group"},
     "hidetag": {"emoji": "📢", "usage": "hidetag <mensaje>", "description": "Envia un mensaje mencionando a todos de forma oculta.", "aliases": ["notificar", "notify"], "requiredRole": "admin", "scope": "group"},
     "delete": {"emoji": "🗑️", "usage": "delete", "description": "Elimina un mensaje respondido cuando el bot puede hacerlo.", "aliases": ["del"], "requiredRole": "admin", "scope": "group"},
+    "censored": {"emoji": "🔇", "usage": "censored @usuario | censored list", "description": "Censura a un usuario o lista las censuras persistentes del grupo; acceso configurable.", "examples": ["censored @usuario", "censored list"], "requiredRole": "admin", "scope": "group"},
+    "uncensored": {"emoji": "🔊", "usage": "uncensored @usuario", "description": "Retira una censura persistente; acceso configurable.", "requiredRole": "admin", "scope": "group"},
     "pin": {"emoji": "📌", "usage": "pin", "description": "Destaca el mensaje respondido en el grupo.", "aliases": ["destacar"], "requiredRole": "admin", "scope": "group"},
     "unpin": {"emoji": "📍", "usage": "unpin", "description": "Quita el destacado del mensaje respondido.", "aliases": ["desmarcar"], "requiredRole": "admin", "scope": "group"},
     "setname": {"emoji": "✏️", "usage": "setname <nombre>", "description": "Cambia el nombre del grupo.", "aliases": ["newnombre", "nuevonombre"], "requiredRole": "admin", "scope": "group"},

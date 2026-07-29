@@ -4,7 +4,7 @@ import {addWalletResource, addWalletResourcesAndSetFields, getWallet} from '../.
 import {pickRandom, randomInt} from '../../utils/random.js';
 import {formatDurationClockWords} from '../../utils/time.js';
 
-const cooldown = 3600000; // 1 hora
+const CRIME_COOLDOWN_MS = 25 * 60 * 1000; // 25 minutos
 export default defineSdkPlugin({
     help: ['crime'],
     tags: ['econ'],
@@ -17,8 +17,8 @@ export default defineSdkPlugin({
     if (!user) return sdk.reply.message('rpg.crime.missingUser');
 
     const timePassed = now - (user.crime || 0);
-    if (timePassed < cooldown) return sdk.reply.message('rpg.crime.cooldown', {
-        time: formatDurationClockWords(cooldown - timePassed)
+    if (timePassed < CRIME_COOLDOWN_MS) return sdk.reply.message('rpg.crime.cooldown', {
+        time: formatDurationClockWords(CRIME_COOLDOWN_MS - timePassed)
     });
     const participants = metadata.participants.map(v => v.id).filter(Boolean);
     const randomTarget = pickRandom(participants);

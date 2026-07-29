@@ -27,9 +27,33 @@ async function listFamilyRules(groupId: string) {
     }));
 }
 
+async function listCommandRules(groupId: string) {
+    const rows = await orm.select({
+        target: groupCommandAccessRules.target,
+        enabled: groupCommandAccessRules.enabled,
+        accessMode: groupCommandAccessRules.accessMode,
+    }).from(groupCommandAccessRules).where(and(
+        eq(groupCommandAccessRules.groupId, groupId),
+        eq(groupCommandAccessRules.scope, 'command'),
+    ));
+    return rows.map(row => ({
+        target: row.target,
+        rule: {enabled: row.enabled, accessMode: normalizeFamilyAccessMode(row.accessMode)},
+    }));
+}
+
 async function upsertFamilyRule(groupId: string, feature: import('../../domain/groups.js').ConfigurableFeatureKey, enabled: boolean, accessMode: import('../../types/config.js').AccessMode) {
     const updatedAt = new Date();
     await orm.insert(groupCommandAccessRules).values({groupId, scope: 'family', target: feature, enabled, accessMode, updatedAt})
+        .onConflictDoUpdate({
+            target: [groupCommandAccessRules.groupId, groupCommandAccessRules.scope, groupCommandAccessRules.target],
+            set: {enabled, accessMode, updatedAt},
+        });
+}
+
+async function upsertCommandRule(groupId: string, command: string, enabled: boolean, accessMode: import('../../types/config.js').AccessMode) {
+    const updatedAt = new Date();
+    await orm.insert(groupCommandAccessRules).values({groupId, scope: 'command', target: command, enabled, accessMode, updatedAt})
         .onConflictDoUpdate({
             target: [groupCommandAccessRules.groupId, groupCommandAccessRules.scope, groupCommandAccessRules.target],
             set: {enabled, accessMode, updatedAt},
@@ -43,7 +67,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
     },
 
     async findContextSettings(groupId) {
-        const [[row], familyRules] = await Promise.all([orm
+        const [[row], familyRules, commandRules] = await Promise.all([orm
             .select({
                 banned: groupSettings.banned,
                 primaryBot: groupSettings.primaryBot,
@@ -75,9 +99,13 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             })
             .from(groupSettings)
             .where(eq(groupSettings.groupId, groupId))
-            .limit(1), listFamilyRules(groupId)]);
+            .limit(1), listFamilyRules(groupId), listCommandRules(groupId)]);
 
-        return row ? {...mapContextGroupSettings(row), familyAccess: mergeFamilyAccessRules(familyRules)} : null;
+        return row ? {
+            ...mapContextGroupSettings(row),
+            familyAccess: mergeFamilyAccessRules(familyRules),
+            commandAccess: Object.fromEntries(commandRules.map(item => [item.target, item.rule])),
+        } : null;
     },
 
     async findNsfwSettings(groupId) {
@@ -200,6 +228,14 @@ export const groupSettingsRepository: GroupSettingsRepository = {
 
     async upsertFamilyAccessRule(groupId, feature, rule) {
         await upsertFamilyRule(groupId, feature, rule.enabled, rule.accessMode);
+    },
+
+    async listCommandAccessRules(groupId) {
+        return listCommandRules(groupId);
+    },
+
+    async upsertCommandAccessRule(groupId, command, rule) {
+        await upsertCommandRule(groupId, command, rule.enabled, rule.accessMode);
     },
 
     async setGreetingHidetagMode(groupId, type, mode) {

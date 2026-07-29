@@ -31,6 +31,7 @@ export interface ContextGroupSettings {
     audios: boolean;
     autolevelup: boolean;
     familyAccess: FamilyAccessMap;
+    commandAccess: CommandAccessMap;
 }
 
 export interface NsfwGroupSettings {
@@ -73,3 +74,5 @@ export interface FamilyAccessRule {
 }
 
 export type FamilyAccessMap = Record<ConfigurableFeatureKey, FamilyAccessRule>;
+export type CommandAccessRule = FamilyAccessRule;
+export type CommandAccessMap = Record<string, CommandAccessRule>;

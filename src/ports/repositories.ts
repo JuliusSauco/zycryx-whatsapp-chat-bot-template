@@ -21,8 +21,10 @@ import type {
     GroupSettingsRecord,
     NsfwGroupSettings,
     FamilyAccessRule,
+    CommandAccessRule,
     UserGroupRoleRecord,
 } from '../domain/groups.js';
+import type {CensoredUserRecord, UpsertCensoredUserInput} from '../domain/censored-users.js';
 import type {SubbotBooleanFlag, SubbotConfig, SubbotTypeCounts} from '../domain/subbots.js';
 import type {AudioResponseRecord, UpsertAudioResponseInput} from '../domain/audio-responses.js';
 import type {
@@ -64,7 +66,9 @@ export type {
     NsfwGroupSettings,
     UserGroupRoleRecord,
     FamilyAccessRule,
+    CommandAccessRule,
 } from '../domain/groups.js';
+export type {CensoredUserRecord, UpsertCensoredUserInput} from '../domain/censored-users.js';
 export type {SubbotBooleanFlag, SubbotConfig, SubbotTypeCounts} from '../domain/subbots.js';
 export type {AudioConfig, AudioEntry, AudioResponseRecord, UpsertAudioResponseInput} from '../domain/audio-responses.js';
 export type {
@@ -225,6 +229,8 @@ export interface GroupSettingsRepository {
     setNsfwGifMode(groupId: string, enabled: boolean, mode: GroupSettings['nsfwGifAccessMode']): Promise<void>;
     listFamilyAccessRules(groupId: string): Promise<Array<{target: ConfigurableFeatureKey; rule: FamilyAccessRule}>>;
     upsertFamilyAccessRule(groupId: string, feature: ConfigurableFeatureKey, rule: FamilyAccessRule): Promise<void>;
+    listCommandAccessRules(groupId: string): Promise<Array<{target: string; rule: CommandAccessRule}>>;
+    upsertCommandAccessRule(groupId: string, command: string, rule: CommandAccessRule): Promise<void>;
     setGreetingHidetagMode(groupId: string, type: 'welcome' | 'bye', mode: GroupSettings['welcomeHidetagMode']): Promise<void>;
     setTextMessage(input: {
         groupId: string;
@@ -244,6 +250,12 @@ export interface GroupSettingsRepository {
     listExpiredGroups(now: number): Promise<ExpiredGroup[]>;
     clearExpiration(groupId: string): Promise<void>;
     clearPrimaryBot(groupId: string): Promise<void>;
+}
+
+export interface CensoredUserRepository {
+    listByGroup(groupId: string): Promise<CensoredUserRecord[]>;
+    upsert(input: UpsertCensoredUserInput): Promise<{created: boolean}>;
+    delete(groupId: string, userId: string, userLid: string | null): Promise<boolean>;
 }
 
 export interface SubbotRepository {
@@ -344,6 +356,7 @@ export interface AppRepositories {
     apiTokens: ApiTokenRepository;
     audioResponses: AudioResponseRepository;
     groupSettings: GroupSettingsRepository;
+    censoredUsers: CensoredUserRepository;
     reports: ReportRepository;
     chatMemory: ChatMemoryRepository;
     database: DatabaseRepository;

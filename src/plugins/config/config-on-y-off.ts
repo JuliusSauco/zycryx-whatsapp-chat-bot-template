@@ -1,12 +1,13 @@
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {content} from '../../services/content.service.js'
-import {getContextGroupSettings, getGroupFamilyAccessRule, getGroupSettings, setGroupAutoAcceptMode, setGroupAutoresponderMode, setGroupAutoresponderTrigger, setGroupBooleanFlag, setGroupBotAccessMode, setGroupFamilyAccessRule, setGroupGreetingHidetagMode, setGroupNsfwGifMode, setGroupNsfwMode} from '../../services/group-settings.service.js'
+import {getContextGroupSettings, getGroupCommandAccessRule, getGroupFamilyAccessRule, getGroupSettings, setGroupAutoAcceptMode, setGroupAutoresponderMode, setGroupAutoresponderTrigger, setGroupBooleanFlag, setGroupBotAccessMode, setGroupCommandAccessRule, setGroupFamilyAccessRule, setGroupGreetingHidetagMode, setGroupNsfwGifMode, setGroupNsfwMode} from '../../services/group-settings.service.js'
 import {getSubbotConfig, setSubbotBooleanFlag} from '../../services/subbot.service.js'
 import {isGroupCreator} from '../../utils/group-creator.js'
 import {getToggleSectionKey, renderConfigOnboarding, renderConfigView, renderToggleMenu} from './config-toggle-menu.js'
 import type {ConfigurableFeatureKey} from '../../domain/groups.js'
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode, GroupSettings} from '../../types/config.js'
 import {getFamilyManagerLevel, getRequiredFamilyManagerLevel} from '../../utils/family-access-authority.js'
+import {CENSORED_COMMAND_ACCESS_KEY, defaultCommandAccess} from '../../utils/command-access.js'
 
 function getAutoAcceptModeLabel(mode?: AutoAcceptMode | null): string {
     switch (mode || 'off') {
@@ -135,13 +136,16 @@ export default defineSdkPlugin({
     let selectedAutoAcceptMode: AutoAcceptMode | null = null
     let selectedBotAccessMode: AccessMode | null = null
     let selectedFeatureAccessMode: {feature: string; key: ConfigurableFeatureKey; enabled: boolean; mode: AccessMode} | null = null
+    let selectedCommandAccessMode: {command: string; enabled: boolean; mode: AccessMode} | null = null
     let selectedAutoresponderMode: {enabled: boolean; mode: AccessMode} | null = null
     let selectedAutoresponderTrigger: AutoresponderTrigger | null = null
     let selectedNsfwMode: {enabled: boolean; mode: AccessMode} | null = null
     let selectedNsfwGifMode: {enabled: boolean; mode: AccessMode} | null = null
     let selectedGreetingConfig: {type: 'welcome' | 'bye'; enabled: boolean; hidetagMode: GreetingHidetagMode} | null = null
     const chat: Partial<GroupSettings> = await getGroupSettings(chatId) || {}
-    const familyAccess = (await getContextGroupSettings(chatId)).familyAccess
+    const contextSettings = await getContextGroupSettings(chatId)
+    const familyAccess = contextSettings.familyAccess
+    const commandAccess = contextSettings.commandAccess
     const enabledIcon = content.message('config.toggle.enabledIcon')
     const disabledIcon = content.message('config.toggle.disabledIcon')
     const notGroupIcon = content.message('config.toggle.notGroupIcon')
@@ -160,6 +164,7 @@ export default defineSdkPlugin({
         notGroupIcon,
         group: chat,
         familyAccess,
+        commandAccess,
         subbot: botConfig,
         isSubbot,
         isAdmin,
@@ -191,6 +196,21 @@ export default defineSdkPlugin({
         }
         await setGroupFamilyAccessRule(chatId, input.key, {enabled: isEnable, accessMode: mode})
         return {feature: input.label, key: input.key, enabled: isEnable, mode}
+    }
+
+    const configureCommandAccess = async (key: string) => {
+        if (!m.isGroup) throw groupOnly
+        const current = await getGroupCommandAccessRule(chatId, key, defaultCommandAccess(key))
+        const mode = isEnable ? resolveAccessMode(args, current.accessMode) : current.accessMode
+        const actorLevel = getFamilyManagerLevel({isOwner, isGroupCreator: isFounder, isAdmin})
+        const requiredLevel = getRequiredFamilyManagerLevel(current, {enabled: isEnable, accessMode: mode})
+        if (actorLevel < requiredLevel) {
+            if (requiredLevel === 3) throw content.message('config.toggle.ownerOnly')
+            if (requiredLevel === 2) throw ownerOrGroupCreatorOnly
+            throw adminOnly
+        }
+        await setGroupCommandAccessRule(chatId, key, {enabled: isEnable, accessMode: mode})
+        return {command: key, enabled: isEnable, mode}
     }
 
     switch (type) {
@@ -345,6 +365,12 @@ export default defineSdkPlugin({
             await setGroupNsfwMode(chatId, selectedNsfwMode.enabled, selectedNsfwMode.mode)
             break
         }
+
+        case 'censored':
+        case 'uncensored':
+        case 'censura':
+            selectedCommandAccessMode = await configureCommandAccess(CENSORED_COMMAND_ACCESS_KEY)
+            break
 
         case 'nsfwgif':
         case 'nsfwgifs':
@@ -531,6 +557,15 @@ export default defineSdkPlugin({
             feature: selectedFeatureAccessMode.feature,
             access: selectedFeatureAccessMode.enabled
                 ? getAccessModeLabel(selectedFeatureAccessMode.mode)
+                : content.message('config.toggle.disabledLabel'),
+        }))
+    }
+
+    if (selectedCommandAccessMode) {
+        return m.reply(content.renderMessage('config.toggle.featureAccessConfigured', {
+            feature: selectedCommandAccessMode.command,
+            access: selectedCommandAccessMode.enabled
+                ? getAccessModeLabel(selectedCommandAccessMode.mode)
                 : content.message('config.toggle.disabledLabel'),
         }))
     }

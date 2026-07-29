@@ -9,7 +9,7 @@ import {
 } from '../lib/db-cache.js';
 import {repositories} from './data-source.js';
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode} from '../types/config.js';
-import type {ConfigurableFeatureKey, ContextGroupSettings, FamilyAccessRule, GroupSettingsRecord} from '../domain/groups.js';
+import type {CommandAccessRule, ConfigurableFeatureKey, ContextGroupSettings, FamilyAccessRule, GroupSettingsRecord} from '../domain/groups.js';
 import {createDefaultFamilyAccessMap, defaultFamilyAccess, mergeFamilyAccessRules} from '../utils/family-access.js';
 
 const EMPTY_CONTEXT_SETTINGS: ContextGroupSettings = {
@@ -41,6 +41,7 @@ const EMPTY_CONTEXT_SETTINGS: ContextGroupSettings = {
     audios: false,
     autolevelup: true,
     familyAccess: createDefaultFamilyAccessMap(),
+    commandAccess: {},
 };
 
 export async function getContextGroupSettings(chatId: string): Promise<ContextGroupSettings> {
@@ -52,6 +53,7 @@ export async function getContextGroupSettings(chatId: string): Promise<ContextGr
         const settings = row ?? {
             ...EMPTY_CONTEXT_SETTINGS,
             familyAccess: mergeFamilyAccessRules(await repositories.groupSettings.listFamilyAccessRules(chatId)),
+            commandAccess: Object.fromEntries((await repositories.groupSettings.listCommandAccessRules(chatId)).map(item => [item.target, item.rule])),
         };
         setCachedGroupSettings(chatId, settings);
         return settings;
@@ -131,6 +133,16 @@ export async function getGroupFamilyAccessRule(chatId: string, feature: Configur
 
 export async function setGroupFamilyAccessRule(chatId: string, feature: ConfigurableFeatureKey, rule: FamilyAccessRule): Promise<void> {
     await repositories.groupSettings.upsertFamilyAccessRule(chatId, feature, rule);
+    invalidateGroupSettings(chatId);
+}
+
+export async function getGroupCommandAccessRule(chatId: string, command: string, fallback: CommandAccessRule): Promise<CommandAccessRule> {
+    const settings = await getContextGroupSettings(chatId);
+    return settings.commandAccess[command] || fallback;
+}
+
+export async function setGroupCommandAccessRule(chatId: string, command: string, rule: CommandAccessRule): Promise<void> {
+    await repositories.groupSettings.upsertCommandAccessRule(chatId, command, rule);
     invalidateGroupSettings(chatId);
 }
 

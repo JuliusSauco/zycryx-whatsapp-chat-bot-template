@@ -80,6 +80,7 @@ export interface GroupSettings {
     botAccessMode?: AccessMode | null;
     messageLogging: boolean;
     familyAccess?: import('../domain/groups.js').FamilyAccessMap;
+    commandAccess?: import('../domain/groups.js').CommandAccessMap;
     // allow custom welcome/bye texts
     swelcome?: string | null;
     sbye?: string | null;

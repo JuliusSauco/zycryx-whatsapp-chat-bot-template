@@ -16,7 +16,7 @@ import {getSubbotConfig, updateSubbotTipo} from '../services/subbot.service.js';
 import {clearPrimaryBot, getContextGroupSettings} from '../services/group-settings.service.js';
 import type {SubbotConfig} from '../types/config.js';
 import type {AccessMode, AutoresponderTrigger} from '../types/config.js';
-import type {FamilyAccessMap} from '../domain/groups.js';
+import type {CommandAccessMap, FamilyAccessMap} from '../domain/groups.js';
 import type {BotBranding, ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
 import {cleanJid, isGroupJid, resolveSenderInfo} from '../utils/jid.js';
@@ -58,6 +58,7 @@ export interface GroupSettings {
     audios: boolean;
     autolevelup: boolean;
     familyAccess: FamilyAccessMap;
+    commandAccess: CommandAccessMap;
 }
 
 export interface HandlerContext {
@@ -114,6 +115,7 @@ const EMPTY_GROUP_SETTINGS: GroupSettings = {
     audios: false,
     autolevelup: true,
     familyAccess: createDefaultFamilyAccessMap(),
+    commandAccess: {},
 };
 
 /**

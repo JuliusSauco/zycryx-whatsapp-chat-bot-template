@@ -158,6 +158,7 @@ export function mapContextGroupSettings(row: ContextGroupSettingsRow): ContextGr
         audios: row.audios ?? false,
         autolevelup: row.autolevelup ?? true,
         familyAccess: createDefaultFamilyAccessMap(),
+        commandAccess: {},
     };
 }
 

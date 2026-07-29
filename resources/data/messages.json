@@ -779,6 +779,21 @@
       }
     },
     "group": {
+      "censored": {
+        "missingTarget": "⚠️ Etiqueta a un usuario o responde a uno de sus mensajes.",
+        "multipleTargets": "⚠️ Solo puedes gestionar un usuario por ejecución.",
+        "selfTarget": "⚠️ No puedes censurarte a ti mismo.",
+        "botTarget": "⚠️ No puedes censurar al bot.",
+        "ownerTarget": "⚠️ Los owners del bot están protegidos contra la censura.",
+        "rankTarget": "⚠️ No puedes censurar a un participante con un rango igual o superior al tuyo.",
+        "added": "🔇 @{user} fue censurado. Sus próximos mensajes serán eliminados.",
+        "alreadyAdded": "ℹ️ @{user} ya estaba censurado en este grupo.",
+        "removed": "🔊 Se retiró la censura de @{user}.",
+        "alreadyRemoved": "ℹ️ @{user} no estaba censurado en este grupo.",
+        "listEmpty": "✅ No hay usuarios censurados en este grupo.",
+        "listHeader": "*🔇 Usuarios censurados ({total})*\n\n",
+        "listItem": "{position}. @{user} — desde {date}"
+      },
       "link": {
         "failure": "No se pudo obtener el enlace del grupo."
       },

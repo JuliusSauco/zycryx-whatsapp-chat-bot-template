@@ -79,6 +79,15 @@ Reglas adicionales del proyecto:
 
 El guard `feature-access.guard.ts` usa la propiedad tipada `feature` para familias configurables por grupo. Cada regla persiste `enabled` y uno de los modos `all`, `admin`, `superadmin` u `owner`.
 
+Los comandos individuales que necesiten el mismo esquema deben declarar `commandAccess` con una clave estable y una regla predeterminada. Las reglas se guardan con `scope = 'command'`; varios aliases o plugins pueden compartir la misma clave. No combines `admin: true` con un acceso individual que permita `--all`, porque el guard fijo seguiría bloqueando miembros.
+
+```ts
+commandAccess: {
+    key: 'censored',
+    defaultRule: {enabled: true, accessMode: 'admin'},
+}
+```
+
 | Familia configurable | Valor de `feature` |
 |---|---|
 | `games` | `games` |
