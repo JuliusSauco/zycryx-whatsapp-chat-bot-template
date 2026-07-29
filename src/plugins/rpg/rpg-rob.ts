@@ -4,6 +4,7 @@ import {randomInt} from '../../utils/random.js';
 import {formatDurationClockWords} from '../../utils/time.js';
 
 const ro = 3000;
+const ROB_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutos
 
 export default defineSdkPlugin({
     help: ['rob', 'robar'],
@@ -14,8 +15,7 @@ export default defineSdkPlugin({
     const now = Date.now();
     const robber = await getWallet(m.sender);
     if (!robber) return sdk.reply.message('rpg.rob.missingUser');
-    const cooldown = 3600000;
-    const timeLeft = (robber.lastrob ?? 0) + cooldown - now;
+    const timeLeft = (robber.lastrob ?? 0) + ROB_COOLDOWN_MS - now;
     if (timeLeft > 0) return sdk.reply.message('rpg.rob.cooldown', {
         time: formatDurationClockWords(timeLeft)
     });

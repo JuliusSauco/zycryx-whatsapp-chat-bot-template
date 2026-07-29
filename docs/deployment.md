@@ -1,10 +1,10 @@
 # Despliegue en servidor
 
-Guia operativa para correr el bot en produccion (VPS Linux o Windows). Fecha de referencia: 2026-06-10.
+Guia operativa para correr el bot en produccion (VPS Linux o Windows). Fecha de referencia: 2026-07-29.
 
 ## Requisitos del servidor
 
-- Node.js 18+ (recomendado 20 LTS o superior).
+- Node.js 24 LTS (usar siempre el parche 24.x mas reciente).
 - PostgreSQL 14+ accesible desde el servidor.
 - Cliente PostgreSQL en PATH (`pg_dump`, `pg_restore`, `createdb`) para backups y recuperacion.
 - FFmpeg en el PATH (stickers, conversiones, audios).
@@ -18,14 +18,17 @@ Guia operativa para correr el bot en produccion (VPS Linux o Windows). Fecha de 
 ```bash
 git clone <url-del-repositorio>
 cd zycryx-whatsapp-chat-bot-template
-npm install
+nvm install 24
+nvm use 24
+node --version # debe mostrar v24.x
+npm ci
 cp .env.example .env.prod        # completar valores reales
 npm run build
 npm run ops:check
 npm run db:migrate               # con NODE_ENV=prod si la DB depende del env
 ```
 
-Nota: `npm install` ejecuta `postinstall: tsc`, por lo que el build inicial ocurre durante la instalacion. Si solo quieres instalar dependencias usa `npm install --ignore-scripts` y compila despues con `npm run build`.
+`npm ci` usa exactamente `package-lock.json` y ejecuta `postinstall: tsc`, por lo que el build inicial ocurre durante la instalacion. `engine-strict=true` rechaza Node fuera de la rama 24.x o npm fuera de la rama 11.x.
 
 ### Vinculacion inicial
 

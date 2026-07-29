@@ -3,7 +3,7 @@
 ![Tecnologias principales](https://skillicons.dev/icons?i=typescript,nodejs,npm,postgres,git&theme=dark)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-24%20LTS-339933?logo=node.js&logoColor=white)
 ![Baileys](https://img.shields.io/badge/Baileys-7.x-25D366?logo=whatsapp&logoColor=white)
 ![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?logo=drizzle&logoColor=111)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1?logo=postgresql&logoColor=white)
@@ -95,7 +95,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 <a id="requisitos"></a>
 ## 📋 Requisitos
 
-- Node.js 20 LTS o superior.
+- Node.js 24 LTS (usar siempre el parche 24.x mas reciente).
 - npm.
 - PostgreSQL 14 o superior.
 - FFmpeg instalado y disponible en PATH.
@@ -111,8 +111,13 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 ```bash
 git clone <url-del-repositorio>
 cd zycryx-whatsapp-chat-bot-template
-npm install
+nvm install 24
+nvm use 24
+node --version # debe mostrar v24.x
+npm ci
 ```
+
+El archivo `.nvmrc` mantiene la seleccion en la rama 24 LTS. Actualiza periodicamente al parche 24.x mas reciente y no uses Node 25/26 sin una nueva validacion del proyecto.
 
 Copia el entorno base:
 

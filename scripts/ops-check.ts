@@ -53,12 +53,10 @@ function anyCommandExists(commands: string[]): boolean {
 
 function checkNode(): void {
     const major = Number(process.versions.node.split('.')[0]);
-    if (major >= 20) {
+    if (major === 24) {
         add('ok', 'Node.js', `version ${process.version}`);
-    } else if (major >= 18) {
-        add('warn', 'Node.js', `version ${process.version}; recomendado 20 LTS o superior`);
     } else {
-        add('fail', 'Node.js', `version ${process.version}; se requiere 18+`);
+        add('fail', 'Node.js', `version ${process.version}; se requiere Node.js 24 LTS`);
     }
 }
 
