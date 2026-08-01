@@ -50,6 +50,7 @@ import {
     exchangeWalletResources,
     getWallet,
     isWalletResource,
+    robExperience,
     setUserLevelRole,
     transferWalletResource,
 } from '../src/services/wallet.service.js';
@@ -389,6 +390,10 @@ async function testWalletAndApiTokenServices(): Promise<void> {
             calls.push(['transferWalletResource', input]);
             return false;
         },
+        robExperience: async input => {
+            calls.push(['robExperience', input]);
+            return {kind: 'success', amount: input.amount ?? 500, maxAmount: 500};
+        },
         setLevelRole: async (userId, level, role) => calls.push(['setLevelRole', userId, level, role]),
     };
     repositories.apiTokens = {
@@ -408,6 +413,9 @@ async function testWalletAndApiTokenServices(): Promise<void> {
         await addWalletResourcesAndSetFields({userId: 'u1', resources: {money: 1}, fields: {lastclaim: 2}});
         assert.equal(await exchangeWalletResources({userId: 'u1', from: 'money', to: 'banco', fromAmount: 1, toAmount: 2}), true);
         assert.equal(await transferWalletResource({from: 'u1', to: 'u2', resource: 'money', amount: 1}), false);
+        assert.deepEqual(await robExperience({robberId: 'u1', victimId: 'u2', attemptedAt: 123}), {
+            kind: 'success', amount: 500, maxAmount: 500,
+        });
         await setUserLevelRole('u1', 9, 'Pro');
 
         invalidateApiTokenCache('service');

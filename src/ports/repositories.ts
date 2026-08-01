@@ -41,6 +41,7 @@ import type {
     MarkMessageDeletedInput,
     MessageLogType,
 } from '../domain/operations.js';
+import type {RobExperienceInput, RobExperienceResult} from '../domain/robbery.js';
 
 export type {
     BannedUserInfo,
@@ -116,6 +117,7 @@ export interface UserRepository {
         resource: WalletResource;
         amount: number;
     }): Promise<boolean>;
+    robExperience(input: RobExperienceInput): Promise<RobExperienceResult>;
     setLevelRole(userId: string, level: number, role: string): Promise<void>;
     decrementLimit(userId: string, amount: number): Promise<void>;
     decrementMoney(userId: string, amount: number): Promise<void>;

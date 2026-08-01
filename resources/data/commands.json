@@ -232,6 +232,8 @@
     "lesbian": {"emoji": "🔞", "usage": "lesbian @usuario", "description": "Envia una reaccion GIF NSFW si esta permitido.", "aliases": ["sexo-lesbiano", "lesbianas", "sexo-mujeres"]},
     "preg": {"emoji": "🎞️", "usage": "preg @usuario", "description": "Envia una reaccion GIF de broma.", "aliases": ["embarazado", "embarazar", "preniado", "en-bola"]},
     "spank": {"emoji": "🎞️", "usage": "spank @usuario", "description": "Envia una reaccion GIF de broma.", "aliases": ["nalgear", "nalguear", "palmaso", "nalgaso"]},
+    "fap": {"emoji": "🔞", "usage": "fap", "description": "Envia una reaccion GIF exclusivamente NSFW y elige a otro integrante del grupo al azar."},
+    "manosear": {"emoji": "🔞", "usage": "manosear @usuario", "description": "Envia una reaccion GIF normal o NSFW dirigida a otra persona etiquetada."},
 
     "sticker": {"emoji": "🧧", "usage": "sticker", "description": "Convierte una imagen o video respondido en sticker.", "aliases": ["s"], "examples": ["sticker"]},
     "attp": {"emoji": "🔤", "usage": "attp <texto>", "description": "Crea un sticker animado con texto.", "aliases": ["attp2"], "examples": ["attp hola"]},
@@ -312,7 +314,7 @@
     "daily": {"emoji": "🎁", "usage": "daily", "description": "Reclama tu recompensa diaria.", "aliases": ["claim"]},
     "work": {"emoji": "🛠️", "usage": "work", "description": "Trabaja para ganar recursos del RPG.", "aliases": ["trabajar", "chambear", "w", "chamba"]},
     "crime": {"emoji": "🕶️", "usage": "crime", "description": "Intenta ganar recursos con una accion arriesgada.", "aliases": ["crimen"], "scope": "group"},
-    "rob": {"emoji": "💰", "usage": "rob @usuario", "description": "Intenta robar recursos a otro usuario.", "aliases": ["robar"], "examples": ["rob @usuario"]},
+    "rob": {"emoji": "💰", "usage": "rob [cantidad] @usuario | rob --info", "description": "Roba una cantidad aleatoria de XP hasta el máximo de tu nivel, o una cantidad explícita.", "aliases": ["robar"], "examples": ["rob --info", "rob @usuario", "rob 2500 @usuario", "rob 2500 respondiendo a un mensaje"]},
     "transfer": {"emoji": "🤝", "usage": "transfer <tipo> <cantidad> @usuario", "description": "Transfiere recursos a otro usuario.", "aliases": ["payxp", "darxp", "dar", "enviar", "transferir"], "examples": ["transfer xp 100 @usuario"]},
     "dep": {"emoji": "🏦", "usage": "dep <cantidad|all>", "description": "Deposita diamantes en el banco.", "aliases": ["depositar"], "examples": ["dep all"]},
     "retirar": {"emoji": "🏧", "usage": "retirar <cantidad|all>", "description": "Retira diamantes del banco.", "aliases": ["toremove"], "examples": ["retirar 50"]},

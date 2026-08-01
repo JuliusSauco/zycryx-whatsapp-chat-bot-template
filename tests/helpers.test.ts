@@ -13,6 +13,7 @@ import type {ExtendedConn} from '../src/types/context.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
 import {replyActionTarget} from '../src/plugins/fun/fun-juegos.helpers.js';
 import {resolveOgiTargets, selectRandomOgiTargets} from '../src/plugins/messages/msg-gif-ogi.js';
+import {selectRandomReactionTarget} from '../src/plugins/messages/msg-gif-reactions.js';
 import {selectReactionMedia} from '../src/plugins/messages/gif-media.js';
 import path from 'node:path';
 import {getTargetJid, parseRoleInput} from '../src/plugins/group/grupo-setrole.js';
@@ -231,6 +232,30 @@ function testOgiTargetResolution(): void {
     assert.equal(new Set(randomTargets.map(target => target.mentionJid)).size, 3);
 }
 
+function testRandomReactionTarget(): void {
+    const participants = [
+        {id: 'sender-lid@lid', participantAlt: '573000000000@s.whatsapp.net'},
+        {id: 'bot-lid@lid', participantAlt: '573000000099@s.whatsapp.net'},
+        {id: 'target-1@lid', participantAlt: '573000000001@s.whatsapp.net'},
+        {id: 'target-2@lid', participantAlt: '573000000002@s.whatsapp.net'},
+    ] as GroupParticipant[];
+
+    const target = selectRandomReactionTarget(
+        participants,
+        'sender-lid@lid',
+        '573000000099@s.whatsapp.net',
+        () => 0,
+    );
+    assert.equal(target?.mentionJid, '573000000001@s.whatsapp.net');
+
+    const noTarget = selectRandomReactionTarget(
+        participants.slice(0, 2),
+        'sender-lid@lid',
+        '573000000099@s.whatsapp.net',
+    );
+    assert.equal(noTarget, null);
+}
+
 function testReactionMediaFallback(): void {
     const root = path.resolve('resources/media/reaction-gifs');
     const trio = selectReactionMedia({
@@ -327,6 +352,7 @@ testContentService();
 await testPluginSdk();
 await testActionTargetMentionResolution();
 testOgiTargetResolution();
+testRandomReactionTarget();
 testReactionMediaFallback();
 
 console.log('helpers.test.ts OK');

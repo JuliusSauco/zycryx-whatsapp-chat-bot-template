@@ -1,4 +1,5 @@
 import type {RewardTimestampField, UserWallet, WalletResource} from '../domain/users.js';
+import type {RobExperienceInput, RobExperienceResult} from '../domain/robbery.js';
 import {repositories} from './data-source.js';
 
 export const WALLET_RESOURCES: WalletResource[] = ['limite', 'exp', 'money', 'banco'];
@@ -57,6 +58,10 @@ export async function transferWalletResource(input: {
     amount: number;
 }): Promise<boolean> {
     return repositories.users.transferWalletResource(input);
+}
+
+export async function robExperience(input: RobExperienceInput): Promise<RobExperienceResult> {
+    return repositories.users.robExperience(input);
 }
 
 export async function setUserLevelRole(userId: string, level: number, role: string): Promise<void> {

@@ -482,13 +482,15 @@
         ]
       },
       "rob": {
+        "info": "💰 *ROBO DE EXPERIENCIA*\n\nPon a prueba tu suerte robando XP a otro usuario. Tu nivel define cuánto puedes intentar robar.\n\n🎲 *ROBO ALEATORIO*\nUsa *.rob @usuario* o responde a su mensaje con *.rob*.\nEl bot elegirá una cantidad al azar entre *1 XP* y tu límite.\n\n🎯 *ROBO EXACTO*\nUsa *.rob cantidad @usuario*.\nEjemplo: *.rob 2567 @usuario*\nSolo funcionará si tu nivel permite robar esa cantidad.\n\n📈 *LÍMITE POR NIVEL*\nCada nivel permite robar hasta *1000 XP*.\nEjemplo: nivel 26 → máximo de *26000 XP*.\n\n🛡️ *CONDICIONES*\n• La víctima debe tener toda la XP que resulte o solicites.\n• No puedes robarte a ti mismo.\n• Solo los robos exitosos activan la espera.\n• Después de un robo exitoso debes esperar *25 minutos*.\n\n✨ *EJEMPLOS*\n*.rob @usuario* — robo aleatorio\n*.rob 2500 @usuario* — robo exacto\n*.rob* respondiendo — robo aleatorio\n*.rob 2500* respondiendo — robo exacto",
         "missingUser": "❌ En usuarios no aparece en mi base de datos",
         "cooldown": "🚓 La policía está vigilando, vuelve en: *{time}*",
-        "missingTarget": "⚠️ *Etiqueta a un usuario para robarle XP*",
+        "missingTarget": "⚠️ *Etiqueta a un usuario o responde a su mensaje para robarle XP.*\nEjemplos: *.rob @usuario* o *.rob 2500 @usuario*",
+        "invalidAmount": "❌ La cantidad debe ser un número entero positivo.\nEjemplo: *.rob 2500 @usuario*",
         "selfTarget": "❌ No puedes robarte a ti mismo.",
-        "missingVictim": "❌ El usuarios no se encuentra en mi base de datos.",
-        "poorVictim": "@{user} tiene menos de {minimum} XP.\n> No robes a un pobre v:",
-        "transferFailed": "❌ No se pudo completar el robo.",
+        "missingVictim": "❌ El usuario no se encuentra en mi base de datos.",
+        "insufficientLevel": "❌ Tu nivel actual es {level}. Para robar esa cantidad necesitas nivel {requiredLevel}.\nTu máximo actual es *{maximum} XP*.",
+        "poorVictim": "@{user} tiene {available} XP y el robo requiere {required} XP.\n> No robes a un pobre v:",
         "success": "*Robaste {amount} XP a @{user}*"
       },
       "work": {
@@ -1402,7 +1404,10 @@
     },
     "messages": {
       "gifReactions": {
-        "missingReaction": "❌ Reacción no configurada."
+        "missingReaction": "❌ Reacción no configurada.",
+        "groupOnly": "⚠️ Este comando necesita un grupo para elegir a otro integrante al azar.",
+        "noRandomTarget": "⚠️ No encontré a otro integrante disponible para esta reacción.",
+        "missingTarget": "⚠️ Debes etiquetar a otra persona.\nEjemplo: *{command}*"
       },
       "gifTr": {
         "needOneMore": "🙋 *{sender}*, para formar el trío necesitas *1 persona más*.\nYa tienes a *{target}* — etiqueta a alguien más para completar.",
