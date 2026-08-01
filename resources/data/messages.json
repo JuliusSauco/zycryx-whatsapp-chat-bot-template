@@ -655,7 +655,7 @@
       },
       "profile": {
         "noRelationship": "💔 *Estado:* Sin relación registrada",
-        "relationship": "💍 *Pareja:* {spouseName}",
+        "relationship": "💍 *Pareja:* {spouseTag}",
         "caption": "*╭━━━〔 👤 PERFIL 〕━━━╮*\n\n╭─「 🪪 *IDENTIDAD* 」\n├ 👤 *Nombre:* {name}\n├ 🏷️ *Usuario:* {userTag}\n├ 🌎 *Nacionalidad:* {nationality}{ageLine}{genderLine}{birthdayLine}\n├ ✅ *Registrado:* {registered}{registrationDateLine}\n╰──────────────{groupBlock}\n\n╭─「 📊 *PROGRESO* 」\n├ ⚙️ *Nivel:* {level}\n├ ✨ *Experiencia:* {experience} XP\n├ 🎖️ *Rango:* {levelRole}\n╰ 💎 *Límite:* {limit}\n\n╭─「 💰 *ECONOMÍA* 」\n├ 🪙 *Cartera:* {money}\n╰ 🏦 *Banco:* {bank}\n\n╭─「 🤝 *INFORMACIÓN SOCIAL* 」\n├ {relationship}\n╰ 🔥 *Racha diaria:* {streak} días\n\n*╰━━━━━━━━━━━━╯*",
         "registeredYes": "Sí ✅",
         "registeredNo": "No ❌",
@@ -1406,8 +1406,7 @@
       "gifReactions": {
         "missingReaction": "❌ Reacción no configurada.",
         "groupOnly": "⚠️ Este comando necesita un grupo para elegir a otro integrante al azar.",
-        "noRandomTarget": "⚠️ No encontré a otro integrante disponible para esta reacción.",
-        "missingTarget": "⚠️ Debes etiquetar a otra persona.\nEjemplo: *{command}*"
+        "noRandomTarget": "⚠️ No encontré a otro integrante disponible para esta reacción."
       },
       "gifTr": {
         "needOneMore": "🙋 *{sender}*, para formar el trío necesitas *1 persona más*.\nYa tienes a *{target}* — etiqueta a alguien más para completar.",

@@ -96,10 +96,11 @@
     "help": "msg-gif-fap",
     "commands": ["fap"],
     "adult": true,
-    "targetMode": "random-group-member",
+    "targetMode": "explicit-or-random-group-member",
     "folder": "resources/media/reaction-gifs/fap",
     "nsfwFolder": "resources/media/reaction-gifs/fap/nsfw",
-    "caption": "🍆💦 {sender} se está masturbando y le lanzó toda la lechita y venida rica a {targets} 😳"
+    "caption": "🍆😳 {sender} se está dando amor a sí mismo y sorprendió a {targets} con el resultado 🤭",
+    "nsfwCaption": "🍆💦 {sender} se está masturbando y le lanzó toda la lechita y su venida rica calientita a {targets} 😳"
   },
   "kc": {
     "help": "msg-gif-kc",
@@ -129,7 +130,7 @@
     "help": "msg-gif-manosear",
     "commands": ["manosear"],
     "adult": true,
-    "targetMode": "required",
+    "targetMode": "explicit-or-random-group-member",
     "folder": "resources/media/reaction-gifs/msr",
     "nsfwFolder": "resources/media/reaction-gifs/msr/nsfw",
     "caption": "🫳💞 {sender} está manoseando juguetonamente a {targets} 😳",

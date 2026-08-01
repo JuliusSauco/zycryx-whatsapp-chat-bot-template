@@ -48,6 +48,7 @@ export interface UserWallet {
 export interface UserRecord {
     id: string;
     nombre: string | null;
+    username: string | null;
     registered: boolean;
     num: string | null;
     lid: string | null;
@@ -117,6 +118,7 @@ export interface UserNumberByLid {
 export interface UpsertUserInput {
     id: string;
     nombre: string;
+    username?: string | null;
     num: string | null;
     lid?: string;
 }

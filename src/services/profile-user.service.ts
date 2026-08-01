@@ -2,7 +2,7 @@ import type {GroupParticipant} from '@whiskeysockets/baileys';
 import type {UserRecord} from '../domain/users.js';
 import {getParticipantIdentityJids} from '../utils/group-creator.js';
 import {cleanJid, isUserJid, jidToPhone} from '../utils/jid.js';
-import {resolveMention} from '../utils/mention.js';
+import {resolveMention, type ResolvedMention} from '../utils/mention.js';
 import {getUserById, upsertUser} from './user.service.js';
 
 export interface ResolveProfileUserInput {
@@ -52,6 +52,24 @@ export async function resolveProfileUser(input: ResolveProfileUserInput): Promis
     });
     const user = await getUserById(userId);
     return user ? buildResult(userId, resolved.mentionJid, participant, user, true) : null;
+}
+
+export async function resolveStoredUserMention(
+    rawJid: string,
+    participants: GroupParticipant[] = [],
+): Promise<ResolvedMention> {
+    const profile = await resolveProfileUser({rawJid, participants, createIfMissing: false});
+    if (!profile) return resolveMention(rawJid, participants);
+
+    const storedPhone = (profile.user.num || '').replace(/\D/g, '');
+    if (/^\d{8,15}$/.test(storedPhone)) {
+        return {
+            tag: `@${storedPhone}`,
+            mentionJid: `${storedPhone}@s.whatsapp.net`,
+        };
+    }
+
+    return {tag: profile.tag, mentionJid: profile.mentionJid};
 }
 
 function buildResult(

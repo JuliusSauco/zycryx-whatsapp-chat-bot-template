@@ -57,9 +57,9 @@ export const userRepository: UserRepository = {
             .where(eq(usuarios.id, userId));
     },
 
-    async upsertBasicUser({id, nombre, num}) {
+    async upsertBasicUser({id, nombre, username, num}) {
         await orm.insert(usuarios)
-            .values({id, nombre, num, registered: false})
+            .values({id, nombre, username: username ?? null, num, registered: false})
             .onConflictDoUpdate({
                 target: usuarios.id,
                 set: {
@@ -70,6 +70,7 @@ export const userRepository: UserRepository = {
                             ELSE excluded.nombre
                         END
                     `,
+                    ...(username !== undefined ? {username} : {}),
                     num: sql`COALESCE(${usuarios.num}, excluded.num)`,
                 },
             });

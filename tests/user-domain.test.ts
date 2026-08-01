@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import {mapUserRecord, mapUserResources, mapUserWallet, type UserRow, type UserWalletRow} from '../src/adapters/drizzle/user.mapper.js';
+import {normalizeWhatsAppUsername, resolveSenderInfo} from '../src/utils/jid.js';
 
 const baseUserRow: UserRow = {
     id: 'user@s.whatsapp.net',
     nombre: null,
+    username: null,
     registered: null,
     num: null,
     lid: null,
@@ -66,6 +68,21 @@ const baseUserRow: UserRow = {
 {
     assert.deepEqual(mapUserResources(undefined), {limite: 0, money: 0, level: 0});
     assert.deepEqual(mapUserResources({limite: 3, money: null, level: 7}), {limite: 3, money: 0, level: 7});
+}
+
+{
+    assert.equal(normalizeWhatsAppUsername(' @NuevoUsuario '), 'NuevoUsuario');
+    assert.equal(normalizeWhatsAppUsername(''), null);
+    assert.deepEqual(resolveSenderInfo({key: {
+        remoteJid: '120363000000@g.us',
+        participant: '12345@lid',
+        participantAlt: '573001112233@s.whatsapp.net',
+        participantUsername: 'nuevo.usuario',
+    }}), {
+        sender: '573001112233@s.whatsapp.net',
+        lid: '12345@lid',
+        username: 'nuevo.usuario',
+    });
 }
 
 console.log('user-domain.test.ts OK');

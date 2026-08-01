@@ -13,7 +13,7 @@ import type {ExtendedConn} from '../src/types/context.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
 import {replyActionTarget} from '../src/plugins/fun/fun-juegos.helpers.js';
 import {resolveOgiTargets, selectRandomOgiTargets} from '../src/plugins/messages/msg-gif-ogi.js';
-import {selectRandomReactionTarget} from '../src/plugins/messages/msg-gif-reactions.js';
+import {resolveExplicitReactionTarget, selectRandomReactionTarget} from '../src/plugins/messages/msg-gif-reactions.js';
 import {selectReactionMedia} from '../src/plugins/messages/gif-media.js';
 import path from 'node:path';
 import {getTargetJid, parseRoleInput} from '../src/plugins/group/grupo-setrole.js';
@@ -239,6 +239,13 @@ function testRandomReactionTarget(): void {
         {id: 'target-1@lid', participantAlt: '573000000001@s.whatsapp.net'},
         {id: 'target-2@lid', participantAlt: '573000000002@s.whatsapp.net'},
     ] as GroupParticipant[];
+
+    const explicitTarget = resolveExplicitReactionTarget(
+        ['sender-lid@lid', 'target-2@lid'],
+        'sender-lid@lid',
+        participants,
+    );
+    assert.equal(explicitTarget?.mentionJid, '573000000002@s.whatsapp.net');
 
     const target = selectRandomReactionTarget(
         participants,

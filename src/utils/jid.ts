@@ -51,6 +51,7 @@ export function isLidJid(jid: string): boolean {
 export interface SenderInfo {
     sender: string;
     lid: string | undefined;
+    username: string | undefined;
 }
 
 /**
@@ -73,6 +74,8 @@ type MessageKeyLike = {
     participant?: string | null;
     remoteJid?: string | null;
     senderLid?: string | null;
+    participantUsername?: string | null;
+    remoteJidUsername?: string | null;
 };
 
 export function resolveSenderInfo(m: {key?: MessageKeyLike}): SenderInfo {
@@ -103,5 +106,11 @@ export function resolveSenderInfo(m: {key?: MessageKeyLike}): SenderInfo {
     sender = sender ? cleanJid(sender) : '';
     lid = lid ? cleanJid(lid) : undefined;
 
-    return {sender, lid};
+    const username = normalizeWhatsAppUsername(k.participantUsername || k.remoteJidUsername);
+    return {sender, lid, username: username ?? undefined};
+}
+
+export function normalizeWhatsAppUsername(value: string | null | undefined): string | null {
+    const username = (value || '').trim().replace(/^@/, '');
+    return username || null;
 }

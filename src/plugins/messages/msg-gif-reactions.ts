@@ -16,7 +16,7 @@ interface ReactionResource {
     caption: string;
     nsfwCaption?: string;
     adult?: boolean;
-    targetMode?: 'optional' | 'required' | 'random-group-member';
+    targetMode?: 'optional' | 'explicit-or-random-group-member';
 }
 
 type ReactionManifest = Record<string, ReactionResource>;
@@ -37,31 +37,24 @@ export default defineSdkPlugin({
         if (!reaction) return sdk.reply.message('messages.gifReactions.missingReaction');
         const nsfwEnabled = reaction.adult ? canUseNsfwGifs(await getNsfwSettings(sdk.chatId), {isAdmin: sdk.isAdmin, isOwner: sdk.isOwner, isGroupCreator}) : false;
 
-        const explicitMentions: string[] = Array.isArray(m.mentionedJid) ? [...m.mentionedJid] : [];
-        const rawMentions = [...explicitMentions];
+        const rawMentions: string[] = Array.isArray(m.mentionedJid) ? [...m.mentionedJid] : [];
         if (m.quoted?.sender) rawMentions.push(m.quoted.sender);
 
         const groupParticipants = getParticipantsFast(sdk.conn, sdk.chatId, sdk.participants);
-        if (reaction.targetMode === 'random-group-member') {
-            if (!sdk.isGroup) return sdk.reply.message('messages.gifReactions.groupOnly');
-            const randomTarget = selectRandomReactionTarget(
-                groupParticipants,
-                sdk.sender,
-                sdk.conn.user?.id,
-            );
-            if (!randomTarget) return sdk.reply.message('messages.gifReactions.noRandomTarget');
-            rawMentions.splice(0, rawMentions.length, randomTarget.mentionJid);
-        } else if (reaction.targetMode === 'required') {
-            const senderJid = cleanJid(resolveMention(sdk.sender, groupParticipants).mentionJid);
-            const target = explicitMentions
-                .map(jid => resolveMention(jid, groupParticipants))
-                .find(mention => cleanJid(mention.mentionJid) !== senderJid);
-            if (!target) {
-                return sdk.reply.message('messages.gifReactions.missingTarget', {
-                    command: `${sdk.usedPrefix}${sdk.command} @usuario`,
-                });
+        if (reaction.targetMode === 'explicit-or-random-group-member') {
+            const explicitTarget = resolveExplicitReactionTarget(rawMentions, sdk.sender, groupParticipants);
+            if (explicitTarget) {
+                rawMentions.splice(0, rawMentions.length, explicitTarget.mentionJid);
+            } else {
+                if (!sdk.isGroup) return sdk.reply.message('messages.gifReactions.groupOnly');
+                const randomTarget = selectRandomReactionTarget(
+                    groupParticipants,
+                    sdk.sender,
+                    sdk.conn.user?.id,
+                );
+                if (!randomTarget) return sdk.reply.message('messages.gifReactions.noRandomTarget');
+                rawMentions.splice(0, rawMentions.length, randomTarget.mentionJid);
             }
-            rawMentions.splice(0, rawMentions.length, target.mentionJid);
         } else if (!rawMentions.length) {
             rawMentions.push(sdk.sender);
         }
@@ -105,6 +98,17 @@ export default defineSdkPlugin({
     }
     }
 });
+
+export function resolveExplicitReactionTarget(
+    rawTargets: string[],
+    senderJid: string,
+    participants: ParticipantLike[],
+): ResolvedMention | null {
+    const sender = cleanJid(resolveMention(senderJid, participants).mentionJid);
+    return rawTargets
+        .map(jid => resolveMention(jid, participants))
+        .find(mention => cleanJid(mention.mentionJid) !== sender) ?? null;
+}
 
 export function selectRandomReactionTarget(
     participants: ParticipantLike[],

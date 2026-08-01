@@ -102,6 +102,7 @@ export type AutoresponderTrigger = 'mention' | 'all';
 export interface Usuario {
     id: string;
     nombre?: string | null;
+    username?: string | null;
     registered: boolean;
     num?: string | null;
     lid?: string | null;

@@ -4,6 +4,7 @@ import {bigint, boolean, check, date, index, integer, jsonb, pgTable, primaryKey
 export const usuarios = pgTable('usuarios', {
     id: text('id').primaryKey(),
     nombre: text('nombre'),
+    username: text('username'),
     registered: boolean('registered').default(false),
     num: text('num'),
     lid: text('lid').unique(),

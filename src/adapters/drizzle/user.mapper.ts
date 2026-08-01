@@ -40,6 +40,7 @@ export function mapUserRecord(row: UserRow): UserRecord {
     return {
         id: row.id,
         nombre: row.nombre,
+        username: row.username,
         registered: booleanOrFalse(row.registered),
         num: row.num,
         lid: row.lid,

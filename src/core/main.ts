@@ -15,6 +15,7 @@ import {drainBackgroundTasks} from '../lib/background-task-queue.js';
 import {isOtherBotKey} from '../utils/message-filter.js';
 import {startScheduledTasks} from './scheduled-tasks.js';
 import {syncStartupGroupAdmins} from './startup-admin-sync.js';
+import {registerContactUserSync} from './contact-user-sync.js';
 import {logDebug, logError, logInfo, logWarn} from '../lib/logger.js';
 import type {ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
@@ -191,6 +192,7 @@ async function startBot() {
     const botSock = sock as BotSocket;
     botSock.groupCache = groupCache;
     setMainConnection(sock);
+    registerContactUserSync(sock);
     setupGroupEvents(botSock);
     sock.ev.on("creds.update", saveCreds);
 

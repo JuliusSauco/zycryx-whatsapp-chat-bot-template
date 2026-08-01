@@ -1,10 +1,9 @@
 import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import moment from 'moment-timezone'
-import {getUserName} from '../../services/user.service.js'
 import {getGroupParticipantRole} from '../../services/group-role.service.js'
 import {getParticipantsFast} from '../../utils/mention.js'
 import {content} from '../../services/content.service.js';
-import {resolveProfileUser} from '../../services/profile-user.service.js';
+import {resolveProfileUser, resolveStoredUserMention} from '../../services/profile-user.service.js';
 import {loadProfileMedia} from './rpg-profile.helpers.js';
 import {logWarn} from '../../lib/logger.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
@@ -70,9 +69,11 @@ export default defineSdkPlugin({
     }
 
     let relacion = sdk.content.message('rpg.profile.noRelationship')
+    let spouseMentionJid: string | null = null
     if (marry) {
-        const nombrePareja = await getUserName(marry) || sdk.content.message('rpg.shared.unknown')
-        relacion = sdk.content.renderMessage('rpg.profile.relationship', {spouseName: nombrePareja})
+        const spouse = await resolveStoredUserMention(marry, groupParticipants)
+        spouseMentionJid = spouse.mentionJid
+        relacion = sdk.content.renderMessage('rpg.profile.relationship', {spouseTag: spouse.tag})
     }
     const targetParticipant = isGroup ? participant : null
     const isGroupAdmin = Boolean(targetParticipant && (
@@ -118,7 +119,7 @@ export default defineSdkPlugin({
         groupBlock,
     })
     await conn.sendFile(m.chat, profileMedia, 'perfil.jpg', texto, m, false, {
-        contextInfo: {mentionedJid: [mentionJid]},
+        contextInfo: {mentionedJid: [...new Set([mentionJid, spouseMentionJid].filter((jid): jid is string => !!jid))]},
     })
     }
 })

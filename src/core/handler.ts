@@ -318,7 +318,7 @@ async function upsertUser(m: BotMessage): Promise<void> {
 
         if (!m.sender) return;
 
-        await upsertUserService({id: m.sender, nombre: userName, num, lid: m.lid});
+        await upsertUserService({id: m.sender, nombre: userName, username: info.username, num, lid: m.lid});
     } catch (err: unknown) {
         logError(err);
     }

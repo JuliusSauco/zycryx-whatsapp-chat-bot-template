@@ -204,6 +204,13 @@
       "when": 1785283200000,
       "tag": "0028_group_censored_users",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1785542400000,
+      "tag": "0029_user_whatsapp_username",
+      "breakpoints": true
     }
   ]
 }
