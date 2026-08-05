@@ -56,7 +56,7 @@ export default defineSdkPlugin({
         fetchBuffer: sdk.http.buffer,
         onFallback: reason => logWarn(`[RPG PROFILE] Imagen no disponible (${reason}); se intentara el siguiente fallback.`),
     })
-    const {limite, nombre, registered, edad, marry, gender, birthday, exp, money, banco, role: levelRole, dailystreak, regTime} = user
+    const {limite, nombre, registered, edad, marry, gender, birthday, exp, role: levelRole, dailystreak, regTime} = user
     const level = user.level ?? 0
     const phone = formatPhoneNumber(mentionJid)
 
@@ -111,8 +111,6 @@ export default defineSdkPlugin({
         level: formatNumber(level),
         experience: formatNumber(exp ?? 0),
         levelRole,
-        money: formatNumber(money ?? 0),
-        bank: formatNumber(banco ?? 0),
         streak: formatNumber(dailystreak ?? 0),
         registered: registered ? sdk.content.message('rpg.profile.registeredYes') : sdk.content.message('rpg.profile.registeredNo'),
         relationship: relacion,

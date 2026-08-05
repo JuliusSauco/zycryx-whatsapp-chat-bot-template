@@ -657,7 +657,7 @@
       "profile": {
         "noRelationship": "💔 *Estado:* Sin relación registrada",
         "relationship": "💍 *Pareja:* {spouseTag}",
-        "caption": "*╭━━━〔 👤 PERFIL 〕━━━╮*\n\n╭─「 🪪 *IDENTIDAD* 」\n├ 👤 *Nombre:* {name}\n├ 🏷️ *Usuario:* {userTag}\n├ 🌎 *Nacionalidad:* {nationality}{ageLine}{genderLine}{birthdayLine}\n├ ✅ *Registrado:* {registered}{registrationDateLine}\n╰──────────────{groupBlock}\n\n╭─「 📊 *PROGRESO* 」\n├ ⚙️ *Nivel:* {level}\n├ ✨ *Experiencia:* {experience} XP\n├ 🎖️ *Rango:* {levelRole}\n╰ 💎 *Límite:* {limit}\n\n╭─「 💰 *ECONOMÍA* 」\n├ 🪙 *Cartera:* {money}\n╰ 🏦 *Banco:* {bank}\n\n╭─「 🤝 *INFORMACIÓN SOCIAL* 」\n├ {relationship}\n╰ 🔥 *Racha diaria:* {streak} días\n\n*╰━━━━━━━━━━━━╯*",
+        "caption": "*╭━━━〔 👤 PERFIL 〕━━━╮*\n\n╭─「 🪪 *IDENTIDAD* 」\n├ 👤 *Nombre:* {name}\n├ 🏷️ *Usuario:* {userTag}\n├ 🌎 *Nacionalidad:* {nationality}{ageLine}{genderLine}{birthdayLine}\n├ ✅ *Registrado:* {registered}{registrationDateLine}\n╰──────────────{groupBlock}\n\n╭─「 📊 *PROGRESO* 」\n├ ⚙️ *Nivel:* {level}\n├ ✨ *Experiencia:* {experience} XP\n├ 🎖️ *Rango:* {levelRole}\n╰ 💎 *Límite:* {limit}\n\n╭─「 🤝 *INFORMACIÓN SOCIAL* 」\n├ {relationship}\n╰ 🔥 *Racha diaria:* {streak} días\n\n_Para consultar tu información económica, usa el comando *.balance* en el chat privado del bot._\n\n_Para ver los detalles de tu nivel y progreso, usa el comando *.nivel* en el grupo._\n\n*╰━━━━━━━━━━━━╯*",
         "registeredYes": "Sí ✅",
         "registeredNo": "No ❌",
         "ageLine": "\n├ 🎂 *Edad:* {age} años",
