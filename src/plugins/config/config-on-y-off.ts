@@ -335,6 +335,15 @@ export default defineSdkPlugin({
             await setGroupBooleanFlag(chatId, 'antiporn', isEnable)
             break
 
+        case 'autolevelup':
+        case 'auto-level':
+        case 'nivelauto':
+            if (!m.isGroup) throw groupOnly
+            if (!isAdmin) throw adminOnly
+            await setGroupBooleanFlag(chatId, 'autolevelup', isEnable)
+            m.chatDB.autolevelup = isEnable
+            break
+
         case 'audios':
         case 'audio': {
             selectedFeatureAccessMode = await configureFeatureAccess({key: 'audio', label: 'audios'})

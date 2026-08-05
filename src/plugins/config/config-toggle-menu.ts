@@ -50,6 +50,7 @@ const DEFAULT_ENABLED_FLAGS: Partial<Record<keyof GroupSettings, boolean>> = {
     bye: true,
     detect: true,
     autoresponder: true,
+    autolevelup: true,
 };
 
 export function getToggleSectionKey(rawType?: string): ToggleSectionKey | null {
@@ -434,6 +435,7 @@ const sections: ToggleSection[] = [
             featureItem(state, 'Juegos', 'juegos', 'games'),
             featureItem(state, 'Herramientas', 'herramientas', 'tools'),
             featureItem(state, 'RPG', 'rpg', 'rpg'),
+            switchItem(state, 'Autonivel RPG', 'autolevelup', getStatus(state, 'autolevelup')),
             featureItem(state, 'Descargas', 'descargas', 'downloads'),
             featureItem(state, 'Buscadores', 'buscadores', 'search'),
             featureItem(state, 'Stickers', 'stickers', 'stickers'),

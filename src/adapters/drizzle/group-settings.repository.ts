@@ -141,6 +141,7 @@ export const groupSettingsRepository: GroupSettingsRepository = {
             antilink2: groupSettings.antilink2,
             virusTotal: groupSettings.virusTotal,
             autoresponder: groupSettings.autoresponder,
+            autolevelup: groupSettings.autolevelup,
             antiporn: groupSettings.antiporn,
             audios: groupSettings.audios,
             antifake: groupSettings.antifake,

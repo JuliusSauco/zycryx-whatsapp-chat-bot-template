@@ -5,15 +5,35 @@ import type {BotMessage} from '../../types/message.js'
 import {pickRandom} from '../../utils/random.js'
 import {content} from '../../services/content.service.js'
 import {createCooldownStore} from '../../lib/ephemeral-state.js'
+import type {PluginInterceptor} from '../../types/plugin.js'
 
 const multiplier = 650
 const CHECK_INTERVAL_MS = 60_000
 const levelCheckCooldowns = createCooldownStore({ttlMs: CHECK_INTERVAL_MS})
 const roles = buildRoles()
 
-export async function before(m: BotMessage, {conn, groupSettings, isGroup, branding}: BeforePluginContext) {
+export async function before(m: BotMessage, ctx: BeforePluginContext) {
+    await applyAutoLevelUp(m, ctx, true)
+}
+
+export const interceptors: PluginInterceptor[] = [{
+    phase: 'post',
+    priority: 0,
+    appliesTo: 'commands',
+    failurePolicy: 'report-only',
+    async run(m, ctx) {
+        await applyAutoLevelUp(m, ctx, false)
+        return {kind: 'continue'}
+    },
+}]
+
+export async function applyAutoLevelUp(
+    m: BotMessage,
+    {conn, groupSettings, isGroup, branding}: BeforePluginContext,
+    throttled: boolean,
+): Promise<void> {
     if (!isGroup || !groupSettings?.autolevelup) return
-    if (!shouldCheckLevel(m.sender)) return
+    if (throttled && !shouldCheckLevel(m.sender)) return
 
     const user = await getWallet(m.sender)
     if (!user) return
@@ -37,7 +57,7 @@ export async function before(m: BotMessage, {conn, groupSettings, isGroup, brand
             level: user.level,
             role: user.role
         })
-        conn.reply(m.chat, message, m, {
+        await conn.reply(m.chat, message, m, {
             contextInfo: {
                 externalAdReply: {
                     mediaType: 1,
