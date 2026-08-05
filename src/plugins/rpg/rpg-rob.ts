@@ -37,9 +37,18 @@ export default defineSdkPlugin({
             return conn.reply(m.chat, sdk.content.renderMessage('rpg.rob.success', {
                 amount: result.amount,
                 user: victimId.split('@')[0],
+                level: result.availableLevel,
+                maximum: result.maxAmount,
+                remaining: result.remainingRobberies,
+                nextAvailable: formatDurationClockWords(Math.max(0, result.nextAvailableAt - Date.now())),
+                maxBlockStatus: result.dailyLimitReached ? 'Sí — límite diario alcanzado' : 'No',
             }), m, {mentions: [victimId]});
         case 'cooldown':
             return sdk.reply.message('rpg.rob.cooldown', {
+                time: formatDurationClockWords(result.remainingMs),
+            });
+        case 'daily_limit':
+            return sdk.reply.message('rpg.rob.dailyLimit', {
                 time: formatDurationClockWords(result.remainingMs),
             });
         case 'insufficient_level':

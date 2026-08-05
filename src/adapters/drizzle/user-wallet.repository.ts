@@ -4,11 +4,13 @@ import {usuarios} from '../../db/schema.js';
 import type {RewardTimestampField, UserRepository, WalletResource} from '../../ports/repositories.js';
 import {mapUserResources, mapUserWallet} from './user.mapper.js';
 import {
+    evaluateRobProgress,
     getMaxRobExp,
+    getNextRobAvailability,
     getRandomRobExp,
     getRequiredRobLevel,
     isValidRobAmount,
-    ROB_COOLDOWN_MS,
+    ROB_DAILY_LIMIT,
 } from '../../domain/robbery.js';
 
 function walletColumn(resource: WalletResource) {
@@ -228,7 +230,7 @@ export const walletUserRepositoryMethods: Pick<UserRepository, 'findWallet' | 'l
         });
     },
 
-    async robExperience({robberId, victimId, amount, attemptedAt, cooldownMs = ROB_COOLDOWN_MS}) {
+    async robExperience({robberId, victimId, amount, attemptedAt}) {
         if (robberId === victimId) return {kind: 'same_user'};
         if (amount !== undefined && !isValidRobAmount(amount)) return {kind: 'invalid_amount'};
 
@@ -240,6 +242,8 @@ export const walletUserRepositoryMethods: Pick<UserRepository, 'findWallet' | 'l
                     exp: usuarios.exp,
                     level: usuarios.level,
                     lastrob: usuarios.lastrob,
+                    robDailyCount: usuarios.robDailyCount,
+                    robDay: usuarios.robDay,
                 })
                 .from(usuarios)
                 .where(inArray(usuarios.id, [robberId, victimId]))
@@ -251,8 +255,12 @@ export const walletUserRepositoryMethods: Pick<UserRepository, 'findWallet' | 'l
             if (!robber) return {kind: 'missing_robber'} as const;
             if (!victim) return {kind: 'missing_victim'} as const;
 
-            const remainingMs = (robber.lastrob ?? 0) + Math.max(0, cooldownMs) - attemptedAt;
-            if (remainingMs > 0) return {kind: 'cooldown', remainingMs} as const;
+            const progress = evaluateRobProgress({
+                lastRobAt: robber.lastrob ?? 0,
+                dailyCount: robber.robDailyCount,
+                dayKey: robber.robDay,
+            }, attemptedAt);
+            if (progress.kind !== 'allowed') return progress;
 
             const availableLevel = Math.max(0, robber.level ?? 0);
             const maxAmount = getMaxRobExp(availableLevel);
@@ -272,6 +280,10 @@ export const walletUserRepositoryMethods: Pick<UserRepository, 'findWallet' | 'l
                 return {kind: 'insufficient_victim_exp', available: victimExp, required: requestedAmount} as const;
             }
 
+            const dailyCount = progress.dailyCount + 1;
+            const remainingRobberies = ROB_DAILY_LIMIT - dailyCount;
+            const nextAvailableAt = getNextRobAvailability(attemptedAt, dailyCount);
+
             await tx.update(usuarios)
                 .set({exp: sql`COALESCE(${usuarios.exp}, 0) - ${requestedAmount}`})
                 .where(eq(usuarios.id, victimId));
@@ -279,10 +291,20 @@ export const walletUserRepositoryMethods: Pick<UserRepository, 'findWallet' | 'l
                 .set({
                     exp: sql`COALESCE(${usuarios.exp}, 0) + ${requestedAmount}`,
                     lastrob: attemptedAt,
+                    robDailyCount: dailyCount,
+                    robDay: progress.dayKey,
                 })
                 .where(eq(usuarios.id, robberId));
 
-            return {kind: 'success', amount: requestedAmount, maxAmount} as const;
+            return {
+                kind: 'success',
+                amount: requestedAmount,
+                availableLevel,
+                maxAmount,
+                remainingRobberies,
+                nextAvailableAt,
+                dailyLimitReached: dailyCount >= ROB_DAILY_LIMIT,
+            } as const;
         });
     },
 

@@ -392,7 +392,15 @@ async function testWalletAndApiTokenServices(): Promise<void> {
         },
         robExperience: async input => {
             calls.push(['robExperience', input]);
-            return {kind: 'success', amount: input.amount ?? 500, maxAmount: 500};
+            return {
+                kind: 'success',
+                amount: input.amount ?? 500,
+                availableLevel: 1,
+                maxAmount: 1000,
+                remainingRobberies: 3,
+                nextAvailableAt: input.attemptedAt + 3_600_000,
+                dailyLimitReached: false,
+            };
         },
         setLevelRole: async (userId, level, role) => calls.push(['setLevelRole', userId, level, role]),
     };
@@ -414,7 +422,13 @@ async function testWalletAndApiTokenServices(): Promise<void> {
         assert.equal(await exchangeWalletResources({userId: 'u1', from: 'money', to: 'banco', fromAmount: 1, toAmount: 2}), true);
         assert.equal(await transferWalletResource({from: 'u1', to: 'u2', resource: 'money', amount: 1}), false);
         assert.deepEqual(await robExperience({robberId: 'u1', victimId: 'u2', attemptedAt: 123}), {
-            kind: 'success', amount: 500, maxAmount: 500,
+            kind: 'success',
+            amount: 500,
+            availableLevel: 1,
+            maxAmount: 1000,
+            remainingRobberies: 3,
+            nextAvailableAt: 3_600_123,
+            dailyLimitReached: false,
         });
         await setUserLevelRole('u1', 9, 'Pro');
 

@@ -36,6 +36,8 @@ export const usuarios = pgTable('usuarios', {
     dailystreak: bigint('dailystreak', {mode: 'number'}).default(0),
     lastcofre: bigint('lastcofre', {mode: 'number'}).default(0),
     lastrob: bigint('lastrob', {mode: 'number'}).default(0),
+    robDailyCount: integer('rob_daily_count').notNull().default(0),
+    robDay: date('rob_day'),
     lastslut: bigint('lastslut', {mode: 'number'}).default(0),
     timevot: bigint('timevot', {mode: 'number'}).default(0),
     wait: bigint('wait', {mode: 'number'}).default(0),

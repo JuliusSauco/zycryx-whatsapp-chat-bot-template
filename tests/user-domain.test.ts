@@ -37,6 +37,8 @@ const baseUserRow: UserRow = {
     dailystreak: null,
     lastcofre: null,
     lastrob: null,
+    robDailyCount: 0,
+    robDay: null,
     lastslut: null,
     timevot: null,
     wait: null,

@@ -482,16 +482,17 @@
         ]
       },
       "rob": {
-        "info": "💰 *ROBO DE EXPERIENCIA*\n\nPon a prueba tu suerte robando XP a otro usuario. Tu nivel define cuánto puedes intentar robar.\n\n🎲 *ROBO ALEATORIO*\nUsa *.rob @usuario* o responde a su mensaje con *.rob*.\nEl bot elegirá una cantidad al azar entre *1 XP* y tu límite.\n\n🎯 *ROBO EXACTO*\nUsa *.rob cantidad @usuario*.\nEjemplo: *.rob 2567 @usuario*\nSolo funcionará si tu nivel permite robar esa cantidad.\n\n📈 *LÍMITE POR NIVEL*\nCada nivel permite robar hasta *1000 XP*.\nEjemplo: nivel 26 → máximo de *26000 XP*.\n\n🛡️ *CONDICIONES*\n• La víctima debe tener toda la XP que resulte o solicites.\n• No puedes robarte a ti mismo.\n• Solo los robos exitosos activan la espera.\n• Después de un robo exitoso debes esperar *25 minutos*.\n\n✨ *EJEMPLOS*\n*.rob @usuario* — robo aleatorio\n*.rob 2500 @usuario* — robo exacto\n*.rob* respondiendo — robo aleatorio\n*.rob 2500* respondiendo — robo exacto",
+        "info": "💰 *ROBO DE EXPERIENCIA*\n\nPon a prueba tu suerte robando XP a otro usuario. Tu nivel define cuánto puedes intentar robar.\n\n🎲 *ROBO ALEATORIO*\nUsa *.rob @usuario* o responde a su mensaje con *.rob*.\nEl bot elegirá una cantidad al azar entre *1 XP* y tu límite.\n\n🎯 *ROBO EXACTO*\nUsa *.rob cantidad @usuario*.\nEjemplo: *.rob 2567 @usuario*\nSolo funcionará si tu nivel permite robar esa cantidad.\n\n📈 *LÍMITE POR NIVEL*\nCada nivel permite robar hasta *1000 XP*.\nEjemplo: nivel 26 → máximo de *26000 XP*.\n\n🛡️ *CONDICIONES*\n• La víctima debe tener toda la XP que resulte o solicites.\n• No puedes robarte a ti mismo.\n• Solo los robos exitosos consumen un intento.\n• Puedes completar hasta *4 robos exitosos por día*.\n• Las esperas progresivas son de *1, 2, 3 y 4 horas*.\n• El contador se reinicia a las *00:00, hora de Colombia*, sin cancelar una espera activa.\n\n✨ *EJEMPLOS*\n*.rob @usuario* — robo aleatorio\n*.rob 2500 @usuario* — robo exacto\n*.rob* respondiendo — robo aleatorio\n*.rob 2500* respondiendo — robo exacto",
         "missingUser": "❌ En usuarios no aparece en mi base de datos",
         "cooldown": "🚓 La policía está vigilando, vuelve en: *{time}*",
+        "dailyLimit": "🔒 Alcanzaste el límite de *4 robos exitosos* de hoy. Podrás volver a robar en: *{time}*",
         "missingTarget": "⚠️ *Etiqueta a un usuario o responde a su mensaje para robarle XP.*\nEjemplos: *.rob @usuario* o *.rob 2500 @usuario*",
         "invalidAmount": "❌ La cantidad debe ser un número entero positivo.\nEjemplo: *.rob 2500 @usuario*",
         "selfTarget": "❌ No puedes robarte a ti mismo.",
         "missingVictim": "❌ El usuario no se encuentra en mi base de datos.",
         "insufficientLevel": "❌ Tu nivel actual es {level}. Para robar esa cantidad necesitas nivel {requiredLevel}.\nTu máximo actual es *{maximum} XP*.",
         "poorVictim": "@{user} tiene {available} XP y el robo requiere {required} XP.\n> No robes a un pobre v:",
-        "success": "*Robaste {amount} XP a @{user}*"
+        "success": "🚨 *¡ROBO EXITOSO!*\n\n💰 Robaste *{amount} XP* a *@{user}*.\n\n📊 *ESTADO DEL LADRÓN*\n🎚️ Nivel actual: *{level}*\n💎 Máximo por tu nivel: *{maximum} XP*\n🎟️ Robos disponibles hoy: *{remaining}/4*\n⏳ Próximo robo: *{nextAvailable}*\n🔒 Bloqueo máximo: *{maxBlockStatus}*\n\n> _Solo los robos exitosos consumen un intento._\n> _Los intentos diarios se reinician a las 00:00._"
       },
       "work": {
         "cooldown": "*⏳ Debes descansar {time} antes de volver a trabajar*",
