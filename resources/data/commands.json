@@ -229,6 +229,7 @@
     "blowjob": {"emoji": "🔞", "usage": "blowjob @usuario", "description": "Envia una reaccion GIF NSFW si esta permitido.", "aliases": ["felacion", "chupar", "oral"]},
     "cogeranal": {"emoji": "🔞", "usage": "cogeranal @usuario", "description": "Envia una reaccion GIF NSFW si esta permitido.", "aliases": ["anal", "por-el-culo", "sexo-anal", "anosex"]},
     "coger": {"emoji": "🔞", "usage": "coger @usuario", "description": "Envia una reaccion GIF NSFW si esta permitido.", "aliases": ["sexear", "sexo"]},
+    "cowgirl": {"emoji": "🤠", "usage": "cowgirl [@usuario]", "description": "Envia una reaccion GIF normal o NSFW a una persona elegida, respondida o aleatoria."},
     "doggystyle": {"emoji": "🔞", "usage": "doggystyle @usuario", "description": "Envia una reaccion GIF NSFW si esta permitido.", "aliases": ["encuatro", "en4", "deaperrito", "cogeren4", "coger4", "follar4"]},
     "lesbian": {"emoji": "🔞", "usage": "lesbian @usuario", "description": "Envia una reaccion GIF NSFW si esta permitido.", "aliases": ["sexo-lesbiano", "lesbianas", "sexo-mujeres"]},
     "preg": {"emoji": "🎞️", "usage": "preg @usuario", "description": "Envia una reaccion GIF de broma.", "aliases": ["embarazado", "embarazar", "preniado", "en-bola"]},

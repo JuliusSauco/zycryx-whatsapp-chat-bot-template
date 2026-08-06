@@ -51,6 +51,16 @@
     "nsfwFolder": "resources/media/reaction-gifs/cog/nsfw",
     "caption": "😋🔥💗👙 {sender} se esta cogiendo bien duro a {targets}"
   },
+  "cowgirl": {
+    "help": "msg-gif-cowgirl",
+    "commands": ["cowgirl"],
+    "adult": true,
+    "targetMode": "explicit-or-random-group-member",
+    "folder": "resources/media/reaction-gifs/cwl",
+    "nsfwFolder": "resources/media/reaction-gifs/cwl/nsfw",
+    "caption": "🤠🐄 {sender} invitó a {targets} a montar como vaqueritos 🌵✨",
+    "nsfwCaption": "🤠🔥 {sender} está cabalgando bien rico, penetrando y rompiedo a {targets} en posición de vaqueritos 😈💦🥵💋"
+  },
   "dogst": {
     "help": "msg-gif-dogst",
     "commands": ["doggystyle", "encuatro", "en4", "deaperrito", "cogeren4", "coger4", "follar4"],

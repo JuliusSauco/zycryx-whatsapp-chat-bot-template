@@ -30,6 +30,7 @@ const AGRESIVO: GifEntry[] = [
 const ADULTO: GifEntry[] = [
     {emoji: '🍆', cmd: 'fap', desc: 'Elige a alguien o usa una persona al azar (versión explícita con NSFW)'},
     {emoji: '🫳', cmd: 'manosear', desc: 'Elige a alguien o usa una persona al azar (versión explícita con NSFW)'},
+    {emoji: '🤠', cmd: 'cowgirl', desc: 'Elige, responde o usa una persona al azar (versión explícita con NSFW)'},
     {emoji: '6️⃣9️⃣', cmd: '69', desc: 'Posición 69 (requiere NSFW para la versión explícita)'},
     {emoji: '🔥', cmd: 'coger', desc: 'Sexo común'},
     {emoji: '🐶', cmd: 'doggystyle', desc: 'Sexo de a perrito'},
