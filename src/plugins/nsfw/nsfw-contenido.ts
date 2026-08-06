@@ -20,7 +20,8 @@ export default defineSdkPlugin({
     tags: ['nsfw', 'nsfw-content'],
     feature: 'nsfw',
     command: buildAliasRegex(aliasMap),
-    limit: 2,
+    limit: 8,
+    alternativeCoins: 80,
     register: true,
     async execute(m, {sdk}) {
     try {

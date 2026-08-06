@@ -64,7 +64,7 @@ export async function before(m: BotMessage, ctx: BeforePluginContext & {conn: Ex
     if (!respondToAll && !mention && !isTrigger) return true;
 
     // 'bot' NO va en no_cmd: es palabra gatillo del autoresponder, no debe excluirse a sí misma.
-    const no_cmd = /(PIEDRA|PAPEL|TIJERA|menu|estado|serbot|jadibot|Video|Audio|Exp|diamante|lolicoins?)/i;
+    const no_cmd = /(PIEDRA|PAPEL|TIJERA|menu|estado|serbot|jadibot|Video|Audio|Exp|diamante|coins?)/i;
     if (no_cmd.test(m.text || '')) {
         logDebug('[AUTORESP] omitido: el texto coincide con la lista no_cmd');
         return true;

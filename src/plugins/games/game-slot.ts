@@ -10,7 +10,7 @@ type SlotMatrix = [SlotRow, SlotRow, SlotRow];
 
 export default defineSdkPlugin({
     command: ['slot'],
-    help: ['slot <xp|money|limite> <cantidad>'],
+    help: ['slot <exp|coins|limite> <cantidad>'],
     tags: ['game'],
     register: true,
     async execute(m, {conn, args, sdk}) {
@@ -30,7 +30,7 @@ export default defineSdkPlugin({
     const tipo = tipoArg === 'xp' ? 'exp' : tipoArg;
     const cantidad = parseInt(args[1]);
 
-    if (!['exp', 'money', 'limite'].includes(tipo) || !isWalletResource(tipo)) return sdk.reply.message('games.slot.usage');
+    if (!['exp', 'coins', 'limite'].includes(tipo) || !isWalletResource(tipo)) return sdk.reply.message('games.slot.usage');
     if (!cantidad || isNaN(cantidad) || cantidad < 10) return sdk.reply.message('games.slot.minBet');
 
     const saldo = user[tipo];
@@ -82,7 +82,7 @@ export default defineSdkPlugin({
         });
     }
 
-    await addWalletResourceAndSetWait(m.sender, tipo, ganancia, now);
+    await addWalletResourceAndSetWait(m.sender, tipo, ganancia, now, 'game_bet', 'slot');
     await delay(600);
     await conn.sendMessage(m.chat, {text: render(final, sdk.content) + `\n\n${textoFinal}`, edit: msg.key});
     }
@@ -111,7 +111,7 @@ function evaluarLinea(arr: SlotRow) {
 }
 
 function tipoBonito(tipo: string) {
-    if (tipo === 'money') return 'LoliCoins';
+    if (tipo === 'coins') return 'Coins';
     if (tipo === 'limite') return 'Diamantes';
     return 'XP';
 }

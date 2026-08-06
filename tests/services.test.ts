@@ -350,8 +350,9 @@ async function testWalletAndApiTokenServices(): Promise<void> {
         nombre: null,
         limite: 1,
         exp: 2,
-        money: 3,
-        banco: 4,
+        coins: 3,
+        botcoin: 0,
+        zyxcoin: 0,
         level: 5,
         role: null,
         wait: 0,
@@ -413,14 +414,15 @@ async function testWalletAndApiTokenServices(): Promise<void> {
     };
 
     try {
-        assert.equal(isWalletResource('money'), true);
+        assert.equal(isWalletResource('coins'), true);
+        assert.equal(isWalletResource('money'), false);
         assert.equal(isWalletResource('diamonds'), false);
         assert.equal(await getWallet('u1'), wallet);
-        assert.equal(await addWalletResource('u1', 'money', 3), 10);
+        assert.equal(await addWalletResource('u1', 'coins', 3), 10);
         assert.equal(await addWalletResourceAndSetWait('u1', 'exp', 4, 123), 11);
-        await addWalletResourcesAndSetFields({userId: 'u1', resources: {money: 1}, fields: {lastclaim: 2}});
-        assert.equal(await exchangeWalletResources({userId: 'u1', from: 'money', to: 'banco', fromAmount: 1, toAmount: 2}), true);
-        assert.equal(await transferWalletResource({from: 'u1', to: 'u2', resource: 'money', amount: 1}), false);
+        await addWalletResourcesAndSetFields({userId: 'u1', resources: {coins: 1}, fields: {lastclaim: 2}});
+        assert.equal(await exchangeWalletResources({userId: 'u1', from: 'coins', to: 'exp', fromAmount: 1, toAmount: 2}), true);
+        assert.equal(await transferWalletResource({from: 'u1', to: 'u2', resource: 'coins', amount: 1}), false);
         assert.deepEqual(await robExperience({robberId: 'u1', victimId: 'u2', attemptedAt: 123}), {
             kind: 'success',
             amount: 500,

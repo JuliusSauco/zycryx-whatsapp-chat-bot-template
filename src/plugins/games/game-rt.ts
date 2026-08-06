@@ -38,7 +38,7 @@ export default defineSdkPlugin({
         winAmount = color === 'green' ? betAmount * 14 : betAmount * 2;
     }
 
-    await addWalletResourceAndSetWait(m.sender, 'exp', -betAmount + winAmount, now);
+    await addWalletResourceAndSetWait(m.sender, 'exp', -betAmount + winAmount, now, 'game_bet', 'roulette');
     const message = isWin
         ? sdk.content.renderMessage('games.roulette.win', {amount: formatExp(winAmount)})
         : sdk.content.renderMessage('games.roulette.lose', {amount: formatExp(betAmount)});

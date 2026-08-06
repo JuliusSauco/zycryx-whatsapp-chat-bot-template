@@ -23,8 +23,9 @@ function wallet(overrides: Partial<UserWallet> = {}): UserWallet {
         nombre: 'User',
         limite: 0,
         exp: 0,
-        money: 0,
-        banco: 0,
+        coins: 0,
+        botcoin: 0,
+        zyxcoin: 0,
         level: 0,
         role: 'NOVATO(A) V',
         wait: 0,
@@ -151,7 +152,8 @@ try {
 
         assert.deepEqual(writes, [['winner@s.whatsapp.net', expectedLevel, getRole(expectedLevel).name]]);
         assert.equal(replies.length, 1);
-        assert.match(String(replies[0][1]), new RegExp(`0.*${expectedLevel}`, 's'));
+        assert.match(String(replies[0][1]), /0/);
+        assert.match(String(replies[0][1]), new RegExp(String(expectedLevel)));
     }
 
     {

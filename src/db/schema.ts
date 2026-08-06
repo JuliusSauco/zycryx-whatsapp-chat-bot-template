@@ -1,5 +1,5 @@
 import {sql} from 'drizzle-orm';
-import {bigint, boolean, check, date, index, integer, jsonb, pgTable, primaryKey, serial, text, timestamp} from 'drizzle-orm/pg-core';
+import {bigint, boolean, check, date, index, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, uniqueIndex} from 'drizzle-orm/pg-core';
 
 export const usuarios = pgTable('usuarios', {
     id: text('id').primaryKey(),
@@ -18,10 +18,6 @@ export const usuarios = pgTable('usuarios', {
     edad: integer('edad'),
     gender: text('gender'),
     birthday: date('birthday'),
-    money: integer('money').default(100),
-    limite: integer('limite').default(10),
-    exp: integer('exp').default(0),
-    banco: integer('banco').default(0),
     level: integer('level').default(0),
     role: text('role').notNull().default('novato'),
     roleDescription: text('role_description'),
@@ -46,13 +42,147 @@ export const usuarios = pgTable('usuarios', {
     marryRequest: text('marry_request'),
 });
 
+export const userWallets = pgTable('user_wallets', {
+    userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
+    limite: integer('limite').notNull().default(10),
+    exp: integer('exp').notNull().default(0),
+    coins: integer('coins').notNull().default(100),
+    botcoin: integer('botcoin').notNull().default(0),
+    zyxcoin: integer('zyxcoin').notNull().default(0),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, table => ({
+    limiteNonNegative: check('user_wallets_limite_non_negative', sql`${table.limite} >= 0`),
+    expNonNegative: check('user_wallets_exp_non_negative', sql`${table.exp} >= 0`),
+    coinsNonNegative: check('user_wallets_coins_non_negative', sql`${table.coins} >= 0`),
+    botcoinNonNegative: check('user_wallets_botcoin_non_negative', sql`${table.botcoin} >= 0`),
+    zyxcoinNonNegative: check('user_wallets_zyxcoin_non_negative', sql`${table.zyxcoin} >= 0`),
+}));
+
+export const walletTransactions = pgTable('wallet_transactions', {
+    id: bigint('id', {mode: 'number'}).primaryKey().generatedAlwaysAsIdentity(),
+    userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    resource: text('resource').notNull(),
+    amount: integer('amount').notNull(),
+    balanceAfter: integer('balance_after').notNull(),
+    reason: text('reason').notNull(),
+    operation: text('operation'),
+    operationId: text('operation_id'),
+    counterpartyId: text('counterparty_id').references(() => usuarios.id, {onDelete: 'set null'}),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+}, table => ({
+    userCreatedAtIdx: index('wallet_transactions_user_created_at_idx').on(table.userId, table.createdAt),
+    operationIdx: index('wallet_transactions_operation_idx').on(table.operationId),
+    resourceCheck: check('wallet_transactions_resource_check', sql`${table.resource} in ('limite', 'exp', 'coins', 'botcoin', 'zyxcoin')`),
+    balanceNonNegative: check('wallet_transactions_balance_non_negative', sql`${table.balanceAfter} >= 0`),
+}));
+
+export const userBankAccounts = pgTable('user_bank_accounts', {
+    userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
+    limite: integer('limite').notNull().default(0),
+    coins: integer('coins').notNull().default(0),
+    botcoin: integer('botcoin').notNull().default(0),
+    zyxcoin: integer('zyxcoin').notNull().default(0),
+    status: text('status').notNull().default('active'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, table => ({
+    limiteNonNegative: check('user_bank_accounts_limite_non_negative', sql`${table.limite} >= 0`),
+    coinsNonNegative: check('user_bank_accounts_coins_non_negative', sql`${table.coins} >= 0`),
+    botcoinNonNegative: check('user_bank_accounts_botcoin_non_negative', sql`${table.botcoin} >= 0`),
+    zyxcoinNonNegative: check('user_bank_accounts_zyxcoin_non_negative', sql`${table.zyxcoin} >= 0`),
+    statusCheck: check('user_bank_accounts_status_check', sql`${table.status} in ('active', 'frozen', 'closed')`),
+}));
+
+export const bankReserves = pgTable('bank_reserves', {
+    resource: text('resource').primaryKey(),
+    balance: bigint('balance', {mode: 'number'}).notNull().default(0),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, table => ({
+    resourceCheck: check('bank_reserves_resource_check', sql`${table.resource} in ('limite', 'coins', 'botcoin', 'zyxcoin')`),
+    balanceNonNegative: check('bank_reserves_balance_non_negative', sql`${table.balance} >= 0`),
+}));
+
+export const bankExchangeRates = pgTable('bank_exchange_rates', {
+    sourceResource: text('source_resource').notNull(),
+    targetResource: text('target_resource').notNull(),
+    sourceAmount: integer('source_amount').notNull(),
+    targetAmount: integer('target_amount').notNull().default(1),
+    active: boolean('active').notNull().default(true),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, table => ({
+    pk: primaryKey({columns: [table.sourceResource, table.targetResource]}),
+    sourceCheck: check('bank_exchange_rates_source_check', sql`${table.sourceResource} in ('limite', 'exp', 'coins', 'botcoin', 'zyxcoin')`),
+    targetCheck: check('bank_exchange_rates_target_check', sql`${table.targetResource} in ('limite', 'coins', 'botcoin', 'zyxcoin')`),
+    amountCheck: check('bank_exchange_rates_amount_check', sql`${table.sourceAmount} > 0 and ${table.targetAmount} > 0`),
+    pairCheck: check('bank_exchange_rates_pair_check', sql`${table.sourceResource} <> ${table.targetResource}`),
+}));
+
+export const bankLoans = pgTable('bank_loans', {
+    id: bigint('id', {mode: 'number'}).primaryKey().generatedAlwaysAsIdentity(),
+    userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    principal: integer('principal').notNull(),
+    interestAmount: integer('interest_amount').notNull(),
+    principalOutstanding: integer('principal_outstanding').notNull(),
+    interestOutstanding: integer('interest_outstanding').notNull(),
+    status: text('status').notNull().default('active'),
+    issuedAt: timestamp('issued_at').notNull().defaultNow(),
+    dueAt: timestamp('due_at').notNull(),
+    defaultAt: timestamp('default_at').notNull(),
+    paidAt: timestamp('paid_at'),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, table => ({
+    userStatusIdx: index('bank_loans_user_status_idx').on(table.userId, table.status),
+    dueStatusIdx: index('bank_loans_due_status_idx').on(table.status, table.dueAt),
+    oneOutstandingLoan: uniqueIndex('bank_loans_one_outstanding_per_user').on(table.userId)
+        .where(sql`${table.status} in ('active', 'overdue', 'defaulted')`),
+    statusCheck: check('bank_loans_status_check', sql`${table.status} in ('active', 'overdue', 'defaulted', 'paid')`),
+    amountsCheck: check('bank_loans_amounts_check', sql`${table.principal} > 0 and ${table.interestAmount} >= 0 and ${table.principalOutstanding} between 0 and ${table.principal} and ${table.interestOutstanding} between 0 and ${table.interestAmount}`),
+    paidCheck: check('bank_loans_paid_check', sql`${table.status} <> 'paid' or (${table.principalOutstanding} = 0 and ${table.interestOutstanding} = 0)`),
+}));
+
+export const bankTransactions = pgTable('bank_transactions', {
+    id: bigint('id', {mode: 'number'}).primaryKey().generatedAlwaysAsIdentity(),
+    userId: text('user_id').references(() => usuarios.id, {onDelete: 'set null'}),
+    actorId: text('actor_id').references(() => usuarios.id, {onDelete: 'set null'}),
+    resource: text('resource').notNull(),
+    type: text('type').notNull(),
+    amount: bigint('amount', {mode: 'number'}).notNull(),
+    balanceAfter: bigint('balance_after', {mode: 'number'}).notNull(),
+    operationId: text('operation_id').notNull(),
+    loanId: bigint('loan_id', {mode: 'number'}).references(() => bankLoans.id, {onDelete: 'set null'}),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+}, table => ({
+    userCreatedAtIdx: index('bank_transactions_user_created_at_idx').on(table.userId, table.createdAt),
+    operationIdx: index('bank_transactions_operation_idx').on(table.operationId),
+    resourceCheck: check('bank_transactions_resource_check', sql`${table.resource} in ('limite', 'coins', 'botcoin', 'zyxcoin')`),
+    balanceNonNegative: check('bank_transactions_balance_non_negative', sql`${table.balanceAfter} >= 0`),
+}));
+
+export const bankLoanPayments = pgTable('bank_loan_payments', {
+    id: bigint('id', {mode: 'number'}).primaryKey().generatedAlwaysAsIdentity(),
+    loanId: bigint('loan_id', {mode: 'number'}).notNull().references(() => bankLoans.id, {onDelete: 'cascade'}),
+    amount: integer('amount').notNull(),
+    principalPaid: integer('principal_paid').notNull(),
+    interestPaid: integer('interest_paid').notNull(),
+    walletTransactionId: bigint('wallet_transaction_id', {mode: 'number'}).notNull().references(() => walletTransactions.id),
+    bankTransactionId: bigint('bank_transaction_id', {mode: 'number'}).notNull().references(() => bankTransactions.id),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+}, table => ({
+    loanCreatedAtIdx: index('bank_loan_payments_loan_created_at_idx').on(table.loanId, table.createdAt),
+    amountCheck: check('bank_loan_payments_amount_check', sql`${table.amount} > 0 and ${table.principalPaid} >= 0 and ${table.interestPaid} >= 0 and ${table.amount} = ${table.principalPaid} + ${table.interestPaid}`),
+}));
+
 export const commandResourceReservations = pgTable('command_resource_reservations', {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull(),
     pluginId: text('plugin_id').notNull(),
     messageId: text('message_id').notNull(),
     limitAmount: integer('limit_amount').notNull().default(0),
-    moneyAmount: integer('money_amount').notNull().default(0),
+    coinsAmount: integer('coins_amount').notNull().default(0),
+    alternativeCoinsAmount: integer('alternative_coins_amount').notNull().default(0),
+    paymentResource: text('payment_resource').notNull().default('none'),
     requiredLevel: integer('required_level').notNull().default(0),
     status: text('status').notNull().default('pending'),
     releaseReason: text('release_reason'),
@@ -62,6 +192,8 @@ export const commandResourceReservations = pgTable('command_resource_reservation
 }, table => ({
     pendingExpiryIdx: index('command_resource_reservations_pending_expiry_idx').on(table.status, table.expiresAt),
     userIdx: index('command_resource_reservations_user_idx').on(table.userId),
+    alternativeCoinsNonNegative: check('command_resource_reservations_alternative_coins_non_negative', sql`${table.alternativeCoinsAmount} >= 0`),
+    paymentResourceCheck: check('command_resource_reservations_payment_resource_check', sql`${table.paymentResource} in ('limite', 'coins', 'mixed', 'none')`),
 }));
 
 export const groupSettings = pgTable('group_settings', {

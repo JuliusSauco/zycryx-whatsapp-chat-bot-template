@@ -319,7 +319,7 @@
       },
       "slot": {
         "cooldown": "🕓 Calma crack, espera *{time}* antes de volver a jugar.",
-        "usage": "⚠️ Usa correctamente: /slot <xp|money|limite> <cantidad>\nEjemplo: /slot xp 500",
+        "usage": "⚠️ Usa correctamente: /slot <exp|coins|limite> <cantidad>\nEjemplo: /slot coins 500",
         "minBet": "❌ Mínimo 10 para apostar.",
         "notEnough": "❌ No tienes suficiente {resource} para apostar. Tienes *{balance}*",
         "triple": "🎉 ¡Triple! Ganaste *{amount} {resource}*",
@@ -376,6 +376,101 @@
         "winner": "🎉 @{winner} *ganarte* y recibe *{xp} XP!"
       }
     },
+    "economy": {
+      "wallet": {
+        "public": "*╭━━〔 👛 E - WALLET PÚBLICA 〕━━╮*\n\n👤 @{user}\n├ ⚙️ *Nivel:* {level}\n├ ✨ *EXP:* {exp}\n╰ 💎 *Límite:* {diamonds}\n\n_Para consultar tus Coins y monedas privadas, usa *.wallet* en el chat privado del bot._",
+        "private": "*╭━━〔 👛 E - WALLET 〕━━╮*\n\n👤 @{user}\n\n╭─「 📊 *RECURSOS PÚBLICOS* 」\n├ ⚙️ *Nivel:* {level}\n├ ✨ *EXP:* {exp}\n╰ 💎 *Límite:* {diamonds}\n\n╭─「 🔐 *MONEDAS PRIVADAS* 」\n├ 🪙 *Coins:* {coins}\n├ 🤖 *Botcoin:* {botcoin}\n╰ 🔷 *Zyxcoin:* {zyxcoin}\n\n╭─「 🏦 *BANCO CUSTODIAL* 」\n├ 💎 *Límite:* {bankLimit}\n├ 🪙 *Coins:* {bankCoins}\n├ 🤖 *Botcoin:* {bankBotcoin}\n╰ 🔷 *Zyxcoin:* {bankZyxcoin}\n{loanBlock}\n\n> *NOTA:* Puedes comprar 💎 usando:\n> *• {prefix}buy <cantidad>*\n> *• {prefix}buyall*\n> Consulta todas las tasas con *{prefix}exchange info*.",
+        "guide": "*╭━━〔 👛 GUÍA DE E - WALLET 〕━━╮*\n\n├ 👛 *{prefix}wallet*\n│  Consulta tus saldos.\n├ 🏦 *{prefix}bank*\n│  Consulta tus depósitos.\n├ 📥 *{prefix}deposit*\n│  Guarda recursos en el banco.\n├ 📤 *{prefix}withdraw*\n│  Retira recursos custodiados.\n├ 📄 *{prefix}loan*\n│  Solicita o paga préstamos.\n├ 💱 *{prefix}exchange*\n│  Convierte recursos.\n├ 🛒 *{prefix}buy*\n│  Compra Límites con EXP.\n╰ 🤝 *{prefix}transfer*\n   Envía recursos a otro usuario.\n\n_Usa cualquiera con *--info* para abrir su guía._"
+      },
+      "bank": {
+        "status": "*╭━━〔 🏦 BANCO CUSTODIAL 〕━━╮*\n\n╭─「 *DEPÓSITOS* 」\n├ 💎 *Límite:* {limite}\n├ 🪙 *Coins:* {coins}\n├ 🤖 *Botcoin:* {botcoin}\n╰ 🔷 *Zyxcoin:* {zyxcoin}\n\n{loanSummary}\n\n_Usa *{prefix}deposit* o *{prefix}withdraw* para mover recursos._",
+        "loanSummary": "📄 *Deuda:* {debt} Coins\n📌 *Estado:* {status}\n📅 *Vence:* {dueAt}",
+        "noLoan": "✅ No tienes préstamos pendientes.",
+        "usage": "⚠️ Uso: *{prefix}{command} [limite|coins|botcoin|zyxcoin] <cantidad|all>*",
+        "notEnoughWallet": "⚠️ No tienes saldo suficiente en tu E - WALLET.",
+        "notEnoughBank": "⚠️ No tienes saldo suficiente depositado en el banco.",
+        "operationFailed": "⚠️ No fue posible completar la operación bancaria.",
+        "deposit": "✅ Depositaste *{amount} {resource}*.\n👛 E - WALLET: {walletBalance}\n🏦 Banco: {bankBalance}",
+        "withdraw": "✅ Retiraste *{amount} {resource}*.\n👛 E - WALLET: {walletBalance}\n🏦 Banco: {bankBalance}",
+        "guide": "*🏦 GUÍA DEL BANCO*\n\n├ 👛 *E - WALLET*\n│  Recursos disponibles para usar.\n├ 🏦 *DEPÓSITOS*\n│  Recursos tuyos custodiados por el banco.\n╰ 🏛️ *RESERVAS*\n   Capital institucional; no pertenece a usuarios.\n\n*Admite:* Límites, Coins, Botcoins y Zyxcoins.\n_EXP no puede depositarse._\n\n• *{prefix}bank* — consulta depósitos y deuda\n• *{prefix}deposit --info* — aprende a depositar\n• *{prefix}withdraw --info* — aprende a retirar\n• *{prefix}loan --info* — consulta la guía de préstamos"
+      },
+      "deposit": {
+        "guide": "*📥 GUÍA DE DEPÓSITOS*\n\nMueve recursos desde tu E - WALLET hacia tu cuenta bancaria.\n\n├ *{prefix}deposit coins 500*\n├ *{prefix}deposit limite 10*\n├ *{prefix}deposit botcoin all*\n╰ *{prefix}dep 10* — deposita 10 Límites\n\n*Recursos:* limite, coins, botcoin y zyxcoin.\n_EXP no se puede depositar._"
+      },
+      "withdraw": {
+        "guide": "*📤 GUÍA DE RETIROS*\n\nDevuelve recursos custodiados a tu E - WALLET.\n\n├ *{prefix}withdraw coins 100*\n├ *{prefix}withdraw limite all*\n├ *{prefix}withdraw zyxcoin 1*\n╰ *{prefix}retirar all* — retira todos tus Límites\n\n_No puedes retirar más de lo que tienes depositado._"
+      },
+      "loan": {
+        "none": "✅ No tienes préstamos pendientes.\n💳 *Cupo actual:* {creditLimit} Coins\n⚙️ *Nivel mínimo:* {minimumLevel}\n\n_Para solicitar: *{prefix}loan request <cantidad>*_",
+        "info": "*╭━━〔 📄 PRÉSTAMO 〕━━╮*\n\n📌 *Estado:* {status}\n🪙 *Principal inicial:* {principal}\n📈 *Interés fijo:* {interest}\n💰 *Principal pendiente:* {principalOutstanding}\n💸 *Interés pendiente:* {interestOutstanding}\n🧾 *Total pendiente:* {total}\n📅 *Vence:* {dueAt}\n⚠️ *Incumplimiento:* {defaultAt}\n\n_Para pagar: *{prefix}loan pay <cantidad|all>*_",
+        "approved": "✅ *Préstamo aprobado*\n🪙 Recibiste: {principal} Coins\n📈 Interés fijo: {interest} Coins\n🧾 Total a pagar: {total} Coins\n📅 Vence: {dueAt}",
+        "notRegistered": "⚠️ Debes estar registrado para solicitar un préstamo.",
+        "existing": "⚠️ Ya tienes un préstamo pendiente. Debes liquidarlo antes de solicitar otro.",
+        "noReserve": "🏦 El banco no tiene suficientes Coins disponibles en sus reservas.",
+        "lowLevel": "⚠️ Necesitas al menos nivel 5 para solicitar un préstamo. Tu nivel: {level}.",
+        "invalidAmount": "⚠️ El préstamo mínimo es de {minimum} Coins enteras.",
+        "overLimit": "⚠️ La cantidad supera tu cupo máximo de {creditLimit} Coins.",
+        "usage": "⚠️ Usa *{prefix}loan*, *{prefix}loan request <cantidad>* o *{prefix}loan pay <cantidad|all>*.",
+        "noDebt": "✅ No tienes un préstamo pendiente por pagar.",
+        "notEnoughCoins": "⚠️ No tienes suficientes Coins en tu E - WALLET para realizar ese pago.",
+        "paid": "✅ Pago aplicado por *{amount} Coins*.\n📈 A interés: {interestPaid}\n🪙 A principal: {principalPaid}\n🧾 Pendiente: {remaining}\n📌 Estado: {status}",
+        "guide": "*📄 GUÍA DE PRÉSTAMOS*\n\n├ 🪙 Moneda: Coins\n├ ⚙️ Nivel mínimo: 5\n├ 💰 Mínimo: 100 Coins\n├ 📊 Cupo: nivel × 1.000\n├ 🔒 Cupo máximo: 50.000 Coins\n├ 📈 Interés fijo: 5 %\n├ 📅 Vencimiento: 7 días\n╰ 📌 Un préstamo pendiente por usuario\n\n• *{prefix}loan* — consulta tu deuda\n• *{prefix}loan request 1000* — solicita Coins\n• *{prefix}loan pay 250* — pago parcial\n• *{prefix}loan pay all* — liquida la deuda\n\n_Los pagos cubren primero interés y después principal._\n*Estados:* active, overdue, defaulted y paid."
+      },
+      "buy": {
+        "usage": "⚠️ Usa *{prefix}buy <cantidad>* o *{prefix}buyall*.",
+        "notEnoughExp": "⚠️ No tienes suficiente EXP para completar esta compra.",
+        "receipt": "╔═❖ *ＮＯＴＡ ＤＥ ＰＡＧＯ*\n║‣ *Has comprado:* {count} 💎\n║‣ *Gastado:* {cost} EXP\n║‣ *EXP restante:* {expBalance}\n║‣ *Límite disponible:* {limitBalance}\n╚═══════════════",
+        "guide": "*🛒 COMPRA DE LÍMITES*\n\n*Precio actual:* {sourceAmount} EXP → {targetAmount} Límite\n\n├ *{prefix}buy* — compra 1 Límite\n├ *{prefix}buy 5* — compra 5 Límites\n╰ *{prefix}buyall* — usa toda la EXP posible\n\n_La EXP sobrante que no complete una unidad se conserva._"
+      },
+      "exchange": {
+        "info": "*╭━━〔 💱 TIPOS DE CAMBIO 〕━━╮*\n\n{rates}\n\n_La cantidad del comando indica las unidades que deseas recibir._\n_Ejemplo: *{prefix}exchange coins limite 5*._",
+        "rate": "• {sourceAmount} {source} → {targetAmount} {target}",
+        "usage": "⚠️ Usa *{prefix}exchange info* o *{prefix}exchange <origen> <destino> <cantidad|all>*.",
+        "invalidAmount": "⚠️ La cantidad debe ser un entero positivo o *all*.",
+        "unavailablePair": "⚠️ Ese tipo de cambio no está disponible. Consulta *exchange info*.",
+        "insufficientWallet": "⚠️ No tienes saldo suficiente en tu E - WALLET.",
+        "insufficientReserve": "🏦 El banco no tiene reservas suficientes para completar el cambio.",
+        "failed": "⚠️ No fue posible completar el cambio.",
+        "receipt": "*╭━━〔 💱 CAMBIO COMPLETADO 〕━━╮*\n\n📤 Entregaste: *{sourceSpent} {source}*\n📥 Recibiste: *{targetReceived} {target}*\n\n👛 Saldo de origen: {sourceBalance}\n👛 Saldo de destino: {targetBalance}",
+        "guide": "*💱 GUÍA DE TIPOS DE CAMBIO*\n\n*Tasas activas:*\n{rates}\n\n├ *{prefix}exchange info* — consulta tasas\n├ *{prefix}exchange coins limite 5*\n├ *{prefix}exchange limite botcoin 2*\n╰ *{prefix}exchange limite zyxcoin all*\n\n_La cantidad indica cuánto deseas recibir._\n_Los cambios solo funcionan en las direcciones publicadas._"
+      },
+      "transfer": {
+        "invalidUsers": "❌ Usuarios no válidos.",
+        "cancelled": "*CANCELADO*",
+        "invalidResource": "❌ Recurso inválido.",
+        "notEnough": "⚠️ *𝙉𝙊 𝙏𝙄𝙀𝙉𝙀 𝙎𝙐𝙁𝙄𝘾𝙄𝙀𝙉𝙏𝙀 {resource}*",
+        "success": "✅ *TRANSFERENCIA HECHA:*\n\n*{amount} {resource} para* @{user}",
+        "alreadyPending": "𝙀𝙨𝙩𝙖𝙨 𝙝𝙖𝙘𝙞𝙚𝙣𝙙𝙤 𝙪𝙣𝙖 𝙩𝙧𝙖𝙣𝙨𝙛𝙚𝙧𝙚𝙣𝙘𝙞𝙖",
+        "usage": "`⧼⧼⧼ 💱 𝙏𝙍𝘼𝙉𝙎𝙁𝙀𝙍𝙀𝙉𝘾𝙄𝘼 💱 ⧽⧽⧽`\n\n> *{command} tipo cantidad @tag*\n\n`❏ 𝙀𝙅𝙀𝙈𝙋𝙇𝙊 :`\n* *{command} exp 30 @0*\n\n┏•「 *✅ 𝙍𝙀𝘾𝙐𝙍𝙎𝙊𝙎 𝘿𝙄𝙎𝙋𝙊𝙉𝙄𝘽𝙇𝙀𝙎* 」\n┃\n┃ 💎 𝘿𝙞𝙖𝙢𝙖𝙣𝙩𝙚𝙨 = limite\n┃ 🪙 𝘾𝙤𝙞𝙣𝙨 = coins\n┃ ⚡ 𝙀𝙭𝙥𝙚𝙧𝙞𝙚𝙣𝙘𝙞𝙖 = exp\n┗•",
+        "missingTarget": "⚠️ *𝙀𝙏𝙄𝙌𝙐𝙀𝙏𝙀 𝘼𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊*",
+        "targetNotFound": "⚠️ *𝙀𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊 {user} 𝙉𝙊 𝙎𝙀 𝙀𝙉𝘾𝙐𝙀𝙉𝙏𝙍𝘼 𝙀𝙉 𝙈𝙄 db*",
+        "confirm": "`ESTÁS A PUNTO DE HACER ESTA TRANSFERENCIA`\n\n> 💹 *{amount} {resource} para* *@{user}*\n\n`¿DESEAS CONTINUAR?`\n> Tienes 60 segundos.\n\n> Escribe: (si) para aceptar\n> Escribe: (no) para cancelar",
+        "timeout": "*SU TIEMPO SE HA TERMINADO*",
+        "guide": "*🤝 GUÍA DE TRANSFERENCIAS*\n\nEnvía recursos directamente de una E - WALLET a otra.\n\n├ *{prefix}transfer coins 100 @usuario*\n├ *{prefix}transfer limite 5 @usuario*\n╰ *{prefix}transfer exp 1000 @usuario*\n\n*Transferibles:* limite, coins y exp.\n_Botcoin y Zyxcoin no se pueden transferir._\n\nResponde *si* para confirmar o *no* para cancelar.\n📜 Historial privado: *{prefix}transfer history*",
+        "historyPrivate": "🔐 Tu historial es privado. Usa *{prefix}transfer history* en el chat privado del bot.",
+        "historyInvalidPage": "⚠️ Página inválida. Usa *{prefix}transfer history* o indica una página positiva.",
+        "historyEmpty": "📭 Todavía no tienes transferencias enviadas ni recibidas.",
+        "history": "*╭━━〔 📜 HISTORIAL DE TRANSFERENCIAS 〕━━╮*\n\n{rows}\n\n📄 Página *{page}/{totalPages}* · {totalItems} movimientos",
+        "historyItem": "{direction} · *{amount} {resource}*\n👤 @{counterparty}\n💰 Saldo resultante: {balance}\n🕒 {date}"
+      },
+      "adminAdd": {
+        "missingTarget": "⚠️ Etiqueta a una persona con el @tag",
+        "lidNotFound": "❌ No se encontró al usuario con ese LID en la base de datos.",
+        "invalidAmount": "⚠️ Ingresa una cantidad válida",
+        "userNotFound": "❌ Ese usuario no está registrado en la base de datos.",
+        "diamondsAdded": "*≡ 💎 DIAMANTES AGREGADOS:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲᥣ:* {amount}\n┗━━━━━━━━━━━━",
+        "diamondsRemoved": "*≡ 💎 DIAMANTES QUITADOS:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* {amount}\n┗━━━━━━━━━━━━",
+        "expAdded": "*≡ ✨ EXP AGREGADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲᥣ:* {amount}\n┗━━━━━━━━━━━━",
+        "expRemoved": "*≡ ✨ EXP QUITADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* {amount}\n┗━━━━━━━━━━━━",
+        "error": "❌ Error al modificar datos."
+      },
+      "bankReserve": {
+        "status": "*╭━━〔 🏛️ RESERVAS DEL BANCO 〕━━╮*\n\n├ 💎 *Límite:* {limite}\n├ 🪙 *Coins:* {coins}\n├ 🤖 *Botcoin:* {botcoin}\n╰ 🔷 *Zyxcoin:* {zyxcoin}",
+        "usage": "⚠️ Usa *{prefix}bankreserve status*, *add <recurso> <cantidad>* o *remove <recurso> <cantidad>*.",
+        "insufficient": "⚠️ Ajuste rechazado: revisa la cantidad y la reserva líquida disponible.",
+        "updated": "✅ Reserva actualizada.\n🏷️ Recurso: {resource}\n🔄 Variación: {amount}\n🏛️ Saldo institucional: {balance}"
+      }
+    },
     "rpg": {
       "shared": {
         "missingUser": "✳️ El usuario no se encuentra en la base de datos.",
@@ -384,12 +479,9 @@
         "unknownFemale": "Desconocida",
         "unnamed": "sin nombre"
       },
-      "balance": {
-        "response": "*•───⧼⧼⧼ 𝙱𝙰𝙻𝙰𝙽𝙲𝙴 ⧽⧽⧽───•*\n\n@{user} Tiene:\n\n*• 𝐃𝐢𝐚𝐦𝐚𝐧𝐭𝐞:* _{diamonds} 💎_\n*• 𝐄𝐱𝐩:* _{exp} ⬆️_\n*• 𝐋𝐨𝐥𝐢𝐂𝐨𝐢𝐧𝐬:* _{money} 🪙_\n> Afuera del Banco \n\n*•───⧼⧼⧼ 𝙱𝙰𝙽𝙲𝙾 ⧽⧽⧽───•*\n\n*🏦 𝐃𝐢𝐧𝐞𝐫𝐨 :* _{bank} 💎_\n> Adentro del Banco 🏦 \n\n•───────────────•\n\n> *𝐍𝐎𝐓𝐀 :* \n> 𝐩𝐮𝐞𝐝𝐞𝐬 𝐜𝐨𝐦𝐩𝐫𝐚𝐫 💎 𝐝𝐢𝐚𝐦𝐚𝐧𝐭𝐞 𝐮𝐬𝐚𝐧𝐝𝐨 𝐥𝐨𝐬 𝐜𝐨𝐦𝐚𝐧𝐝𝐨𝐬\n> *• {prefix}buy <cantidad>*\n> *• {prefix}buyall*"
-      },
       "daily": {
         "alreadyClaimed": "⚠️ Ya reclamaste tu recompensa diaria, vuelve en *{time}* para reclamar de nuevo 🎁.",
-        "bonus": "\n\n🎉 *¡BONUS por 7 días de racha!* 🎉\n> +{bonusExp} XP extra\n> +{bonusLimit} Diamantes 💎\n> +{bonusMoney} LoliCoins 🪙\n\n",
+        "bonus": "\n\n🎉 *¡BONUS por 7 días de racha!* 🎉\n> +{bonusExp} XP extra\n> +{bonusLimit} Diamantes 💎\n> +{bonusCoins} Coins 🪙\n\n",
         "reward": "*🔸 𝐇𝐀𝐒 𝐑𝐄𝐂𝐈𝐁𝐈𝐃𝐎:* Tu recompensa diaria de: *{currentExp} XP* (Día  {streak})\n{bonusText}> _*Mañana no te olviden de seguir reclamado tu recompensa ganaras: {nextExpShort} ({nextExp}) XP*_\n",
         "quoted": "🎁 Obtener un regalo 🎁"
       },
@@ -421,32 +513,13 @@
         "caption": "[ 🛒 𝐎𝐁𝐓𝐈𝐄𝐍𝐄𝐒 𝐔𝐍 𝐂𝐎𝐅𝐑𝐄 🎉 ]\n\n* {diamonds} 𝐃𝐢𝐚𝐦𝐚𝐧𝐭𝐞𝐬 💎\n* {coins} 𝐂𝐨𝐢𝐧𝐬 🪙\n* {xp} 𝐄𝐱𝐩 ⚡",
         "quoted": "🎉 Obtiene un regalo 🎁"
       },
-      "shop": {
-        "notEnoughExp": "⚠️ Lo siento, no tienes suficientes *XP* para comprar *{count}* Diamantes 💎",
-        "receipt": "╔═❖ *ＮＯＴＡ ＤＥ ＰＡＧＯ*\n║‣ *Has comprado:* {count} 💎\n║‣ *Gastado:* {cost} XP\n╚═══════════════"
-      },
-      "bank": {
-        "missingDepositAmount": "[ ⚠️ ] *Ingresa la cantidad para agregar a tu cuenta bancaria*",
-        "emptyWallet": "*Estás pobre, no tienes diamantes*",
-        "depositAll": "*[ 🏦 ] Has agregado {amount} diamantes al Banco.*",
-        "invalidDepositAmount": "[ ⚠️ ] *Falta un número válido de diamantes 💎*",
-        "minimumAmount": "❌ El mínimo es 1 diamante.",
-        "notEnoughWallet": "*Che, no sabes cuánto tienes en tu cartera? Usa el comando:* #bal",
-        "deposit": "*[ 🏦 ] Has ingresado {amount} diamantes al Banco*",
-        "missingWithdrawAmount": "[ ⚠️ ] *Ingresa la cantidad a retirar*",
-        "emptyBank": "Hey fantasma 👻, no tienes nada en el banco 🥲",
-        "withdrawAll": "*[ 🏦 ] Retiraste {amount} diamantes 💎 del Banco.*",
-        "invalidWithdrawAmount": "La cantidad debe ser un número válido.",
-        "notEnoughBank": "*Che, no sabes cuánto tienes en tu cuenta? Usa el comando:* #bal",
-        "withdraw": "*[ 🏦 ] Has retirado {amount} diamantes del Banco*"
-      },
       "crime": {
         "missingUser": "❌ En usuarios no aparece en mi base de datos",
         "cooldown": "『🚓︎』𝙇𝘼 𝙋𝙊𝙇𝙄𝘾𝙄𝘼 𝙀𝙎𝙏𝘼 𝙑𝙄𝙂𝙄𝙇𝘼𝙉𝘿𝙊, 𝙑𝙐𝙀𝙇𝙑𝙀 𝙀𝙉 : {time}",
         "successXp": "《💰》{message} {xp} XP",
         "failureXp": "《🚓》{message} {xp} XP",
-        "successResources": "《💰》{message}\n\n{diamonds} 💎 DIAMANTE\n{money} 🪙 LOLICOINS",
-        "failureResources": "《🚓》{message}\n\n{diamonds} 💎 DIAMANTE\n{money} 🪙 LOLICOINS",
+        "successResources": "《💰》{message}\n\n{diamonds} 💎 DIAMANTE\n{coins} 🪙 COINS",
+        "failureResources": "《🚓》{message}\n\n{diamonds} 💎 DIAMANTE\n{coins} 🪙 COINS",
         "stoleFromUser": "《💰》Le has robado a @{user} una cantidad de {xp} XP",
         "successMessages": [
           "Robaste un Banco 🏦 y Obtuviste",
@@ -563,7 +636,7 @@
           "Tu cliente era un furry y te pagó el doble",
           "Te disfrazaste de maid y funcionó",
           "El viejo verde del grupo te dio propina",
-          "Ofreciste abrazos por monedas, pero te malinterpretaron",
+          "Ofreciste abrazos por Coins, pero te malinterpretaron",
           "Trabajaste en una esquina pixelada de San Andreas",
           "Te pagaron por quedarte calladito... y lo hiciste muy bien",
           "Fuiste a la zona roja del grupo y volviste con billete",
@@ -597,30 +670,6 @@
           "Organizaste un evento de ‘nalgadas virtuales’ con entrada paga",
           "Le bailaste a un bot de economía y te soltó todo su saldo"
         ]
-      },
-      "transfer": {
-        "invalidUsers": "❌ Usuarios no válidos.",
-        "cancelled": "*CANCELADO*",
-        "invalidResource": "❌ Recurso inválido.",
-        "notEnough": "⚠️ *𝙉𝙊 𝙏𝙄𝙀𝙉𝙀 𝙎𝙐𝙁𝙄𝘾𝙄𝙀𝙉𝙏𝙀 {resource}*",
-        "success": "✅ *TRANSFERENCIA HECHA:*\n\n*{amount} {resource} para* @{user}",
-        "alreadyPending": "𝙀𝙨𝙩𝙖𝙨 𝙝𝙖𝙘𝙞𝙚𝙣𝙙𝙤 𝙪𝙣𝙖 𝙩𝙧𝙖𝙣𝙨𝙛𝙚𝙧𝙚𝙣𝙘𝙞𝙖",
-        "usage": "`⧼⧼⧼ 💱 𝙏𝙍𝘼𝙉𝙎𝙁𝙀𝙍𝙀𝙉𝘾𝙄𝘼 💱 ⧽⧽⧽`\n\n> *{command} tipo cantidad @tag*\n\n`❏ 𝙀𝙅𝙀𝙈𝙋𝙇𝙊 :`\n* *{command} exp 30 @0*\n\n┏•「 *✅ 𝙍𝙀𝘾𝙐𝙍𝙎𝙊𝙎 𝘿𝙄𝙎𝙋𝙊𝙉𝙄𝘽𝙇𝙀𝙎* 」\n┃\n┃ 💎 𝘿𝙞𝙖𝙢𝙖𝙣𝙩𝙚𝙨 = limite\n┃ 🪙 𝙇𝙤𝙡𝙞𝘾𝙤𝙞𝙣𝙨 = money \n┃ ⚡ 𝙀𝙭𝙥𝙚𝙧𝙞𝙚𝙣𝙘𝙞𝙖 = exp \n┗•",
-        "missingTarget": "⚠️ *𝙀𝙏𝙄𝙌𝙐𝙀𝙏𝙀 𝘼𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊*",
-        "targetNotFound": "⚠️ *𝙀𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊 {user} 𝙉𝙊 𝙎𝙀 𝙀𝙉𝘾𝙐𝙀𝙉𝙏𝙍𝘼 𝙀𝙉 𝙈𝙄 db*",
-        "confirm": "`ESTÁS A PUNTO DE HACER ESTA TRANSFERENCIA`\n\n> 💹 *{amount} {resource} para* *@{user}*\n\n`¿DESEAS CONTINUAR?`\n> Tienes 60 segundos.\n\n> Escribe: (si) para aceptar\n> Escribe: (no) para cancelar",
-        "timeout": "*SU TIEMPO SE HA TERMINADO*"
-      },
-      "adminAdd": {
-        "missingTarget": "⚠️ Etiqueta a una persona con el @tag",
-        "lidNotFound": "❌ No se encontró al usuario con ese LID en la base de datos.",
-        "invalidAmount": "⚠️ Ingresa una cantidad válida",
-        "userNotFound": "❌ Ese usuario no está registrado en la base de datos.",
-        "diamondsAdded": "*≡ 💎 DIAMANTES AGREGADOS:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲᥣ:* {amount}\n┗━━━━━━━━━━━━",
-        "diamondsRemoved": "*≡ 💎 DIAMANTES QUITADOS:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* {amount}\n┗━━━━━━━━━━━━",
-        "expAdded": "*≡ ✨ EXP AGREGADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲᥣ:* {amount}\n┗━━━━━━━━━━━━",
-        "expRemoved": "*≡ ✨ EXP QUITADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* {amount}\n┗━━━━━━━━━━━━",
-        "error": "❌ Error al modificar datos."
       },
       "registration": {
         "invalidGenderSelection": "⚠️ Responde con 1, 2, 3, hombre, mujer u otro para seleccionar tu género",
@@ -657,7 +706,7 @@
       "profile": {
         "noRelationship": "💔 *Estado:* Sin relación registrada",
         "relationship": "💍 *Pareja:* {spouseTag}",
-        "caption": "*╭━━━〔 👤 PERFIL 〕━━━╮*\n\n╭─「 🪪 *IDENTIDAD* 」\n├ 👤 *Nombre:* {name}\n├ 🏷️ *Usuario:* {userTag}\n├ 🌎 *Nacionalidad:* {nationality}{ageLine}{genderLine}{birthdayLine}\n├ ✅ *Registrado:* {registered}{registrationDateLine}\n╰──────────────{groupBlock}\n\n╭─「 📊 *PROGRESO* 」\n├ ⚙️ *Nivel:* {level}\n├ ✨ *Experiencia:* {experience} XP\n├ 🎖️ *Rango:* {levelRole}\n╰ 💎 *Límite:* {limit}\n\n╭─「 🤝 *INFORMACIÓN SOCIAL* 」\n├ {relationship}\n╰ 🔥 *Racha diaria:* {streak} días\n\n_Para consultar tu información económica, usa el comando *.balance* en el chat privado del bot._\n\n_Para ver los detalles de tu nivel y progreso, usa el comando *.nivel* en el grupo._\n\n*╰━━━━━━━━━━━━╯*",
+        "caption": "*╭━━━〔 👤 PERFIL 〕━━━╮*\n\n╭─「 🪪 *IDENTIDAD* 」\n├ 👤 *Nombre:* {name}\n├ 🏷️ *Usuario:* {userTag}\n├ 🌎 *Nacionalidad:* {nationality}{ageLine}{genderLine}{birthdayLine}\n├ ✅ *Registrado:* {registered}{registrationDateLine}\n╰──────────────{groupBlock}\n\n╭─「 📊 *PROGRESO* 」\n├ ⚙️ *Nivel:* {level}\n├ ✨ *Experiencia:* {experience} XP\n├ 🎖️ *Rango:* {levelRole}\n╰ 💎 *Límite:* {limit}\n\n╭─「 🤝 *INFORMACIÓN SOCIAL* 」\n├ {relationship}\n╰ 🔥 *Racha diaria:* {streak} días\n\n_Para consultar tus Coins y demás información económica, usa el comando *.wallet* en el chat privado del bot._\n\n_Para ver los detalles de tu nivel y progreso, usa el comando *.nivel* en el grupo._\n\n*╰━━━━━━━━━━━━╯*",
         "registeredYes": "Sí ✅",
         "registeredNo": "No ❌",
         "ageLine": "\n├ 🎂 *Edad:* {age} años",
@@ -671,7 +720,7 @@
       "leaderboard": {
         "cooldown": "⚠️ Hey @{user} Hay ya se mostró el ranking pendejo 🙄, Solo se muestra cada 3 minutos para evitar spam, Desplázate hacia arriba para verlo completo.👆",
         "line": "{position}. @{user} *{compactValue}* ({value}) {icon}",
-        "caption": "`🏆 𝚃𝙰𝙱𝙻𝙰 𝙳𝙴 𝙲𝙻𝙰𝚂𝙸𝙲𝙰𝙲𝙸𝙾𝙽`\n\n💠 *𝐓𝐎𝐏 {len} 𝐗𝐏 🎯* \n𝐓𝐮: *{expPosition}* 𝐝𝐞 *{expTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{expRanking}\n\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n\n💠 *𝐓𝐎𝐏 {len} 𝐃𝐈𝐀𝐌𝐀𝐍𝐓𝐄 💎* \n𝐓𝐮: *{diamondPosition}* 𝐝𝐞 *{diamondTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{diamondRanking}\n\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n\n💠 *𝐓𝐎𝐏 {len} 𝐋𝐎𝐋𝐈𝐂𝐎𝐈𝐍𝐒 🪙*\n𝐓𝐮: *{moneyPosition}* 𝐝𝐞 *{moneyTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{moneyRanking}\n\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n\n💠 *𝐓𝐎𝐏 {len} 𝐌𝐈𝐋𝐋𝐎𝐍𝐀𝐑𝐈𝐎𝐒 💵* _(Usuarios con mas dinero en el banco)_\n𝐓𝐮: *{bankPosition}* 𝐝𝐞 *{bankTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{bankRanking}"
+        "caption": "`🏆 𝚃𝙰𝙱𝙻𝙰 𝙳𝙴 𝙲𝙻𝙰𝚂𝙸𝙲𝙰𝙲𝙸𝙾𝙽`\n\n💠 *𝐓𝐎𝐏 {len} 𝐗𝐏 🎯*\n𝐓𝐮: *{expPosition}* 𝐝𝐞 *{expTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{expRanking}\n\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n\n💠 *𝐓𝐎𝐏 {len} 𝐃𝐈𝐀𝐌𝐀𝐍𝐓𝐄 💎*\n𝐓𝐮: *{diamondPosition}* 𝐝𝐞 *{diamondTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{diamondRanking}"
       },
       "level": {
         "stats": "『 *TUS ESTADISTICAS 🆙* 』\n\nTus estadisticas en tiempo real 🕐\n\n├─ ❏ *NOMBRE:*  {name}\n├─ ❏ *XP 🆙:* {xpProgress}/{xpRequired}\n├─ ❏ *NIVEL:* {level}\n└─ ❏ *RANGO:* {role}\n\n> Te falta *{missingXp}* De *XP* para subir de nivel",
@@ -1339,7 +1388,12 @@
           {
             "emoji": "💎",
             "command": "menurpg",
-            "description": "Economía, registro, niveles y gacha."
+            "description": "Registro, niveles, actividades y gacha."
+          },
+          {
+            "emoji": "🏦",
+            "command": "menueconomia",
+            "description": "Wallet, banco, préstamos, transferencias y cambios."
           },
           {
             "emoji": "🚀",

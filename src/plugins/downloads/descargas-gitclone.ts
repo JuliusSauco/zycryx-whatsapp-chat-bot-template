@@ -13,7 +13,8 @@ export default defineSdkPlugin({
     tags: ['downloader'],
     command: /gitclone|clonarepo|clonarrepo|repoclonar/i,
     register: true,
-    limit: 2,
+    limit: 10,
+    alternativeCoins: 100,
     level: 1,
     async execute(m, {sdk}) {
     if (!sdk.args[0]) throw sdk.content.renderMessage('downloads.gitclone.missingUrl', {

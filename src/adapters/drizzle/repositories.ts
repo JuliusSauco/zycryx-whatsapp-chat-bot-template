@@ -15,10 +15,12 @@ import {subbotsRepository} from './subbot.repository.js';
 import {userRepository} from './user.repository.js';
 import {userGroupRoleRepository} from './user-group-role.repository.js';
 import {censoredUserRepository} from './censored-user.repository.js';
+import {bankRepository} from './bank.repository.js';
 
 export function createDrizzleRepositories(): AppRepositories {
     return {
         users: userRepository,
+        banks: bankRepository,
         commandResources: commandResourceRepository,
         userGroupRoles: userGroupRoleRepository,
         chats: chatsRepository,

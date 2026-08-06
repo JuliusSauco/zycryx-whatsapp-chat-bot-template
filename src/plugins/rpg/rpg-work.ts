@@ -6,7 +6,7 @@ import {formatDurationMinutesSeconds} from '../../utils/time.js';
 
 export default defineSdkPlugin({
     help: ['work', 'trabajar', 'w'],
-    tags: ['econ'],
+    tags: ['rpg'],
     command: /^(work|trabajar|chambear|w|chamba)$/i,
     register: true,
     async execute(m, {sdk}) {
@@ -25,6 +25,8 @@ export default defineSdkPlugin({
         userId: m.sender,
         resources: {exp: xpGanado},
         fields: {lastwork: now},
+        reason: 'game_reward',
+        operation: 'work',
     });
     await sdk.reply.message('rpg.work.result', {
         message: pickRandom(sdk.content.messageList('rpg.work.variants')),

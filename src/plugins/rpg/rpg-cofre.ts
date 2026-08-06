@@ -5,7 +5,7 @@ import {formatDurationHoursMinutes} from '../../utils/time.js';
 
 export default defineSdkPlugin({
     help: ['cofre', 'coffer', 'abrircofre'],
-    tags: ['econ'],
+    tags: ['rpg'],
     command: ['coffer', 'cofre', 'abrircofre', 'cofreabrir'],
     register: true,
     level: 9,
@@ -28,8 +28,10 @@ export default defineSdkPlugin({
 
     await addWalletResourcesAndSetFields({
         userId: m.sender,
-        resources: {exp: xp, money: coins, limite: diamantes},
+        resources: {exp: xp, coins, limite: diamantes},
         fields: {lastcofre: now},
+        reason: 'chest_reward',
+        operation: 'cofre',
     });
 
     const texto = sdk.content.renderMessage('rpg.cofre.caption', {

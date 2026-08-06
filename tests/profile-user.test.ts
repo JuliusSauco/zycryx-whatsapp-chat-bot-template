@@ -11,8 +11,9 @@ function user(id: string, lid: string | null = null): UserRecord {
     return {
         id, lid, nombre: 'User', username: null, registered: false, num: id.endsWith('@s.whatsapp.net') ? id.split('@')[0] : null,
         banned: false, razonBan: null, avisosBan: 0, warnPv: false, warn: 0, warnAntiporn: 0,
-        warnEstado: 0, edad: null, gender: null, birthday: null, money: 100, limite: 10, exp: 0,
-        banco: 0, level: 0, role: 'novato', roleDescription: null, regTime: null, serialNumber: null,
+        warnEstado: 0, edad: null, gender: null, birthday: null, coins: 100, limite: 10, exp: 0,
+        botcoin: 0, zyxcoin: 0,
+        level: 0, role: 'novato', roleDescription: null, regTime: null, serialNumber: null,
         stickerPackname: null, stickerAuthor: null, ryTime: 0, lastwork: 0, lastmiming: 0, lastclaim: 0,
         dailystreak: 0, lastcofre: 0, lastrob: 0, lastslut: 0, timevot: 0, wait: 0, crime: 0,
         marry: null, marryRequest: null,

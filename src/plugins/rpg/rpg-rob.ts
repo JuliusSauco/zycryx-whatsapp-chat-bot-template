@@ -11,7 +11,7 @@ export type RobAmountSelection =
 
 export default defineSdkPlugin({
     help: ['rob [cantidad] @usuario', 'rob --info', 'robar [cantidad] @usuario'],
-    tags: ['econ'],
+    tags: ['rpg'],
     command: /^(robar|rob)$/i,
     register: true,
     async execute(m, {args, conn, sdk}) {

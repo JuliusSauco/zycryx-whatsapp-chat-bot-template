@@ -67,7 +67,12 @@ export function buildPluginRegistry(plugins: Record<string, Plugin>): PluginRegi
                 register: !!plugin.register,
             }),
             scope: plugin.group ? 'group' : plugin.private ? 'private' : 'both',
-            resources: Object.freeze({limit: plugin.limit ?? 0, money: plugin.money ?? 0, level: plugin.level ?? 0}),
+            resources: Object.freeze({
+                limit: plugin.limit ?? 0,
+                coins: plugin.coins ?? 0,
+                alternativeCoins: plugin.alternativeCoins ?? 0,
+                level: plugin.level ?? 0,
+            }),
             feature: plugin.feature,
             commandAccess: plugin.commandAccess ? Object.freeze({
                 ...plugin.commandAccess,

@@ -51,7 +51,7 @@ const migratedEphemeralFiles = [
     'src/plugins/games/game-ppt.ts',
     'src/plugins/games/game-ttt.ts',
     'src/plugins/hooks/_autolevelup.ts',
-    'src/plugins/rpg/rpg-transfer.ts',
+    'src/plugins/economy/economy-transfer.ts',
     'src/plugins/rpg/rpg-rw-vender.ts',
     'src/plugins/rpg/rpg-rw.ts',
 ].map(file => path.join(ROOT, file));

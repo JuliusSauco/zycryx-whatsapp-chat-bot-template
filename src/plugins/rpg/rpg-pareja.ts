@@ -11,7 +11,7 @@ import {content} from '../../services/content.service.js';
 
 export default defineSdkPlugin({
     help: ['marry @tag'],
-    tags: ['econ'],
+    tags: ['rpg'],
     command: ['marry', 'pareja'],
     register: true,
     async before(m, {conn}) {

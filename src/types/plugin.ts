@@ -33,7 +33,7 @@ export interface PluginManifest {
     customPrefixPriority: number;
     permissions: Readonly<{owner: boolean; admin: boolean; botAdmin: boolean; register: boolean}>;
     scope: 'group' | 'private' | 'both';
-    resources: Readonly<{limit: number; money: number; level: number}>;
+    resources: Readonly<{limit: number; coins: number; alternativeCoins: number; level: number}>;
     feature?: PluginFeature;
     commandAccess?: PluginCommandAccess;
     executionPolicy: ExecutionPolicy;
@@ -53,7 +53,9 @@ export interface Plugin {
     private?: boolean;
     register?: boolean;
     limit?: number;
-    money?: number;
+    coins?: number;
+    /** Precio alternativo completo en Coins cuando no alcanza el precio principal. */
+    alternativeCoins?: number;
     level?: number;
     feature?: PluginFeature;
     commandAccess?: PluginCommandAccess;

@@ -42,8 +42,10 @@ export interface PluginDefinition {
     register?: boolean;
     /** Costo en diamantes (limit). */
     limit?: number;
-    /** Costo en lolicoins. */
-    money?: number;
+    /** Costo en Coins. */
+    coins?: number;
+    /** Precio alternativo completo en Coins cuando no alcanza el costo principal. */
+    alternativeCoins?: number;
     /** Nivel mínimo requerido. */
     level?: number;
     feature?: PluginFeature;
@@ -82,7 +84,8 @@ export function definePlugin(def: PluginDefinition): Plugin {
     if (def.private !== undefined) fn.private = def.private;
     if (def.register !== undefined) fn.register = def.register;
     if (def.limit !== undefined) fn.limit = def.limit;
-    if (def.money !== undefined) fn.money = def.money;
+    if (def.coins !== undefined) fn.coins = def.coins;
+    if (def.alternativeCoins !== undefined) fn.alternativeCoins = def.alternativeCoins;
     if (def.level !== undefined) fn.level = def.level;
     fn.feature = def.feature ?? inferLegacyFeature(def.tags);
     fn.commandAccess = def.commandAccess ? {...def.commandAccess, defaultRule: {...def.commandAccess.defaultRule}} : undefined;

@@ -6,11 +6,50 @@ export interface UserBanInfo {
 
 export interface UserResources {
     limite: number;
-    money: number;
+    coins: number;
     level: number;
 }
 
-export type WalletResource = 'limite' | 'exp' | 'money' | 'banco';
+export type WalletResource = 'limite' | 'exp' | 'coins' | 'botcoin' | 'zyxcoin';
+export type TransferableWalletResource = 'limite' | 'exp' | 'coins';
+export interface WalletTransferHistoryItem {
+    id: number;
+    resource: TransferableWalletResource;
+    amount: number;
+    balanceAfter: number;
+    counterpartyId: string | null;
+    operationId: string | null;
+    createdAt: Date;
+}
+
+export interface WalletTransferHistoryPage {
+    items: WalletTransferHistoryItem[];
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+}
+export type WalletTransactionReason =
+    | 'opening_balance'
+    | 'registration'
+    | 'unregistration'
+    | 'daily_reward'
+    | 'chest_reward'
+    | 'crime'
+    | 'robbery'
+    | 'game_reward'
+    | 'game_bet'
+    | 'transfer'
+    | 'limit_purchase'
+    | 'currency_exchange'
+    | 'command_cost'
+    | 'command_refund'
+    | 'bank_transfer'
+    | 'loan_disbursement'
+    | 'loan_payment'
+    | 'admin_adjustment'
+    | 'character_market'
+    | 'other';
 export type RewardTimestampField =
     | 'lastclaim'
     | 'dailystreak'
@@ -28,8 +67,9 @@ export interface UserWallet {
     nombre: string | null;
     limite: number;
     exp: number;
-    money: number;
-    banco: number;
+    coins: number;
+    botcoin: number;
+    zyxcoin: number;
     level: number;
     role: string;
     wait: number;
@@ -62,10 +102,11 @@ export interface UserRecord {
     edad: number | null;
     gender: string | null;
     birthday: string | null;
-    money: number;
+    coins: number;
     limite: number;
     exp: number;
-    banco: number;
+    botcoin: number;
+    zyxcoin: number;
     level: number;
     role: string;
     roleDescription: string | null;

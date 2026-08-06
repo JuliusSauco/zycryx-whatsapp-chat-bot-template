@@ -110,8 +110,8 @@ export default defineSdkPlugin({
                 if (!user || user.exp < character.price) return conn.sendMessage(m.chat, {text: content.message('rpg.rw.notEnoughExp')}, {quoted: m})
 
                 const sellerExp = Math.floor(character.price * 0.9)
-                await addWalletResource(m.sender, 'exp', -character.price)
-                if (seller) await addWalletResource(seller, 'exp', sellerExp)
+                await addWalletResource(m.sender, 'exp', -character.price, 'character_market', 'character_purchase')
+                if (seller) await addWalletResource(seller, 'exp', sellerExp, 'character_market', 'character_sale')
                 await completeCharacterSale(claimedCharacter.id, m.sender)
 
                 await conn.sendMessage(m.chat, {
@@ -140,7 +140,7 @@ export default defineSdkPlugin({
                 }
 
                 if (!esGratis) {
-                    await addWalletResource(m.sender, 'exp', -character.price)
+                    await addWalletResource(m.sender, 'exp', -character.price, 'character_market', 'character_claim')
                 }
 
                 await claimCharacter(claimedCharacter.id, m.sender)
@@ -214,7 +214,7 @@ export default defineSdkPlugin({
 
         const messageId = sentMessage.key?.id
         if (messageId) tempCharacters.start(messageId, {...claimedCharacter, esGratis, messageId})
-        await addWalletResourcesAndSetFields({userId: m.sender, resources: {}, fields: {ryTime: now}})
+        await addWalletResourcesAndSetFields({userId: m.sender, resources: {}, fields: {ryTime: now}, reason: 'character_market', operation: 'character_roll'})
     } catch (e: unknown) {
         logError(e)
         return sdk.reply.message('rpg.rw.loadError')

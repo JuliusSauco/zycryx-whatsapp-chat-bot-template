@@ -33,7 +33,7 @@ export default defineSdkPlugin({
         const newPrice = currentPrice + increment;
 
         await voteCharacter(character.id, newVotes, newPrice);
-        await addWalletResourcesAndSetFields({userId: m.sender, resources: {}, fields: {timevot: now}});
+        await addWalletResourcesAndSetFields({userId: m.sender, resources: {}, fields: {timevot: now}, reason: 'character_market', operation: 'character_vote'});
 
         const formattedPrice = newPrice.toLocaleString();
         return sdk.reply.message('rpg.rw.voteSuccess', {

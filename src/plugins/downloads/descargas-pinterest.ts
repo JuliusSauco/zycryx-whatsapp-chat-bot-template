@@ -7,7 +7,8 @@ export default defineSdkPlugin({
     tags: ['buscadores'],
     command: /^(pinterest)$/i,
     register: true,
-    limit: 1,
+    limit: 4,
+    alternativeCoins: 40,
     async execute(m, {sdk}) {
     if (!sdk.text) return sdk.reply.message('downloads.pinterest.missingQuery', {
         command: sdk.usedPrefix + sdk.command

@@ -16,6 +16,8 @@ interface HelpEntry {
     tags: string[];
     prefix: boolean;
     limit?: number;
+    coins?: number;
+    alternativeCoins?: number;
     premium?: boolean;
     owner?: boolean;
     admin?: boolean;
@@ -103,6 +105,8 @@ function getHelpEntries(tags: string[], include?: (entry: HelpEntry) => boolean)
             tags: pluginTags,
             prefix: !plugin.customPrefix,
             limit: plugin.limit,
+            coins: plugin.coins,
+            alternativeCoins: plugin.alternativeCoins,
             premium: plugin.premium,
             owner: plugin.owner,
             admin: plugin.admin,
@@ -132,13 +136,25 @@ function renderEntry(entry: HelpEntry, usedPrefix: string): string {
     const metadata = getCommandMetadata(entry.command, entry.tags);
     const command = entry.prefix ? `${usedPrefix}${metadata.usage}` : metadata.usage;
     const markers = [
-        entry.limit ? '💎' : '',
+        renderPrice(entry),
         entry.premium ? '💵' : '',
         entry.owner ? '👑' : '',
         entry.admin || entry.botAdmin ? '🛡️' : '',
     ].filter(Boolean).join(' ');
     const suffix = markers ? ` ${markers}` : '';
     return `${metadata.emoji} *${command}* — ${metadata.description}${suffix}`;
+}
+
+function renderPrice(entry: HelpEntry): string {
+    const limit = entry.limit ?? 0;
+    const coins = entry.coins ?? 0;
+    const alternativeCoins = entry.alternativeCoins ?? 0;
+    if (alternativeCoins) {
+        const primary = [limit ? `${limit} 💎` : '', coins ? `${coins} 🪙` : ''].filter(Boolean).join(' + ');
+        return `[${primary} o ${alternativeCoins} 🪙]`;
+    }
+    const price = [limit ? `${limit} 💎` : '', coins ? `${coins} 🪙` : ''].filter(Boolean).join(' + ');
+    return price ? `[${price}]` : '';
 }
 
 function isString(value: unknown): value is string {

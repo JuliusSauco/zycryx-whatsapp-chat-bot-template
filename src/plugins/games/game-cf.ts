@@ -27,7 +27,7 @@ export default defineSdkPlugin({
 
     const outcome = randomChance(0.5) ? 'cara' : 'cruz';
     const win = outcome === 'cara';
-    await addWalletResourceAndSetWait(m.sender, 'exp', win ? bet * 2 : -bet, now);
+    await addWalletResourceAndSetWait(m.sender, 'exp', win ? bet * 2 : -bet, now, 'game_bet', 'coin_flip');
     const message = win
         ? sdk.content.renderMessage('games.coinFlip.win', {amount: formatThousandsDot(bet * 2)})
         : sdk.content.renderMessage('games.coinFlip.lose', {amount: formatThousandsDot(bet)});

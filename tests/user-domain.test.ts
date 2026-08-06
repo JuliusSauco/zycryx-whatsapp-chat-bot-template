@@ -19,10 +19,6 @@ const baseUserRow: UserRow = {
     edad: null,
     gender: null,
     birthday: null,
-    money: null,
-    limite: null,
-    exp: null,
-    banco: null,
     level: null,
     role: null,
     roleDescription: null,
@@ -52,7 +48,7 @@ const baseUserRow: UserRow = {
     assert.equal(user.registered, false);
     assert.equal(user.banned, false);
     assert.equal(user.warn, 0);
-    assert.equal(user.money, 0);
+    assert.equal(user.coins, 0);
     assert.equal(user.limite, 0);
     assert.equal(user.exp, 0);
     assert.equal(user.role, 'novato');
@@ -60,16 +56,17 @@ const baseUserRow: UserRow = {
 }
 
 {
-    const wallet = mapUserWallet(baseUserRow as UserWalletRow);
-    assert.equal(wallet.money, 0);
-    assert.equal(wallet.banco, 0);
+    const wallet = mapUserWallet({...baseUserRow, limite: null, exp: null, coins: null, botcoin: null, zyxcoin: null} as UserWalletRow);
+    assert.equal(wallet.coins, 0);
+    assert.equal(wallet.botcoin, 0);
+    assert.equal(wallet.zyxcoin, 0);
     assert.equal(wallet.wait, 0);
     assert.equal(wallet.role, 'novato');
 }
 
 {
-    assert.deepEqual(mapUserResources(undefined), {limite: 0, money: 0, level: 0});
-    assert.deepEqual(mapUserResources({limite: 3, money: null, level: 7}), {limite: 3, money: 0, level: 7});
+    assert.deepEqual(mapUserResources(undefined), {limite: 0, coins: 0, level: 0});
+    assert.deepEqual(mapUserResources({limite: 3, coins: null, level: 7}), {limite: 3, coins: 0, level: 7});
 }
 
 {

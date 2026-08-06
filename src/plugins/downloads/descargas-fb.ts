@@ -11,7 +11,8 @@ export default defineSdkPlugin({
     tags: ['downloader'],
     command: /^(facebook|fb|facebookdl|fbdl|facebook2|fb2|facebookdl2|fbdl2|facebook3|fb3|facebookdl3|fbdl3|facebook4|fb4|facebookdl4|fbdl4|facebook5|fb5|facebookdl5|fbdl5)$/i,
     register: true,
-    limit: 3,
+    limit: 10,
+    alternativeCoins: 100,
     async execute(m, {sdk}) {
         const missingUrlMessage = sdk.content.renderMessage('downloads.facebook.missingUrl', {
             command: sdk.usedPrefix + sdk.command,

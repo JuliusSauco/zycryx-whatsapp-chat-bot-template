@@ -7,7 +7,7 @@ import {formatDurationClockWords} from '../../utils/time.js';
 const CRIME_COOLDOWN_MS = 25 * 60 * 1000; // 25 minutos
 export default defineSdkPlugin({
     help: ['crime'],
-    tags: ['econ'],
+    tags: ['rpg'],
     command: /^(crime|crimen)$/i,
     group: true,
     register: true,
@@ -24,7 +24,7 @@ export default defineSdkPlugin({
     const randomTarget = pickRandom(participants);
     const exp = randomInt(7000);
     const diamond = randomInt(30);
-    const money = randomInt(9000);
+    const coins = randomInt(9000);
     const type = randomInt(5);
     const crimeSuccessMessages = sdk.content.messageList('rpg.crime.successMessages');
     const crimeFailureMessages = sdk.content.messageList('rpg.crime.failureMessages');
@@ -36,38 +36,38 @@ export default defineSdkPlugin({
                 message: pickRandom(crimeSuccessMessages),
                 xp: exp
             });
-            await addWalletResourcesAndSetFields({userId: m.sender, resources: {exp}, fields: {crime: now}});
+            await addWalletResourcesAndSetFields({userId: m.sender, resources: {exp}, fields: {crime: now}, reason: 'crime', operation: 'crime'});
             break;
         case 1:
             text = sdk.content.renderMessage('rpg.crime.failureXp', {
                 message: pickRandom(crimeFailureMessages),
                 xp: exp
             });
-            await addWalletResourcesAndSetFields({userId: m.sender, resources: {exp: -exp}, fields: {crime: now}});
+            await addWalletResourcesAndSetFields({userId: m.sender, resources: {exp: -exp}, fields: {crime: now}, reason: 'crime', operation: 'crime'});
             break;
         case 2:
             text = sdk.content.renderMessage('rpg.crime.successResources', {
                 message: pickRandom(crimeSuccessMessages),
                 diamonds: diamond,
-                money
+                coins
             });
-            await addWalletResourcesAndSetFields({userId: m.sender, resources: {limite: diamond, money}, fields: {crime: now}});
+            await addWalletResourcesAndSetFields({userId: m.sender, resources: {limite: diamond, coins}, fields: {crime: now}, reason: 'crime', operation: 'crime'});
             break;
         case 3:
             text = sdk.content.renderMessage('rpg.crime.failureResources', {
                 message: pickRandom(crimeFailureMessages),
                 diamonds: diamond,
-                money
+                coins
             });
-            await addWalletResourcesAndSetFields({userId: m.sender, resources: {limite: -diamond, money: -money}, fields: {crime: now}});
+            await addWalletResourcesAndSetFields({userId: m.sender, resources: {limite: -diamond, coins: -coins}, fields: {crime: now}, reason: 'crime', operation: 'crime'});
             break;
         case 4:
             text = sdk.content.renderMessage('rpg.crime.stoleFromUser', {
                 user: randomTarget.split('@')[0],
                 xp: exp
             });
-            await addWalletResourcesAndSetFields({userId: m.sender, resources: {exp}, fields: {crime: now}});
-            await addWalletResource(randomTarget, 'exp', -500);
+            await addWalletResourcesAndSetFields({userId: m.sender, resources: {exp}, fields: {crime: now}, reason: 'crime', operation: 'crime'});
+            await addWalletResource(randomTarget, 'exp', -500, 'crime', 'crime_victim');
             break;
     }
 

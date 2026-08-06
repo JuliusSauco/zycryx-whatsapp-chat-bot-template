@@ -17,7 +17,8 @@ export default defineSdkPlugin({
     tags: ['downloader'],
     command: /^(thread|threads|threaddl)$/i,
     register: true,
-    limit: 1,
+    limit: 4,
+    alternativeCoins: 40,
     async execute(m, {sdk}) {
         if (!sdk.args[0]) return sdk.reply.message('downloads.threads.missingUrl', {
             command: sdk.usedPrefix + sdk.command,

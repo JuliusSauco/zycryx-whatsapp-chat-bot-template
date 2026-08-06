@@ -112,10 +112,11 @@ export interface Usuario {
     warn_antiporn: number;
     warn_estado: number;
     edad?: number | null;
-    money: number;
+    coins: number;
     limite: number;
     exp: number;
-    banco: number;
+    botcoin: number;
+    zyxcoin: number;
     level: number;
     role: string;
     roleDescription?: string | null;

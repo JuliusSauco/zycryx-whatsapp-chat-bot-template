@@ -11,6 +11,7 @@ import type {
     UserStickerSettings,
     UserWallet,
     UserWarnInfo,
+    WalletTransactionReason,
     WalletResource,
 } from '../domain/users.js';
 import type {GroupSettings} from '../types/config.js';
@@ -42,6 +43,7 @@ import type {
     MessageLogType,
 } from '../domain/operations.js';
 import type {RobExperienceInput, RobExperienceResult} from '../domain/robbery.js';
+import type {BankBalances, BankExchangeRate, BankOverview, BankResource, BankTransferResult, CurrencyExchangeResult, ExchangeAmount, LoanPaymentResult, LoanRequestResult} from '../domain/bank.js';
 
 export type {
     BannedUserInfo,
@@ -57,6 +59,7 @@ export type {
     UserStickerSettings,
     UserWallet,
     UserWarnInfo,
+    WalletTransactionReason,
     WalletResource,
 } from '../domain/users.js';
 export type {
@@ -97,12 +100,14 @@ export interface UserRepository {
     incrementBanNotice(userId: string, notices: number): Promise<void>;
     setBanStatus(userId: string, banned: boolean, reason: string | null): Promise<void>;
     getResources(userId: string): Promise<UserResources>;
-    addWalletResource(userId: string, resource: WalletResource, amount: number): Promise<number | null>;
-    addWalletResourceAndSetWait(userId: string, resource: WalletResource, amount: number, wait: number): Promise<number | null>;
+    addWalletResource(userId: string, resource: WalletResource, amount: number, reason: WalletTransactionReason, operation?: string): Promise<number | null>;
+    addWalletResourceAndSetWait(userId: string, resource: WalletResource, amount: number, wait: number, reason: WalletTransactionReason, operation?: string): Promise<number | null>;
     addWalletResourcesAndSetFields(input: {
         userId: string;
         resources: Partial<Record<WalletResource, number>>;
         fields: Partial<Record<RewardTimestampField, number>>;
+        reason: WalletTransactionReason;
+        operation?: string;
     }): Promise<void>;
     exchangeWalletResources(input: {
         userId: string;
@@ -110,17 +115,23 @@ export interface UserRepository {
         to: WalletResource;
         fromAmount: number;
         toAmount: number;
+        reason: WalletTransactionReason;
+        operation?: string;
     }): Promise<boolean>;
     transferWalletResource(input: {
         from: string;
         to: string;
-        resource: WalletResource;
+        resource: import('../domain/users.js').TransferableWalletResource;
         amount: number;
+        reason: WalletTransactionReason;
+        operation?: string;
+        operationId: string;
     }): Promise<boolean>;
+    listWalletTransferHistory(userId: string, page: number, pageSize: number): Promise<import('../domain/users.js').WalletTransferHistoryPage>;
     robExperience(input: RobExperienceInput): Promise<RobExperienceResult>;
     setLevelRole(userId: string, level: number, role: string): Promise<void>;
     decrementLimit(userId: string, amount: number): Promise<void>;
-    decrementMoney(userId: string, amount: number): Promise<void>;
+    decrementCoins(userId: string, amount: number): Promise<void>;
     upsertBasicUser(input: UpsertUserInput): Promise<void>;
     clearLidFromOtherUsers(lid: string, userId: string): Promise<void>;
     setUserLid(userId: string, lid: string): Promise<void>;
@@ -154,14 +165,45 @@ export interface CommandResourceRepository {
         userId: string;
         pluginId: string;
         messageId: string;
-        limit: number;
-        money: number;
-        level: number;
+          limit: number;
+          coins: number;
+          alternativeCoins: number;
+          level: number;
         expiresAt: Date;
     }): Promise<import('../domain/command-resources.js').CommandResourceDecision>;
     commit(id: string): Promise<import('../domain/command-resources.js').CommandResourceReservation | null>;
     release(id: string, reason: string): Promise<import('../domain/command-resources.js').CommandResourceReservation | null>;
     releaseExpired(now: Date): Promise<number>;
+}
+
+export interface BankRepository {
+    ensureAccount(userId: string): Promise<void>;
+    getOverview(userId: string, now: Date): Promise<BankOverview>;
+    transferCustody(input: {
+        userId: string;
+        resource: BankResource;
+        direction: 'deposit' | 'withdraw';
+        amount: number | 'all';
+        operationId: string;
+    }): Promise<BankTransferResult>;
+    getReserves(): Promise<BankBalances>;
+    adjustReserve(input: {
+        actorId: string;
+        resource: BankResource;
+        amount: number;
+        operationId: string;
+    }): Promise<number | null>;
+    listExchangeRates(): Promise<BankExchangeRate[]>;
+    exchangeCurrency(input: {
+        userId: string;
+        sourceResource: WalletResource;
+        targetResource: BankResource;
+        amount: ExchangeAmount;
+        operationId: string;
+    }): Promise<CurrencyExchangeResult>;
+    requestLoan(input: {userId: string; amount: number; now: Date; operationId: string}): Promise<LoanRequestResult>;
+    payLoan(input: {userId: string; amount: number | 'all'; now: Date; operationId: string}): Promise<LoanPaymentResult>;
+    refreshLoanStatuses(now: Date): Promise<number>;
 }
 
 export interface UserGroupRoleRepository {
@@ -347,6 +389,7 @@ export interface DatabaseRepository {
 
 export interface AppRepositories {
     users: UserRepository;
+    banks: BankRepository;
     commandResources: CommandResourceRepository;
     userGroupRoles: UserGroupRoleRepository;
     chats: ChatRepository;

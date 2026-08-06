@@ -11,7 +11,8 @@ export default defineSdkPlugin({
     tags: ['downloader'],
     command: /^(instagramdl|instagram|igdl|ig|instagramdl2|instagram2|igdl2|ig2|instagramdl3|instagram3|igdl3|ig3)$/i,
     register: true,
-    limit: 1,
+    limit: 4,
+    alternativeCoins: 40,
     async execute(m, {sdk}) {
         if (!sdk.args[0]) return sdk.reply.message('downloads.instagram.missingUrl', {
             command: sdk.usedPrefix + sdk.command,

@@ -117,17 +117,17 @@ function createContext(calls: Calls, overrides: Partial<GuardContext['ctx']> = {
 }
 
 function installRepositoryMocks(calls: Calls, options: {
-    resources?: {limite: number; money: number; level: number};
+    resources?: {limite: number; coins: number; level: number};
     banInfo?: {banned: boolean; razon_ban: string | null; avisos_ban: number} | null;
     nsfwSettings?: {modohorny: boolean; nsfwAccessMode?: 'all' | 'admin' | 'superadmin' | 'owner'; nsfwGifEnabled?: boolean; nsfwGifAccessMode?: 'all' | 'admin' | 'superadmin' | 'owner'; nsfw_horario: string | null} | null;
 } = {}): void {
     repositories.users = {
         ...originalUsers,
-        getResources: async () => options.resources ?? {limite: 10, money: 10, level: 10},
+        getResources: async () => options.resources ?? {limite: 10, coins: 10, level: 10},
         decrementLimit: async (userId: string, amount: number) => {
             calls.decrementedLimits.push({userId, amount});
         },
-        decrementMoney: async (userId: string, amount: number) => {
+        decrementCoins: async (userId: string, amount: number) => {
             calls.decrementedMoney.push({userId, amount});
         },
         findBanInfo: async () => options.banInfo ?? null,
@@ -173,15 +173,15 @@ async function testOwnerAdminScopeModeGuards(): Promise<void> {
 
 async function testResourceGuard(): Promise<void> {
     const calls = createCalls();
-    installRepositoryMocks(calls, {resources: {limite: 5, money: 10, level: 3}});
+    installRepositoryMocks(calls, {resources: {limite: 5, coins: 10, level: 3}});
     try {
-        assert.equal(await resourceGuard(createContext(calls, {}, {limit: 2, money: 4, level: 3})), null);
+        assert.equal(await resourceGuard(createContext(calls, {}, {limit: 2, coins: 4, level: 3})), null);
         assert.deepEqual(calls.decrementedLimits, []);
         assert.deepEqual(calls.decrementedMoney, []);
         assert.equal(calls.replies.length, 0);
 
         assert.match(String(await resourceGuard(createContext(calls, {}, {limit: 6}))), /#buy/);
-        assert.match(String(await resourceGuard(createContext(calls, {}, {money: 11}))), /LOLICOINS/);
+        assert.match(String(await resourceGuard(createContext(calls, {}, {coins: 11}))), /COINS/);
         assert.match(String(await resourceGuard(createContext(calls, {}, {level: 4}))), /𝐍𝐞𝐜𝐞𝐬𝐢𝐭𝐚/);
     } finally {
         restoreRepositories();

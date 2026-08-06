@@ -10,7 +10,8 @@ export default defineSdkPlugin({
     help: ['tiktok'],
     tags: ['downloader'],
     command: /^(tt|tiktok)(dl|nowm)?$/i,
-    limit: 1,
+    limit: 4,
+    alternativeCoins: 40,
     async execute(m, {sdk}) {
         if (!sdk.text) return sdk.reply.message('downloads.tiktok.missingUrl', {
             command: sdk.usedPrefix + sdk.command,

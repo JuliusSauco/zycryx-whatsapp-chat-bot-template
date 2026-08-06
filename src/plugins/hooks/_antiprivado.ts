@@ -4,7 +4,16 @@ import type {BotMessage} from '../../types/message.js'
 import {content} from '../../services/content.service.js'
 import {pickRandom} from '../../utils/random.js'
 
-const comandosPermitidos = ['code', 'serbot', 'jadibot', 'bots', 'piedra', 'tijera', 'papel']
+export const PRIVATE_ALLOWED_COMMANDS = [
+    'code', 'serbot', 'jadibot', 'bots', 'piedra', 'tijera', 'papel',
+    'wallet', 'ewallet', 'balance', 'bal', 'diamantes', 'diamond',
+    'bank', 'deposit', 'dep', 'depositar', 'withdraw', 'retirar', 'toremove', 'loan', 'bankreserve',
+    'buy', 'buyall', 'exchange',
+] as const
+
+export function isPrivateCommandAllowed(command: string): boolean {
+    return PRIVATE_ALLOWED_COMMANDS.includes(command as typeof PRIVATE_ALLOWED_COMMANDS[number])
+}
 
 function pickOfficialGroupLink(): string {
     return pickRandom([info.nn, info.nn2, info.nn3, info.nn4, info.nn5, info.nn6])
@@ -39,7 +48,7 @@ export async function before(m: BotMessage, {isOwner, botConfig}: BeforePluginCo
     const [commandName] = withoutPrefix.split(/\s+/)
     const command = commandName ? commandName.toLowerCase() : ''
 
-    if (comandosPermitidos.includes(command)) {
+    if (isPrivateCommandAllowed(command)) {
         return
     }
 

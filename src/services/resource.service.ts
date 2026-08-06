@@ -4,6 +4,7 @@ import type {Plugin} from '../types/plugin.js';
 import {
     normalizeCommandResourcePolicy,
     requiresCommandResources,
+    selectCommandPayment,
     type CommandResourceDecision,
     type CommandResourceReservation,
 } from '../domain/command-resources.js';
@@ -16,8 +17,10 @@ export async function checkCommandResources(sender: string, plugin: Plugin): Pro
     if (!requiresCommandResources(policy)) return null;
     const resources = await repositories.users.getResources(sender);
     if (resources.level < policy.level) return insufficientLevel(policy.level, resources.level);
+    if (selectCommandPayment(policy, resources)) return null;
+    if (policy.alternativeCoins) return insufficientAlternatives(policy.limit, policy.alternativeCoins);
     if (resources.limite < policy.limit) return insufficientLimit();
-    if (resources.money < policy.money) return insufficientMoney();
+    if (resources.coins < policy.coins) return insufficientCoins();
     return null;
 }
 
@@ -56,15 +59,16 @@ export function commandResourceDecisionMessage(decision: CommandResourceDecision
     switch (decision.kind) {
         case 'insufficient_level': return insufficientLevel(decision.required, decision.available);
         case 'insufficient_limit': return insufficientLimit();
-        case 'insufficient_money': return insufficientMoney();
+        case 'insufficient_coins': return insufficientCoins();
+        case 'insufficient_alternatives': return insufficientAlternatives(decision.requiredLimit, decision.requiredCoins);
         default: return null;
     }
 }
 
 export function commandResourceChargeMessage(reservation: CommandResourceReservation): string | null {
     const charges: string[] = [];
-    if (reservation.limitAmount) charges.push(`${reservation.limitAmount} diamante${reservation.limitAmount > 1 ? 's' : ''} 💎`);
-    if (reservation.moneyAmount) charges.push(`${reservation.moneyAmount} LoliCoin${reservation.moneyAmount > 1 ? 's' : ''} 🪙`);
+    if (reservation.limitAmount) charges.push(`${reservation.limitAmount} Límite${reservation.limitAmount > 1 ? 's' : ''} 💎`);
+    if (reservation.coinsAmount) charges.push(`${reservation.coinsAmount} Coins 🪙`);
     return charges.length ? `*Usado: ${charges.join(' y ')}.*` : null;
 }
 
@@ -76,8 +80,20 @@ function insufficientLimit(): string {
     return '*⚠ 𝐒𝐮𝐬 𝐝𝐢𝐚𝐦𝐚𝐧𝐭𝐞 💎 𝐬𝐞 𝐡𝐚𝐧 𝐚𝐠𝐨𝐭𝐚𝐝𝐨 𝐩𝐮𝐞𝐝𝐞 𝐜𝐨𝐦𝐩𝐫𝐚𝐫 𝐦𝐚𝐬 𝐮𝐬𝐚𝐧𝐝𝐨 𝐞𝐥 𝐜𝐨𝐦𝐚𝐧𝐝𝐨:* #buy.';
 }
 
-function insufficientMoney(): string {
-    return '*NO TIENE SUFICIENTES LOLICOINS 🪙*';
+function insufficientCoins(): string {
+    return '*NO TIENES SUFICIENTES COINS 🪙*';
+}
+
+function insufficientAlternatives(requiredLimit: number, requiredCoins: number): string {
+    return [
+        '*⚠️ No tienes saldo suficiente para usar este comando.*',
+        '',
+        '*Precio:*',
+        `• ${requiredLimit} Límite${requiredLimit === 1 ? '' : 's'} 💎`,
+        `• o ${requiredCoins} Coins 🪙`,
+        '',
+        '_Puedes consultar tus saldos con *.wallet*._',
+    ].join('\n');
 }
 
 function insufficientLevel(required: number, available: number): string {
