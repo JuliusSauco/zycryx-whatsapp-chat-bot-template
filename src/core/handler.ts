@@ -31,6 +31,8 @@ import type {CommandResourceReservation} from '../domain/command-resources.js';
 import {executePluginWithTimeout, PluginTimeoutError} from './plugin-execution.js';
 import {runPluginInterceptors} from './plugin-interceptors.js';
 import type {ExtendedConn} from '../types/context.js';
+import {requireBotInstanceIdentity} from './bot-instance-identity.js';
+import {linkToApplicationShutdown} from './application-lifecycle.js';
 import type {BotMessage} from '../types/message.js';
 import type {HandlerContext} from './context-builder.js';
 
@@ -202,11 +204,13 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
         });
 
         const controller = new AbortController();
-        await executePluginWithTimeout({
-            plugin,
-            pluginId,
-            controller,
-            execute: () => plugin(m, {
+        const unlinkShutdown = linkToApplicationShutdown(controller);
+        try {
+            await executePluginWithTimeout({
+                plugin,
+                pluginId,
+                controller,
+                execute: () => plugin(m, {
                 conn,
                 text: parsed.text,
                 args: parsed.args,
@@ -227,8 +231,11 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
                 pluginId,
                 correlationId,
                 signal: controller.signal,
-            }),
-        });
+                }),
+            });
+        } finally {
+            unlinkShutdown();
+        }
         if (resourceReservation) {
             await commitCommandResources(resourceReservation);
             const chargeMessage = commandResourceChargeMessage(resourceReservation);
@@ -273,11 +280,12 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
 // ---- Helpers privados del handler ----
 
 function upsertChat(chatId: string, conn: ExtendedConn): void {
+    const identity = requireBotInstanceIdentity(conn);
     enqueueBackgroundTask('upsert-active-chat', () => upsertActiveChat({
         chatId,
         isGroup: chatId.endsWith('@g.us'),
         timestamp: Date.now(),
-        botId: jidToPhone(cleanJid(conn.user?.id || '')),
+        botId: identity.instanceId,
     }), {key: `upsert-active-chat:${chatId}`, maxRetries: 1});
 }
 

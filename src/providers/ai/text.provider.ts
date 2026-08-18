@@ -1,6 +1,7 @@
+import {externalApis} from '../external-api-config.js';
 import {chatCompletion, type ChatMessage} from '../../lib/ai.js';
 import {httpJson} from '../../lib/http-client.js';
-import {blackboxAi} from '../../lib/scraper.js';
+import {blackboxAi} from '../legacy-scrapers/ai.scraper.js';
 import {LONG_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
 export interface AiTextOptions {
@@ -48,7 +49,7 @@ export function buildMemoryChatProviders(
         {
             name: 'main-gpt-prompt',
             run: async () => {
-                const res = await httpJson<TextApiResponse>(`${info.apis}/ia/gptprompt?text=${encodeURIComponent(prompt)}&prompt=${encodeURIComponent(options.systemPrompt || '')}`);
+                const res = await httpJson<TextApiResponse>(`${externalApis.main.url}/ia/gptprompt?text=${encodeURIComponent(prompt)}&prompt=${encodeURIComponent(options.systemPrompt || '')}`);
                 return res.data || null;
             },
         },
@@ -71,21 +72,21 @@ export function buildOpenAiTextProviders(prompt: string): ProviderCandidate<stri
         {
             name: 'main-gptweb',
             run: async () => {
-                const res = await httpJson<TextApiResponse>(`${info.apis}/ia/gptweb?text=${encodeURIComponent(prompt)}`);
+                const res = await httpJson<TextApiResponse>(`${externalApis.main.url}/ia/gptweb?text=${encodeURIComponent(prompt)}`);
                 return res.gpt || null;
             },
         },
         {
             name: 'main-ia2',
             run: async () => {
-                const res = await httpJson<TextApiResponse>(`${info.apis}/api/ia2?text=${encodeURIComponent(prompt)}`);
+                const res = await httpJson<TextApiResponse>(`${externalApis.main.url}/api/ia2?text=${encodeURIComponent(prompt)}`);
                 return res.gpt || null;
             },
         },
         {
             name: 'main-chatgpt',
             run: async () => {
-                const res = await httpJson<TextApiResponse>(`${info.apis}/ia/chatgpt?q=${encodeURIComponent(prompt)}`);
+                const res = await httpJson<TextApiResponse>(`${externalApis.main.url}/ia/chatgpt?q=${encodeURIComponent(prompt)}`);
                 return res.data || null;
             },
         },
@@ -164,7 +165,7 @@ export function buildCopilotTextProviders(prompt: string): ProviderCandidate<str
         {
             name: 'main-bingia',
             run: async () => {
-                const res = await httpJson<TextApiResponse>(`${info.apis}/ia/bingia?query=${encodeURIComponent(prompt)}`);
+                const res = await httpJson<TextApiResponse>(`${externalApis.main.url}/ia/bingia?query=${encodeURIComponent(prompt)}`);
                 return res.message || null;
             },
         },

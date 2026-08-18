@@ -1,3 +1,4 @@
+import {externalApis} from '../external-api-config.js';
 import {httpJson} from '../../lib/http-client.js';
 import {LONG_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
@@ -40,7 +41,7 @@ export function buildMediafireDownloadProviders(fileUrl: string): ProviderCandid
         {
             name: 'neoxr-mediafire',
             run: async () => {
-                const data = await httpJson<NeoxrMediafireResponse>(`${info.neoxr.url}/mediafire?url=${encodeURIComponent(fileUrl)}&apikey=${info.neoxr.key}`);
+                const data = await httpJson<NeoxrMediafireResponse>(`${externalApis.neoxr.url}/mediafire?url=${encodeURIComponent(fileUrl)}&apikey=${externalApis.neoxr.key}`);
                 if (!data.status || !data.data?.url || !data.data.title) return null;
                 return {
                     url: data.data.url,

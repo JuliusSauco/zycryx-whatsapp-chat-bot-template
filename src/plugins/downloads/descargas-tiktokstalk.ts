@@ -26,25 +26,15 @@ export default defineSdkPlugin({
 })
 
 function renderTikTokProfile(content: PluginContentSdk, profile: TikTokStalkProfile): string {
-    if (profile.source === 'main') {
-        return content.renderMessage('downloads.tiktokStalk.profile', {
-            username: profile.username,
-            nickname: profile.nickname,
-            verified: profile.verified ? content.message('downloads.tiktokStalk.yes') : content.message('downloads.tiktokStalk.no'),
-            followers: profile.followers.toLocaleString(),
-            following: profile.following.toLocaleString(),
-            likes: profile.likes.toLocaleString(),
-            videos: profile.videos.toLocaleString(),
-            signature: profile.signature,
-            url: profile.url
-        });
-    }
-
-    return content.renderMessage('downloads.tiktokStalk.fallbackProfile', {
-        name: profile.name,
+    return content.renderMessage('downloads.tiktokStalk.profile', {
         username: profile.username,
-        followers: profile.followers,
-        following: profile.following,
-        description: profile.description
+        nickname: profile.nickname,
+        verified: profile.verified ? content.message('downloads.tiktokStalk.yes') : content.message('downloads.tiktokStalk.no'),
+        followers: profile.followers.toLocaleString(),
+        following: profile.following.toLocaleString(),
+        likes: profile.likes.toLocaleString(),
+        videos: profile.videos.toLocaleString(),
+        signature: profile.signature,
+        url: profile.url
     });
 }

@@ -1,3 +1,4 @@
+import {botInfo} from "../core/config.js";
 import {logError} from '../lib/logger.js';
 import type {Guard} from '../types/guard.js';
 import {SILENT_REJECT} from '../types/guard.js';
@@ -33,7 +34,7 @@ export const banGuard: Guard = async ({m, conn, ctx}) => {
                 await registerBanNotice(senderId, nuevoAviso);
                 const razon = banInfo.razon_ban?.trim() || "Spam";
                 await conn.sendMessage(m.chat, {
-                    text: `⚠️ ESTAS BANEADO ⚠️\n*• Motivo:* ${razon} (avisos: ${nuevoAviso}/3)\n*👉🏻 Puedes contactar al propietario del Bot si crees que se trata de un error o para charlar sobre tu desbaneo*\n\n👉 ${info.fb}`,
+                    text: `⚠️ ESTAS BANEADO ⚠️\n*• Motivo:* ${razon} (avisos: ${nuevoAviso}/3)\n*👉🏻 Puedes contactar al propietario del Bot si crees que se trata de un error o para charlar sobre tu desbaneo*\n\n👉 ${botInfo.fb}`,
                     contextInfo: {mentionedJid: [senderId]}
                 }, {quoted: m});
             }

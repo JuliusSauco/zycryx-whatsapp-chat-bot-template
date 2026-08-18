@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 
 export default defineSdkPlugin({
@@ -11,7 +12,7 @@ export default defineSdkPlugin({
     async execute(_m, {sdk}) {
     const runtime = process.uptime()
     const teks = sdk.content.renderMessage('info.runtime.response', {
-        repositoryUrl: info.md,
+        repositoryUrl: botInfo.md,
         runtime: formatRuntime(runtime, (values) => sdk.content.renderMessage('info.runtime.duration', values)),
     })
     return sdk.reply.text(teks)

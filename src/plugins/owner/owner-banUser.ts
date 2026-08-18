@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {logError} from '../../lib/logger.js';
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {getUserById, setUserBanStatus} from '../../services/user.service.js';
@@ -39,7 +40,7 @@ export default defineSdkPlugin({
                                 body: branding.watermark,
                                 previewType: "PHOTO",
                                 thumbnail: m.pp,
-                                sourceUrl: info.md,
+                                sourceUrl: botInfo.md,
                                 showAdAttribution: true
                             }
                         },

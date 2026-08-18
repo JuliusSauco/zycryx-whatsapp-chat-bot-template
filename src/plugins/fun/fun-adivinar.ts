@@ -1,6 +1,6 @@
 import {logError} from '../../lib/logger.js';
 import similarity from 'similarity';
-import {defineSdkPlugin, type PluginHttpSdk} from '../../core/sdk-plugin.js';
+import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {addWalletResource} from '../../services/wallet.service.js';
 import type {proto} from '@whiskeysockets/baileys';
 import {getCachedJson} from '../../lib/static-resource-cache.js';
@@ -8,6 +8,7 @@ import {pickRandom} from '../../utils/random.js';
 import {createExpiringMap} from '../../lib/ephemeral-state.js';
 import type {ExtendedConn} from '../../types/context.js';
 import {content} from '../../services/content.service.js';
+import {generateGuessQuestion} from '../../providers/ai/guess-question.provider.js';
 
 const timeout = 50000;
 const timeout2 = 20000;
@@ -29,10 +30,6 @@ interface ActiveGuessGame {
     intentos: number;
     chat: string;
     conn: ExtendedConn;
-}
-
-interface NeoxrGptResponse {
-    data?: string;
 }
 
 const juegos = createExpiringMap<ActiveGuessGame>({
@@ -57,23 +54,15 @@ const prompts: Record<GameType, string> = {
     trivia: content.message('fun.guess.prompts.trivia'),
 };
 
-async function obtenerPregunta(tipo: GameType, http: PluginHttpSdk): Promise<GuessQuestion | null> {
+async function obtenerPregunta(tipo: GameType): Promise<GuessQuestion | null> {
     const prompt = prompts[tipo];
 
     for (let i = 0; i < 6; i++) {
         try {
-            if (!info.neoxr.key) throw new Error('NEOXR_API_KEY no configurado');
-            const res = await http.request(`${info.neoxr.url}/gptweb?text=${encodeURIComponent(prompt)}&apikey=${info.neoxr.key}`);
-            if (res.headers.get('content-type')?.includes('text/html')) throw new Error(`Invalid API response (${res.status})`);
-            const json = await res.json() as NeoxrGptResponse;
-            if (json?.data) {
-                const match = json.data.match(/```json\s*([\s\S]*?)\s*```/);
-                const clean = match ? match[1] : json.data;
-                const obj = JSON.parse(clean) as Partial<GuessQuestion>;
-                if (obj.question && obj.response && !preguntasUsadas.has(obj.question)) {
-                    preguntasUsadas.add(obj.question);
-                    return {question: obj.question, response: obj.response};
-                }
+            const generated = await generateGuessQuestion(prompt);
+            if (generated && !preguntasUsadas.has(generated.question)) {
+                preguntasUsadas.add(generated.question);
+                return generated;
             }
         } catch (e: unknown) {
             logError('[IA backup]', e instanceof Error ? e.message : e);
@@ -104,7 +93,7 @@ export default defineSdkPlugin({
 
     const tipo = getGameType(command);
     if (!tipo) return;
-    const pregunta = await obtenerPregunta(tipo, sdk.http);
+    const pregunta = await obtenerPregunta(tipo);
     if (!pregunta) return sdk.reply.message('fun.guess.generationFailed');
     const tiempo = tipo === 'trivia' ? timeout2 : timeout;
     const texto = sdk.content.renderMessage('fun.guess.question', {

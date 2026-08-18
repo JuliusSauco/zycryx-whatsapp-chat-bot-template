@@ -5,7 +5,7 @@ import {deleteMessageCount, markBotLeftGroup} from '../services/chat.service.js'
 import {registerGroupAdmins} from '../services/group-role.service.js';
 import {handleGroupAntifake} from './group-antifake.js';
 import {sendAdminChangeMessage} from './group-admin-events.js';
-import {getCurrentBotJid} from './group-bot-identity.js';
+import {getCurrentBotInstanceId, getCurrentBotJid} from './group-bot-identity.js';
 import {getEventGroupSettings} from './group-event-settings.js';
 import {isBotGroupAdmin, loadEventGroupMetadata} from './group-metadata.js';
 import {resolveGroupAuthor, resolveGroupParticipant} from './group-participant-resolver.js';
@@ -84,7 +84,7 @@ export async function participantsUpdate(conn: EventConn, {id, participants, act
                         await deleteMessageCount(userJid, id);
                         const botJid = getCurrentBotJid(conn);
                         if (participantJid.replace(/:\d+/, '') === botJid) {
-                            await markBotLeftGroup(id, botJid);
+                            await markBotLeftGroup(id, getCurrentBotInstanceId(conn));
                             logDebug(`[DEBUG] El bot fue eliminado del grupo ${id}. Marcado como 'joined = false'.`);
                         }
                     } catch (err: unknown) {

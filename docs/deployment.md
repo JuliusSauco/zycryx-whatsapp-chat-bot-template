@@ -10,7 +10,7 @@ Guia operativa para correr el bot en produccion (VPS Linux o Windows). Fecha de 
 - FFmpeg en el PATH (stickers, conversiones, audios).
 - git (para despliegues y actualizaciones administrativas con `git pull`).
 - Python 3 con el alias `python3` (opcional, solo para el comando `speedtest`).
-- Un process manager: **obligatorio**, no opcional. El bot se reinicia solo cada 3 horas con `process.exit(0)` y tambien sale con codigo 1 si detecta loops de sesion; sin supervisor, el proceso queda muerto.
+- Un process manager es recomendado para reinicio ante fallos no recuperables y arranque del servidor.
 - ~512 MB de RAM para el proceso Node (`serve` ya usa `--max-old-space-size=512`).
 
 ## Primer despliegue
@@ -23,12 +23,16 @@ nvm use 24
 node --version # debe mostrar v24.x
 npm ci
 cp .env.example .env.prod        # completar valores reales
+# generar BOT_SECRETS_MASTER_KEY_B64 y guardarla en el gestor de secretos
 npm run build
 npm run ops:check
 NODE_ENV=prod npm run db:setup   # una sola vez sobre una base vacia
+NODE_ENV=prod npm run db:setup-runtime-role # con DB_ADMIN_URL sólo durante este paso
 ```
 
-`npm ci` usa exactamente `package-lock.json` y ejecuta `postinstall: tsc`, por lo que el build inicial ocurre durante la instalacion. `engine-strict=true` rechaza Node fuera de la rama 24.x o npm fuera de la rama 11.x.
+Después, configura `DATABASE_URL` con el rol runtime creado y retira `DB_ADMIN_URL` del entorno del proceso. Vuelve a ejecutar `db:setup-runtime-role` si provisionas nuevamente el modelo para aplicar grants y políticas RLS.
+
+`npm ci` usa exactamente `package-lock.json`. El typecheck/build es un paso explícito para que una instalación de producción con devDependencies omitidas no dependa de `tsc`. `engine-strict=true` rechaza Node fuera de la rama 24.x o npm fuera de la rama 11.x.
 
 ### Vinculacion inicial
 
@@ -38,7 +42,7 @@ La primera ejecucion es interactiva (pide QR o codigo por consola), asi que hazl
 npm run serve   # NODE_ENV=prod
 ```
 
-Cuando la sesion quede guardada en `BotSession/`, detén el proceso y arranca bajo el supervisor.
+Con `BAILEYS_AUTH_STATE_SOURCE=database`, la sesión queda cifrada en `bot_sessions`; detén el proceso cuando la conexión abra y arranca bajo el supervisor. Una carpeta `BotSession/` existente se importa automáticamente la primera vez y se conserva como respaldo.
 
 ## PM2 (recomendado)
 
@@ -63,8 +67,8 @@ pm2 startup   # arranque automatico del sistema
 
 Claves:
 
-- La plantilla PM2 ejecuta `npm run serve:checked`: valida PostgreSQL 18 y los siete schemas antes de iniciar, sin modificar estructura.
-- `autorestart` (default de PM2) cubre el `process.exit(0)` periodico del bot.
+- La plantilla PM2 ejecuta `npm run serve:checked`: valida PostgreSQL 18 y los nueve schemas antes de iniciar, sin modificar estructura.
+- `autorestart` (default de PM2) recupera fallos no controlados; las reconexiones normales usan backoff dentro del proceso.
 - Logs: `pm2 logs zycryx-bot`. Considera `pm2 install pm2-logrotate` porque el bot loguea bastante en niveles altos.
 - Variables: PM2 no lee `.env.prod` por si mismo; el bot la carga solo segun `NODE_ENV`. Basta con exportar `NODE_ENV=prod`.
 - La plantilla `ecosystem.config.cjs` fija `instances: 1`; no escales horizontalmente el mismo numero de WhatsApp.
@@ -75,13 +79,14 @@ Equivalente con systemd: unit con `Restart=always`, `Environment=NODE_ENV=prod` 
 
 ```bash
 git pull
-npm install
+npm ci
 npm run build
+NODE_ENV=prod npm run db:setup-runtime-role
 NODE_ENV=prod npm run ops:check
 pm2 restart zycryx-bot
 ```
 
-Con `ecosystem.config.cjs`, `pm2 restart` valida el modelo antes de levantar el bot. Esta rama no ejecuta migraciones incrementales durante despliegues; cualquier evolución futura requiere un plan explícito fuera del arranque.
+Con `ecosystem.config.cjs`, `pm2 restart` valida el modelo antes de levantar el bot. El arranque no modifica la estructura de la base.
 
 ## Preflight operativo
 
@@ -100,8 +105,7 @@ NODE_ENV=prod npm run ops:backup
 Esto crea una carpeta local en `backups/<fecha>/` con:
 
 - `database.dump` en formato custom de PostgreSQL, si `pg_dump` esta disponible y existe configuracion de DB.
-- `BotSession/`.
-- `jadibot/`.
+- `BotSession/` y `jadibot/` si aún existen sesiones legacy en archivos.
 - `resources/media/audio/custom/`.
 - `manifest.json` con lo que se copio, omitio o fallo.
 
@@ -123,9 +127,9 @@ Que respaldar y con que frecuencia:
 
 | Que | Donde | Frecuencia | Nota |
 |---|---|---|---|
-| Base de datos | `npm run ops:backup` o `pg_dump` | Diario | Contiene usuarios, settings, RPG, warns, roles y audios dinamicos. |
-| Sesion principal | `BotSession/` | Tras vincular y ante cambios importantes | Copiar con el bot detenido. Tratar como secreto. |
-| Sesiones subbots | `jadibot/` | Opcional | Los duenos pueden re-vincular si se pierden. |
+| Base de datos | `npm run ops:backup` o `pg_dump` | Diario | Incluye sesiones y secretos cifrados; sin la clave externa el dump no basta para recuperarlos. |
+| Clave maestra/keyring | Gestor de secretos externo | Tras cada rotación | Respaldar separado de PostgreSQL y con acceso restringido. |
+| Sesiones legacy | `BotSession/`, `jadibot/` | Sólo durante migración | Compatibilidad temporal; tratar como secreto. |
 | Audios custom | `resources/media/audio/custom/` | Semanal | Archivos subidos con `addaudios`. |
 | Config | `.env.prod` | Ante cambios | Guardar en gestor de secretos, no en el repo. |
 
@@ -156,24 +160,24 @@ NODE_ENV=prod npm run ops:check
 pm2 start zycryx-bot
 ```
 
-Restaurar sesion:
+Restaurar una sesión persistida en base de datos:
 
 ```bash
 pm2 stop zycryx-bot
-cp -a backups/<fecha>/BotSession ./BotSession
-chmod -R 700 BotSession jadibot 2>/dev/null || true
+# restaurar database.dump y reinyectar la misma clave/keyring externa
+NODE_ENV=prod npm run db:check
 pm2 restart zycryx-bot
 ```
 
-Si WhatsApp invalido la sesion (401/403/500), restaurar archivos antiguos no ayuda: hay que borrar `BotSession/` y re-vincular.
+Si WhatsApp invalidó la sesión (401/403/500), restaurar una copia antigua no ayuda: elimina la sesión revocada mediante el flujo administrativo y vuelve a vincular.
 
 ## Operacion
 
 - **Salud**: el bot loguea `CONECTADO CORRECTAMENTE` al abrir conexion y `[PERF]` cuando el pipeline supera `PERF_LOG_THRESHOLD_MS`.
-- **Espacio en disco**: `tmp/` se limpia solo (archivos >3 min). `BotSession/` y `jadibot/` recortan pre-keys automaticamente cada 10 min.
+- **Espacio en disco**: `tmp/` se limpia solo. En modo `files`, las carpetas legacy recortan pre-keys; en modo `database`, Signal keys viven normalizadas en PostgreSQL.
 - **Reinicio manual**: comando owner `restart` (requiere process manager) o `pm2 restart zycryx-bot`.
-- **Sesion invalida en logs** (`Sesión inválida (código 401/403/500)`): el bot deja de reintentar por si solo. Detener proceso, borrar `BotSession/`, re-vincular.
-- **Multiples replicas**: NO soportado. El estado de juegos, cooldowns y locks vive en memoria del proceso y la sesion de WhatsApp es por dispositivo. Una instancia por numero.
+- **Sesion invalida en logs** (`Sesión inválida (código 401/403/500)`): el bot revoca el estado activo y deja de reintentar; vuelve a vincular.
+- **Multiples replicas**: una sesión concreta sólo puede ser tomada por un proceso gracias al lease de DB. Juegos, cooldowns y locks siguen siendo locales: no uses varias réplicas activas para repartir mensajes del mismo número.
 - **Preflight**: `NODE_ENV=prod npm run ops:check` para revisar prerequisitos antes de reiniciar.
 
 ## Checklist de seguridad en produccion
@@ -182,5 +186,6 @@ Si WhatsApp invalido la sesion (401/403/500), restaurar archivos antiguos no ayu
 - `BOT_OWNER_NUMBERS` limitado a operadores de confianza y revisado en cada despliegue.
 - Usuario de sistema dedicado sin sudo para correr el bot.
 - PostgreSQL sin exposicion publica (bind local o firewall) y usuario con permisos solo sobre la base del bot.
+- Clave maestra/keyring almacenada fuera de PostgreSQL, con backup separado y rotación controlada.
 - Revisar logs `[SENSITIVE]` periodicamente: registran cada uso de eval/shell/update con sender y comando.
 - Mantener `npm audit` bajo control; varias dependencias de scraping/descargas son inestables por naturaleza.

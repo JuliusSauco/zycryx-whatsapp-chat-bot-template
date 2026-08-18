@@ -1,4 +1,4 @@
-import fg from 'api-dylux';
+import {externalApis} from '../external-api-config.js';
 import {httpJson} from '../../lib/http-client.js';
 import {DEFAULT_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
@@ -60,7 +60,7 @@ export function buildFacebookDownloadProviders(postUrl: string): ProviderCandida
         {
             name: 'fgmods-facebook',
             run: async () => {
-                const data = await httpJson<FgmodsFacebookResponse>(`${info.fgmods.url}/downloader/fbdl?url=${encodeURIComponent(postUrl)}&apikey=${info.fgmods.key}`);
+                const data = await httpJson<FgmodsFacebookResponse>(`${externalApis.fgmods.url}/downloader/fbdl?url=${encodeURIComponent(postUrl)}&apikey=${externalApis.fgmods.key}`);
                 const url = data.result?.[0]?.hd || data.result?.[0]?.sd;
                 return url ? {type: 'video', url, fileName: 'video.mp4'} : null;
             },
@@ -68,7 +68,7 @@ export function buildFacebookDownloadProviders(postUrl: string): ProviderCandida
         {
             name: 'main-facebook',
             run: async () => {
-                const data = await httpJson<DeliusFacebookResponse>(`${info.apis}/download/facebook?url=${encodeURIComponent(postUrl)}`);
+                const data = await httpJson<DeliusFacebookResponse>(`${externalApis.main.url}/download/facebook?url=${encodeURIComponent(postUrl)}`);
                 const url = data.urls?.[0]?.hd || data.urls?.[0]?.sd;
                 return url ? {type: 'video', url, fileName: 'video.mp4'} : null;
             },
@@ -79,14 +79,6 @@ export function buildFacebookDownloadProviders(postUrl: string): ProviderCandida
                 const data = await httpJson<DorratzFacebookResponse>(`https://api.dorratz.com/fbvideo?url=${encodeURIComponent(postUrl)}`);
                 const url = data.result?.hd || data.result?.sd;
                 return url ? {type: 'video', url, fileName: 'video.mp4'} : null;
-            },
-        },
-        {
-            name: 'api-dylux-facebook',
-            run: async () => {
-                const data = await fg.fbdl(postUrl) as {data?: Array<{url?: string}>};
-                const url = data.data?.[0]?.url;
-                return url ? {type: 'video', url, fileName: 'video.mp4', captionVariant: 'bold'} : null;
             },
         },
     ], {timeoutMs: DEFAULT_PROVIDER_TIMEOUT_MS, retries: 1});

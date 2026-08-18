@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {logError} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
@@ -24,7 +25,7 @@ export default defineSdkPlugin({
         if (!url) return sdk.reply.message('stickers.common.apiNoSticker')
         let texto = `💋 ${senderName} está besando a ${mentionedNames.join(', ')}`
         try {
-            let stickerMessage = await sticker(null, url, texto, info.author)
+            let stickerMessage = await sticker(null, url, texto, botInfo.author)
             await sdk.sendFile(stickerMessage, 'sticker.webp', '', m, true, {
                 contextInfo: {
                     forwardingScore: 200,
@@ -34,7 +35,7 @@ export default defineSdkPlugin({
                         title: texto,
                         body: sdk.branding.watermark,
                         mediaType: 2,
-                        sourceUrl: info.md,
+                        sourceUrl: botInfo.md,
                         thumbnail: m.pp
                     }
                 }

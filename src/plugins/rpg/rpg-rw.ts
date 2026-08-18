@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {logError} from '../../lib/logger.js';
 import {defineSdkPlugin, type PluginContentSdk, type PluginHttpSdk} from '../../core/plugin-sdk.js';
 //Código elaborado por: https://github.com/elrebelde21
@@ -204,7 +205,7 @@ export default defineSdkPlugin({
                     title: sdk.content.message('rpg.rw.adTitle'),
                     body: branding.watermark,
                     thumbnailUrl: m.pp,
-                    sourceUrl: pickRandom([info.nna, info.nna2, info.md]),
+                    sourceUrl: pickRandom([botInfo.nna, botInfo.nna2, botInfo.md]),
                     mediaType: 1,
                     showAdAttribution: false,
                     renderLargerThumbnail: false

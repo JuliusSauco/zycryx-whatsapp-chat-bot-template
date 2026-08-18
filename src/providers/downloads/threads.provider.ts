@@ -1,3 +1,4 @@
+import {externalApis} from '../external-api-config.js';
 import {httpJson} from '../../lib/http-client.js';
 import {DEFAULT_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
@@ -44,7 +45,7 @@ export function buildThreadsDownloadProviders(postUrl: string): ProviderCandidat
         {
             name: 'main-threads',
             run: async () => {
-                const data = await httpJson<ThreadsFallbackResponse>(`${info.apis}/download/threads?url=${encodeURIComponent(postUrl)}`);
+                const data = await httpJson<ThreadsFallbackResponse>(`${externalApis.main.url}/download/threads?url=${encodeURIComponent(postUrl)}`);
                 const media = data.status ? data.data?.[0] : undefined;
                 if (!media?.url) return null;
                 const type = inferThreadsMediaType(media.url, media.type);

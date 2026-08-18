@@ -63,6 +63,7 @@ export interface Plugin {
     interceptors?: PluginInterceptor[];
     manifest?: Readonly<PluginManifest>;
     before?: (m: BotMessage, ctx: BeforePluginContext) => Promise<boolean | void | unknown>;
+    beforePolicy?: Readonly<Pick<PluginInterceptor, 'phase' | 'priority' | 'failurePolicy'>>;
     runBeforeOnCommand?: boolean;
     needsFullGroupSettings?: boolean;
     __hasBefore?: boolean;

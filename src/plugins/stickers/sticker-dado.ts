@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {pickRandom} from '../../utils/random.js'
 
@@ -24,7 +25,7 @@ export default defineSdkPlugin({
                 title: m.pushName,
                 body: sdk.branding.watermark,
                 mediaType: 2,
-                sourceUrl: info.md,
+                sourceUrl: botInfo.md,
                 thumbnail: m.pp
             }
         }

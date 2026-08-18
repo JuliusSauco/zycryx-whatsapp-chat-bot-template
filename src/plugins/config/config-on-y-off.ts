@@ -1,6 +1,6 @@
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {content} from '../../services/content.service.js'
-import {getContextGroupSettings, getGroupCommandAccessRule, getGroupFamilyAccessRule, getGroupSettings, setGroupAutoAcceptMode, setGroupAutoresponderMode, setGroupAutoresponderTrigger, setGroupBooleanFlag, setGroupBotAccessMode, setGroupCommandAccessRule, setGroupFamilyAccessRule, setGroupGreetingHidetagMode, setGroupNsfwGifMode, setGroupNsfwMode} from '../../services/group-settings.service.js'
+import {getContextGroupSettings, getGroupCommandAccessRule, getGroupFamilyAccessRule, getGroupSettings, setGroupAutoAcceptMode, setGroupAutoresponderMode, setGroupAutoresponderTrigger, setGroupBooleanFlag, setGroupBotAccessMode, setGroupCommandAccessRule, setGroupFamilyAccessRule, setGroupGreetingConfig, setGroupGreetingHidetagMode, setGroupNsfwGifMode, setGroupNsfwMode} from '../../services/group-settings.service.js'
 import {getSubbotConfig, setSubbotBooleanFlag} from '../../services/subbot.service.js'
 import {isGroupCreator} from '../../utils/group-creator.js'
 import {getToggleSectionKey, renderConfigOnboarding, renderConfigView, renderToggleMenu} from './config-toggle-menu.js'
@@ -8,6 +8,8 @@ import type {ConfigurableFeatureKey} from '../../domain/groups.js'
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode, GroupSettings} from '../../types/config.js'
 import {getFamilyManagerLevel, getRequiredFamilyManagerLevel} from '../../utils/family-access-authority.js'
 import {CENSORED_COMMAND_ACCESS_KEY, defaultCommandAccess} from '../../utils/command-access.js'
+import {FAMILY_TOGGLES, GROUP_BOOLEAN_TOGGLES} from './config-toggle-registry.js'
+import {requireBotInstanceIdentity} from '../../core/bot-instance-identity.js'
 
 function getAutoAcceptModeLabel(mode?: AutoAcceptMode | null): string {
     switch (mode || 'off') {
@@ -128,14 +130,13 @@ export default defineSdkPlugin({
     const isConfigMenu = /^config$/i.test(command)
     const type = (args[0] || '').toLowerCase()
     const chatId = m.chat
-    const botId = conn.user?.id
-    if (!botId) return m.reply(content.message('config.toggle.missingBotId'))
-    const cleanId = botId.replace(/:\d+/, '')
-    const isSubbot = botId !== 'main'
+    const identity = requireBotInstanceIdentity(conn)
+    const botId = identity.instanceId
+    const cleanId = botId
+    const isSubbot = identity.instanceType === 'subbot'
     let isAll = false, isUser = false
     let selectedAutoAcceptMode: AutoAcceptMode | null = null
     let selectedBotAccessMode: AccessMode | null = null
-    let selectedFeatureAccessMode: {feature: string; key: ConfigurableFeatureKey; enabled: boolean; mode: AccessMode} | null = null
     let selectedCommandAccessMode: {command: string; enabled: boolean; mode: AccessMode} | null = null
     let selectedAutoresponderMode: {enabled: boolean; mode: AccessMode} | null = null
     let selectedAutoresponderTrigger: AutoresponderTrigger | null = null
@@ -149,7 +150,7 @@ export default defineSdkPlugin({
     const enabledIcon = content.message('config.toggle.enabledIcon')
     const disabledIcon = content.message('config.toggle.disabledIcon')
     const notGroupIcon = content.message('config.toggle.notGroupIcon')
-    const botConfig = isSubbot ? await getSubbotConfig(botId) : null
+    const botConfig = await getSubbotConfig(botId)
     const groupOnly = content.message('config.toggle.groupOnly')
     const adminOnly = content.message('config.toggle.adminOnly')
     const ownerOrGroupCreatorOnly = content.message('config.toggle.ownerOrGroupCreatorOnly')
@@ -213,6 +214,28 @@ export default defineSdkPlugin({
         return {command: key, enabled: isEnable, mode}
     }
 
+    const booleanToggle = GROUP_BOOLEAN_TOGGLES[type]
+    if (booleanToggle) {
+        if (!m.isGroup) throw groupOnly
+        if (!isAdmin) throw adminOnly
+        await setGroupBooleanFlag(chatId, booleanToggle.flag, isEnable)
+        if (booleanToggle.flag === 'autolevelup') m.chatDB.autolevelup = isEnable
+        return m.reply(content.renderMessage('config.toggle.updated', {
+            type,
+            target: content.message('config.toggle.targetChat'),
+            status: isEnable ? content.message('config.toggle.enabledLabel') : content.message('config.toggle.disabledLabel'),
+        }))
+    }
+
+    const familyToggle = FAMILY_TOGGLES[type]
+    if (familyToggle) {
+        const configured = await configureFeatureAccess(familyToggle)
+        return m.reply(content.renderMessage('config.toggle.featureAccessConfigured', {
+            feature: configured.feature,
+            access: configured.enabled ? getAccessModeLabel(configured.mode) : content.message('config.toggle.disabledLabel'),
+        }))
+    }
+
     switch (type) {
         case 'welcome':
         case 'bienvenida':
@@ -221,14 +244,12 @@ export default defineSdkPlugin({
             {
                 const mode = resolveGreetingHidetagMode(args)
                 if (!isEnable && mode) {
-                    await setGroupBooleanFlag(chatId, 'welcome', true)
-                    await setGroupGreetingHidetagMode(chatId, 'welcome', 'off')
+                    await setGroupGreetingConfig(chatId, 'welcome', true, 'off')
                     selectedGreetingConfig = {type: 'welcome', enabled: true, hidetagMode: 'off'}
                     break
                 }
-                await setGroupBooleanFlag(chatId, 'welcome', isEnable)
                 const nextMode = isEnable ? mode || 'off' : getCurrentGreetingHidetagMode(chat.welcomeHidetagMode, chat.welcomeHidetag)
-                if (isEnable) await setGroupGreetingHidetagMode(chatId, 'welcome', nextMode)
+                await setGroupGreetingConfig(chatId, 'welcome', isEnable, nextMode)
                 selectedGreetingConfig = {type: 'welcome', enabled: isEnable, hidetagMode: nextMode}
             }
             break
@@ -240,14 +261,12 @@ export default defineSdkPlugin({
             {
                 const mode = resolveGreetingHidetagMode(args)
                 if (!isEnable && mode) {
-                    await setGroupBooleanFlag(chatId, 'bye', true)
-                    await setGroupGreetingHidetagMode(chatId, 'bye', 'off')
+                    await setGroupGreetingConfig(chatId, 'bye', true, 'off')
                     selectedGreetingConfig = {type: 'bye', enabled: true, hidetagMode: 'off'}
                     break
                 }
-                await setGroupBooleanFlag(chatId, 'bye', isEnable)
                 const nextMode = isEnable ? mode || 'off' : getCurrentGreetingHidetagMode(chat.byeHidetagMode, chat.byeHidetag)
-                if (isEnable) await setGroupGreetingHidetagMode(chatId, 'bye', nextMode)
+                await setGroupGreetingConfig(chatId, 'bye', isEnable, nextMode)
                 selectedGreetingConfig = {type: 'bye', enabled: isEnable, hidetagMode: nextMode}
             }
             break
@@ -270,35 +289,6 @@ export default defineSdkPlugin({
             if (!isAdmin) throw adminOnly
             await setGroupGreetingHidetagMode(chatId, 'bye', isEnable ? 'all' : 'off')
             selectedGreetingConfig = {type: 'bye', enabled: chat.bye ?? true, hidetagMode: isEnable ? 'all' : 'off'}
-            break
-
-        case 'detect':
-        case 'avisos':
-            if (!m.isGroup) throw groupOnly
-            if (!isAdmin) throw adminOnly
-            await setGroupBooleanFlag(chatId, 'detect', isEnable)
-            break
-
-        case 'antilink':
-        case 'antienlace':
-            if (!m.isGroup) throw groupOnly
-            if (!isAdmin) throw adminOnly
-            await setGroupBooleanFlag(chatId, 'antilink', isEnable)
-            break
-
-        case 'antilink2':
-            if (!m.isGroup) throw groupOnly
-            if (!isAdmin) throw adminOnly
-            await setGroupBooleanFlag(chatId, 'antilink2', isEnable)
-            break
-
-        case 'virustotal':
-        case 'virus':
-        case 'vt':
-        case 'antivirus':
-            if (!m.isGroup) throw groupOnly
-            if (!isAdmin) throw adminOnly
-            await setGroupBooleanFlag(chatId, 'virusTotal', isEnable)
             break
 
         case 'autoresponder':
@@ -325,42 +315,6 @@ export default defineSdkPlugin({
                 selectedAutoresponderMode = {enabled: isEnable, mode}
                 await setGroupAutoresponderMode(chatId, isEnable, mode)
             }
-            break
-
-        case 'antiporn':
-        case 'antiporno':
-        case 'antinwfs':
-            if (!m.isGroup) throw groupOnly
-            if (!isAdmin) throw adminOnly
-            await setGroupBooleanFlag(chatId, 'antiporn', isEnable)
-            break
-
-        case 'autolevelup':
-        case 'auto-level':
-        case 'nivelauto':
-            if (!m.isGroup) throw groupOnly
-            if (!isAdmin) throw adminOnly
-            await setGroupBooleanFlag(chatId, 'autolevelup', isEnable)
-            m.chatDB.autolevelup = isEnable
-            break
-
-        case 'audios':
-        case 'audio': {
-            selectedFeatureAccessMode = await configureFeatureAccess({key: 'audio', label: 'audios'})
-            await setGroupBooleanFlag(chatId, 'audios', selectedFeatureAccessMode.enabled)
-            break
-        }
-
-        case 'gifs':
-        case 'gif':
-        case 'reacciones':
-            selectedFeatureAccessMode = await configureFeatureAccess({key: 'gifs', label: 'gifs/reacciones'})
-            break
-
-        case 'antifake':
-            if (!m.isGroup) throw groupOnly
-            if (!isAdmin) throw adminOnly
-            await setGroupBooleanFlag(chatId, 'antifake', isEnable)
             break
 
         case 'nsfw':
@@ -430,52 +384,6 @@ export default defineSdkPlugin({
             await setGroupBotAccessMode(chatId, selectedBotAccessMode)
             break
 
-        case 'juegos':
-        case 'games':
-            selectedFeatureAccessMode = await configureFeatureAccess({key: 'games', label: 'juegos'})
-            break
-
-        case 'herramientas':
-        case 'tools':
-            selectedFeatureAccessMode = await configureFeatureAccess({key: 'tools', label: 'herramientas'})
-            break
-
-        case 'rpg':
-        case 'economia':
-        case 'economía':
-            selectedFeatureAccessMode = await configureFeatureAccess({key: 'rpg', label: 'rpg'})
-            break
-
-        case 'descargas':
-        case 'downloads':
-            selectedFeatureAccessMode = await configureFeatureAccess({key: 'downloads', label: 'descargas'})
-            break
-
-        case 'buscadores':
-        case 'busquedas':
-        case 'búsquedas':
-        case 'search':
-            selectedFeatureAccessMode = await configureFeatureAccess({key: 'search', label: 'buscadores'})
-            break
-
-        case 'stickers':
-        case 'sticker':
-            selectedFeatureAccessMode = await configureFeatureAccess({key: 'stickers', label: 'stickers'})
-            break
-
-        case 'convertidores':
-        case 'converters':
-        case 'convertidor':
-            selectedFeatureAccessMode = await configureFeatureAccess({key: 'converters', label: 'convertidores'})
-            break
-
-        case 'diversion':
-        case 'diversión':
-        case 'fun':
-        case 'random':
-            selectedFeatureAccessMode = await configureFeatureAccess({key: 'fun', label: 'diversion/random'})
-            break
-
         case 'autoaceptar':
         case 'autoacept':
         case 'autoaccept':
@@ -485,15 +393,6 @@ export default defineSdkPlugin({
             if (!isAdmin) throw adminOnly
             selectedAutoAcceptMode = resolveAutoAcceptMode(isEnable, args)
             await setGroupAutoAcceptMode(chatId, selectedAutoAcceptMode)
-            break
-
-        case 'msglog':
-        case 'messagelog':
-        case 'registromsg':
-        case 'registrarmensajes':
-            if (!m.isGroup) throw groupOnly
-            if (!isAdmin) throw adminOnly
-            await setGroupBooleanFlag(chatId, 'messageLogging', isEnable)
             break
 
         case 'antiprivate':
@@ -558,15 +457,6 @@ export default defineSdkPlugin({
         return m.reply(content.renderMessage('config.toggle.nsfwGifConfigured', {
             status: selectedNsfwGifMode.enabled ? content.message('config.toggle.enabledLabel') : content.message('config.toggle.disabledLabel'),
             access: getAccessModeLabel(selectedNsfwGifMode.mode),
-        }))
-    }
-
-    if (selectedFeatureAccessMode) {
-        return m.reply(content.renderMessage('config.toggle.featureAccessConfigured', {
-            feature: selectedFeatureAccessMode.feature,
-            access: selectedFeatureAccessMode.enabled
-                ? getAccessModeLabel(selectedFeatureAccessMode.mode)
-                : content.message('config.toggle.disabledLabel'),
         }))
     }
 

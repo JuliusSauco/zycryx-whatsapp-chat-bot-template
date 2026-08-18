@@ -3,6 +3,8 @@ import {content} from '../../services/content.service.js';
 import type {BeforePluginContext} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
 
+export const beforePolicy = {phase: 'security', priority: 100, failurePolicy: 'fail-closed'} as const;
+
 let linkRegex1 = /chat\.whatsapp\.com\/[0-9A-Za-z]{20,24}|5chat-whatzapp\.vercel\.app/i;
 let linkRegex2 = /whatsapp\.com\/channel\/[0-9A-Za-z]{20,24}/i;
 type MessageKeyWithAlt = BotMessage['key'] & {participantAlt?: string};

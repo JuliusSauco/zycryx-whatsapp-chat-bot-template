@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {addWalletResource} from '../../services/wallet.service.js';
 import {pickRandom, randomInt} from '../../utils/random.js';
@@ -63,7 +64,7 @@ export default defineSdkPlugin({
         b,
         seconds: nivel.tiempo / 1000,
         reward: recompensa,
-        version: info.vs
+        version: botInfo.vs
     });
     },
 

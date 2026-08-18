@@ -1,4 +1,6 @@
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
+import {configuredOwners} from '../../core/config.js';
+import {normalizeJid} from '../../utils/jid.js';
 export default defineSdkPlugin({
     help: ['kicknum', 'listnum'],
     tags: ['group'],
@@ -30,9 +32,13 @@ export default defineSdkPlugin({
             const ownerGroup = sdk.chatId.split('-')[0] + '@s.whatsapp.net';
             for (const user of encontrados) {
                 const error = sdk.content.renderMessage('group.kickNum.alreadyGone', {user: user.split('@')[0]});
-                const protegido = [ownerGroup, botJid, global.owner + '@s.whatsapp.net'];
+                const protegido = new Set([
+                    normalizeJid(ownerGroup),
+                    normalizeJid(botJid),
+                    ...configuredOwners.map(([owner]) => normalizeJid(owner)),
+                ]);
 
-                if (!protegido.includes(user)) {
+                if (!protegido.has(normalizeJid(user))) {
                     try {
                         const r = await sdk.conn.groupParticipantsUpdate(sdk.chatId, [user], 'remove');
                         if (r[0]?.status === '404') await sdk.reply.text(error, null, {mentions: [user]});

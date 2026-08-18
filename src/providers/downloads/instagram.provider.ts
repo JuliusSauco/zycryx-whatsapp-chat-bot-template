@@ -1,3 +1,4 @@
+import {externalApis} from '../external-api-config.js';
 import {instagramdl} from '@bochilteam/scraper';
 import {httpJson, httpText} from '../../lib/http-client.js';
 import {DEFAULT_PROVIDER_TIMEOUT_MS, LONG_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
@@ -44,7 +45,7 @@ export function buildInstagramDownloadProviders(postUrl: string): ProviderCandid
         {
             name: 'fgmods-instagram',
             run: async () => {
-                const data = await httpJson<FgmodsInstagramResponse>(`${info.fgmods.url}/downloader/igdl?url=${encodeURIComponent(postUrl)}&apikey=${info.fgmods.key}`);
+                const data = await httpJson<FgmodsInstagramResponse>(`${externalApis.fgmods.url}/downloader/igdl?url=${encodeURIComponent(postUrl)}&apikey=${externalApis.fgmods.key}`);
                 const mediaUrl = data.result?.[0]?.url;
                 if (!mediaUrl) return null;
                 const type = inferInstagramMediaType(mediaUrl);
@@ -54,7 +55,7 @@ export function buildInstagramDownloadProviders(postUrl: string): ProviderCandid
         {
             name: 'main-instagram',
             run: async () => {
-                const data = await httpJson<InstagramArrayResponse>(`${info.apis}/download/instagram?url=${encodeURIComponent(postUrl)}`);
+                const data = await httpJson<InstagramArrayResponse>(`${externalApis.main.url}/download/instagram?url=${encodeURIComponent(postUrl)}`);
                 const media = data.data?.[0];
                 if (!media?.url) return null;
                 const type = inferInstagramMediaType(media.url, media.type);

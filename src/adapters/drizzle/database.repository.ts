@@ -19,21 +19,23 @@ export const databaseRepository: DatabaseRepository = {
             tablasRes,
             totalSizeRes,
         ] = await Promise.all([
-            orm.execute(sql`SELECT COUNT(*)::int AS count FROM usuarios`),
-            orm.execute(sql`SELECT COUNT(*)::int AS count FROM usuarios WHERE registered = true`),
-            orm.execute(sql`SELECT COUNT(*)::int AS count FROM chats`),
-            orm.execute(sql`SELECT COUNT(*)::int AS count FROM group_settings WHERE welcome IS NOT NULL`),
-            orm.execute(sql`SELECT COALESCE(SUM(message_count), 0)::int AS count FROM messages`),
+            orm.execute(sql`SELECT COUNT(*)::int AS count FROM bot_identity.users`),
+            orm.execute(sql`SELECT COUNT(*)::int AS count FROM bot_identity.user_registrations`),
+            orm.execute(sql`SELECT COUNT(*)::int AS count FROM bot_groups.chats`),
+            orm.execute(sql`SELECT COUNT(*)::int AS count FROM bot_groups.chats WHERE is_group = true`),
+            orm.execute(sql`SELECT COALESCE(SUM(message_count), 0)::int AS count FROM bot_groups.user_group_activity_counters`),
             orm.execute(sql`
                 SELECT relname AS tabla,
                        n_live_tup::int AS filas,
                        pg_size_pretty(pg_total_relation_size(relid)) AS tamano
                 FROM pg_stat_user_tables
+                WHERE schemaname LIKE 'bot\_%' ESCAPE '\\'
                 ORDER BY pg_total_relation_size(relid) DESC
             `),
             orm.execute(sql`
                 SELECT pg_size_pretty(COALESCE(SUM(pg_total_relation_size(relid)), 0)) AS total
                 FROM pg_stat_user_tables
+                WHERE schemaname LIKE 'bot\_%' ESCAPE '\\'
             `),
         ]);
 

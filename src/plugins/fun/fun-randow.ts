@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {logError} from '../../lib/logger.js';
 import {defineSdkPlugin, type PluginContentSdk, type PluginHttpSdk} from '../../core/sdk-plugin.js'
 import {pickRandom} from '../../utils/random.js'
@@ -136,7 +137,7 @@ async function replyRandomFun(conn: ExtendedConn, m: BotMessage, config: RandomF
                 body: pluginContent.message('fun.random.adBody'),
                 previewType: 0,
                 thumbnail: m.pp,
-                sourceUrl: pickRandom([info.md, info.yt, info.tiktok])
+                sourceUrl: pickRandom([botInfo.md, botInfo.yt, botInfo.tiktok])
             }
         }
     });

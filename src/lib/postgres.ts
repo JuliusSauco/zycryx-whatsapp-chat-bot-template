@@ -6,7 +6,7 @@ export {invalidateSubbotConfig, invalidateGroupSettings} from './db-cache.js';
 
 const {Pool} = pg;
 
-const searchPathOptions = '-c search_path=bot_identity,bot_economy,bot_groups,bot_runtime,bot_content,bot_ai,bot_audit,public,extensions';
+const searchPathOptions = `-c search_path=pg_catalog,public,extensions -c statement_timeout=${ENV.DB_STATEMENT_TIMEOUT_MS} -c application_name=zycryx-bot`;
 
 const poolConfig = ENV.DATABASE_URL
     ? {connectionString: ENV.DATABASE_URL, options: searchPathOptions}
@@ -19,7 +19,12 @@ const poolConfig = ENV.DATABASE_URL
         options: searchPathOptions,
     };
 
-export const db = new Pool({...poolConfig, max: 20});
+export const db = new Pool({
+    ...poolConfig,
+    max: ENV.DB_POOL_MAX,
+    idleTimeoutMillis: ENV.DB_IDLE_TIMEOUT_MS,
+    connectionTimeoutMillis: ENV.DB_CONNECTION_TIMEOUT_MS,
+});
 
 db.on('error', err => {
     logError('[DB] Error inesperado en el pool de PostgreSQL:', err);

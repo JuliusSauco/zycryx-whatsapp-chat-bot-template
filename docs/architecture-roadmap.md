@@ -4,6 +4,8 @@ Este roadmap prioriza cambios estructurales que reducen acoplamiento y preparan 
 
 ## Snapshot 2026-06-30
 
+Actualización 2026-08-17: se cerró el bloque de endurecimiento P0/P1 de la segunda auditoría: identidad estable por socket, sesión desacoplada, reconexión condicionada a persistencia, shutdown coordinado, providers sin credenciales en plugins, invalidación selectiva y readiness real. El registro de owners en base de datos queda aplazado por decisión explícita. Ver `docs/architecture-hardening-2026-08.md`.
+
 Actualizacion 2026-07-21: se implemento el siguiente bloque arquitectonico sobre P0/P2/P5:
 
 - reservas transaccionales e idempotentes para costos de comandos;
@@ -20,7 +22,7 @@ Actualizacion 2026-07-21: se implemento el siguiente bloque arquitectonico sobre
 - La deuda legacy de plugins ya no bloquea P0; las nuevas mejoras deben conservar la compuerta P0 en verde.
 - P3 queda cancelado: no se usara backend REST/GraphQL y el bot se conectara directamente a PostgreSQL mediante Drizzle.
 - P1 ya tiene providers reales para YouTube, Spotify, TikTok, Threads, Instagram, Facebook, MediaFire y Drive en `src/providers/downloads`.
-- La base está normalizada en siete schemas; `database/schema.sql` es el bootstrap único PostgreSQL 18 para instalaciones nuevas.
+- La base está normalizada en nueve schemas; `database/schema.sql` es el único bootstrap para instalaciones nuevas y no se soportan upgrades legacy incrementales.
 
 | Fase | Avance | Estado |
 |---|---:|---|

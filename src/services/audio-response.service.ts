@@ -5,14 +5,15 @@ import {repositories} from './data-source.js';
 import {ENV} from '../core/env.js';
 import type {AudioConfig, AudioEntry, AudioResponseRecord} from '../domain/audio-responses.js';
 import {getAudioUrls, normalizeAudioEntry} from '../domain/audio-responses.js';
+import {BoundedTtlCache} from '../lib/bounded-ttl-cache.js';
 
 const seedAudiosPath = path.resolve('./resources/data/audios.json');
 let seedCache: AudioConfig | null = null;
-const audioConfigCache = new Map<string, {data: AudioConfig; expiresAt: number}>();
-const regexCache = new Map<string, RegExp | null>();
+const regexCache = new BoundedTtlCache<string, RegExp | null>({ttlMs: 60 * 60_000, maxEntries: 2_000});
 const AUDIO_CACHE_TTL_MS = Number.isFinite(ENV.AUDIO_CACHE_TTL_MS) && ENV.AUDIO_CACHE_TTL_MS > 0
     ? ENV.AUDIO_CACHE_TTL_MS
     : 300_000;
+const audioConfigCache = new BoundedTtlCache<string, AudioConfig>({ttlMs: AUDIO_CACHE_TTL_MS, maxEntries: 250});
 
 function readSeedAudios(): AudioConfig {
     if (seedCache) return structuredClone(seedCache);
@@ -117,18 +118,11 @@ function buildAudioCacheKey(scopes?: string[]): string {
 function getCachedAudioConfig(cacheKey: string): AudioConfig | null {
     const cached = audioConfigCache.get(cacheKey);
     if (!cached) return null;
-    if (Date.now() > cached.expiresAt) {
-        audioConfigCache.delete(cacheKey);
-        return null;
-    }
-    return structuredClone(cached.data);
+    return structuredClone(cached);
 }
 
 function setCachedAudioConfig(cacheKey: string, data: AudioConfig): void {
-    audioConfigCache.set(cacheKey, {
-        data: structuredClone(data),
-        expiresAt: Date.now() + AUDIO_CACHE_TTL_MS,
-    });
+    audioConfigCache.set(cacheKey, structuredClone(data));
 }
 
 function invalidateAudioConfig(): void {

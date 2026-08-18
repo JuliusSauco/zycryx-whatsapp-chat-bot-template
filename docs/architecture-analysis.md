@@ -1,6 +1,8 @@
 # Analisis arquitectonico
 
-Fecha de revision: 2026-06-10.
+Fecha de revision: 2026-08-17.
+
+La segunda auditoría de bootstrap, sesiones, normalización, cachés y observabilidad quedó implementada. Sesiones e instancias ya no comparten clave obligatoriamente, `primary_bot` referencia la instancia, las reconexiones se bloquean ante fallos de persistencia y los scrapers grandes fueron divididos físicamente. El registro de owners en base de datos no forma parte de esta etapa. El detalle está en `docs/architecture-hardening-2026-08.md`.
 
 Este documento resume el estado arquitectonico actual despues de cerrar P0, iniciar P1 con providers por dominio, alinear los scripts de base de datos y cerrar P5 para runtime single-process. La revision 2026-06-10 agrega hallazgos de runtime y conexion (ver seccion al final de riesgos).
 

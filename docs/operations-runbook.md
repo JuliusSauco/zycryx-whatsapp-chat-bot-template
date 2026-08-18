@@ -25,12 +25,12 @@ El chequeo valida Node.js, archivo `.env`, owners, PostgreSQL, herramientas del 
 
 1. Avisar a owners si habra reinicio.
 2. Ejecutar `git pull`.
-3. Ejecutar `npm install`.
+3. Ejecutar `npm ci`.
 4. Ejecutar `npm run build`.
 5. Ejecutar `NODE_ENV=prod npm run db:check` para validar la estructura sin modificarla.
 6. Ejecutar `NODE_ENV=prod npm run ops:check`.
-7. Reiniciar: `pm2 restart zycryx-bot`.
-8. Confirmar conexion en logs.
+8. Reiniciar: `pm2 restart zycryx-bot`.
+9. Confirmar conexion en logs.
 
 Si `ops:check` falla, no reiniciar hasta corregir el error. Si solo hay advertencias, decidir segun impacto.
 
@@ -60,8 +60,8 @@ La plantilla usa una sola instancia, `NODE_ENV=prod`, `--max-old-space-size=512`
 Indicadores: logs con `Sesión inválida` o codigos `401`, `403`, `500`.
 
 1. Detener proceso.
-2. Respaldar la carpeta actual si hace falta diagnostico.
-3. Borrar `BotSession/`.
+2. Respaldar DB y keyring si hace falta diagnostico.
+3. Revocar/eliminar la sesión `main` del almacenamiento activo.
 4. Arrancar en terminal interactiva para vincular.
 5. Volver a PM2.
 
@@ -70,7 +70,7 @@ Indicadores: logs con `Sesión inválida` o codigos `401`, `403`, `500`.
 1. Verificar `.env.prod` o variables del sistema.
 2. Probar conexion PostgreSQL desde el servidor.
 3. Ejecutar `NODE_ENV=prod npm run ops:check`.
-4. Si faltan tablas en una base nueva, ejecutar `npm run db:setup`; en una base existente detenerse y diagnosticar antes de cambiar estructura.
+4. Si faltan tablas en una base nueva, ejecutar `npm run db:setup`; en una existente detener el despliegue y comparar contra `database/schema.sql` antes de intervenirla.
 
 ### Descargas o APIs externas fallan
 
@@ -111,31 +111,20 @@ pg_restore --clean --if-exists --dbname "$DATABASE_URL" backups/<fecha>/database
 
 Si no usas `DATABASE_URL`, exporta `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` y usa `--dbname "$DB_NAME"`.
 
-### Restaurar sesion
+### Restaurar sesión
 
 1. Detener bot: `pm2 stop zycryx-bot`.
-2. Restaurar carpeta principal:
+2. Restaurar el dump que contiene `bot_sessions`.
+3. Reinyectar exactamente la clave maestra/keyring respaldada por separado.
+4. Validar con `NODE_ENV=prod npm run db:check`.
+5. Arrancar bot: `pm2 restart zycryx-bot`.
 
-```bash
-cp -a backups/<fecha>/BotSession ./BotSession
-chmod -R 700 BotSession
-```
-
-3. Restaurar subbots si aplica:
-
-```bash
-cp -a backups/<fecha>/jadibot ./jadibot
-chmod -R 700 jadibot
-```
-
-4. Arrancar bot: `pm2 restart zycryx-bot`.
-
-Si WhatsApp invalido la sesion, restaurar archivos antiguos no ayuda: hay que re-vincular.
+Las carpetas `BotSession/` y `jadibot/` sólo se restauran para importar sesiones legacy. Si WhatsApp invalidó la sesión, hay que re-vincular.
 
 ## Reglas de seguridad
 
 - Mantener `BOT_OWNER_NUMBERS` limitado a operadores de confianza.
-- Tratar `BotSession/`, `jadibot/` y `.env.prod` como secretos.
+- Tratar dump, keyring, `BotSession/`, `jadibot/` y `.env.prod` como secretos; mantener la clave separada de la DB.
 - No correr el bot con usuario de sistema con sudo.
 - No exponer PostgreSQL publicamente salvo firewall estricto.
 - Revisar logs `[SENSITIVE]` despues de cambios de owners o mantenimiento.

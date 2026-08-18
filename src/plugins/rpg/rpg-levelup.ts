@@ -2,6 +2,7 @@ import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import {canLevelUp, xpRange} from '../../lib/levelling.js'
 import {getRole} from '../hooks/_autolevelup.js'
 import {getWallet, setUserLevelRole} from '../../services/wallet.service.js'
+import {buildLevelCardUrl} from '../../providers/main-api.provider.js'
 
 const multiplier = 650
 
@@ -41,7 +42,7 @@ export default defineSdkPlugin({
     })
 
     try {
-        const apiURL = `${info.apis}/canvas/balcard?url=${encodeURIComponent(m.pp)}&background=https://telegra.ph/file/66c5ede2293ccf9e53efa.jpg&username=${encodeURIComponent(name)}&discriminator=${m.sender.replace(/[^0-9]/g, '')}&money=${coins}&xp=${exp}&level=${newLevel}`
+        const apiURL = buildLevelCardUrl({avatarUrl: m.pp, backgroundUrl: 'https://telegra.ph/file/66c5ede2293ccf9e53efa.jpg', username: name, discriminator: m.sender.replace(/[^0-9]/g, ''), money: coins, xp: exp, level: newLevel})
         const buffer = await sdk.http.buffer(apiURL)
         await conn.sendFile(m.chat, buffer, 'levelup.jpg', str, m)
     } catch (e: unknown) {

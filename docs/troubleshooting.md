@@ -14,7 +14,7 @@ Si marca errores, corrige eso primero. Si solo marca advertencias, revisalas seg
 
 ### No aparece el QR en la terminal
 
-- Verifica que elegiste la opcion 1 en el menu de vinculacion y que `BotSession/creds.json` no existe (si existe, el bot intenta reutilizar la sesion en vez de pedir QR).
+- Verifica que elegiste la opcion 1 y que no existe una sesión activa para `main` en `bot_sessions.auth_sessions`. En modo legacy, revisa `BotSession/creds.json`.
 - El QR se renderiza desde el evento `connection.update` con `qrcode-terminal` (Baileys 7 deprecó `printQRInTerminal`). Si actualizaste Baileys y dejo de salir el QR, revisa que `main.ts` siga manejando el campo `qr` del evento.
 - Algunas terminales con fuentes no monoespaciadas deforman el QR; prueba con otra terminal o usa el codigo de emparejamiento (opcion 2).
 
@@ -29,18 +29,14 @@ Si marca errores, corrige eso primero. Si solo marca advertencias, revisalas seg
 La sesion fue cerrada o invalidada (por ejemplo "Cerrar sesion" desde el telefono). El bot detiene los reintentos automaticamente y queda esperando intervencion:
 
 1. Detener el proceso.
-2. Borrar la carpeta `BotSession/`.
+2. Conservar un backup para diagnóstico y eliminar/revocar la sesión `main` en el almacenamiento activo.
 3. Arrancar de nuevo y re-vincular.
 
-Otros codigos de cierre (red caida, `connectionReplaced`, `restartRequired`) si se reintentan solos cada 3 segundos.
+Otros codigos de cierre (red caida, `connectionReplaced`, `restartRequired`) usan reconexión single-flight con backoff exponencial y jitter.
 
 ### El bot se desconecta cada cierto tiempo
 
-Es esperado: el proceso se reinicia solo cada 3 horas (`process.exit(0)`) como medida de higiene de memoria. Necesitas un process manager (PM2/systemd) que lo levante de nuevo; ver `docs/deployment.md`.
-
-### Loop de "Closing stale open session"
-
-El detector integrado reinicia el proceso (exit 1) si hay mas de 50 en un minuto. Si reaparece constantemente, suele indicar sesion corrupta: borrar `BotSession/` (o la carpeta del subbot afectado en `jadibot/`) y re-vincular.
+No hay un reinicio periódico forzado. Revisa el código de desconexión, pérdida del lease de sesión, conectividad y logs del supervisor. Un loop de sesiones stale suele indicar una sesión inválida o dos procesos intentando operar el mismo dispositivo; el lease de DB debe dejar sólo uno activo.
 
 ## Base de datos
 
@@ -52,7 +48,7 @@ El detector integrado reinicia el proceso (exit 1) si hay mas de 50 en un minuto
 
 ### `relation "..." does not exist`
 
-Ejecuta `npm run db:check`. En una base realmente vacía, provisiona una sola vez con `npm run db:setup`; no lo ejecutes sobre una base que ya tenga tablas parciales. Los schemas del bot son fijos y no usan `DB_SCHEMA`.
+Ejecuta `npm run db:check`. En una base realmente vacía, provisiona una sola vez con `npm run db:setup`; no lo ejecutes sobre una base que ya tenga tablas parciales. Esta rama no actualiza esquemas legacy y los schemas del bot son fijos.
 
 ### PostgreSQL anterior a 18
 

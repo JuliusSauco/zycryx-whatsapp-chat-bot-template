@@ -1,3 +1,4 @@
+import {externalApis} from '../external-api-config.js';
 import {httpJson} from '../../lib/http-client.js';
 import {DEFAULT_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
@@ -52,7 +53,7 @@ export function buildModApkDownloadProviders(query: string): ProviderCandidate<M
         {
             name: 'main-apk',
             run: async () => {
-                const data = await httpJson<MainApkResponse>(`${info.apis}/download/apk?query=${encodeURIComponent(query)}`);
+                const data = await httpJson<MainApkResponse>(`${externalApis.main.url}/download/apk?query=${encodeURIComponent(query)}`);
                 const apkData = data.data;
                 if (!apkData?.name || !apkData.size || !apkData.image || !apkData.download) return null;
                 return {

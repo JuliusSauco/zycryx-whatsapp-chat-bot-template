@@ -1,5 +1,11 @@
 import type {AccessMode, AutoresponderTrigger, GroupSettings} from '../types/config.js';
 
+export type GroupBooleanFlag =
+    | 'welcome' | 'bye'
+    | 'detect' | 'antifake' | 'antilink' | 'antilink2' | 'virusTotal' | 'antiporn'
+    | 'autoresponder' | 'autolevelup' | 'audios' | 'modohorny'
+    | 'messageLogging' | 'modoadmin' | 'welcomeHidetag' | 'byeHidetag';
+
 export type GroupSettingsRecord = GroupSettings;
 
 export interface ContextGroupSettings {

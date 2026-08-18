@@ -57,6 +57,28 @@ NODE_ENV=prod npm run ops:check
 | `DB_CACHE_TTL_MS` | `300000` | TTL del cache en memoria de settings de grupo y subbot config. |
 | `AUDIO_CACHE_TTL_MS` | `300000` | TTL del cache de audios dinamicos. |
 | `BACKGROUND_TASK_CONCURRENCY` | `4` | Concurrencia de la cola de tareas en segundo plano (upserts no criticos). |
+| `PLUGIN_HOT_RELOAD_ENABLED` | `false` | Activa watchers de plugins; recomendado sólo en desarrollo. |
+| `REQUIRED_PLUGIN_PATHS` | hooks críticos | Lista separada por coma que debe existir al arrancar. |
+| `MESSAGE_QUEUE_CONCURRENCY` | `32` | Máximo global de mensajes procesados simultáneamente. |
+| `MESSAGE_QUEUE_PER_CHAT_LIMIT` | `50` | Backpressure por bot/chat antes de rechazar trabajo nuevo. |
+| `MESSAGE_QUEUE_GLOBAL_LIMIT` | `2000` | Límite total de mensajes pendientes. |
+| `BOT_LINK_MODE` | `auto` | `auto`, `qr`, `code` o `disabled`. En procesos sin TTY se debe seleccionar un modo explícito. |
+| `BOT_LINK_PHONE` | vacío | Número internacional usado por `BOT_LINK_MODE=code` cuando no hay terminal interactiva. |
+
+## Sesiones y cifrado
+
+| Variable | Default | Uso |
+|---|---|---|
+| `BAILEYS_AUTH_STATE_SOURCE` | `database` | `database` persiste cifrado; `files` mantiene compatibilidad temporal. |
+| `BAILEYS_AUTH_WRITE_DELAY_MS` | `25` | Ventana de coalescing para escrituras de Signal keys fuera del camino crítico. |
+| `BAILEYS_AUTH_LEASE_SECONDS` | `120` | Lease que impide abrir la misma sesión en dos procesos. |
+| `BOT_SECRETS_KEY_VERSION` | `1` | Versión usada para cifrados nuevos. |
+| `BOT_SECRETS_MASTER_KEY_B64` | vacío | Clave aleatoria recomendada de exactamente 32 bytes en base64. |
+| `BOT_SECRETS_KEYRING_JSON` | vacío | JSON `versión -> clave base64` para leer datos durante una rotación. |
+| `BOT_SECRETS_PASSPHRASE` | vacío | Alternativa que deriva la clave una vez mediante Argon2id. |
+| `BOT_SECRETS_KDF_SALT_B64` | vacío | Salt aleatorio de al menos 16 bytes, obligatorio con passphrase. |
+
+No configures simultáneamente clave maestra y passphrase. El modo base de datos requiere uno de los dos métodos. La clave o passphrase debe vivir en el gestor de secretos del despliegue, nunca en PostgreSQL ni en el repositorio.
 
 ## PostgreSQL
 
@@ -68,6 +90,16 @@ NODE_ENV=prod npm run ops:check
 | `DB_USER` | `postgres` | Usuario. |
 | `DB_PASSWORD` | vacio | Password. |
 | `DATABASE_URL` | vacio | Alternativa a los parametros individuales. Tiene prioridad si esta definida. |
+| `DB_POOL_MAX` | `20` | Máximo de conexiones del pool por proceso. |
+| `DB_IDLE_TIMEOUT_MS` | `30000` | Tiempo para cerrar conexiones ociosas. |
+| `DB_CONNECTION_TIMEOUT_MS` | `10000` | Timeout al adquirir conexión. |
+| `DB_STATEMENT_TIMEOUT_MS` | `30000` | Timeout PostgreSQL por sentencia del bot. |
+| `HEALTH_HOST` | `127.0.0.1` | Interfaz donde escucha health/readiness/metrics. Usa una red privada o proxy autenticado al exponerla. |
+| `HEALTH_PORT` | `3000` | Puerto HTTP para `/health/live`, `/health/ready` y `/metrics`. |
+| `HEALTH_METRICS_TOKEN` | vacío | Si está definido, `/metrics` exige `Authorization: Bearer <token>`. |
+| `DB_ADMIN_URL` | vacío | Conexión administrativa usada sólo por `db:setup-runtime-role`. |
+| `DB_RUNTIME_ROLE` | `zycryx_bot_app` | Rol DML sin DDL que se aprovisiona para el proceso. |
+| `DB_RUNTIME_PASSWORD` | vacío | Password de al menos 20 caracteres para ese rol; no la versionar. |
 
 ## APIs externas
 
@@ -101,5 +133,5 @@ Todas son opcionales: los comandos que las usan fallan de forma controlada o usa
 
 - Nunca versionar `.env.local`, `.env.dev`, `.env.test` ni `.env.prod` (ya estan en `.gitignore`).
 - `.env.example` debe mantener todas las claves pero sin valores reales.
-- Tokens que cambian en runtime pueden vivir en la tabla `api_tokens` (ver README, seccion API Tokens).
+- Tokens que cambian en runtime pueden vivir cifrados en `bot_security.encrypted_secrets` mediante `npm run secrets:set`.
 - Si un secreto se filtro en un commit, rota el token; eliminarlo del historial no alcanza.

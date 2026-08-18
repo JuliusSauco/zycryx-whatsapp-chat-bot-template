@@ -1,9 +1,9 @@
 import {promises as fs} from 'fs';
-import {dirname, join} from 'path';
+import {join} from 'path';
 import {spawn} from 'child_process';
-import {fileURLToPath} from 'url';
+import {randomUUID} from 'node:crypto';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const TMP_DIR = join(process.cwd(), 'tmp');
 
 export interface FfmpegResult {
     data: Buffer;
@@ -15,7 +15,8 @@ export interface FfmpegResult {
 function ffmpeg(buffer: Buffer, args: string[] = [], ext: string = '', ext2: string = ''): Promise<FfmpegResult> {
     return new Promise(async (resolve, reject) => {
         try {
-            const tmpFile = join(__dirname, '../tmp', Date.now() + '.' + ext);
+            await fs.mkdir(TMP_DIR, {recursive: true});
+            const tmpFile = join(TMP_DIR, `${randomUUID()}.${ext}`);
             const outFile = tmpFile + '.' + ext2;
 
             await fs.writeFile(tmpFile, buffer);

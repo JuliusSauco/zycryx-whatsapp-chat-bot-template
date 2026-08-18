@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {sticker} from '../../lib/sticker.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js';
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
@@ -22,9 +23,9 @@ export default defineSdkPlugin({
                 externalAdReply: {
                     showAdAttribution: false,
                     title: sdk.branding.watermark,
-                    body: info.vs,
+                    body: botInfo.vs,
                     mediaType: 2,
-                    sourceUrl: info.md,
+                    sourceUrl: botInfo.md,
                     thumbnail: m.pp
                 }
             }

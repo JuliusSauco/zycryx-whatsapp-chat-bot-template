@@ -24,9 +24,10 @@ import type {
     FamilyAccessRule,
     CommandAccessRule,
     UserGroupRoleRecord,
+    GroupBooleanFlag,
 } from '../domain/groups.js';
 import type {CensoredUserRecord, UpsertCensoredUserInput} from '../domain/censored-users.js';
-import type {SubbotBooleanFlag, SubbotConfig, SubbotTypeCounts} from '../domain/subbots.js';
+import type {BotInstanceType, SubbotBooleanFlag, SubbotConfig, SubbotTypeCounts} from '../domain/subbots.js';
 import type {AudioResponseRecord, UpsertAudioResponseInput} from '../domain/audio-responses.js';
 import type {
     CharacterClaimOwner,
@@ -133,7 +134,6 @@ export interface UserRepository {
     decrementLimit(userId: string, amount: number): Promise<void>;
     decrementCoins(userId: string, amount: number): Promise<void>;
     upsertBasicUser(input: UpsertUserInput): Promise<void>;
-    clearLidFromOtherUsers(lid: string, userId: string): Promise<void>;
     setUserLid(userId: string, lid: string): Promise<void>;
     upsertRegisteredAdmin(input: UpsertRegisteredAdminInput): Promise<void>;
     completeRegistration(input: CompleteRegistrationInput): Promise<void>;
@@ -264,7 +264,7 @@ export interface GroupSettingsRepository {
     findByGroupId(groupId: string): Promise<GroupSettingsRecord | null>;
     findContextSettings(groupId: string): Promise<ContextGroupSettings | null>;
     findNsfwSettings(groupId: string): Promise<NsfwGroupSettings | null>;
-    setBooleanFlag(groupId: string, flag: string, value: boolean): Promise<void>;
+    setBooleanFlag(groupId: string, flag: GroupBooleanFlag, value: boolean): Promise<void>;
     setAutoAcceptMode(groupId: string, mode: GroupSettings['autoAcceptMode']): Promise<void>;
     setBotAccessMode(groupId: string, mode: GroupSettings['botAccessMode']): Promise<void>;
     setAutoresponderMode(groupId: string, enabled: boolean, mode: GroupSettings['autoresponderMode']): Promise<void>;
@@ -276,6 +276,7 @@ export interface GroupSettingsRepository {
     listCommandAccessRules(groupId: string): Promise<Array<{target: string; rule: CommandAccessRule}>>;
     upsertCommandAccessRule(groupId: string, command: string, rule: CommandAccessRule): Promise<void>;
     setGreetingHidetagMode(groupId: string, type: 'welcome' | 'bye', mode: GroupSettings['welcomeHidetagMode']): Promise<void>;
+    setGreetingConfig(groupId: string, type: 'welcome' | 'bye', enabled: boolean, mode: GroupSettings['welcomeHidetagMode']): Promise<void>;
     setTextMessage(input: {
         groupId: string;
         type: 'welcome' | 'bye' | 'promote' | 'demote';
@@ -304,9 +305,10 @@ export interface CensoredUserRepository {
 
 export interface SubbotRepository {
     findConfig(botId: string): Promise<SubbotConfig | null>;
-    listConfigs(tipo?: string | null): Promise<SubbotConfig[]>;
+    findInstanceIdByJid(botJid: string): Promise<string | null>;
+    findBotJidByInstanceId(botId: string): Promise<string | null>;
+    listConfigs(instanceType?: BotInstanceType | null): Promise<SubbotConfig[]>;
     countByType(): Promise<SubbotTypeCounts>;
-    updateTipo(botId: string, tipo: string): Promise<void>;
     setBooleanFlag(botId: string, flag: SubbotBooleanFlag, value: boolean): Promise<void>;
     setName(botId: string, name: string): Promise<void>;
     setLogoUrl(botId: string, logoUrl: string): Promise<void>;
@@ -330,8 +332,25 @@ export interface CharacterRepository {
 }
 
 export interface ApiTokenRepository {
-    findTokenB64(name: string): Promise<string | null>;
+    findToken(name: string): Promise<string | null>;
+    upsertToken(name: string, token: string): Promise<void>;
 }
+
+export type UserIdentityRepository = Pick<UserRepository,
+    'findById' | 'findNameById' | 'upsertBasicUser' | 'setUserLid' | 'findNumberByLid'>;
+export type UserRegistrationRepository = Pick<UserRepository,
+    'upsertRegisteredAdmin' | 'completeRegistration' | 'unregister' | 'setGender' | 'setBirthday' | 'countUsers'>;
+export type UserModerationRepository = Pick<UserRepository,
+    'findBanInfo' | 'incrementBanNotice' | 'setBanStatus' | 'findWarnInfo' | 'incrementWarn' |
+    'decrementWarn' | 'resetWarn' | 'listWarnedUsers' | 'listBannedUsers' | 'getPrivateWarn' | 'setPrivateWarn'>;
+export type UserRelationshipRepository = Pick<UserRepository,
+    'listMarriedUsers' | 'setMarriageRequest' | 'getMarriageRequest' | 'marryUsers' | 'divorceUsers'>;
+export type UserEconomyRepository = Pick<UserRepository,
+    'findWallet' | 'listWallets' | 'getResources' | 'addWalletResource' | 'addWalletResourceAndSetWait' |
+    'addWalletResourcesAndSetFields' | 'exchangeWalletResources' | 'transferWalletResource' |
+    'listWalletTransferHistory' | 'robExperience' | 'setLevelRole' | 'decrementLimit' | 'decrementCoins'>;
+export type UserPreferencesRepository = Pick<UserRepository,
+    'findStickerSettings' | 'setStickerSettings'>;
 
 export interface AudioResponseRepository {
     listByScopes(scopes: string[]): Promise<AudioResponseRecord[]>;
@@ -347,6 +366,7 @@ export interface PendingReport {
     mensaje: string;
     tipo: string;
     fecha?: Date | string;
+    attempt_count?: number;
 }
 
 export interface ReportRepository {
@@ -356,8 +376,9 @@ export interface ReportRepository {
         message: string;
         type: string;
     }): Promise<void>;
-    listPending(limit: number): Promise<PendingReport[]>;
-    deleteById(id: number): Promise<void>;
+    claimPending(limit: number, workerId: string, leaseSeconds: number): Promise<PendingReport[]>;
+    markDelivered(id: number, workerId: string, deliveredMessageId: string | null): Promise<void>;
+    markFailed(id: number, workerId: string, error: string): Promise<void>;
 }
 
 export interface ChatMemoryRepository {
@@ -388,7 +409,12 @@ export interface DatabaseRepository {
 }
 
 export interface AppRepositories {
-    users: UserRepository;
+    userIdentity: UserIdentityRepository;
+    userRegistration: UserRegistrationRepository;
+    userModeration: UserModerationRepository;
+    userRelationships: UserRelationshipRepository;
+    userEconomy: UserEconomyRepository;
+    userPreferences: UserPreferencesRepository;
     banks: BankRepository;
     commandResources: CommandResourceRepository;
     userGroupRoles: UserGroupRoleRepository;

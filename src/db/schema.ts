@@ -8,10 +8,106 @@ export const botRuntimeSchema = pgSchema('bot_runtime');
 export const botContentSchema = pgSchema('bot_content');
 export const botAiSchema = pgSchema('bot_ai');
 export const botAuditSchema = pgSchema('bot_audit');
+export const botSecuritySchema = pgSchema('bot_security');
+export const botSessionsSchema = pgSchema('bot_sessions');
 
 const timestampRange = customType<{data: string; driverData: string}>({
     dataType: () => 'tstzrange',
 });
+
+const encryptedBytes = customType<{data: Buffer; driverData: Buffer}>({
+    dataType: () => 'bytea',
+});
+
+/** Raíz canónica de identidad y ciclo de vida para bot principal y subbots. */
+export const botInstances = botRuntimeSchema.table('bot_instances', {
+    id: text('id').primaryKey(),
+    instanceType: text('instance_type').notNull().default('subbot'),
+    botJid: text('bot_jid'),
+    status: text('status').notNull().default('active'),
+    name: text('name'),
+    logoUrl: text('logo_url'),
+    mode: text('mode').notNull().default('public'),
+    antiPrivate: boolean('anti_private').notNull().default(false),
+    antiCall: boolean('anti_call').notNull().default(true),
+    privacy: boolean('privacy').notNull().default(false),
+    prestar: boolean('prestar').notNull().default(false),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+    lastConnectedAt: timestamp('last_connected_at', {withTimezone: true}),
+}, table => ({
+    modeCheck: check('bot_instances_mode_check', sql`${table.mode} in ('public', 'private')`),
+    typeCheck: check('bot_instances_type_check', sql`${table.instanceType} in ('main', 'subbot')`),
+    statusCheck: check('bot_instances_status_check', sql`${table.status} in ('active', 'revoked', 'error')`),
+    typeStatusIdx: index('bot_instances_type_status_idx').on(table.instanceType, table.status),
+    botJidUnique: uniqueIndex('bot_instances_bot_jid_uidx').on(table.botJid),
+}));
+
+export const encryptionKeyVersions = botSecuritySchema.table('encryption_key_versions', {
+    version: integer('version').primaryKey(),
+    algorithm: text('algorithm').notNull().default('aes-256-gcm'),
+    kdf: text('kdf').notNull().default('raw-key'),
+    active: boolean('active').notNull().default(true),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    retiredAt: timestamp('retired_at', {withTimezone: true}),
+}, table => ({
+    versionPositive: check('encryption_key_versions_version_positive', sql`${table.version} > 0`),
+    algorithmCheck: check('encryption_key_versions_algorithm_check', sql`${table.algorithm} = 'aes-256-gcm'`),
+    kdfCheck: check('encryption_key_versions_kdf_check', sql`${table.kdf} in ('raw-key', 'argon2id')`),
+    retirementCheck: check('encryption_key_versions_retirement_check', sql`${table.active} = (${table.retiredAt} IS NULL)`),
+}));
+
+export const encryptedSecrets = botSecuritySchema.table('encrypted_secrets', {
+    name: text('name').notNull(),
+    purpose: text('purpose').notNull().default('api-token'),
+    keyVersion: integer('key_version').notNull().references(() => encryptionKeyVersions.version),
+    ciphertext: encryptedBytes('ciphertext').notNull(),
+    iv: encryptedBytes('iv').notNull(),
+    authTag: encryptedBytes('auth_tag').notNull(),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    pk: primaryKey({name: 'encrypted_secrets_pkey', columns: [table.purpose, table.name]}),
+    purposeCheck: check('encrypted_secrets_purpose_check', sql`${table.purpose} in ('api-token', 'oauth-token', 'webhook-secret')`),
+}));
+
+export const baileysAuthSessions = botSessionsSchema.table('auth_sessions', {
+    sessionId: text('session_id').primaryKey(),
+    botInstanceId: text('bot_instance_id').notNull()
+        .references(() => botInstances.id, {onDelete: 'cascade'}),
+    /** Compatibilidad temporal; la migración de owners queda fuera de esta etapa. */
+    ownerId: text('owner_id'),
+    leaseOwner: text('lease_owner'),
+    leaseExpiresAt: timestamp('lease_expires_at', {withTimezone: true}),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    leaseIdx: index('auth_sessions_lease_idx').on(table.leaseExpiresAt),
+    botInstanceUnique: uniqueIndex('auth_sessions_bot_instance_uidx').on(table.botInstanceId),
+}));
+
+export const baileysAuthCredentials = botSessionsSchema.table('auth_credentials', {
+    sessionId: text('session_id').primaryKey().references(() => baileysAuthSessions.sessionId, {onDelete: 'cascade'}),
+    keyVersion: integer('key_version').notNull().references(() => encryptionKeyVersions.version),
+    ciphertext: encryptedBytes('ciphertext').notNull(),
+    iv: encryptedBytes('iv').notNull(),
+    authTag: encryptedBytes('auth_tag').notNull(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+});
+
+export const baileysSignalKeys = botSessionsSchema.table('signal_keys', {
+    sessionId: text('session_id').notNull().references(() => baileysAuthSessions.sessionId, {onDelete: 'cascade'}),
+    keyType: text('key_type').notNull(),
+    keyId: text('key_id').notNull(),
+    keyVersion: integer('key_version').notNull().references(() => encryptionKeyVersions.version),
+    ciphertext: encryptedBytes('ciphertext').notNull(),
+    iv: encryptedBytes('iv').notNull(),
+    authTag: encryptedBytes('auth_tag').notNull(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    pk: primaryKey({columns: [table.sessionId, table.keyType, table.keyId]}),
+    sessionTypeIdx: index('signal_keys_session_type_idx').on(table.sessionId, table.keyType),
+}));
 
 export const usuarios = botIdentitySchema.table('users', {
     id: text('id').primaryKey(),
@@ -289,7 +385,7 @@ export const groupSettings = botGroupsSchema.table('group_settings', {
     groupId: text('group_id').primaryKey(),
     banned: boolean('banned').notNull().default(false),
     expiresAt: timestamp('expires_at', {withTimezone: true}),
-    primaryBot: text('primary_bot'),
+    primaryBot: text('primary_bot').references(() => botInstances.id, {onDelete: 'set null'}),
     autoAcceptMode: text('autoaccept_mode').notNull().default('off'),
     botAccessMode: text('bot_access_mode').notNull().default('all'),
     messageLogging: boolean('message_logging').notNull().default(false),
@@ -298,6 +394,7 @@ export const groupSettings = botGroupsSchema.table('group_settings', {
 }, table => ({
     autoAcceptModeCheck: check('group_settings_autoaccept_mode_check', sql`${table.autoAcceptMode} in ('off', 'on', 'on_hidetag_admin', 'on_hidetag_all', 'off_hidetag_admin', 'off_hidetag_all')`),
     botAccessModeCheck: check('group_settings_bot_access_mode_check', sql`${table.botAccessMode} in ('all', 'admin', 'superadmin', 'owner')`),
+    primaryBotIdx: index('group_settings_primary_bot_idx').on(table.primaryBot),
 }));
 
 export const groupModerationSettings = botGroupsSchema.table('group_moderation_settings', {
@@ -434,19 +531,8 @@ export const messageLogs = botAuditSchema.table('message_logs', {
     userIdx: index('message_logs_user_idx').on(table.userId),
 }));
 
-export const subbots = botRuntimeSchema.table('subbots', {
-    id: text('id').primaryKey(),
-    tipo: text('tipo').notNull().default('null'),
-    name: text('name'),
-    logoUrl: text('logo_url'),
-    mode: text('mode').notNull().default('public'),
-    antiPrivate: boolean('anti_private').notNull().default(false),
-    antiCall: boolean('anti_call').notNull().default(true),
-    privacy: boolean('privacy').notNull().default(false),
-    prestar: boolean('prestar').notNull().default(false),
-}, table => ({
-    modeCheck: check('subbots_mode_check', sql`${table.mode} in ('public', 'private')`),
-}));
+/** @deprecated Nombre de dominio histórico; la tabla canónica es bot_instances. */
+export const subbots = botInstances;
 
 export const subbotPrefixes = botRuntimeSchema.table('subbot_prefixes', {
     botId: text('bot_id').notNull().references(() => subbots.id, {onDelete: 'cascade'}),
@@ -537,9 +623,26 @@ export const reportes = botRuntimeSchema.table('reports', {
     senderName: text('sender_name'),
     mensaje: text('mensaje').notNull(),
     fecha: timestamp('fecha', {withTimezone: true}).notNull().defaultNow(),
-    enviado: boolean('enviado').notNull().default(false),
     tipo: text('tipo').notNull().default('reporte'),
 });
+
+export const reportDeliveries = botRuntimeSchema.table('report_deliveries', {
+    reportId: integer('report_id').primaryKey().references(() => reportes.id, {onDelete: 'cascade'}),
+    status: text('status').notNull().default('pending'),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', {withTimezone: true}).notNull().defaultNow(),
+    lockedBy: text('locked_by'),
+    lockedUntil: timestamp('locked_until', {withTimezone: true}),
+    lastError: text('last_error'),
+    deliveredMessageId: text('delivered_message_id'),
+    sentAt: timestamp('sent_at', {withTimezone: true}),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    statusCheck: check('report_deliveries_status_check', sql`${table.status} in ('pending', 'processing', 'sent', 'dead')`),
+    attemptNonNegative: check('report_deliveries_attempt_non_negative', sql`${table.attemptCount} >= 0`),
+    pendingIdx: index('report_deliveries_pending_idx').on(table.status, table.nextAttemptAt),
+    lockIdx: index('report_deliveries_lock_idx').on(table.lockedUntil),
+}));
 
 export const chatMemory = botAiSchema.table('chat_memory', {
     chatId: text('chat_id').primaryKey(),
@@ -567,10 +670,8 @@ export const stats = botRuntimeSchema.table('stats', {
     countNonNegative: check('stats_count_non_negative', sql`${table.count} >= 0`),
 }));
 
-export const apiTokens = botRuntimeSchema.table('api_tokens', {
-    name: text('name').primaryKey(),
-    tokenB64: text('token_b64').notNull(),
-});
+/** @deprecated Usa `encryptedSecrets`; se mantiene el alias durante la migración de servicios. */
+export const apiTokens = encryptedSecrets;
 
 export const audioResponses = botContentSchema.table('audio_responses', {
     id: uuid('id').primaryKey().default(sql`uuidv7()`),

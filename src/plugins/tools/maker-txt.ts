@@ -1,4 +1,5 @@
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
+import {buildTextImageUrl} from '../../providers/media-conversion/text-image.provider.js'
 
 export default defineSdkPlugin({
     help: ['txt', 'brat'],
@@ -11,7 +12,7 @@ export default defineSdkPlugin({
 
     if (sdk.command == 'txt' || sdk.command == 'escribir') {
         if (!teks) return sdk.reply.message('tools.maker.txtUsage', {command: sdk.usedPrefix + sdk.command})
-        let img = `${info.fgmods.url}/maker/txt?text=${encodeURIComponent(teks)}&apikey=${info.fgmods.key}`;
+        const img = buildTextImageUrl(teks);
         return sdk.sendFile(img, 'img.png', sdk.content.renderMessage('tools.maker.txtCaption', {watermark: sdk.branding.watermark}));
     }
 

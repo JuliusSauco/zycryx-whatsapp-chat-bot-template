@@ -160,14 +160,13 @@ export const userRepository: UserRepository = {
         });
     },
 
-    async clearLidFromOtherUsers(lid, userId) {
-        await orm.delete(userIdentities).where(and(
-            eq(userIdentities.identityType, 'lid'), eq(userIdentities.identityValue, lid), ne(userIdentities.userId, userId),
-        ));
-    },
-
     async setUserLid(userId, lid) {
-        await orm.transaction(tx => replaceIdentity(tx, userId, 'lid', lid));
+        await orm.transaction(async tx => {
+            await tx.delete(userIdentities).where(and(
+                eq(userIdentities.identityType, 'lid'), eq(userIdentities.identityValue, lid), ne(userIdentities.userId, userId),
+            ));
+            await replaceIdentity(tx, userId, 'lid', lid);
+        });
     },
 
     async upsertRegisteredAdmin({id, nombre, num, lid, serialNumber}) {
@@ -180,7 +179,12 @@ export const userRepository: UserRepository = {
                     ELSE excluded.nombre END`, updatedAt: new Date()},
             });
             if (num) await tx.insert(userIdentities).values({userId: id, identityType: 'phone', identityValue: num}).onConflictDoNothing();
-            if (lid) await replaceIdentity(tx, id, 'lid', lid);
+            if (lid) {
+                await tx.delete(userIdentities).where(and(
+                    eq(userIdentities.identityType, 'lid'), eq(userIdentities.identityValue, lid), ne(userIdentities.userId, id),
+                ));
+                await replaceIdentity(tx, id, 'lid', lid);
+            }
             await tx.insert(userRegistrations).values({userId: id, serialNumber}).onConflictDoUpdate({
                 target: userRegistrations.userId, set: {serialNumber},
             });

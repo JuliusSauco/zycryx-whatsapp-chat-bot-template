@@ -108,7 +108,7 @@ function buildPgDumpArgs(backupDir: string): { args: string[]; env: NodeJS.Proce
   const args = ['--format=custom', '--no-owner', '--no-privileges', '--file', outputPath];
   for (const schemaName of [
     'bot_identity', 'bot_economy', 'bot_groups', 'bot_runtime',
-    'bot_content', 'bot_ai', 'bot_audit',
+    'bot_content', 'bot_ai', 'bot_audit', 'bot_security', 'bot_sessions',
   ]) args.push('--schema', schemaName);
 
   if (databaseUrl) {

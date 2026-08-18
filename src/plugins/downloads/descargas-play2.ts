@@ -19,7 +19,11 @@ export default defineSdkPlugin({
     if (!sdk.args[0]) return sdk.reply.message('downloads.play2.missingUrl')
     const sendType = sdk.command.includes('doc') ? 'document' : sdk.command.includes('mp3') ? 'audio' : 'video';
     const yt_play = await searchYouTube(sdk.args.join(' '));
-    const youtubeLink = resolveIndexedYoutubeLink(sdk.args[0], sdk.sender);
+    const youtubeLink = resolveIndexedYoutubeLink(sdk.args[0], {
+        botId: sdk.conn.user?.id ?? '',
+        chatId: sdk.chatId,
+        senderId: sdk.sender,
+    });
 
     if (!userRequests.acquire(sdk.sender)) {
         return sdk.reply.message('downloads.play2.locked')

@@ -11,6 +11,16 @@ import uploadFile from './uploadFile.js';
 import {fileTypeFromBuffer} from 'file-type';
 import webp from 'node-webpmux';
 import {httpBuffer} from './http-client.js';
+import {createRequire} from 'node:module';
+
+interface SharpPipeline {
+    resize(width: number, height: number, options: {fit: 'contain'; background: {r: number; g: number; b: number; alpha: number}}): SharpPipeline;
+    webp(options: {quality: number}): SharpPipeline;
+    toBuffer(): Promise<Buffer>;
+}
+
+type SharpFactory = (input: Buffer, options?: {animated?: boolean}) => SharpPipeline;
+const sharp = createRequire(import.meta.url)('sharp') as SharpFactory;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const tmp = path.join(__dirname, '../tmp');
@@ -64,9 +74,13 @@ async function sticker4(img: Buffer, url?: string): Promise<Buffer> {
 }
 
 async function sticker5(img: Buffer, url?: string, packname?: string, author?: string, categories: string[] = [''], extra: Record<string, unknown> = {}): Promise<Buffer> {
-    const {Sticker} = await import('wa-sticker-formatter');
-    const stickerMetadata = {type: 'default', pack: packname, author, categories, ...extra};
-    return (new Sticker(img ? img : url, stickerMetadata)).toBuffer();
+    const input = img.length ? img : url ? await httpBuffer(url) : null;
+    if (!input) throw new Error('Se requiere una imagen para generar el sticker.');
+    const converted = await sharp(input, {animated: true})
+        .resize(512, 512, {fit: 'contain', background: {r: 0, g: 0, b: 0, alpha: 0}})
+        .webp({quality: 80})
+        .toBuffer();
+    return addExif(converted, packname || '', author || '', categories, extra);
 }
 
 async function sticker6(img: Buffer, url?: string): Promise<Buffer> {

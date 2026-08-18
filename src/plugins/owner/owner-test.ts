@@ -13,7 +13,7 @@ export default defineSdkPlugin({
         if (!id) return sdk.reply.message('owner.testSubbots.missingBotId');
 
         try {
-            const tipoFiltro = args[0] === '1' ? 'oficial' : args[0] === '2' ? 'subbot' : null;
+            const tipoFiltro = args[0] === '1' ? 'main' : args[0] === '2' ? 'subbot' : null;
             const [rows, conteo] = await Promise.all([
                 listSubbotConfigs(tipoFiltro),
                 tipoFiltro ? null : countSubbotsByType()
@@ -30,9 +30,9 @@ export default defineSdkPlugin({
             });
 
             if (!tipoFiltro && conteo) {
-                const {oficiales, subbots} = conteo;
+                const {main, subbots} = conteo;
                 mensaje += sdk.content.renderMessage('owner.testSubbots.summary', {
-                    main: oficiales,
+                    main,
                     subbots
                 });
             }
@@ -40,7 +40,7 @@ export default defineSdkPlugin({
             for (const row of rows) {
                 mensaje += sdk.content.renderMessage('owner.testSubbots.row', {
                     id: row.id,
-                    type: row.tipo || sdk.content.message('owner.testSubbots.unknown'),
+                    type: row.instanceType || sdk.content.message('owner.testSubbots.unknown'),
                     mode: row.mode || sdk.content.message('owner.testSubbots.defaultMode'),
                     name: row.name || sdk.content.message('owner.testSubbots.defaultName'),
                     prefixes: row.prefix ? row.prefix.join(', ') : sdk.content.message('owner.testSubbots.defaultPrefixes'),

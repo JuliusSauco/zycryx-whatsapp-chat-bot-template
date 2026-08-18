@@ -12,22 +12,29 @@
  *    participants ya cargados.
  */
 import type {GroupMetadata, GroupParticipant} from '@whiskeysockets/baileys';
-import {getSubbotConfig, updateSubbotTipo} from '../services/subbot.service.js';
-import {clearPrimaryBot, getContextGroupSettings} from '../services/group-settings.service.js';
+import {getSubbotConfig} from '../services/subbot.service.js';
+import {getContextGroupSettings} from '../services/group-settings.service.js';
 import type {SubbotConfig} from '../types/config.js';
 import type {AccessMode, AutoresponderTrigger} from '../types/config.js';
 import type {CommandAccessMap, FamilyAccessMap} from '../domain/groups.js';
 import type {BotBranding, ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
 import {cleanJid, isGroupJid, resolveSenderInfo} from '../utils/jid.js';
-import {GROUP_META_CACHE_TTL} from '../utils/constants.js';
 import {isGroupCreator} from '../utils/group-creator.js';
-import {isMainConnection} from './runtime-state.js';
+import {requireBotInstanceIdentity} from './bot-instance-identity.js';
 import {createDefaultFamilyAccessMap} from '../utils/family-access.js';
 import {resolveMention} from '../utils/mention-identity.js';
+import {botInfo, configuredOwners} from './config.js';
+import {groupMetadataCache} from './group-metadata-cache.js';
 
 // --- Cache de metadata de grupos ---
-const groupMetaCache = new Map<string, GroupMetadata>();
+const groupMetaCache = groupMetadataCache;
+
+interface GroupMetadataResolution {
+    metadata: GroupMetadata;
+    /** Solo una lectura fresca de WhatsApp autoriza decisiones destructivas. */
+    authoritative: boolean;
+}
 
 export interface GroupSettings {
     banned: boolean;
@@ -126,6 +133,7 @@ const EMPTY_GROUP_SETTINGS: GroupSettings = {
 export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<HandlerContext> {
     const chatId: string = m.key?.remoteJid || "";
     const botId: string = conn.user?.id || "";
+    const botIdentity = requireBotInstanceIdentity(conn);
     const isGroup = isGroupJid(chatId);
 
     // --- Resolver sender (sincrónico) ---
@@ -135,26 +143,22 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
     const senderJid = cleanJid(m.sender || "");
 
     // --- Disparar TODAS las llamadas IO en paralelo ---
-    const [botConfig, metadata, groupSettings] = await Promise.all([
-        getSubbotConfig(botId),
-        isGroup ? getCachedGroupMetadata(conn, chatId) : Promise.resolve({participants: []} as unknown as GroupMetadata),
+    const [botConfig, metadataResult, groupSettings] = await Promise.all([
+        getSubbotConfig(botIdentity.instanceId),
+        isGroup
+            ? getCachedGroupMetadata(conn, chatId)
+            : Promise.resolve({metadata: {participants: []} as unknown as GroupMetadata, authoritative: true}),
         isGroup ? getContextGroupSettings(chatId) : Promise.resolve(EMPTY_GROUP_SETTINGS),
     ]);
+    const {metadata} = metadataResult;
 
     const branding: BotBranding = {
-        watermark: botConfig.name ?? info.wm,
-        logoUrl: botConfig.logo_url ?? info.img2,
+        watermark: botConfig.name ?? botInfo.wm,
+        logoUrl: botConfig.logo_url ?? botInfo.img2,
     };
 
-    // Actualizar tipo de bot si cambió (fire-and-forget)
-    const isMainBot = isMainConnection(conn);
-    const botType = isMainBot ? "oficial" : "subbot";
-    if (botConfig.tipo !== botType) {
-        updateSubbotTipo(cleanJid(botId), botType);
-    }
-
     // --- Ownership ---
-    const isCreator = global.owner
+    const isCreator = configuredOwners
         .map(([v]: string[]) => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
         .includes(senderJid);
     const isOwner = isCreator || senderJid === botJid || (botConfig.owners || []).includes(senderJid);
@@ -176,7 +180,7 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
     // --- Grupo baneado / primary bot check (usando datos ya cargados, sin más IO) ---
     let shouldAbort = false;
     if (isGroup && !isCreator && senderJid !== botJid) {
-        shouldAbort = await checkGroupRestrictions(chatId, isAdmin, botId, groupSettings, participants);
+        shouldAbort = checkGroupRestrictions(isAdmin, botIdentity.instanceId, groupSettings);
     }
 
     m.isGroup = isGroup;
@@ -236,43 +240,44 @@ function resolveSender(conn: ExtendedConn, m: BotMessage, chatId: string): void 
 }
 
 /** Obtiene metadata de grupo del cache o la solicita al server. */
-async function getCachedGroupMetadata(conn: ExtendedConn, chatId: string): Promise<GroupMetadata> {
+async function getCachedGroupMetadata(conn: ExtendedConn, chatId: string): Promise<GroupMetadataResolution> {
     if (groupMetaCache.has(chatId)) {
-        return groupMetaCache.get(chatId)!;
+        return {metadata: groupMetaCache.get(chatId)!, authoritative: false};
     }
 
     // Hidratar desde el cache de Baileys (NodeCache, TTL 1h) sin pegar a la red.
     const baileysCached = conn?.groupCache?.get?.(chatId) as GroupMetadata | undefined;
     if (baileysCached?.participants?.length) {
         groupMetaCache.set(chatId, baileysCached);
-        setTimeout(() => groupMetaCache.delete(chatId), GROUP_META_CACHE_TTL).unref?.();
-        return baileysCached;
+        return {metadata: baileysCached, authoritative: false};
     }
 
     try {
         const metadata = await conn.groupMetadata(chatId);
         groupMetaCache.set(chatId, metadata);
         conn?.groupCache?.set?.(chatId, metadata);
-        setTimeout(() => groupMetaCache.delete(chatId), GROUP_META_CACHE_TTL).unref?.();
-        return metadata;
+        return {metadata, authoritative: true};
     } catch {
-        return {participants: []} as unknown as GroupMetadata;
+        const cached = groupMetaCache.get(chatId) ?? conn?.groupCache?.get?.(chatId) as GroupMetadata | undefined;
+        return {
+            metadata: cached ?? {participants: []} as unknown as GroupMetadata,
+            authoritative: false,
+        };
     }
 }
 
 /** Exportar para que otros módulos puedan actualizar el cache (ej: participantsUpdate). */
 export {groupMetaCache};
 
-/** Construye la lista de adminIds con ambas variantes (JID y LID). */
+/** Construye adminIds solo con identidades observadas; un LID nunca se convierte en teléfono por sufijo. */
 function buildAdminIds(participants: GroupParticipant[]): string[] {
-    return participants
+    const ids = participants
         .filter(p => p.admin === "admin" || p.admin === "superadmin")
         .flatMap(p => {
-            const clean = cleanJid(p.id || "");
-            return clean.endsWith("@lid")
-                ? [clean, clean.replace("@lid", "@s.whatsapp.net")]
-                : [clean, clean.replace("@s.whatsapp.net", "@lid")];
+            const participant = p as GroupParticipant & {participantAlt?: string | null};
+            return [participant.id, participant.participantAlt].map(value => cleanJid(value || '')).filter(Boolean);
         });
+    return [...new Set(ids)];
 }
 
 /** Construye las variantes de JID del sender para comparación con adminIds. */
@@ -289,26 +294,14 @@ function buildSenderJids(m: BotMessage): string[] {
  * Verifica si el grupo está baneado o si otro bot tiene prioridad.
  * Usa `groupSettings` y `participants` ya cargados (sin IO adicional).
  */
-async function checkGroupRestrictions(
-    chatId: string,
+function checkGroupRestrictions(
     isAdmin: boolean,
-    botId: string,
+    botInstanceId: string,
     settings: GroupSettings,
-    participants: GroupParticipant[],
-): Promise<boolean> {
+): boolean {
     if (settings.banned) return true;
 
     const primaryBot = settings.primary_bot;
     if (!primaryBot || isAdmin) return false;
-
-    const botExists = participants.some((p) => p.id === primaryBot);
-    if (!botExists) {
-        // Si el primary_bot ya no está en el grupo, limpiar la setting (fire-and-forget).
-        clearPrimaryBot(chatId);
-        return false;
-    }
-
-    const currentBotJid = cleanJid(botId) + "@s.whatsapp.net";
-    const expected = cleanJid(primaryBot);
-    return !currentBotJid.includes(expected);
+    return botInstanceId !== primaryBot;
 }

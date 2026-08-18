@@ -1,8 +1,7 @@
 import {logError} from '../../lib/logger.js';
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
-import yts from 'yt-search';
 import type {QuotedMessage} from '../../types/context.js';
-import type {YouTubeSearchVideo} from 'yt-search';
+import {searchYouTubeVideos, type YouTubeSearchVideo} from '../../providers/youtube-search.provider.js';
 import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 import {createExpiringMap} from '../../lib/ephemeral-state.js';
 import {renderDownloadFailure} from './download-error.js';
@@ -41,7 +40,7 @@ export default defineSdkPlugin({
         let videoIdToFind = sdk.text.match(youtubeRegexID) || null;
         const yt_play = await searchYouTube(sdk.args.join(' '));
         if (!yt_play[0]) return sdk.reply.message('downloads.play.noResults')
-        const ytResult = await yts(videoIdToFind === null ? sdk.text : 'https://youtu.be/' + videoIdToFind[1]);
+        const ytResult = await searchYouTubeVideos(videoIdToFind === null ? sdk.text : 'https://youtu.be/' + videoIdToFind[1]);
         let ytplay2: YouTubeSearchVideo | undefined;
         if (videoIdToFind) {
             const videoId = videoIdToFind[1];

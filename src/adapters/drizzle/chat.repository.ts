@@ -1,6 +1,6 @@
 import {and, eq, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
-import {botChatMemberships, chats, subbots} from '../../db/schema.js';
+import {botChatMemberships, chats} from '../../db/schema.js';
 import type {ChatRepository} from '../../ports/repositories.js';
 
 export const chatsRepository: ChatRepository = {
@@ -12,7 +12,6 @@ export const chatsRepository: ChatRepository = {
                     target: chats.id,
                     set: {isGroup, lastActivityAt: activityAt, isActive: true},
                 });
-            await tx.insert(subbots).values({id: botId}).onConflictDoNothing();
             await tx.insert(botChatMemberships).values({botId, chatId, joined: true})
                 .onConflictDoUpdate({
                     target: [botChatMemberships.botId, botChatMemberships.chatId],

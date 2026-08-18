@@ -29,6 +29,10 @@ CREATE SCHEMA "bot_identity";
 
 CREATE SCHEMA "bot_runtime";
 
+CREATE SCHEMA "bot_security";
+
+CREATE SCHEMA "bot_sessions";
+
 CREATE TABLE "bot_economy"."account_balances" (
 	"account_id" uuid NOT NULL,
 	"resource_code" text NOT NULL,
@@ -38,9 +42,62 @@ CREATE TABLE "bot_economy"."account_balances" (
 	CONSTRAINT "account_balances_non_negative" CHECK ("bot_economy"."account_balances"."balance" >= 0)
 );
 
-CREATE TABLE "bot_runtime"."api_tokens" (
-	"name" text PRIMARY KEY NOT NULL,
-	"token_b64" text NOT NULL
+CREATE TABLE "bot_security"."encryption_key_versions" (
+	"version" integer PRIMARY KEY NOT NULL,
+	"algorithm" text DEFAULT 'aes-256-gcm' NOT NULL,
+	"kdf" text DEFAULT 'raw-key' NOT NULL,
+	"active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"retired_at" timestamp with time zone,
+	CONSTRAINT "encryption_key_versions_version_positive" CHECK ("bot_security"."encryption_key_versions"."version" > 0),
+	CONSTRAINT "encryption_key_versions_algorithm_check" CHECK ("bot_security"."encryption_key_versions"."algorithm" = 'aes-256-gcm'),
+	CONSTRAINT "encryption_key_versions_kdf_check" CHECK ("bot_security"."encryption_key_versions"."kdf" in ('raw-key', 'argon2id')),
+	CONSTRAINT "encryption_key_versions_retirement_check" CHECK ("bot_security"."encryption_key_versions"."active" = ("bot_security"."encryption_key_versions"."retired_at" IS NULL))
+);
+
+CREATE TABLE "bot_security"."encrypted_secrets" (
+	"name" text NOT NULL,
+	"purpose" text DEFAULT 'api-token' NOT NULL,
+	"key_version" integer NOT NULL REFERENCES "bot_security"."encryption_key_versions"("version"),
+	"ciphertext" bytea NOT NULL,
+	"iv" bytea NOT NULL,
+	"auth_tag" bytea NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "encrypted_secrets_pkey" PRIMARY KEY("purpose", "name"),
+	CONSTRAINT "encrypted_secrets_purpose_check" CHECK ("bot_security"."encrypted_secrets"."purpose" in ('api-token', 'oauth-token', 'webhook-secret'))
+);
+
+CREATE TABLE "bot_sessions"."auth_sessions" (
+	"session_id" text PRIMARY KEY NOT NULL,
+	"bot_instance_id" text NOT NULL,
+	"owner_id" text,
+	"lease_owner" text,
+	"lease_expires_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "auth_sessions_bot_instance_uidx" UNIQUE("bot_instance_id")
+);
+
+CREATE TABLE "bot_sessions"."auth_credentials" (
+	"session_id" text PRIMARY KEY NOT NULL REFERENCES "bot_sessions"."auth_sessions"("session_id") ON DELETE cascade,
+	"key_version" integer NOT NULL REFERENCES "bot_security"."encryption_key_versions"("version"),
+	"ciphertext" bytea NOT NULL,
+	"iv" bytea NOT NULL,
+	"auth_tag" bytea NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE "bot_sessions"."signal_keys" (
+	"session_id" text NOT NULL REFERENCES "bot_sessions"."auth_sessions"("session_id") ON DELETE cascade,
+	"key_type" text NOT NULL,
+	"key_id" text NOT NULL,
+	"key_version" integer NOT NULL REFERENCES "bot_security"."encryption_key_versions"("version"),
+	"ciphertext" bytea NOT NULL,
+	"iv" bytea NOT NULL,
+	"auth_tag" bytea NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "signal_keys_session_id_key_type_key_id_pk" PRIMARY KEY("session_id", "key_type", "key_id")
 );
 
 CREATE TABLE "bot_content"."audio_response_assets" (
@@ -398,8 +455,23 @@ CREATE TABLE "bot_runtime"."reports" (
 	"sender_name" text,
 	"mensaje" text NOT NULL,
 	"fecha" timestamp with time zone DEFAULT now() NOT NULL,
-	"enviado" boolean DEFAULT false NOT NULL,
 	"tipo" text DEFAULT 'reporte' NOT NULL
+);
+
+CREATE TABLE "bot_runtime"."report_deliveries" (
+	"report_id" integer PRIMARY KEY NOT NULL,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"attempt_count" integer DEFAULT 0 NOT NULL,
+	"next_attempt_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"locked_by" text,
+	"locked_until" timestamp with time zone,
+	"last_error" text,
+	"delivered_message_id" text,
+	"sent_at" timestamp with time zone,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "report_deliveries_report_id_reports_id_fk" FOREIGN KEY ("report_id") REFERENCES "bot_runtime"."reports"("id") ON DELETE cascade,
+	CONSTRAINT "report_deliveries_status_check" CHECK ("status" in ('pending', 'processing', 'sent', 'dead')),
+	CONSTRAINT "report_deliveries_attempt_non_negative" CHECK ("attempt_count" >= 0)
 );
 
 CREATE TABLE "bot_runtime"."stats" (
@@ -424,9 +496,10 @@ CREATE TABLE "bot_runtime"."subbot_prefixes" (
 	CONSTRAINT "subbot_prefixes_position_non_negative" CHECK ("bot_runtime"."subbot_prefixes"."position" >= 0)
 );
 
-CREATE TABLE "bot_runtime"."subbots" (
+CREATE TABLE "bot_runtime"."bot_instances" (
 	"id" text PRIMARY KEY NOT NULL,
-	"tipo" text DEFAULT 'null' NOT NULL,
+	"instance_type" text DEFAULT 'subbot' NOT NULL,
+	"bot_jid" text,
 	"name" text,
 	"logo_url" text,
 	"mode" text DEFAULT 'public' NOT NULL,
@@ -434,7 +507,13 @@ CREATE TABLE "bot_runtime"."subbots" (
 	"anti_call" boolean DEFAULT true NOT NULL,
 	"privacy" boolean DEFAULT false NOT NULL,
 	"prestar" boolean DEFAULT false NOT NULL,
-	CONSTRAINT "subbots_mode_check" CHECK ("bot_runtime"."subbots"."mode" in ('public', 'private'))
+	"status" text DEFAULT 'active' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"last_connected_at" timestamp with time zone,
+	CONSTRAINT "bot_instances_mode_check" CHECK ("bot_runtime"."bot_instances"."mode" in ('public', 'private')),
+	CONSTRAINT "bot_instances_type_check" CHECK ("bot_runtime"."bot_instances"."instance_type" in ('main', 'subbot')),
+	CONSTRAINT "bot_instances_status_check" CHECK ("bot_runtime"."bot_instances"."status" in ('active', 'revoked', 'error'))
 );
 
 CREATE TABLE "bot_identity"."user_bans" (
@@ -546,7 +625,7 @@ ALTER TABLE "bot_economy"."bank_loan_payments" ADD CONSTRAINT "bank_loan_payment
 ALTER TABLE "bot_economy"."bank_loan_payments" ADD CONSTRAINT "bank_loan_payments_wallet_ledger_entry_id_ledger_entries_id_fk" FOREIGN KEY ("wallet_ledger_entry_id") REFERENCES "bot_economy"."ledger_entries"("id") ON DELETE no action ON UPDATE no action;
 ALTER TABLE "bot_economy"."bank_loan_payments" ADD CONSTRAINT "bank_loan_payments_reserve_ledger_entry_id_ledger_entries_id_fk" FOREIGN KEY ("reserve_ledger_entry_id") REFERENCES "bot_economy"."ledger_entries"("id") ON DELETE no action ON UPDATE no action;
 ALTER TABLE "bot_economy"."bank_loans" ADD CONSTRAINT "bank_loans_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "bot_runtime"."bot_chat_memberships" ADD CONSTRAINT "bot_chat_memberships_bot_id_subbots_id_fk" FOREIGN KEY ("bot_id") REFERENCES "bot_runtime"."subbots"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_runtime"."bot_chat_memberships" ADD CONSTRAINT "bot_chat_memberships_bot_id_bot_instances_id_fk" FOREIGN KEY ("bot_id") REFERENCES "bot_runtime"."bot_instances"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_runtime"."bot_chat_memberships" ADD CONSTRAINT "bot_chat_memberships_chat_id_chats_id_fk" FOREIGN KEY ("chat_id") REFERENCES "bot_groups"."chats"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_content"."character_market_listings" ADD CONSTRAINT "character_market_listings_character_id_characters_id_fk" FOREIGN KEY ("character_id") REFERENCES "bot_content"."characters"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_content"."character_market_listings" ADD CONSTRAINT "character_market_listings_seller_id_users_id_fk" FOREIGN KEY ("seller_id") REFERENCES "bot_identity"."users"("id") ON DELETE restrict ON UPDATE no action;
@@ -573,6 +652,7 @@ ALTER TABLE "bot_groups"."group_memory_settings" ADD CONSTRAINT "group_memory_se
 ALTER TABLE "bot_groups"."group_moderation_settings" ADD CONSTRAINT "group_moderation_settings_group_id_group_settings_group_id_fk" FOREIGN KEY ("group_id") REFERENCES "bot_groups"."group_settings"("group_id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_groups"."group_nsfw_settings" ADD CONSTRAINT "group_nsfw_settings_group_id_group_settings_group_id_fk" FOREIGN KEY ("group_id") REFERENCES "bot_groups"."group_settings"("group_id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_groups"."group_rpg_settings" ADD CONSTRAINT "group_rpg_settings_group_id_group_settings_group_id_fk" FOREIGN KEY ("group_id") REFERENCES "bot_groups"."group_settings"("group_id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_groups"."group_settings" ADD CONSTRAINT "group_settings_primary_bot_instance_fk" FOREIGN KEY ("primary_bot") REFERENCES "bot_runtime"."bot_instances"("id") ON DELETE set null ON UPDATE no action;
 ALTER TABLE "bot_economy"."ledger_entries" ADD CONSTRAINT "ledger_entries_operation_id_financial_operations_id_fk" FOREIGN KEY ("operation_id") REFERENCES "bot_economy"."financial_operations"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_economy"."ledger_entries" ADD CONSTRAINT "ledger_entries_account_id_financial_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "bot_economy"."financial_accounts"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "bot_economy"."ledger_entries" ADD CONSTRAINT "ledger_entries_resource_code_resources_code_fk" FOREIGN KEY ("resource_code") REFERENCES "bot_economy"."resources"("code") ON DELETE restrict ON UPDATE no action;
@@ -585,9 +665,10 @@ ALTER TABLE "bot_audit"."message_logs" ADD CONSTRAINT "message_logs_deleted_by_u
 ALTER TABLE "bot_groups"."user_group_activity_counters" ADD CONSTRAINT "user_group_activity_counters_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_groups"."user_group_activity_counters" ADD CONSTRAINT "user_group_activity_counters_group_id_chats_id_fk" FOREIGN KEY ("group_id") REFERENCES "bot_groups"."chats"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_runtime"."reports" ADD CONSTRAINT "reports_sender_id_users_id_fk" FOREIGN KEY ("sender_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "bot_runtime"."subbot_owners" ADD CONSTRAINT "subbot_owners_bot_id_subbots_id_fk" FOREIGN KEY ("bot_id") REFERENCES "bot_runtime"."subbots"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_runtime"."subbot_owners" ADD CONSTRAINT "subbot_owners_bot_id_bot_instances_id_fk" FOREIGN KEY ("bot_id") REFERENCES "bot_runtime"."bot_instances"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_runtime"."subbot_owners" ADD CONSTRAINT "subbot_owners_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "bot_runtime"."subbot_prefixes" ADD CONSTRAINT "subbot_prefixes_bot_id_subbots_id_fk" FOREIGN KEY ("bot_id") REFERENCES "bot_runtime"."subbots"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_runtime"."subbot_prefixes" ADD CONSTRAINT "subbot_prefixes_bot_id_bot_instances_id_fk" FOREIGN KEY ("bot_id") REFERENCES "bot_runtime"."bot_instances"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_sessions"."auth_sessions" ADD CONSTRAINT "auth_sessions_bot_instance_fk" FOREIGN KEY ("bot_instance_id") REFERENCES "bot_runtime"."bot_instances"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_identity"."user_bans" ADD CONSTRAINT "user_bans_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_identity"."user_cooldowns" ADD CONSTRAINT "user_cooldowns_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_identity"."user_daily_rewards" ADD CONSTRAINT "user_daily_rewards_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
@@ -603,12 +684,18 @@ ALTER TABLE "bot_identity"."user_robbery_states" ADD CONSTRAINT "user_robbery_st
 ALTER TABLE "bot_identity"."user_sticker_preferences" ADD CONSTRAINT "user_sticker_preferences_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_identity"."user_warnings" ADD CONSTRAINT "user_warnings_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
 CREATE UNIQUE INDEX "audio_response_assets_response_position_uidx" ON "bot_content"."audio_response_assets" USING btree ("response_id","position");
+CREATE INDEX "auth_sessions_lease_idx" ON "bot_sessions"."auth_sessions" USING btree ("lease_expires_at");
+CREATE INDEX "signal_keys_session_type_idx" ON "bot_sessions"."signal_keys" USING btree ("session_id","key_type");
+CREATE INDEX "report_deliveries_pending_idx" ON "bot_runtime"."report_deliveries" USING btree ("status","next_attempt_at");
+CREATE INDEX "report_deliveries_lock_idx" ON "bot_runtime"."report_deliveries" USING btree ("locked_until");
 CREATE UNIQUE INDEX "audio_responses_scope_phrase_uidx" ON "bot_content"."audio_responses" USING btree ("scope","phrase");
 CREATE INDEX "bank_loan_payments_loan_created_at_idx" ON "bot_economy"."bank_loan_payments" USING btree ("loan_id","created_at");
 CREATE INDEX "bank_loans_user_status_idx" ON "bot_economy"."bank_loans" USING btree ("user_id","status");
 CREATE INDEX "bank_loans_due_status_idx" ON "bot_economy"."bank_loans" USING btree ("status","due_at");
 CREATE UNIQUE INDEX "bank_loans_one_outstanding_per_user" ON "bot_economy"."bank_loans" USING btree ("user_id") WHERE "bot_economy"."bank_loans"."status" in ('active', 'overdue', 'defaulted');
 CREATE INDEX "bot_chat_memberships_bot_joined_idx" ON "bot_runtime"."bot_chat_memberships" USING btree ("bot_id","joined");
+CREATE INDEX "bot_instances_type_status_idx" ON "bot_runtime"."bot_instances" USING btree ("instance_type","status");
+CREATE UNIQUE INDEX "bot_instances_bot_jid_uidx" ON "bot_runtime"."bot_instances" USING btree ("bot_jid");
 CREATE INDEX "character_market_listings_character_status_idx" ON "bot_content"."character_market_listings" USING btree ("character_id","status");
 CREATE UNIQUE INDEX "character_market_listings_one_active_uidx" ON "bot_content"."character_market_listings" USING btree ("character_id") WHERE "bot_content"."character_market_listings"."status" = 'active';
 CREATE INDEX "character_price_events_character_created_idx" ON "bot_content"."character_price_events" USING btree ("character_id","created_at");
@@ -620,6 +707,7 @@ CREATE INDEX "command_resource_reservations_user_idx" ON "bot_economy"."command_
 CREATE UNIQUE INDEX "financial_accounts_user_type_uidx" ON "bot_economy"."financial_accounts" USING btree ("user_id","account_type");
 CREATE UNIQUE INDEX "financial_accounts_one_reserve_uidx" ON "bot_economy"."financial_accounts" USING btree ("account_type") WHERE "bot_economy"."financial_accounts"."user_id" IS NULL AND "bot_economy"."financial_accounts"."account_type" = 'reserve';
 CREATE INDEX "group_command_access_rules_group_scope_idx" ON "bot_groups"."group_command_access_rules" USING btree ("group_id","scope");
+CREATE INDEX "group_settings_primary_bot_idx" ON "bot_groups"."group_settings" USING btree ("primary_bot");
 CREATE INDEX "ledger_entries_account_created_idx" ON "bot_economy"."ledger_entries" USING btree ("account_id","created_at");
 CREATE INDEX "ledger_entries_operation_idx" ON "bot_economy"."ledger_entries" USING btree ("operation_id");
 CREATE INDEX "marriage_members_marriage_idx" ON "bot_identity"."marriage_members" USING btree ("marriage_id");
@@ -707,7 +795,7 @@ BEGIN
         WHERE column_name = 'updated_at'
           AND table_schema = ANY (ARRAY[
               'bot_identity', 'bot_economy', 'bot_groups', 'bot_runtime',
-              'bot_content', 'bot_ai', 'bot_audit'
+              'bot_content', 'bot_ai', 'bot_audit', 'bot_security', 'bot_sessions'
           ])
     LOOP
         EXECUTE format(
@@ -720,13 +808,63 @@ BEGIN
 END
 $$;
 
+-- Cross-process cache coherence: publish only the affected aggregate key.
+CREATE FUNCTION bot_runtime.notify_cache_invalidation()
+RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+    row_data jsonb;
+    cache_key text;
+BEGIN
+    IF TG_OP = 'TRUNCATE' THEN
+        PERFORM pg_notify('zycryx_cache_invalidate', json_build_object('domain', TG_ARGV[0], 'key', NULL)::text);
+        RETURN NULL;
+    END IF;
+    row_data := CASE WHEN TG_OP = 'DELETE' THEN to_jsonb(OLD) ELSE to_jsonb(NEW) END;
+    cache_key := row_data ->> TG_ARGV[1];
+    PERFORM pg_notify('zycryx_cache_invalidate', json_build_object('domain', TG_ARGV[0], 'key', cache_key)::text);
+    RETURN NULL;
+END;
+$$;
+
+DO $$
+DECLARE
+    item text[];
+BEGIN
+    FOREACH item SLICE 1 IN ARRAY ARRAY[
+        ARRAY['bot_runtime.bot_instances', 'bot-instance', 'id'],
+        ARRAY['bot_runtime.subbot_owners', 'bot-instance', 'bot_id'],
+        ARRAY['bot_runtime.subbot_prefixes', 'bot-instance', 'bot_id'],
+        ARRAY['bot_groups.group_settings', 'group-settings', 'group_id'],
+        ARRAY['bot_groups.group_moderation_settings', 'group-settings', 'group_id'],
+        ARRAY['bot_groups.group_autoresponder_settings', 'group-settings', 'group_id'],
+        ARRAY['bot_groups.group_nsfw_settings', 'group-settings', 'group_id'],
+        ARRAY['bot_groups.group_rpg_settings', 'group-settings', 'group_id'],
+        ARRAY['bot_groups.group_greetings', 'group-settings', 'group_id'],
+        ARRAY['bot_groups.group_command_access_rules', 'group-settings', 'group_id'],
+        ARRAY['bot_groups.group_censored_users', 'group-censored-users', 'group_id'],
+        ARRAY['bot_security.encrypted_secrets', 'api-token', 'name']
+    ] LOOP
+        EXECUTE format(
+            'CREATE TRIGGER zycryx_cache_invalidation AFTER INSERT OR UPDATE OR DELETE ON %s FOR EACH ROW EXECUTE FUNCTION bot_runtime.notify_cache_invalidation(%L, %L)',
+            item[1], item[2], item[3]
+        );
+        EXECUTE format(
+            'CREATE TRIGGER zycryx_cache_invalidation_truncate AFTER TRUNCATE ON %s FOR EACH STATEMENT EXECUTE FUNCTION bot_runtime.notify_cache_invalidation(%L, %L)',
+            item[1], item[2], item[3]
+        );
+    END LOOP;
+END;
+$$;
+
 COMMENT ON SCHEMA bot_identity IS 'Canonical users, identities, registration, progression and relationships.';
 COMMENT ON SCHEMA bot_economy IS 'Resource catalog, accounts, balances, immutable financial operations and ledger.';
 COMMENT ON SCHEMA bot_groups IS 'Chats, group configuration modules, roles and aggregate activity.';
-COMMENT ON SCHEMA bot_runtime IS 'Bot instances, memberships, operational reports, counters and protected tokens.';
+COMMENT ON SCHEMA bot_runtime IS 'Bot instances, memberships, operational reports and counters.';
 COMMENT ON SCHEMA bot_content IS 'Characters, ownership, market history and audio-response assets.';
 COMMENT ON SCHEMA bot_ai IS 'Normalized AI chat sessions and ordered messages.';
 COMMENT ON SCHEMA bot_audit IS 'Append-oriented message audit records.';
+COMMENT ON SCHEMA bot_security IS 'Encrypted application secrets and non-secret encryption key metadata.';
+COMMENT ON SCHEMA bot_sessions IS 'Encrypted Baileys credentials and normalized Signal key material.';
 
 -- Custom schemas are private by default. Direct PostgreSQL owner connections still work.
 DO $$
@@ -736,7 +874,7 @@ DECLARE
 BEGIN
     FOREACH schema_name IN ARRAY ARRAY[
         'bot_identity', 'bot_economy', 'bot_groups', 'bot_runtime',
-        'bot_content', 'bot_ai', 'bot_audit'
+        'bot_content', 'bot_ai', 'bot_audit', 'bot_security', 'bot_sessions'
     ]
     LOOP
         EXECUTE format('REVOKE ALL ON SCHEMA %I FROM PUBLIC', schema_name);
@@ -765,7 +903,7 @@ BEGIN
         FROM pg_tables
         WHERE schemaname = ANY (ARRAY[
             'bot_identity', 'bot_economy', 'bot_groups', 'bot_runtime',
-            'bot_content', 'bot_ai', 'bot_audit'
+            'bot_content', 'bot_ai', 'bot_audit', 'bot_security', 'bot_sessions'
         ])
     LOOP
         EXECUTE format(

@@ -3,6 +3,8 @@ import {content} from '../../services/content.service.js';
 import type {BeforePluginContext} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
 
+export const beforePolicy = {phase: 'security', priority: 100, failurePolicy: 'fail-closed'} as const;
+
 const linkRegex = /https?:\/\/\S+/i;
 type MessageKeyWithAlt = BotMessage['key'] & {participantAlt?: string};
 

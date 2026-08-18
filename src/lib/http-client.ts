@@ -1,4 +1,3 @@
-import fetch, {type RequestInit, type Response} from 'node-fetch';
 import {logDebug} from './logger.js';
 
 const DEFAULT_TIMEOUT_MS = 15_000;
@@ -36,7 +35,7 @@ export async function httpRequest(url: string, options: HttpRequestOptions = {})
     try {
         const response = await fetch(url, {
             ...init,
-            signal: controller.signal as RequestInit['signal'],
+            signal: controller.signal,
         });
         const ok = response.ok || expectedStatuses?.includes(response.status);
 
@@ -52,7 +51,7 @@ export async function httpRequest(url: string, options: HttpRequestOptions = {})
         }
 
         logDebug(`[HTTP] ${init.method || 'GET'} ${url} ${response.status} ${Date.now() - startedAt}ms`);
-        return response as unknown as Response;
+        return response;
     } catch (error: unknown) {
         if (error instanceof Error && error.name === 'AbortError') {
             throw new Error(`[HTTP] Timeout ${timeoutMs}ms: ${url}`);

@@ -14,6 +14,8 @@ import {logError} from '../../lib/logger.js';
 import {content} from '../../services/content.service.js';
 import type {BeforePluginContext, ExtendedConn} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
+
+export const beforePolicy = {phase: 'security', priority: 120, failurePolicy: 'fail-closed'} as const;
 import type {VirusTotalStats} from '../../lib/virustotal.js';
 
 type MessageRecord = Record<string, unknown>;

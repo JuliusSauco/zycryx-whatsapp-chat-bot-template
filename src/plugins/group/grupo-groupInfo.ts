@@ -4,6 +4,7 @@ import {cleanJid} from '../../utils/jid.js'
 import {accessModeLabel} from '../../utils/access-mode.js'
 import {getGroupParticipantRole} from '../../services/group-role.service.js'
 import type {GroupParticipant} from '@whiskeysockets/baileys'
+import {findBotJidByInstanceId} from '../../services/subbot.service.js'
 
 type GroupInfoParticipant = GroupParticipant & {
     participantAlt?: string
@@ -75,8 +76,10 @@ export default defineSdkPlugin({
     const owner = await resolveGroupMention(ownerJid, groupInfoParticipants, sdk.content.message('group.groupInfo.unknownOwner'))
 
     let primaryBotMention = ''
+    let primaryBotJid: string | null = null
     if (primary_bot) {
-        primaryBotMention = `@${primary_bot.split('@')[0]}`
+        primaryBotJid = await findBotJidByInstanceId(primary_bot)
+        if (primaryBotJid) primaryBotMention = `@${primaryBotJid.split('@')[0]}`
     }
 
     const enabled = sdk.content.message('group.groupInfo.enabled')
@@ -101,7 +104,7 @@ export default defineSdkPlugin({
         banned: banned ? sdk.content.message('group.groupInfo.bannedYes') : sdk.content.message('group.groupInfo.bannedNo'),
     }).trim()
 
-    const mentionedJid = [...new Set([owner.mentionJid, ...adminMentions.map(admin => admin.mentionJid)]
+    const mentionedJid = [...new Set([owner.mentionJid, primaryBotJid, ...adminMentions.map(admin => admin.mentionJid)]
         .filter((jid): jid is string => Boolean(jid && jid.includes('@'))))]
 
     await sdk.sendFile(pp, 'pp.jpg', text, m, false, {contextInfo: {mentionedJid}})

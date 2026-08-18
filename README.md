@@ -59,7 +59,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - Registro validado de plugins con deteccion de aliases y regex duplicadas.
 - Interceptores tipados, timeouts por perfil, cancelacion cooperativa y locks con namespace por plugin.
 - Conexion directa a PostgreSQL como decision arquitectonica; no hay adapter backend REST/GraphQL.
-- Modelo estricto normalizado por dominios en siete schemas PostgreSQL.
+- Modelo estricto normalizado por dominios en nueve schemas PostgreSQL.
 - Bootstrap único para bases nuevas, validación de PostgreSQL 18 y seguridad RLS compatible con Supabase.
 - Subbots con sesiones independientes.
 - Reglas persistentes por familia con activación independiente y modos `all`, `admin`, `superadmin` y `owner`: juegos, herramientas, RPG, descargas, búsquedas, stickers, convertidores, diversión, audios, GIFs y NSFW.
@@ -87,9 +87,9 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 | tsx | Ejecucion TypeScript en desarrollo. |
 | Pino | Logger silencioso usado internamente por Baileys. |
 | HTTP client centralizado | Consumo de APIs externas desde SDK, providers y librerias internas. |
-| Axios / node-fetch | Compatibilidad interna en scrapers especiales documentados. |
+| Axios / Fetch nativo | Compatibilidad interna en scrapers especiales documentados. |
 | FFmpeg | Procesamiento multimedia. |
-| Jimp / node-webpmux / wa-sticker-formatter | Imagenes y stickers. |
+| Sharp / Jimp / node-webpmux | Imagenes y stickers. |
 | cross-env | Scripts con variables de entorno. |
 
 <a id="requisitos"></a>
@@ -143,7 +143,7 @@ En Supabase también puedes pegar el contenido completo del script en SQL Editor
 psql -U <user> -d <database> -f database/schema.sql
 ```
 
-No existe una ruta de migración legacy en esta rama: está diseñada para una base nueva. El arranque PM2 ejecuta `db:check`, que sólo valida versión y estructura; nunca altera la base.
+El despliegue ejecuta `db:check`, que sólo valida versión y estructura; nunca altera la base. Las bases nuevas se provisionan una sola vez con `db:setup`.
 
 Ejecuta en desarrollo:
 
@@ -157,7 +157,7 @@ O compila y ejecuta la version local:
 npm run start:local
 ```
 
-En la primera ejecucion el bot pedira QR o codigo de emparejamiento. Las sesiones se guardan en carpetas locales y no deben versionarse.
+En la primera ejecucion el bot pedira QR o codigo de emparejamiento. Por defecto, credenciales y Signal keys quedan cifradas en PostgreSQL; las carpetas locales sólo se usan para importar sesiones legacy o con `BAILEYS_AUTH_STATE_SOURCE=files`.
 
 <a id="configuracion"></a>
 ## ⚙️ Configuracion
@@ -191,6 +191,8 @@ BOT_GROUP_LINKS=
 BOT_CHANNEL_LINKS=
 BOT_OWNER_NUMBERS=573001112233,51999888777
 BOT_MOD_GROUP_ID=
+BOT_LINK_MODE=auto
+BOT_LINK_PHONE=
 DEFAULT_MENU_IMAGE=./resources/media/menus/Menu2.jpg
 
 LOG_LEVEL=command
@@ -288,8 +290,12 @@ BOT_OWNER_NUMBERS=573001112233,51999888777
 | `npm run ops:backup:db` | Backup solo de PostgreSQL con `pg_dump`. |
 | `npm run ops:backup:sessions` | Backup solo de sesiones y audios custom. |
 | `npm run db:setup` | Provisiona una base nueva desde `database/schema.sql`. |
-| `npm run db:check` | Valida PostgreSQL 18+ y los siete schemas sin modificar datos. |
+| `npm run db:setup-runtime-role` | Crea/actualiza un rol DML sin DDL y sus políticas RLS. |
+| `npm run db:check` | Valida PostgreSQL 18+, schemas, relaciones e índices críticos sin modificar datos. |
 | `npm run db:studio` | Abre Drizzle Studio. |
+| `npm run secrets:set -- <nombre> <valor>` | Guarda o rota un secreto cifrado. |
+| `npm run secrets:migrate-legacy` | Migra y verifica `api_tokens` base64 antes de eliminarla. |
+| `npm run secrets:rotate` | Recifra secretos, credenciales y Signal keys con la versión activa. |
 | `npm run dev` | Ejecuta local con `tsx watch`. |
 | `npm run dev:dev` | Ejecuta con `NODE_ENV=dev`. |
 | `npm run dev:test` | Ejecuta con `NODE_ENV=test`. |
@@ -310,7 +316,7 @@ BOT_OWNER_NUMBERS=573001112233,51999888777
 Guia completa en `docs/deployment.md` y runbook diario en `docs/operations-runbook.md`. Resumen:
 
 ```bash
-npm install
+npm ci
 cp .env.example .env.prod   # completar valores reales
 npm run db:setup             # una sola vez, sobre la base vacía
 npm run build
@@ -319,11 +325,11 @@ npm run serve               # primera vez en terminal real para vincular QR/codi
 
 Puntos clave:
 
-- Un process manager (PM2, systemd o restart policy de Docker) es **obligatorio**: el bot se reinicia solo cada 3 horas (`process.exit(0)`) como higiene de memoria y espera que el supervisor lo levante.
+- Un process manager (PM2, systemd o restart policy de Docker) es recomendado para recuperar fallos no controlados y arrancar con el servidor.
 - La vinculacion inicial es interactiva (pide QR o codigo por consola); hazla fuera del supervisor y luego arranca bajo PM2.
 - La plantilla PM2 ejecuta `db:check` antes del bot. Los cambios de estructura no se aplican durante un reinicio.
 - Una sola instancia por numero de WhatsApp: el estado de juegos/cooldowns vive en memoria y la sesion es por dispositivo.
-- Respalda `BotSession/` (con el bot detenido) y la base de datos con `NODE_ENV=prod npm run ops:backup`; ver politica de backups en `docs/deployment.md`.
+- Respalda la base y la clave maestra/keyring por separado; las carpetas de sesión sólo importan durante la migración legacy.
 - Flujo de conexion, sesiones y reconexion documentado en `docs/baileys-connection.md`. Problemas comunes en `docs/troubleshooting.md`.
 - Preflight operativo: `NODE_ENV=prod npm run ops:check`.
 
@@ -692,17 +698,19 @@ Metadata soportada:
 <a id="base-de-datos"></a>
 ## 🗄️ Base De Datos
 
-La fuente tipada vive en `src/db/schema.ts` y el bootstrap ejecutable en `database/schema.sql`. La normalización separa identidad, economía, grupos, runtime, contenido, IA y auditoría. No se guardan listas en arrays/JSON ni se repiten columnas por cada recurso, owner, prefijo, saludo o mensaje de memoria.
+La fuente tipada vive en `src/db/schema.ts` y el bootstrap ejecutable en `database/schema.sql`. La normalización separa identidad, economía, grupos, runtime, contenido, IA, auditoría, seguridad y sesiones. No se guardan listas en arrays/JSON ni se repiten columnas por cada recurso, owner, prefijo, saludo o mensaje de memoria.
 
 | Schema | Responsabilidad | Tablas principales |
 |---|---|---|
 | `bot_identity` | Usuario canónico e información dependiente | `users`, `user_identities`, `user_profiles`, `user_registrations`, `user_bans`, `user_warnings`, `user_progress`, `user_cooldowns`, `marriages`, `marriage_members`, `marriage_requests` |
 | `bot_economy` | Catálogo y contabilidad | `resources`, `financial_accounts`, `account_balances`, `financial_operations`, `ledger_entries`, `bank_loans`, `bank_loan_payments`, `command_resource_reservations`, `command_reservation_items` |
 | `bot_groups` | Chats y módulos configurables | `chats`, `group_settings`, ajustes por módulo, `group_command_access_rules`, `group_censored_users`, `user_group_roles`, `user_group_activity_counters` |
-| `bot_runtime` | Instancias y operación del bot | `subbots`, `subbot_prefixes`, `subbot_owners`, `bot_chat_memberships`, `reports`, `stats`, `api_tokens` |
+| `bot_runtime` | Instancias y operación del bot | `subbots`, `subbot_prefixes`, `subbot_owners`, `bot_chat_memberships`, `reports`, `report_deliveries`, `stats` |
 | `bot_content` | Contenido dinámico y mercado RPG | `characters`, `character_ownerships`, `character_price_events`, `character_market_listings`, `audio_responses`, `audio_response_assets` |
 | `bot_ai` | Memoria conversacional ordenada | `chat_memory`, `chat_memory_messages` |
 | `bot_audit` | Registro auditable | `message_logs` |
+| `bot_security` | Secretos cifrados y versiones de clave | `encryption_key_versions`, `encrypted_secrets` |
+| `bot_sessions` | Estado cifrado de Baileys | `auth_sessions`, `auth_credentials`, `signal_keys` |
 
 ### Modelo relacional
 
@@ -729,6 +737,10 @@ erDiagram
     CHARACTERS ||--o{ CHARACTER_MARKET_LISTINGS : lists
     CHAT_MEMORY ||--o{ CHAT_MEMORY_MESSAGES : contains
     AUDIO_RESPONSES ||--o{ AUDIO_RESPONSE_ASSETS : uses
+    REPORTS ||--|| REPORT_DELIVERIES : dispatches
+    AUTH_SESSIONS ||--|| AUTH_CREDENTIALS : authenticates
+    AUTH_SESSIONS ||--o{ SIGNAL_KEYS : contains
+    ENCRYPTION_KEY_VERSIONS ||--o{ ENCRYPTED_SECRETS : encrypts
 ```
 
 Detalles importantes:
@@ -739,6 +751,8 @@ Detalles importantes:
 - Los ajustes de grupo se dividen por módulo. `group_settings` es la raíz y las reglas de familias/comandos sólo almacenan overrides.
 - Owners, prefixes, recursos de reservas, URLs de audio e historial de IA son relaciones uno-a-muchos ordenadas.
 - El precio y propietario actuales de un personaje se separan de su historial de precios y publicaciones de mercado.
+- Las entregas de reportes forman un outbox durable con lease, reintentos y `FOR UPDATE SKIP LOCKED`.
+- Las credenciales de Baileys y cada Signal key se cifran con AES-256-GCM y AAD; nunca se persiste la clave maestra.
 - PostgreSQL 18 aporta `uuidv7()` y la unicidad temporal `WITHOUT OVERLAPS` para solicitudes matrimoniales vigentes.
 
 ### Bootstrap de Supabase
@@ -751,27 +765,27 @@ npm run db:setup
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/schema.sql
 ```
 
-En Supabase puedes ejecutar el archivo completo desde SQL Editor. Para `db:setup`/`psql`, usa la conexión directa de la base y no el pooler en modo transacción. El script es transaccional, comprueba la versión, crea los siete schemas, catálogos, claves foráneas, checks, índices, triggers de `updated_at`, capitalización inicial del reserve y seguridad RLS. `anon` y `authenticated` no reciben permisos; `service_role` los recibe si el rol existe.
+En Supabase puedes ejecutar el archivo completo desde SQL Editor. Para `db:setup`/`psql`, usa la conexión directa de la base y no el pooler en modo transacción. El script es transaccional, comprueba la versión, crea los nueve schemas, catálogos, claves foráneas, checks, índices, triggers de `updated_at`, capitalización inicial del reserve y seguridad RLS. `anon` y `authenticated` no reciben permisos; `service_role` los recibe si el rol existe.
 
-No hay migraciones históricas ni baseline legacy. Para comprobar una instalación sin modificarla:
+Para evolucionar una instalación existente y luego comprobarla:
 
 ```bash
 npm run db:check
 npm run db:studio
 ```
 
-### 🔑 API Tokens
+### 🔑 Secretos y sesiones cifradas
 
-Los secretos externos pueden vivir en `.env.local` o en la tabla `api_tokens`, segun su naturaleza.
+Los secretos externos pueden vivir en el gestor de secretos del entorno o en `bot_security.encrypted_secrets`. El valor se cifra en la aplicación con AES-256-GCM; PostgreSQL sólo recibe `ciphertext`, IV, auth tag y versión de clave.
 
-`api_tokens` usa:
+Genera una clave aleatoria de 32 bytes y guárdala fuera de la base:
 
-```text
-name      text primary key
-token_b64 text not null
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
+npm run secrets:set -- nombre-del-token valor-secreto
 ```
 
-El servicio `api-token.service.ts` decodifica `token_b64` y mantiene cache en memoria.
+Argon2id está disponible como alternativa de derivación desde passphrase. Su coste se paga una vez por proceso y la clave derivada queda en memoria; para producción automatizada se recomienda la clave aleatoria base64. Consulta `docs/baileys-database-sessions.md` para rotación, migración y recuperación.
 
 <a id="recursos"></a>
 ## 📦 Recursos
@@ -846,7 +860,7 @@ PERF_LOG_THRESHOLD_MS=300
 Este repositorio esta pensado para ser publico. No versionar:
 
 - `.env.local`, `.env.dev`, `.env.test`, `.env.prod`;
-- sesiones de WhatsApp (`BotSession/`, `jadibot/`);
+- carpetas legacy de WhatsApp (`BotSession/`, `jadibot/`);
 - tokens reales de APIs;
 - backups de base de datos;
 - archivos temporales.
@@ -855,7 +869,7 @@ Usa `.env.example` como contrato publico y `.env.local` para valores reales. Si 
 
 Recomendaciones operativas:
 
-- Trata `BotSession/` y `jadibot/` como credenciales: quien tenga esos archivos controla la cuenta de WhatsApp.
+- Trata el dump de DB, `BotSession/`, `jadibot/` y la clave maestra como credenciales; guarda la clave separada del dump.
 - Manten `BOT_OWNER_NUMBERS` limitado a operadores de confianza. Los comandos de ejecucion remota, mantenimiento del proceso y respaldo de credenciales no se exponen por WhatsApp; consulta `docs/owner-security.md`.
 - Corre el bot con un usuario de sistema dedicado y sin privilegios; PostgreSQL sin exposicion publica.
 - Los guards de permisos (`owner`, `admin`, `group`, access modes por familia) deben declararse en la metadata del plugin, no re-implementarse a mano.
@@ -892,7 +906,7 @@ Para ejecutar local desde build:
 npm run start:local
 ```
 
-En una instalación nueva ejecuta `npm run db:setup` una sola vez; en instalaciones existentes usa `npm run db:check`.
+En una instalación nueva ejecuta `npm run db:setup` una sola vez. En instalaciones existentes usa `npm run db:check`; esta rama no ofrece upgrades incrementales sobre esquemas legacy.
 
 O si ya compilaste:
 
@@ -959,6 +973,7 @@ Documentacion tecnica viva:
 | `docs/improvement-roadmap.md` | Backlog interno de mejoras y refactors. |
 | `docs/adr/` | Decisiones arquitectonicas aceptadas: branding por contexto, runtime state, providers, catalogo y estado efimero. |
 | `docs/baileys-connection.md` | Flujo de conexion, vinculacion, sesiones y reconexion con Baileys. |
+| `docs/baileys-database-sessions.md` | Cifrado, rendimiento, migración, rotación y recuperación de sesiones. |
 | `docs/environment-variables.md` | Referencia completa de variables de entorno. |
 | `docs/adding-commands.md` | Guia paso a paso para agregar comandos nuevos. |
 | `docs/deployment.md` | Despliegue en servidor, PM2, backups y checklist de produccion. |
@@ -989,7 +1004,8 @@ Resumen actual:
 - Repositorios Drizzle separados por agregado.
 - Capa `src/domain` separada para modelos y reglas de usuarios, grupos, subbots, audios, personajes y operaciones.
 - Plugins y core consumen servicios/puertos, no SQL directo.
-- `api_tokens` migrado a Drizzle.
+- Secretos runtime cifrados y versionados en `bot_security.encrypted_secrets`.
+- Sesiones Baileys cifradas en PostgreSQL, con cache de Signal keys en memoria, write-behind y lease entre réplicas.
 - `audio_responses` almacena audios dinamicos.
 - Backend REST/GraphQL descartado; la persistencia soportada es PostgreSQL directo con Drizzle.
 - Loader de plugins recursivo con soporte para carpetas por familia.
@@ -1020,7 +1036,7 @@ Resumen actual:
 - Registry de plugins validado y hot reload con rollback, debounce y desactivado en produccion.
 - Pipeline compatible con interceptores tipados, perfiles de timeout, `AbortSignal` y locks por namespace.
 - Build, typecheck y suite de pruebas pasan.
-- Base estrictamente normalizada en siete schemas, con `schema.ts` y `database/schema.sql` alineados para PostgreSQL 18/Supabase.
+- Base estrictamente normalizada en nueve schemas, con `schema.ts` y bootstrap alineados para PostgreSQL 18/Supabase.
 
 ## 🧭 Mejoras Pendientes Registradas
 

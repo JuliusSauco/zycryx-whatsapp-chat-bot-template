@@ -1,3 +1,4 @@
+import {botInfo} from "../core/config.js";
 import type {Guard} from '../types/guard.js';
 import {SILENT_REJECT} from '../types/guard.js';
 import {pickRandom} from '../utils/random.js';
@@ -48,7 +49,7 @@ export const nsfwGuard: Guard = async ({m, conn, ctx, plugin}) => {
                         title,
                         body,
                         mediaType: 2,
-                        sourceUrl: info.md,
+                        sourceUrl: botInfo.md,
                         thumbnail: m.pp
                     }
                 },
@@ -68,7 +69,7 @@ export const nsfwGuard: Guard = async ({m, conn, ctx, plugin}) => {
                         body,
                         mediaType: 2,
                         thumbnail: m.pp,
-                        sourceUrl: info.md
+                        sourceUrl: botInfo.md
                     }
                 }
             }, {quoted: m});

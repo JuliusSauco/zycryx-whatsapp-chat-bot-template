@@ -1,6 +1,9 @@
 import {logError} from '../../lib/logger.js';
 import {setPrimaryBot} from '../../services/group-settings.service.js';
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
+import {requireBotInstanceIdentity} from '../../core/bot-instance-identity.js';
+import {findBotInstanceIdByJid} from '../../services/subbot.service.js';
+import {cleanJid} from '../../utils/jid.js';
 
 export default defineSdkPlugin({
     help: ['setprimary'],
@@ -21,21 +24,29 @@ export default defineSdkPlugin({
         return;
     }
 
-    const botId = conn.user?.id.replace(/:\d+/, "");
-    const selectedId = mentioned.replace(/:\d+/, "").replace("@s.whatsapp.net", "");
+    const identity = requireBotInstanceIdentity(conn);
+    const selectedJid = cleanJid(mentioned);
+    const selectedInstanceId = selectedJid === identity.botJid
+        ? identity.instanceId
+        : await findBotInstanceIdByJid(selectedJid);
 
-    if (selectedId !== botId) {
+    if (!selectedInstanceId) {
+        await m.reply('No se encontró una instancia activa asociada al bot mencionado.');
+        return;
+    }
+
+    if (selectedInstanceId !== identity.instanceId) {
         try {
             await conn.sendMessage(m.chat, {
-                text: sdk.content.renderMessage('subbots.primary.selected', {bot: selectedId}),
+                text: sdk.content.renderMessage('subbots.primary.selected', {bot: selectedJid.split('@')[0]}),
                 mentions: [mentioned]
             }, {quoted: m});
-            await setPrimaryBot(m.chat, mentioned);
+            await setPrimaryBot(m.chat, selectedInstanceId);
         } catch (err: unknown) {
             logError(err);
         }
     } else {
-        await setPrimaryBot(m.chat, botId + "@s.whatsapp.net");
+        await setPrimaryBot(m.chat, identity.instanceId);
         await sdk.reply.message('subbots.primary.selfSelected');
     }
     }

@@ -1,6 +1,5 @@
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 //import Presence from '@adiwajshing/baileys'
-//let Presence = (await import(global.baileys)).default
 export default defineSdkPlugin({
     help: ['setname'],
     tags: ['group'],

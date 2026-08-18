@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {logInfo} from '../../lib/logger.js';
 // Código adaptado por https://github.com/GataNina-Li
 // Código compatible con canales y comunidades de WhatsApp
@@ -43,7 +44,7 @@ export default defineSdkPlugin({
                     title: sdk.content.message('tools.superInspect.groupAdTitle'),
                     body: m.pushName,
                     thumbnailUrl: m.pp,
-                    sourceUrl: sdk.args[0] ? sdk.args[0] : inviteCode ? `https://chat.whatsapp.com/${inviteCode}` : info.md,
+                    sourceUrl: sdk.args[0] ? sdk.args[0] : inviteCode ? `https://chat.whatsapp.com/${inviteCode}` : botInfo.md,
                     mediaType: 1,
                     showAdAttribution: false,
                     renderLargerThumbnail: true

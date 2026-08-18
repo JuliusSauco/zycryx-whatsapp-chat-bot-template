@@ -7,6 +7,7 @@ import {resolveProfileUser, resolveStoredUserMention} from '../../services/profi
 import {loadProfileMedia} from './rpg-profile.helpers.js';
 import {logWarn} from '../../lib/logger.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
+import {lookupCountry} from '../../providers/main-api.provider.js';
 
 interface CountryResponse {
     result?: {
@@ -62,8 +63,8 @@ export default defineSdkPlugin({
 
     let nacionalidad = sdk.content.message('rpg.shared.unknownFemale')
     try {
-        const data = await sdk.http.json<CountryResponse>(`${info.apis}/tools/country?text=${phone}`)
-        if (data?.result?.name) nacionalidad = `${data.result.name} ${data.result.emoji}`
+        const country = await lookupCountry(phone)
+        if (country?.name) nacionalidad = `${country.name} ${country.emoji}`
     } catch (_) {
         logWarn('[RPG PROFILE] No se pudo resolver la nacionalidad; se usara el valor por defecto.')
     }

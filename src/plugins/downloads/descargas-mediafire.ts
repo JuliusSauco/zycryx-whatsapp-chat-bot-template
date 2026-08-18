@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {logError} from '../../lib/logger.js';
 import {createExpiringMap} from '../../lib/ephemeral-state.js';
@@ -36,7 +37,7 @@ export default defineSdkPlugin({
                 filename: file.filename,
                 filesize: file.filesize,
                 mimetype: file.mimetype,
-                version: info.vs,
+                version: botInfo.vs,
             }).trim();
             const captionMessage = await sdk.reply.text(caption);
             userCaptions.set(sdk.sender, captionMessage);

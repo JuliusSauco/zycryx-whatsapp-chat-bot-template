@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {logError} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
@@ -21,7 +22,7 @@ export default defineSdkPlugin({
 
         let stiker
         try {
-            stiker = await sticker(null, url, texto, info.author)
+            stiker = await sticker(null, url, texto, botInfo.author)
         } catch (e: unknown) {
             logError('⚠️ Error generando sticker:', e)
         }
@@ -36,7 +37,7 @@ export default defineSdkPlugin({
                         title: texto,
                         body: sdk.branding.watermark,
                         mediaType: 2,
-                        sourceUrl: info.md,
+                        sourceUrl: botInfo.md,
                         thumbnail: m.pp
                     }
                 }

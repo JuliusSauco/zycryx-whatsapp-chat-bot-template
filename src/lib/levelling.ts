@@ -1,6 +1,6 @@
 export const growth: number = Math.pow(Math.PI / Math.E, 1.618) * Math.E * .75;
 
-export function xpRange(level: number, multiplier: number = global.multiplier || 1): {
+export function xpRange(level: number, multiplier: number = 1): {
     min: number;
     max: number;
     xp: number
@@ -18,7 +18,7 @@ export function xpRange(level: number, multiplier: number = global.multiplier ||
     };
 }
 
-export function findLevel(xp: number, multiplier: number = global.multiplier || 1): number {
+export function findLevel(xp: number, multiplier: number = 1): number {
     if (xp === Infinity) {
         return Infinity;
     }
@@ -36,7 +36,7 @@ export function findLevel(xp: number, multiplier: number = global.multiplier || 
     return --level;
 }
 
-export function canLevelUp(level: number, xp: number, multiplier: number = global.multiplier || 1): boolean {
+export function canLevelUp(level: number, xp: number, multiplier: number = 1): boolean {
     if (level < 0) {
         return false;
     }

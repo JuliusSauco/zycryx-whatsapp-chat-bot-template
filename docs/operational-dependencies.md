@@ -15,9 +15,9 @@ Esta guia separa herramientas del sistema por funcionalidad afectada. Complement
 
 ## Auditoria npm
 
-La migracion a Node.js 24 LTS fue validada el 2026-07-29 con `npm audit`: quedaron 23 hallazgos (2 criticos, 11 altos y 10 moderados). Las ramas pendientes proceden principalmente de dependencias legacy de voz, stickers, busqueda, scraping y SDKs no migrados, entre ellas `node-gtts`, `wa-sticker-formatter`, `yt-search`, `link-preview-js` y `openai`.
+La rama de endurecimiento fue validada con `npm audit --omit=dev`: el árbol de dependencias que se instala en runtime queda en **0 vulnerabilidades conocidas**. Se retiraron los SDKs y wrappers legacy de voz, stickers, búsqueda, scraping y OpenAI que arrastraban las cadenas vulnerables; sus usos se reemplazaron por Fetch nativo, Sharp y providers pequeños.
 
-No ejecutar `npm audit fix --force`: npm propone downgrades o majors incompatibles para algunos de estos paquetes. Sus reemplazos y migraciones deben abordarse por separado, con pruebas funcionales de WhatsApp y multimedia.
+El audit completo puede seguir reportando tooling de desarrollo transitivo, especialmente `drizzle-kit`; no se carga en el proceso del bot. No ejecutar `npm audit fix --force`: cualquier actualización de tooling debe validarse con export de schema, typecheck y suite completa.
 
 ## Por funcionalidad
 
