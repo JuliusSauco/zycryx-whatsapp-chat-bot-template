@@ -5,7 +5,7 @@ module.exports = {
     {
       name: 'zycryx-bot',
       script: npmCommand,
-      args: 'run serve:migrate',
+      args: 'run serve:checked',
       cwd: __dirname,
       interpreter: 'none',
       instances: 1,

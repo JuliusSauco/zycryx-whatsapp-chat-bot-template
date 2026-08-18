@@ -1,6 +1,6 @@
 # Contexto para Codex
 
-Este archivo resume el estado del proyecto para que Codex lo lea al iniciar un chat nuevo desde la raiz del repo. Fecha de referencia: 2026-06-06.
+Este archivo resume el estado del proyecto para que Codex lo lea al iniciar un chat nuevo desde la raiz del repo. Fecha de referencia: 2026-08-17.
 
 ## Proyecto
 
@@ -13,7 +13,7 @@ El proyecto esta organizado por capas:
 - `src/services`: logica de negocio y casos de uso.
 - `src/ports`: contratos de repositorios.
 - `src/adapters/drizzle`: repositorios concretos con Drizzle/PostgreSQL.
-- `src/db`: schema Drizzle, cliente y migraciones.
+- `src/db`: definición Drizzle, cliente y verificación read-only del modelo PostgreSQL 18.
 - `src/lib`: utilidades compartidas e integraciones.
 - `src/utils`: helpers puros y reutilizables.
 - `resources/data`: datos estaticos versionados, no estado mutable de runtime.
@@ -23,7 +23,13 @@ El proyecto esta organizado por capas:
 
 ## Estado actual
 
-- Persistencia migrada a Drizzle ORM sobre PostgreSQL.
+- Persistencia Drizzle sobre PostgreSQL 18, preparada para Supabase.
+- Base estrictamente normalizada en `bot_identity`, `bot_economy`, `bot_groups`, `bot_runtime`, `bot_content`, `bot_ai` y `bot_audit`.
+- `database/schema.sql` es el único bootstrap de una base nueva; no hay migraciones históricas activas ni soporte de upgrade legacy en esta rama.
+- Usuarios separados de identidades, perfil, registro, sanciones, progreso, cooldowns y relaciones.
+- Economía basada en catálogo de recursos, cuentas, balances por filas, operaciones y ledger; no existen tablas wallet/bank con una columna por moneda.
+- Settings de grupo separados por módulo; owners, prefixes, assets de audio e historial de IA están modelados como filas relacionadas.
+- PostgreSQL 18 se usa para UUIDv7 y unicidad temporal `WITHOUT OVERLAPS`.
 - Repositorios Drizzle separados por agregado.
 - Core y plugins consumen servicios/puertos; evitar SQL directo en plugins.
 - `DATA_SOURCE=local` es el adapter estable. `DATA_SOURCE=backend` existe como scaffold REST/GraphQL futuro, pero no es el camino activo por defecto.
@@ -41,7 +47,19 @@ El proyecto esta organizado por capas:
 
 ## Trabajo reciente realizado
 
-La ultima etapa grande fue el commit `69db9b9 refactor: complete roadmap v2 bot optimizations`. Trabajo realizado:
+La etapa más reciente normalizó la persistencia completa. Trabajo realizado:
+
+- Dividí la base por siete schemas de dominio y eliminé el uso de `public` como contenedor del bot.
+- Reemplacé la tabla ancha de usuarios por agregados 1:1 y 1:N con claves foráneas y checks.
+- Reemplacé wallet, banco y reservas duplicadas por `resources`, `financial_accounts`, `account_balances`, `financial_operations` y `ledger_entries`.
+- Normalicé configuraciones de grupos, membresías de bots, personajes, audios y memoria IA.
+- Adapté repositorios y servicios manteniendo los contratos de dominio consumidos por plugins.
+- Creé el bootstrap transaccional PostgreSQL 18/Supabase con RLS, permisos, seeds y triggers.
+- Retiré scripts de migración y baseline legacy porque el objetivo de esta rama es una base nueva.
+- Agregué `tests/database-normalization.test.ts` y actualicé las pruebas de economía.
+- Actualicé Baileys a la última versión publicada (`7.0.0-rc14`) y Jimp a `1.6.1`.
+
+Trabajo arquitectónico anterior relevante:
 
 - Complete el Roadmap v2 de mejoras internas.
 - Centralice helpers aleatorios en `src/utils/random.ts`.
@@ -63,6 +81,13 @@ La ultima etapa grande fue el commit `69db9b9 refactor: complete roadmap v2 bot 
 ## Reglas de mantenimiento
 
 - No agregar SQL directo en plugins. Usar servicios y repositorios.
+- Toda tabla nueva debe pertenecer al schema temático correcto; no crear tablas del bot en `public`.
+- No volver a introducir tablas anchas con columnas repetidas por recurso, feature, owner o prefijo. Usar catálogos y tablas hijas.
+- No persistir relaciones o historiales como arrays o JSON; usar filas con claves foráneas, posición y restricciones de unicidad.
+- Mantener `src/db/schema.ts` y `database/schema.sql` alineados. El SQL debe seguir siendo un bootstrap completo para una base vacía PostgreSQL 18+.
+- No agregar migraciones incrementales ni modificar estructura durante el arranque. `db:setup` provisiona y `db:check` sólo valida.
+- Para nuevas relaciones definir `ON DELETE`, checks de estados/rangos e índices para claves foráneas y consultas calientes.
+- Mantener RLS y revocación de `anon`/`authenticated` en tablas nuevas del script Supabase.
 - No escribir estado mutable en `resources/data`; usar DB o backend cuando exista contrato.
 - Usar `resources/data/messages.json`, `resources/data/prompts.json` y `resources/data/reactions.json` como manifiestos para mapear prompts, mensajes y reacciones a archivos en `resources/text` o `resources/media`.
 - Mantener medios locales versionados en `resources/media`; los GIFs de reaccion se guardan como MP4 en `resources/media/reaction-gifs`.
@@ -82,7 +107,7 @@ Antes de cerrar cambios importantes:
 ```bash
 npm run typecheck
 npm run build
-npm run test:helpers
+npm test
 ```
 
 Tambien conviene revisar:
@@ -90,6 +115,7 @@ Tambien conviene revisar:
 ```bash
 rg "\bany\b|@ts-ignore" src
 rg "from 'axios'|from \"axios\"|from 'node-fetch'|from \"node-fetch\"|fetch\(" src/plugins src/lib
+rg "jsonb\(|\.array\(\)|serial\(" src/db/schema.ts
 ```
 
 La segunda busqueda puede encontrar excepciones internas documentadas; no asumir que todo resultado es bug.
@@ -102,7 +128,7 @@ La segunda busqueda puede encontrar excepciones internas documentadas; no asumir
 - Continuar reduciendo plugins grandes si aparecen nuevos puntos de complejidad.
 - Revisar dependencias externas inestables de descargas/APIs y agregar fallbacks donde haga falta.
 - Auditar comandos owner y comandos que ejecutan codigo o red para endurecer permisos/errores.
-- Revisar compatibilidad y runtime real de PostgreSQL, migraciones y `DB_SCHEMA` en ambientes nuevos.
+- Validar el bootstrap en cada proyecto Supabase PostgreSQL 18 nuevo antes de conectar el bot.
 - Mejorar documentacion operativa de deploy, backups, sesiones y recuperacion.
 
 ## Documentacion util

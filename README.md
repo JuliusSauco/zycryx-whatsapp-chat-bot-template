@@ -6,7 +6,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-24%20LTS-339933?logo=node.js&logoColor=white)
 ![Baileys](https://img.shields.io/badge/Baileys-7.x-25D366?logo=whatsapp&logoColor=white)
 ![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?logo=drizzle&logoColor=111)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1?logo=postgresql&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18%2B-4169E1?logo=postgresql&logoColor=white)
 ![npm](https://img.shields.io/badge/npm-package-CB3837?logo=npm&logoColor=white)
 
 Plantilla modular para construir bots de WhatsApp con TypeScript, Baileys, Drizzle ORM y PostgreSQL. Esta base esta pensada para reutilizar core, arquitectura, persistencia, guards, subbots, observabilidad y utilidades entre varios proyectos, cambiando marca, comandos, textos, recursos multimedia, owners y APIs externas.
@@ -55,12 +55,12 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - Repositorios Drizzle separados por agregado.
 - Puertos de repositorio para desacoplar servicios de la implementacion Drizzle.
 - Modelos y reglas de dominio independientes de Drizzle en `src/domain` para usuarios, grupos, subbots, audios, personajes y estado operativo.
-- Reservas transaccionales e idempotentes para comandos que consumen diamantes o LoliCoins.
+- Reservas transaccionales e idempotentes para comandos que consumen recursos de la economia.
 - Registro validado de plugins con deteccion de aliases y regex duplicadas.
 - Interceptores tipados, timeouts por perfil, cancelacion cooperativa y locks con namespace por plugin.
 - Conexion directa a PostgreSQL como decision arquitectonica; no hay adapter backend REST/GraphQL.
-- Migraciones versionadas y script `db:ensure-schema`.
-- Soporte para `DB_SCHEMA` usando `search_path`.
+- Modelo estricto normalizado por dominios en siete schemas PostgreSQL.
+- Bootstrap único para bases nuevas, validación de PostgreSQL 18 y seguridad RLS compatible con Supabase.
 - Subbots con sesiones independientes.
 - Reglas persistentes por familia con activación independiente y modos `all`, `admin`, `superadmin` y `owner`: juegos, herramientas, RPG, descargas, búsquedas, stickers, convertidores, diversión, audios, GIFs y NSFW.
 - Roles de admins por grupo persistidos en `user_group_roles`, sincronizados al iniciar y en eventos promote/demote.
@@ -81,9 +81,9 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 | TypeScript | Lenguaje principal y contratos de arquitectura. |
 | Node.js | Runtime principal del bot. |
 | Baileys | Conexion WebSocket con WhatsApp. |
-| Drizzle ORM | Acceso tipado a PostgreSQL y migraciones. |
-| PostgreSQL | Persistencia local. |
-| drizzle-kit | Generacion, migracion y Drizzle Studio. |
+| Drizzle ORM | Acceso tipado al modelo PostgreSQL normalizado. |
+| PostgreSQL 18 | Persistencia, UUIDv7 y restricciones temporales. |
+| drizzle-kit | Verificacion/exportacion del schema y Drizzle Studio. |
 | tsx | Ejecucion TypeScript en desarrollo. |
 | Pino | Logger silencioso usado internamente por Baileys. |
 | HTTP client centralizado | Consumo de APIs externas desde SDK, providers y librerias internas. |
@@ -97,7 +97,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 
 - Node.js 24 LTS (usar siempre el parche 24.x mas reciente).
 - npm.
-- PostgreSQL 14 o superior.
+- PostgreSQL 18 o superior. Para hosting administrado, el proyecto está preparado para Supabase con PostgreSQL 18.
 - FFmpeg instalado y disponible en PATH.
 - Cliente PostgreSQL (`pg_dump`, `pg_restore`) para backups y restauracion.
 - git disponible en PATH (lo usa el comando owner `update`).
@@ -131,21 +131,19 @@ En Windows PowerShell:
 Copy-Item .env.example .env.local
 ```
 
-Prepara la base de datos:
+Prepara una base vacía. Este comando ejecuta una sola vez `database/schema.sql` y falla si el servidor no es PostgreSQL 18+:
 
 ```bash
-npm run db:migrate
+npm run db:setup
 ```
 
-Las migraciones se aplican automáticamente al iniciar mediante la plantilla PM2 (`npm run serve:migrate`). Si arrancas el proceso directamente, ejecuta `npm run db:migrate` como paso previo o usa `npm run start:migrate`.
-
-Si necesitas crear manualmente una base desde cero sin reproducir migraciones historicas, usa el script limpio:
+En Supabase también puedes pegar el contenido completo del script en SQL Editor. Con `psql`:
 
 ```bash
 psql -U <user> -d <database> -f database/schema.sql
 ```
 
-Ese archivo contiene el schema actual con `CREATE TABLE` y `CREATE INDEX`. No lo mezcles con `npm run db:migrate` sobre la misma base salvo que marques/baselines las migraciones como aplicadas.
+No existe una ruta de migración legacy en esta rama: está diseñada para una base nueva. El arranque PM2 ejecuta `db:check`, que sólo valida versión y estructura; nunca altera la base.
 
 Ejecuta en desarrollo:
 
@@ -157,12 +155,6 @@ O compila y ejecuta la version local:
 
 ```bash
 npm run start:local
-```
-
-Si estas levantando un ambiente nuevo y quieres build + migracion + arranque en un solo comando:
-
-```bash
-npm run start:local:migrate
 ```
 
 En la primera ejecucion el bot pedira QR o codigo de emparejamiento. Las sesiones se guardan en carpetas locales y no deben versionarse.
@@ -240,17 +232,15 @@ DB_PORT=5432
 DB_NAME=zycryx_bot
 DB_USER=postgres
 DB_PASSWORD=
-DB_SCHEMA=public
 ```
 
 Tambien puedes usar `DATABASE_URL`:
 
 ```env
 DATABASE_URL=postgresql://usuario:password@localhost:5432/zycryx_bot
-DB_SCHEMA=bot_dev
 ```
 
-`DB_SCHEMA` se aplica al cliente y a Drizzle Kit mediante `search_path`. El proyecto trabaja sobre el schema configurado.
+Los schemas son parte fija del modelo (`bot_identity`, `bot_economy`, `bot_groups`, `bot_runtime`, `bot_content`, `bot_ai` y `bot_audit`); no se configuran mediante variables de entorno.
 
 ### 👑 Owners
 
@@ -268,8 +258,9 @@ BOT_OWNER_NUMBERS=573001112233,51999888777
 | `npm run clean` | Elimina `dist` y `tsconfig.tsbuildinfo` con un script portable Node.js. |
 | `npm run build` | Limpia y compila TypeScript a `dist/`. |
 | `npm run typecheck` | Valida tipos sin emitir archivos. |
-| `npm test` | Ejecuta helpers, dominios de usuarios/grupos/subbots/audios/operacion/personajes, estado efimero, router, guards, context builder, servicios, seguridad, providers, catalogo, ayuda y P0. |
+| `npm test` | Ejecuta normalización DB, helpers, dominios, router, guards, servicios, seguridad, providers, catálogo, ayuda y P0. |
 | `npm run test:helpers` | Pruebas de helpers compartidos. |
+| `npm run test:database` | Verifica schemas temáticos, invariantes PG18 y ausencia de tablas legacy. |
 | `npm run test:plugin-pipeline` | Pruebas de interceptores, timeouts y locks del pipeline de plugins. |
 | `npm run test:command-resources` | Pruebas de validacion, reservas idempotentes y mensajes de cobro. |
 | `npm run test:profile-user` | Pruebas de resolucion JID/LID, alta basica y fallback de foto de perfil. |
@@ -296,24 +287,21 @@ BOT_OWNER_NUMBERS=573001112233,51999888777
 | `npm run ops:backup` | Backup local de DB, sesiones y audios custom con manifest. |
 | `npm run ops:backup:db` | Backup solo de PostgreSQL con `pg_dump`. |
 | `npm run ops:backup:sessions` | Backup solo de sesiones y audios custom. |
-| `npm run db:generate` | Genera migraciones desde `src/db/schema.ts`. |
-| `npm run db:ensure-schema` | Crea el schema configurado si no existe. |
-| `npm run db:migrate` | Ejecuta `db:ensure-schema` y aplica migraciones. |
-| `npm run db:setup` | Alias explicito de preparacion de base. |
+| `npm run db:setup` | Provisiona una base nueva desde `database/schema.sql`. |
+| `npm run db:check` | Valida PostgreSQL 18+ y los siete schemas sin modificar datos. |
 | `npm run db:studio` | Abre Drizzle Studio. |
 | `npm run dev` | Ejecuta local con `tsx watch`. |
 | `npm run dev:dev` | Ejecuta con `NODE_ENV=dev`. |
 | `npm run dev:test` | Ejecuta con `NODE_ENV=test`. |
 | `npm run serve` | Ejecuta `dist` con `NODE_ENV=prod` sin migrar. |
+| `npm run serve:checked` | Valida la base y ejecuta `serve`; es el comando usado por PM2. |
 | `npm run serve:local` | Ejecuta `dist` con `NODE_ENV=local` sin migrar. |
 | `npm run serve:dev` | Ejecuta `dist` con `NODE_ENV=dev` sin migrar. |
 | `npm run serve:test` | Ejecuta `dist` con `NODE_ENV=test` sin migrar. |
-| `npm run serve:*:migrate` | Ejecuta migraciones y luego inicia `dist` para el ambiente indicado. |
 | `npm run start` | Build + serve prod sin migrar. |
 | `npm run start:local` | Build + serve local sin migrar. |
 | `npm run start:dev` | Build + serve dev sin migrar. |
 | `npm run start:test` | Build + serve test sin migrar. |
-| `npm run start:*:migrate` | Build + migraciones + serve para el ambiente indicado. |
 | `npm run bun:start:*` | Alternativas con Bun. |
 
 <a id="produccion"></a>
@@ -324,8 +312,8 @@ Guia completa en `docs/deployment.md` y runbook diario en `docs/operations-runbo
 ```bash
 npm install
 cp .env.example .env.prod   # completar valores reales
+npm run db:setup             # una sola vez, sobre la base vacía
 npm run build
-npm run db:migrate
 npm run serve               # primera vez en terminal real para vincular QR/codigo
 ```
 
@@ -333,7 +321,7 @@ Puntos clave:
 
 - Un process manager (PM2, systemd o restart policy de Docker) es **obligatorio**: el bot se reinicia solo cada 3 horas (`process.exit(0)`) como higiene de memoria y espera que el supervisor lo levante.
 - La vinculacion inicial es interactiva (pide QR o codigo por consola); hazla fuera del supervisor y luego arranca bajo PM2.
-- Con la plantilla PM2 las migraciones pendientes corren antes del bot; en arranques directos usa `db:migrate`, `serve:migrate` o `start:migrate`.
+- La plantilla PM2 ejecuta `db:check` antes del bot. Los cambios de estructura no se aplican durante un reinicio.
 - Una sola instancia por numero de WhatsApp: el estado de juegos/cooldowns vive en memoria y la sesion es por dispositivo.
 - Respalda `BotSession/` (con el bot detenido) y la base de datos con `NODE_ENV=prod npm run ops:backup`; ver politica de backups en `docs/deployment.md`.
 - Flujo de conexion, sesiones y reconexion documentado en `docs/baileys-connection.md`. Problemas comunes en `docs/troubleshooting.md`.
@@ -362,7 +350,8 @@ zycryx-whatsapp-chat-bot-template/
 │   │   └── drizzle/
 │   ├── core/
 │   ├── db/
-│   │   └── migrations/
+│   │   ├── schema.ts
+│   │   └── ensure-schema.ts
 │   ├── domain/
 │   ├── guards/
 │   ├── lib/
@@ -400,14 +389,14 @@ zycryx-whatsapp-chat-bot-template/
 
 | Ruta | Responsabilidad |
 |---|---|
-| `database/` | SQL auxiliar para referencias y migracion legacy. |
+| `database/` | Bootstrap canónico PostgreSQL 18 para bases nuevas. |
 | `resources/data/` | Datos estaticos y seeds readonly. |
 | `resources/media/` | Imagenes, audios y recursos multimedia usados por plugins. |
 | `resources/media/reaction-gifs/` | GIFs de reaccion guardados como MP4 para envio inline en WhatsApp. |
 | `resources/text/` | Textos versionados: mensajes base y prompts. |
 | `src/adapters/drizzle/` | Implementacion local de repositorios con Drizzle. |
 | `src/core/` | Arranque, entorno, router, parser, handler, contexto y tareas. |
-| `src/db/` | Cliente, schema y migraciones Drizzle. |
+| `src/db/` | Cliente, definición Drizzle y verificación de schemas. |
 | `src/domain/` | Modelos, defaults, mappers puros y reglas de negocio independientes de la persistencia. |
 | `src/guards/` | Validaciones previas a ejecutar comandos. |
 | `src/lib/` | Integraciones, loader de plugins, subbots, multimedia, logs y scraping. |
@@ -703,71 +692,73 @@ Metadata soportada:
 <a id="base-de-datos"></a>
 ## 🗄️ Base De Datos
 
-El schema vive en `src/db/schema.ts` y actualmente incluye:
+La fuente tipada vive en `src/db/schema.ts` y el bootstrap ejecutable en `database/schema.sql`. La normalización separa identidad, economía, grupos, runtime, contenido, IA y auditoría. No se guardan listas en arrays/JSON ni se repiten columnas por cada recurso, owner, prefijo, saludo o mensaje de memoria.
 
-- `usuarios`;
-- `group_settings`;
-- `chats`;
-- `messages`;
-- `user_group_roles`;
-- `message_logs`;
-- `subbots`;
-- `characters`;
-- `reportes`;
-- `chat_memory`;
-- `stats`;
-- `api_tokens`;
-- `audio_responses`.
+| Schema | Responsabilidad | Tablas principales |
+|---|---|---|
+| `bot_identity` | Usuario canónico e información dependiente | `users`, `user_identities`, `user_profiles`, `user_registrations`, `user_bans`, `user_warnings`, `user_progress`, `user_cooldowns`, `marriages`, `marriage_members`, `marriage_requests` |
+| `bot_economy` | Catálogo y contabilidad | `resources`, `financial_accounts`, `account_balances`, `financial_operations`, `ledger_entries`, `bank_loans`, `bank_loan_payments`, `command_resource_reservations`, `command_reservation_items` |
+| `bot_groups` | Chats y módulos configurables | `chats`, `group_settings`, ajustes por módulo, `group_command_access_rules`, `group_censored_users`, `user_group_roles`, `user_group_activity_counters` |
+| `bot_runtime` | Instancias y operación del bot | `subbots`, `subbot_prefixes`, `subbot_owners`, `bot_chat_memberships`, `reports`, `stats`, `api_tokens` |
+| `bot_content` | Contenido dinámico y mercado RPG | `characters`, `character_ownerships`, `character_price_events`, `character_market_listings`, `audio_responses`, `audio_response_assets` |
+| `bot_ai` | Memoria conversacional ordenada | `chat_memory`, `chat_memory_messages` |
+| `bot_audit` | Registro auditable | `message_logs` |
 
-Para una base nueva:
+### Modelo relacional
 
-```bash
-npm run db:migrate
+```mermaid
+erDiagram
+    USERS ||--o{ USER_IDENTITIES : has
+    USERS ||--o| USER_PROFILES : has
+    USERS ||--o| USER_REGISTRATIONS : registers
+    USERS ||--o{ FINANCIAL_ACCOUNTS : owns
+    FINANCIAL_ACCOUNTS ||--o{ ACCOUNT_BALANCES : contains
+    RESOURCES ||--o{ ACCOUNT_BALANCES : classifies
+    FINANCIAL_OPERATIONS ||--o{ LEDGER_ENTRIES : groups
+    FINANCIAL_ACCOUNTS ||--o{ LEDGER_ENTRIES : receives
+    RESOURCES ||--o{ LEDGER_ENTRIES : denominates
+    GROUP_SETTINGS ||--o| GROUP_MODERATION_SETTINGS : configures
+    GROUP_SETTINGS ||--o{ GROUP_GREETINGS : configures
+    GROUP_SETTINGS ||--o{ GROUP_COMMAND_ACCESS_RULES : overrides
+    SUBBOTS ||--o{ SUBBOT_PREFIXES : exposes
+    SUBBOTS ||--o{ SUBBOT_OWNERS : authorizes
+    SUBBOTS ||--o{ BOT_CHAT_MEMBERSHIPS : joins
+    CHATS ||--o{ BOT_CHAT_MEMBERSHIPS : contains
+    CHARACTERS ||--o| CHARACTER_OWNERSHIPS : owned_by
+    CHARACTERS ||--o{ CHARACTER_PRICE_EVENTS : prices
+    CHARACTERS ||--o{ CHARACTER_MARKET_LISTINGS : lists
+    CHAT_MEMORY ||--o{ CHAT_MEMORY_MESSAGES : contains
+    AUDIO_RESPONSES ||--o{ AUDIO_RESPONSE_ASSETS : uses
 ```
 
-El arranque del bot no aplica migraciones automaticamente. Esto evita que multiples replicas, reinicios o despliegues ejecuten cambios de schema sin control. La secuencia recomendada para dev/prod es:
+Detalles importantes:
+
+- `users` conserva sólo la identidad interna y el nombre visible; teléfono, LID y username son filas únicas en `user_identities`.
+- Los saldos son filas `(account_id, resource_code)`. Añadir un recurso no exige alterar tablas ni duplicar lógica wallet/bank/reserve.
+- `financial_operations` agrupa cada caso de uso y `ledger_entries` conserva importes y saldo resultante para auditoría.
+- Los ajustes de grupo se dividen por módulo. `group_settings` es la raíz y las reglas de familias/comandos sólo almacenan overrides.
+- Owners, prefixes, recursos de reservas, URLs de audio e historial de IA son relaciones uno-a-muchos ordenadas.
+- El precio y propietario actuales de un personaje se separan de su historial de precios y publicaciones de mercado.
+- PostgreSQL 18 aporta `uuidv7()` y la unicidad temporal `WITHOUT OVERLAPS` para solicitudes matrimoniales vigentes.
+
+### Bootstrap de Supabase
+
+La rama requiere una base vacía con PostgreSQL 18+. Usa una sola de estas opciones:
 
 ```bash
-npm run build
-npm run db:migrate
-npm run serve:dev
+npm run db:setup
+# o
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/schema.sql
 ```
 
-Para generar cambios de schema:
+En Supabase puedes ejecutar el archivo completo desde SQL Editor. Para `db:setup`/`psql`, usa la conexión directa de la base y no el pooler en modo transacción. El script es transaccional, comprueba la versión, crea los siete schemas, catálogos, claves foráneas, checks, índices, triggers de `updated_at`, capitalización inicial del reserve y seguridad RLS. `anon` y `authenticated` no reciben permisos; `service_role` los recibe si el rol existe.
+
+No hay migraciones históricas ni baseline legacy. Para comprobar una instalación sin modificarla:
 
 ```bash
-npm run db:generate
-npm run db:migrate
-```
-
-Para inspeccion:
-
-```bash
+npm run db:check
 npm run db:studio
 ```
-
-### 🧱 Bootstrap Manual Desde Cero
-
-`database/schema.sql` es el script canónico para crear manualmente la estructura final en una base vacia. A diferencia de `src/db/migrations`, no contiene `ALTER ADD COLUMN`, `UPDATE` legacy ni pasos historicos.
-
-Uso recomendado:
-
-```bash
-psql -U <user> -d <database> -f database/schema.sql
-```
-
-Usa este camino cuando quieras provisionar una base limpia manualmente. Usa `npm run db:migrate` cuando quieras que Drizzle controle el historial incremental de migraciones. No ejecutes ambos caminos sobre la misma base sin hacer baseline del historial.
-
-### 🧬 Migracion Legacy
-
-Si vienes de una base antigua creada antes de Drizzle:
-
-```bash
-psql "$DATABASE_URL" -f database/legacy-to-drizzle-baseline.sql
-npm run db:migrate
-```
-
-No uses `database/legacy-to-drizzle-baseline.sql` en bases nuevas. Ese baseline existe para alinear tablas y columnas historicas sin chocar con la migracion inicial.
 
 ### 🔑 API Tokens
 
@@ -901,7 +892,7 @@ Para ejecutar local desde build:
 npm run start:local
 ```
 
-Recuerda ejecutar `npm run db:migrate` antes si hay migraciones pendientes.
+En una instalación nueva ejecuta `npm run db:setup` una sola vez; en instalaciones existentes usa `npm run db:check`.
 
 O si ya compilaste:
 
@@ -1029,7 +1020,7 @@ Resumen actual:
 - Registry de plugins validado y hot reload con rollback, debounce y desactivado en produccion.
 - Pipeline compatible con interceptores tipados, perfiles de timeout, `AbortSignal` y locks por namespace.
 - Build, typecheck y suite de pruebas pasan.
-- Scripts de base de datos alineados: migraciones registradas, `schema.ts` actualizado y `database/schema.sql` listo para bootstrap manual limpio desde cero.
+- Base estrictamente normalizada en siete schemas, con `schema.ts` y `database/schema.sql` alineados para PostgreSQL 18/Supabase.
 
 ## 🧭 Mejoras Pendientes Registradas
 

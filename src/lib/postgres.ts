@@ -6,12 +6,7 @@ export {invalidateSubbotConfig, invalidateGroupSettings} from './db-cache.js';
 
 const {Pool} = pg;
 
-function normalizeIdentifier(value: string, fallback: string): string {
-    return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(value) ? value : fallback;
-}
-
-const schema = normalizeIdentifier(ENV.DB_SCHEMA, 'public');
-const searchPathOptions = `-c search_path=${schema}`;
+const searchPathOptions = '-c search_path=bot_identity,bot_economy,bot_groups,bot_runtime,bot_content,bot_ai,bot_audit,public,extensions';
 
 const poolConfig = ENV.DATABASE_URL
     ? {connectionString: ENV.DATABASE_URL, options: searchPathOptions}

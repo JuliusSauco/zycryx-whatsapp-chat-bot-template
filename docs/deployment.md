@@ -5,7 +5,7 @@ Guia operativa para correr el bot en produccion (VPS Linux o Windows). Fecha de 
 ## Requisitos del servidor
 
 - Node.js 24 LTS (usar siempre el parche 24.x mas reciente).
-- PostgreSQL 14+ accesible desde el servidor.
+- PostgreSQL 18+ accesible desde el servidor (incluido un proyecto Supabase con PG18).
 - Cliente PostgreSQL en PATH (`pg_dump`, `pg_restore`, `createdb`) para backups y recuperacion.
 - FFmpeg en el PATH (stickers, conversiones, audios).
 - git (para despliegues y actualizaciones administrativas con `git pull`).
@@ -25,7 +25,7 @@ npm ci
 cp .env.example .env.prod        # completar valores reales
 npm run build
 npm run ops:check
-npm run db:migrate               # con NODE_ENV=prod si la DB depende del env
+NODE_ENV=prod npm run db:setup   # una sola vez sobre una base vacia
 ```
 
 `npm ci` usa exactamente `package-lock.json` y ejecuta `postinstall: tsc`, por lo que el build inicial ocurre durante la instalacion. `engine-strict=true` rechaza Node fuera de la rama 24.x o npm fuera de la rama 11.x.
@@ -63,7 +63,7 @@ pm2 startup   # arranque automatico del sistema
 
 Claves:
 
-- La plantilla PM2 ejecuta `npm run serve:migrate`: antes de cada arranque consulta el historial de Drizzle, aplica solo migraciones pendientes y luego inicia el bot. Si una migracion falla, el bot no arranca con un schema incompatible.
+- La plantilla PM2 ejecuta `npm run serve:checked`: valida PostgreSQL 18 y los siete schemas antes de iniciar, sin modificar estructura.
 - `autorestart` (default de PM2) cubre el `process.exit(0)` periodico del bot.
 - Logs: `pm2 logs zycryx-bot`. Considera `pm2 install pm2-logrotate` porque el bot loguea bastante en niveles altos.
 - Variables: PM2 no lee `.env.prod` por si mismo; el bot la carga solo segun `NODE_ENV`. Basta con exportar `NODE_ENV=prod`.
@@ -81,13 +81,13 @@ NODE_ENV=prod npm run ops:check
 pm2 restart zycryx-bot
 ```
 
-Con `ecosystem.config.cjs`, `pm2 restart` ejecuta automaticamente las migraciones pendientes antes de levantar el bot. Haz un backup antes de desplegar migraciones destructivas. Si arrancas sin PM2, usa `npm run start:migrate` o `npm run serve:migrate`.
+Con `ecosystem.config.cjs`, `pm2 restart` valida el modelo antes de levantar el bot. Esta rama no ejecuta migraciones incrementales durante despliegues; cualquier evolución futura requiere un plan explícito fuera del arranque.
 
 ## Preflight operativo
 
 El comando `npm run ops:check` revisa prerequisitos locales sin iniciar el bot: version de Node, archivo `.env`, owners, configuracion de PostgreSQL, herramientas externas, build y sesion principal.
 
-Usalo antes de dejar un servidor en produccion y despues de cambios en `.env.prod`, migraciones o actualizaciones del sistema. Ver tambien `docs/operations-runbook.md` y `docs/operational-dependencies.md`.
+Usalo antes de dejar un servidor en produccion y despues de cambios en `.env.prod`, estructura de base o actualizaciones del sistema. Ver tambien `docs/operations-runbook.md` y `docs/operational-dependencies.md`.
 
 ## Backups
 
@@ -151,7 +151,7 @@ Restaurar DB:
 pm2 stop zycryx-bot
 createdb "$DB_NAME"   # solo si la base no existe
 pg_restore --clean --if-exists --dbname "$DATABASE_URL" backups/<fecha>/database.dump
-NODE_ENV=prod npm run db:migrate
+NODE_ENV=prod npm run db:check
 NODE_ENV=prod npm run ops:check
 pm2 start zycryx-bot
 ```

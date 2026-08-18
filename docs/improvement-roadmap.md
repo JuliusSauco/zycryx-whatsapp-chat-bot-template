@@ -141,10 +141,10 @@ Estado: activo. Es el roadmap operativo actual y debe seguir alineado con `docs/
 
 Estado: cerrado como mantenimiento actual.
 
-- [x] 100% - Alinear `src/db/schema.ts` con el estado final de migraciones.
-- [x] 100% - Verificar que todos los `.sql` de migraciones esten registrados en `src/db/migrations/meta/_journal.json`.
+- [x] 100% - Alinear `src/db/schema.ts` con el bootstrap normalizado PostgreSQL 18.
+- [x] 100% - Retirar migraciones históricas para la estrategia explícita de base nueva.
 - [x] 100% - Mantener `database/schema.sql` como bootstrap manual limpio desde cero.
-- [x] 100% - Documentar en README la diferencia entre `npm run db:migrate` y `database/schema.sql`.
+- [x] 100% - Documentar en README `db:setup`, `db:check` y el modelo por schemas.
 
 ## Notas tecnicas
 

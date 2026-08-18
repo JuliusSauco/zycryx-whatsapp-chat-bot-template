@@ -13,12 +13,12 @@ import {
     bankExchangeRates,
     bankLoanPayments,
     bankLoans,
-    bankReserves,
-    bankTransactions,
-    userBankAccounts,
-    userWallets,
+    accountBalances,
+    economyResources,
+    financialAccounts,
+    financialOperations,
+    ledgerEntries,
     usuarios,
-    walletTransactions,
 } from '../src/db/schema.js';
 import bankPlugin from '../src/plugins/economy/economy-bank.js';
 import depositPlugin, {DEPOSIT_COMMANDS} from '../src/plugins/economy/economy-deposit.js';
@@ -96,43 +96,40 @@ for (const command of ['bank', ...DEPOSIT_COMMANDS, ...WITHDRAW_COMMANDS, 'loan'
     assert.equal(isPrivateCommandAllowed(command), true, `${command} must bypass anti_private`);
 }
 
-for (const table of [userBankAccounts, bankReserves, bankExchangeRates, bankLoans, bankTransactions, bankLoanPayments]) {
+for (const table of [economyResources, financialAccounts, accountBalances, financialOperations, ledgerEntries, bankExchangeRates, bankLoans, bankLoanPayments]) {
     assert.ok(Object.keys(getTableColumns(table)).length > 0);
 }
 assert.equal('banco' in getTableColumns(usuarios), false);
-assert.ok(getTableColumns(walletTransactions).operationId);
-assert.equal(getTableColumns(userWallets).botcoin.default, 0);
-assert.equal(getTableColumns(userWallets).zyxcoin.default, 0);
+assert.ok(getTableColumns(ledgerEntries).operationId);
+assert.ok(getTableColumns(accountBalances).resourceCode);
+assert.ok(getTableColumns(financialAccounts).accountType);
 
-const migration = readFileSync('src/db/migrations/0032_bank_system.sql', 'utf8');
-assert.match(migration, /CREATE TABLE "user_bank_accounts"/);
-assert.match(migration, /CREATE TABLE "bank_reserves"/);
-assert.match(migration, /CREATE TABLE "bank_loans"/);
-assert.match(migration, /CREATE TABLE "bank_loan_payments"/);
-assert.match(migration, /'limite', 0\), \('coins', 0\), \('botcoin', 0\), \('zyxcoin', 0\)/);
-assert.match(migration, /ALTER TABLE "usuarios" DROP COLUMN "banco"/);
-const exchangeMigration = readFileSync('src/db/migrations/0033_bank_exchange_rates.sql', 'utf8');
-assert.match(exchangeMigration, /\('exp', 'limite', 1000, 1\)/);
-assert.match(exchangeMigration, /\('coins', 'limite', 10, 1\)/);
-assert.match(exchangeMigration, /\('limite', 'botcoin', 10, 1\)/);
-assert.match(exchangeMigration, /\('limite', 'zyxcoin', 100, 1\)/);
-assert.match(exchangeMigration, /10000000000::bigint/g);
-assert.match(exchangeMigration, /1000000000::bigint/);
-assert.match(exchangeMigration, /1000000::bigint/);
-assert.match(exchangeMigration, /initial_capitalization/);
+const schemaSql = readFileSync('database/schema.sql', 'utf8');
+assert.match(schemaSql, /CREATE TABLE "bot_economy"\."financial_accounts"/);
+assert.match(schemaSql, /CREATE TABLE "bot_economy"\."account_balances"/);
+assert.match(schemaSql, /CREATE TABLE "bot_economy"\."bank_loans"/);
+assert.match(schemaSql, /CREATE TABLE "bot_economy"\."bank_loan_payments"/);
+assert.match(schemaSql, /\('exp', 'limite', 1000, 1\)/);
+assert.match(schemaSql, /\('coins', 'limite', 10, 1\)/);
+assert.match(schemaSql, /\('limite', 'botcoin', 10, 1\)/);
+assert.match(schemaSql, /\('limite', 'zyxcoin', 100, 1\)/);
+assert.match(schemaSql, /10000000000::bigint/g);
+assert.match(schemaSql, /1000000000::bigint/);
+assert.match(schemaSql, /1000000::bigint/);
+assert.match(schemaSql, /initial_capitalization/);
+assert.doesNotMatch(schemaSql, /CREATE TABLE .*bank_reserves/);
 
 const repositorySource = readFileSync('src/adapters/drizzle/bank.repository.ts', 'utf8');
 assert.match(repositorySource, /for\('update'\)/);
 assert.match(repositorySource, /reason: 'loan_disbursement'/);
 assert.match(repositorySource, /reason: 'loan_payment'/);
 assert.match(repositorySource, /reason: 'currency_exchange'/);
-assert.match(repositorySource, /type: 'currency_exchange_in'/);
-assert.match(repositorySource, /type: 'currency_exchange_out'/);
+assert.match(repositorySource, /insertLedgerEntries/);
 const custodyMethod = repositorySource.slice(
     repositorySource.indexOf('async transferCustody'),
     repositorySource.indexOf('async getReserves'),
 );
-assert.doesNotMatch(custodyMethod, /bankReserves/);
+assert.doesNotMatch(custodyMethod, /getReserveAccountId/);
 
 const walletPluginSource = readFileSync('src/plugins/economy/economy-wallet.ts', 'utf8');
 assert.match(walletPluginSource, /isGroup \? undefined : await getBankOverview/);

@@ -67,7 +67,6 @@ NODE_ENV=prod npm run ops:check
 | `DB_NAME` | `zycryx_bot` | Base de datos. |
 | `DB_USER` | `postgres` | Usuario. |
 | `DB_PASSWORD` | vacio | Password. |
-| `DB_SCHEMA` | `public` | Schema usado via `search_path`, aplicado al pool y a drizzle-kit. Solo acepta identificadores válidos (`[a-zA-Z_][a-zA-Z0-9_]*`); si no, cae a `public`. |
 | `DATABASE_URL` | vacio | Alternativa a los parametros individuales. Tiene prioridad si esta definida. |
 
 ## APIs externas

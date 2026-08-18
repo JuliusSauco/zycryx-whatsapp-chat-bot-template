@@ -20,7 +20,7 @@ Actualizacion 2026-07-21: se implemento el siguiente bloque arquitectonico sobre
 - La deuda legacy de plugins ya no bloquea P0; las nuevas mejoras deben conservar la compuerta P0 en verde.
 - P3 queda cancelado: no se usara backend REST/GraphQL y el bot se conectara directamente a PostgreSQL mediante Drizzle.
 - P1 ya tiene providers reales para YouTube, Spotify, TikTok, Threads, Instagram, Facebook, MediaFire y Drive en `src/providers/downloads`.
-- Los scripts de base de datos estan alineados: migraciones registradas en journal y `database/schema.sql` limpio para bootstrap manual desde cero.
+- La base está normalizada en siete schemas; `database/schema.sql` es el bootstrap único PostgreSQL 18 para instalaciones nuevas.
 
 | Fase | Avance | Estado |
 |---|---:|---|

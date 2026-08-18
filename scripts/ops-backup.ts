@@ -104,13 +104,12 @@ function copyDirectoryIfExists(sourceRelativePath: string, backupDir: string, st
 function buildPgDumpArgs(backupDir: string): { args: string[]; env: NodeJS.ProcessEnv } | null {
   const databaseUrl = process.env.DATABASE_URL;
   const dbName = process.env.PGDATABASE || process.env.DB_NAME || process.env.POSTGRES_DB;
-  const schemaName = process.env.DB_SCHEMA;
   const outputPath = path.join(backupDir, 'database.dump');
   const args = ['--format=custom', '--no-owner', '--no-privileges', '--file', outputPath];
-
-  if (schemaName && schemaName !== 'public') {
-    args.push('--schema', schemaName);
-  }
+  for (const schemaName of [
+    'bot_identity', 'bot_economy', 'bot_groups', 'bot_runtime',
+    'bot_content', 'bot_ai', 'bot_audit',
+  ]) args.push('--schema', schemaName);
 
   if (databaseUrl) {
     args.push(databaseUrl);

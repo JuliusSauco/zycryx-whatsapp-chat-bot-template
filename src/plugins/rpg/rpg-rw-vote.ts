@@ -28,11 +28,10 @@ export default defineSdkPlugin({
         if (!character) return sdk.reply.message('rpg.rw.voteNotFound', {name: characterName});
 
         const currentPrice = character.price ?? 0;
-        const newVotes = (character.votes || 0) + 1;
         const increment = randomInt(1, 50);
         const newPrice = currentPrice + increment;
 
-        await voteCharacter(character.id, newVotes, newPrice);
+        await voteCharacter(character.id, m.sender, newPrice);
         await addWalletResourcesAndSetFields({userId: m.sender, resources: {}, fields: {timevot: now}, reason: 'character_market', operation: 'character_vote'});
 
         const formattedPrice = newPrice.toLocaleString();

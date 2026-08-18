@@ -1,20 +1,30 @@
-import {and, eq, lte, sql} from 'drizzle-orm';
+import {and, eq, lte} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
-import {bankReserves, bankTransactions, commandResourceReservations, usuarios, userWallets, walletTransactions} from '../../db/schema.js';
+import {commandReservationItems, commandResourceReservations, userProgress} from '../../db/schema.js';
 import {selectCommandPayment, type CommandResourceReservation} from '../../domain/command-resources.js';
 import type {CommandResourceRepository} from '../../ports/repositories.js';
+import {
+    createFinancialOperation, ensureUserAccounts, getReserveAccountId, insertLedgerEntries,
+    lockBalances, updateBalance,
+} from './economy-account.helpers.js';
 
 type ReservationRow = typeof commandResourceReservations.$inferSelect;
+type ReservationItemRow = typeof commandReservationItems.$inferSelect;
+type Transaction = Parameters<Parameters<typeof orm.transaction>[0]>[0];
 
-function mapReservation(row: ReservationRow): CommandResourceReservation {
+function itemAmount(items: ReservationItemRow[], resourceCode: string, itemType: string): number {
+    return items.find(item => item.resourceCode === resourceCode && item.itemType === itemType)?.amount ?? 0;
+}
+
+function mapReservation(row: ReservationRow, items: ReservationItemRow[]): CommandResourceReservation {
     return {
         id: row.id,
         userId: row.userId,
         pluginId: row.pluginId,
         messageId: row.messageId,
-        limitAmount: row.limitAmount,
-        coinsAmount: row.coinsAmount,
-        alternativeCoinsAmount: row.alternativeCoinsAmount,
+        limitAmount: itemAmount(items, 'limite', 'charged'),
+        coinsAmount: itemAmount(items, 'coins', 'charged'),
+        alternativeCoinsAmount: itemAmount(items, 'coins', 'alternative'),
         paymentResource: row.paymentResource as CommandResourceReservation['paymentResource'],
         requiredLevel: row.requiredLevel,
         status: row.status as CommandResourceReservation['status'],
@@ -23,6 +33,11 @@ function mapReservation(row: ReservationRow): CommandResourceReservation {
         updatedAt: row.updatedAt,
         expiresAt: row.expiresAt,
     };
+}
+
+function loadItems(tx: Transaction, reservationId: string): Promise<ReservationItemRow[]> {
+    return tx.select().from(commandReservationItems)
+        .where(eq(commandReservationItems.reservationId, reservationId));
 }
 
 export const commandResourceRepository: CommandResourceRepository = {
@@ -35,9 +50,6 @@ export const commandResourceRepository: CommandResourceRepository = {
                 userId: input.userId,
                 pluginId: input.pluginId,
                 messageId: input.messageId,
-                limitAmount: 0,
-                coinsAmount: 0,
-                alternativeCoinsAmount: input.alternativeCoins,
                 paymentResource: 'none',
                 requiredLevel: input.level,
                 expiresAt: input.expiresAt,
@@ -46,56 +58,78 @@ export const commandResourceRepository: CommandResourceRepository = {
             if (!inserted) {
                 const [existing] = await tx.select().from(commandResourceReservations)
                     .where(eq(commandResourceReservations.id, input.id)).limit(1);
-                if (existing) {
-                    return {kind: 'reserved' as const, reservation: mapReservation(existing), duplicate: true};
-                }
+                if (existing) return {
+                    kind: 'reserved' as const,
+                    reservation: mapReservation(existing, await loadItems(tx, input.id)),
+                    duplicate: true,
+                };
                 return {kind: 'not_required' as const};
             }
 
-            const [user] = await tx.select({level: usuarios.level}).from(usuarios)
-                .where(eq(usuarios.id, input.userId)).limit(1);
+            if (input.alternativeCoins > 0) await tx.insert(commandReservationItems).values({
+                reservationId: input.id,
+                resourceCode: 'coins',
+                itemType: 'alternative',
+                amount: input.alternativeCoins,
+            });
+
+            const [user] = await tx.select({level: userProgress.level}).from(userProgress)
+                .where(eq(userProgress.userId, input.userId)).limit(1);
             if ((user?.level ?? 0) < input.level) {
                 await tx.delete(commandResourceReservations).where(eq(commandResourceReservations.id, input.id));
                 return {kind: 'insufficient_level' as const, available: user?.level ?? 0, required: input.level};
             }
 
-            const [wallet] = await tx.select({limite: userWallets.limite, coins: userWallets.coins})
-                .from(userWallets).where(eq(userWallets.userId, input.userId)).limit(1).for('update');
-            const availableLimit = wallet?.limite ?? 0;
-            const availableCoins = wallet?.coins ?? 0;
+            const {walletId} = await ensureUserAccounts(tx, input.userId);
+            const balances = await lockBalances(tx, [walletId], ['limite', 'coins']);
+            const availableLimit = balances.find(row => row.resourceCode === 'limite')?.balance ?? 0;
+            const availableCoins = balances.find(row => row.resourceCode === 'coins')?.balance ?? 0;
             const selection = selectCommandPayment(input, {limite: availableLimit, coins: availableCoins});
-            const chargedLimit = selection?.limitAmount ?? 0;
-            const chargedCoins = selection?.coinsAmount ?? 0;
-
-            if (selection) {
-                const [debited] = await tx.update(userWallets).set({
-                    limite: sql`${userWallets.limite} - ${chargedLimit}`,
-                    coins: sql`${userWallets.coins} - ${chargedCoins}`,
-                    updatedAt: new Date(),
-                }).where(eq(userWallets.userId, input.userId))
-                    .returning({limite: userWallets.limite, coins: userWallets.coins});
-                const [reserved] = await tx.update(commandResourceReservations).set({
-                    limitAmount: chargedLimit,
-                    coinsAmount: chargedCoins,
-                    paymentResource: selection.paymentResource,
-                    updatedAt: new Date(),
-                }).where(eq(commandResourceReservations.id, input.id)).returning();
-                const entries = [];
-                if (chargedLimit) entries.push({userId: input.userId, resource: 'limite', amount: -chargedLimit, balanceAfter: debited!.limite, reason: 'command_cost', operation: input.pluginId, operationId: input.id});
-                if (chargedCoins) entries.push({userId: input.userId, resource: 'coins', amount: -chargedCoins, balanceAfter: debited!.coins, reason: 'command_cost', operation: input.pluginId, operationId: input.id});
-                if (entries.length) await tx.insert(walletTransactions).values(entries);
-                return {kind: 'reserved' as const, reservation: mapReservation(reserved!), duplicate: false};
+            if (!selection) {
+                await tx.delete(commandResourceReservations).where(eq(commandResourceReservations.id, input.id));
+                if (input.alternativeCoins > 0) return {
+                    kind: 'insufficient_alternatives' as const,
+                    availableLimit, requiredLimit: input.limit, availableCoins, requiredCoins: input.alternativeCoins,
+                };
+                if (availableLimit < input.limit) return {
+                    kind: 'insufficient_limit' as const, available: availableLimit, required: input.limit,
+                };
+                return {kind: 'insufficient_coins' as const, available: availableCoins, required: input.coins};
             }
-            await tx.delete(commandResourceReservations).where(eq(commandResourceReservations.id, input.id));
-            if (input.alternativeCoins > 0) return {
-                kind: 'insufficient_alternatives' as const,
-                availableLimit,
-                requiredLimit: input.limit,
-                availableCoins,
-                requiredCoins: input.alternativeCoins,
+
+            const charged = [
+                {resourceCode: 'limite', amount: selection.limitAmount, balance: availableLimit},
+                {resourceCode: 'coins', amount: selection.coinsAmount, balance: availableCoins},
+            ].filter(item => item.amount > 0);
+            if (charged.length) {
+                await tx.insert(commandReservationItems).values(charged.map(item => ({
+                    reservationId: input.id,
+                    resourceCode: item.resourceCode,
+                    itemType: 'charged',
+                    amount: item.amount,
+                })));
+                const operationId = await createFinancialOperation(tx, {
+                    reason: 'command_cost', operation: input.pluginId,
+                    externalId: `command:${input.id}:reserve`, actorId: input.userId,
+                });
+                const entries = [];
+                for (const item of charged) {
+                    const balanceAfter = item.balance - item.amount;
+                    await updateBalance(tx, walletId, item.resourceCode, balanceAfter);
+                    entries.push({accountId: walletId, resourceCode: item.resourceCode, amount: -item.amount, balanceAfter});
+                }
+                await insertLedgerEntries(tx, operationId, entries);
+            }
+
+            const [reserved] = await tx.update(commandResourceReservations).set({
+                paymentResource: selection.paymentResource,
+                updatedAt: new Date(),
+            }).where(eq(commandResourceReservations.id, input.id)).returning();
+            return {
+                kind: 'reserved' as const,
+                reservation: mapReservation(reserved!, await loadItems(tx, input.id)),
+                duplicate: false,
             };
-            if (availableLimit < input.limit) return {kind: 'insufficient_limit' as const, available: availableLimit, required: input.limit};
-            return {kind: 'insufficient_coins' as const, available: availableCoins, required: input.coins};
         });
     },
 
@@ -106,26 +140,25 @@ export const commandResourceRepository: CommandResourceRepository = {
                 .where(and(eq(commandResourceReservations.id, id), eq(commandResourceReservations.status, 'pending')))
                 .returning();
             if (!row) return null;
-            const revenues = [
-                {resource: 'limite', amount: row.limitAmount},
-                {resource: 'coins', amount: row.coinsAmount},
-            ].filter(entry => entry.amount > 0);
-            for (const revenue of revenues) {
-                const [reserve] = await tx.update(bankReserves).set({
-                    balance: sql`${bankReserves.balance} + ${revenue.amount}`,
-                    updatedAt: new Date(),
-                }).where(eq(bankReserves.resource, revenue.resource)).returning({balance: bankReserves.balance});
-                if (!reserve) throw new Error(`Missing institutional bank reserve: ${revenue.resource}`);
-                await tx.insert(bankTransactions).values({
-                    userId: row.userId,
-                    resource: revenue.resource,
-                    type: 'command_revenue',
-                    amount: revenue.amount,
-                    balanceAfter: reserve.balance,
-                    operationId: row.id,
+            const items = await loadItems(tx, id);
+            const charged = items.filter(item => item.itemType === 'charged' && item.amount > 0);
+            if (charged.length) {
+                const reserveId = await getReserveAccountId(tx);
+                const balances = await lockBalances(tx, [reserveId], charged.map(item => item.resourceCode));
+                const operationId = await createFinancialOperation(tx, {
+                    reason: 'command_revenue', operation: row.pluginId,
+                    externalId: `command:${id}:commit`, actorId: row.userId,
                 });
+                const entries = [];
+                for (const item of charged) {
+                    const current = balances.find(balance => balance.resourceCode === item.resourceCode)?.balance ?? 0;
+                    const balanceAfter = current + item.amount;
+                    await updateBalance(tx, reserveId, item.resourceCode, balanceAfter);
+                    entries.push({accountId: reserveId, resourceCode: item.resourceCode, amount: item.amount, balanceAfter});
+                }
+                await insertLedgerEntries(tx, operationId, entries);
             }
-            return mapReservation(row);
+            return mapReservation(row, items);
         });
     },
 
@@ -136,19 +169,25 @@ export const commandResourceRepository: CommandResourceRepository = {
                 .where(and(eq(commandResourceReservations.id, id), eq(commandResourceReservations.status, 'pending')))
                 .returning();
             if (!row) return null;
-            const [refunded] = await tx.update(userWallets).set({
-                limite: sql`${userWallets.limite} + ${row.limitAmount}`,
-                coins: sql`${userWallets.coins} + ${row.coinsAmount}`,
-                updatedAt: new Date(),
-            }).where(eq(userWallets.userId, row.userId))
-                .returning({limite: userWallets.limite, coins: userWallets.coins});
-            if (refunded) {
+            const items = await loadItems(tx, id);
+            const charged = items.filter(item => item.itemType === 'charged' && item.amount > 0);
+            if (charged.length) {
+                const {walletId} = await ensureUserAccounts(tx, row.userId);
+                const balances = await lockBalances(tx, [walletId], charged.map(item => item.resourceCode));
+                const operationId = await createFinancialOperation(tx, {
+                    reason: 'command_refund', operation: row.pluginId,
+                    externalId: `command:${id}:release`, actorId: row.userId,
+                });
                 const entries = [];
-                if (row.limitAmount) entries.push({userId: row.userId, resource: 'limite', amount: row.limitAmount, balanceAfter: refunded.limite, reason: 'command_refund', operation: row.pluginId, operationId: row.id});
-                if (row.coinsAmount) entries.push({userId: row.userId, resource: 'coins', amount: row.coinsAmount, balanceAfter: refunded.coins, reason: 'command_refund', operation: row.pluginId, operationId: row.id});
-                if (entries.length) await tx.insert(walletTransactions).values(entries);
+                for (const item of charged) {
+                    const current = balances.find(balance => balance.resourceCode === item.resourceCode)?.balance ?? 0;
+                    const balanceAfter = current + item.amount;
+                    await updateBalance(tx, walletId, item.resourceCode, balanceAfter);
+                    entries.push({accountId: walletId, resourceCode: item.resourceCode, amount: item.amount, balanceAfter});
+                }
+                await insertLedgerEntries(tx, operationId, entries);
             }
-            return mapReservation(row);
+            return mapReservation(row, items);
         });
     },
 
@@ -157,9 +196,7 @@ export const commandResourceRepository: CommandResourceRepository = {
             .from(commandResourceReservations)
             .where(and(eq(commandResourceReservations.status, 'pending'), lte(commandResourceReservations.expiresAt, now)));
         let released = 0;
-        for (const {id} of expired) {
-            if (await this.release(id, 'expired')) released++;
-        }
+        for (const {id} of expired) if (await this.release(id, 'expired')) released++;
         return released;
     },
 };

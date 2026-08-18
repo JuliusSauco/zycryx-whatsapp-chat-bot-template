@@ -27,6 +27,7 @@ repositories.commandResources = {
                 id: input.id, userId: input.userId, pluginId: input.pluginId, messageId: input.messageId,
                 limitAmount: input.limit, coinsAmount: input.coins, alternativeCoinsAmount: input.alternativeCoins,
                 paymentResource: input.limit && input.coins ? 'mixed' : input.limit ? 'limite' : input.coins ? 'coins' : 'none',
+                requiredLevel: input.level,
                 status: 'pending', releaseReason: null, createdAt: new Date(), updatedAt: new Date(), expiresAt: input.expiresAt,
             },
         };
