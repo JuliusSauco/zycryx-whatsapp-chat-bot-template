@@ -11,6 +11,7 @@
  */
 
 import {ENV} from '../core/env.js';
+import {clearRedisNamespace, deleteRedisKeys} from './redis-runtime.js';
 
 const TTL_MS = Number.isFinite(ENV.DB_CACHE_TTL_MS) && ENV.DB_CACHE_TTL_MS > 0
     ? ENV.DB_CACHE_TTL_MS
@@ -26,6 +27,12 @@ const groupContextSettingsCache = new Map<string, CacheEntry<unknown>>();
 const groupFullSettingsCache = new Map<string, CacheEntry<unknown>>();
 const groupCensoredUsersCache = new Map<string, CacheEntry<unknown>>();
 const MAX_CACHE_ENTRIES = 5_000;
+const stats = {hits: 0, misses: 0, writes: 0, evictions: 0};
+
+export const DISTRIBUTED_DB_CACHE = {
+    subbot: 'cache:db:subbot',
+    groupContext: 'cache:db:group-context',
+} as const;
 
 function setBounded<T>(cache: Map<string, CacheEntry<T>>, key: string, data: T): void {
     cache.delete(key);
@@ -33,18 +40,29 @@ function setBounded<T>(cache: Map<string, CacheEntry<T>>, key: string, data: T):
         const oldest = cache.keys().next().value as string | undefined;
         if (!oldest) break;
         cache.delete(oldest);
+        stats.evictions++;
     }
     cache.set(key, {data, expiresAt: Date.now() + TTL_MS});
+    stats.writes++;
+}
+
+function readEntry<T>(cache: Map<string, CacheEntry<unknown>>, key: string): T | null {
+    const entry = cache.get(key);
+    if (!entry) {
+        stats.misses++;
+        return null;
+    }
+    if (Date.now() > entry.expiresAt) {
+        cache.delete(key);
+        stats.misses++;
+        return null;
+    }
+    stats.hits++;
+    return entry.data as T;
 }
 
 export function getCachedSubbotConfig<T>(botId: string): T | null {
-    const entry = subbotConfigCache.get(botId);
-    if (!entry) return null;
-    if (Date.now() > entry.expiresAt) {
-        subbotConfigCache.delete(botId);
-        return null;
-    }
-    return entry.data as T;
+    return readEntry<T>(subbotConfigCache, botId);
 }
 
 export function setCachedSubbotConfig<T>(botId: string, data: T): void {
@@ -53,16 +71,11 @@ export function setCachedSubbotConfig<T>(botId: string, data: T): void {
 
 export function invalidateSubbotConfig(botId: string): void {
     subbotConfigCache.delete(botId);
+    void deleteRedisKeys([{namespace: DISTRIBUTED_DB_CACHE.subbot, key: botId}]);
 }
 
 export function getCachedGroupSettings<T>(chatId: string): T | null {
-    const entry = groupContextSettingsCache.get(chatId);
-    if (!entry) return null;
-    if (Date.now() > entry.expiresAt) {
-        groupContextSettingsCache.delete(chatId);
-        return null;
-    }
-    return entry.data as T;
+    return readEntry<T>(groupContextSettingsCache, chatId);
 }
 
 export function setCachedGroupSettings<T>(chatId: string, data: T): void {
@@ -70,13 +83,7 @@ export function setCachedGroupSettings<T>(chatId: string, data: T): void {
 }
 
 export function getCachedFullGroupSettings<T>(chatId: string): T | null {
-    const entry = groupFullSettingsCache.get(chatId);
-    if (!entry) return null;
-    if (Date.now() > entry.expiresAt) {
-        groupFullSettingsCache.delete(chatId);
-        return null;
-    }
-    return entry.data as T;
+    return readEntry<T>(groupFullSettingsCache, chatId);
 }
 
 export function setCachedFullGroupSettings<T>(chatId: string, data: T): void {
@@ -86,16 +93,11 @@ export function setCachedFullGroupSettings<T>(chatId: string, data: T): void {
 export function invalidateGroupSettings(chatId: string): void {
     groupContextSettingsCache.delete(chatId);
     groupFullSettingsCache.delete(chatId);
+    void deleteRedisKeys([{namespace: DISTRIBUTED_DB_CACHE.groupContext, key: chatId}]);
 }
 
 export function getCachedGroupCensoredUsers<T>(chatId: string): T | null {
-    const entry = groupCensoredUsersCache.get(chatId);
-    if (!entry) return null;
-    if (Date.now() > entry.expiresAt) {
-        groupCensoredUsersCache.delete(chatId);
-        return null;
-    }
-    return entry.data as T;
+    return readEntry<T>(groupCensoredUsersCache, chatId);
 }
 
 export function setCachedGroupCensoredUsers<T>(chatId: string, data: T): void {
@@ -111,6 +113,23 @@ export function invalidateAllDatabaseCaches(): void {
     groupContextSettingsCache.clear();
     groupFullSettingsCache.clear();
     groupCensoredUsersCache.clear();
+    void Promise.all([
+        clearRedisNamespace(DISTRIBUTED_DB_CACHE.subbot),
+        clearRedisNamespace(DISTRIBUTED_DB_CACHE.groupContext),
+    ]);
+}
+
+export function getDatabaseCacheStats() {
+    return {
+        ...stats,
+        ttlMs: TTL_MS,
+        entries: {
+            subbots: subbotConfigCache.size,
+            groupContext: groupContextSettingsCache.size,
+            groupFull: groupFullSettingsCache.size,
+            censoredUsers: groupCensoredUsersCache.size,
+        },
+    };
 }
 
 // Limpieza periódica de entradas expiradas (evita memory leak si miles de chats únicos).

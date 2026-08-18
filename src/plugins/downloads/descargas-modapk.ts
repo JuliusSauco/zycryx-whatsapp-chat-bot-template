@@ -7,7 +7,7 @@ import {downloadModApk} from '../../providers/downloads/modapk.provider.js';
 import {renderDownloadFailure} from './download-error.js';
 
 const userMessages = createExpiringMap<QuotedMessage>({ttlMs: 10 * 60 * 1000});
-const userRequests = createUserRequestLocks();
+const userRequests = createUserRequestLocks('downloads:modapk');
 
 export default defineSdkPlugin({
     help: ['apk', 'apkmod'],
@@ -17,7 +17,7 @@ export default defineSdkPlugin({
     limit: 2,
     async execute(m, {sdk}) {
     if (!sdk.text) return sdk.reply.message('downloads.modApk.missingQuery')
-    if (!userRequests.acquire(sdk.sender)) return sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.modApk.locked', {
+    if (!await userRequests.acquire(sdk.sender)) return sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.modApk.locked', {
         user: sdk.sender.split('@')[0]
     }), userMessages.get(sdk.sender) || m)
     await sdk.reply.react("⌛");
@@ -54,7 +54,7 @@ export default defineSdkPlugin({
         await sdk.reply.react('❌');
         logInfo(e);
     } finally {
-        userRequests.release(sdk.sender);
+        await userRequests.release(sdk.sender);
     }
     }
 });

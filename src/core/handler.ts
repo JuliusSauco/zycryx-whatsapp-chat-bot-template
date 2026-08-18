@@ -47,7 +47,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     const chatId = m.key?.remoteJid || "";
 
     // 1. Dedup
-    if (isDuplicateMessage(m, MESSAGE_DEDUP_TTL)) return;
+    if (await isDuplicateMessage(m, MESSAGE_DEDUP_TTL)) return;
     markPerf(marks, 'dedup', perfStart);
 
     if (shouldSkipMessage(m, chatId)) return;

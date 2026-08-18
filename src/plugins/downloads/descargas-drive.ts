@@ -7,7 +7,7 @@ import type {QuotedMessage} from '../../types/context.js';
 import {renderDownloadFailure} from './download-error.js';
 
 const userCaptions = createExpiringMap<QuotedMessage>({ttlMs: 10 * 60 * 1000});
-const userRequests = createUserRequestLocks();
+const userRequests = createUserRequestLocks('downloads:drive');
 
 export default defineSdkPlugin({
     help: ['drive'].map(v => v + ' <url>'),
@@ -21,7 +21,7 @@ export default defineSdkPlugin({
             command: sdk.usedPrefix + sdk.command,
         });
 
-        if (!userRequests.acquire(sdk.sender)) {
+        if (!await userRequests.acquire(sdk.sender)) {
             await sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.drive.locked', {
                 user: sdk.sender.split('@')[0],
             }), userCaptions.get(sdk.sender) || m);
@@ -47,7 +47,7 @@ export default defineSdkPlugin({
             await sdk.reply.reportableError(e);
             logInfo(e);
         } finally {
-            userRequests.release(sdk.sender);
+            await userRequests.release(sdk.sender);
         }
     },
 });

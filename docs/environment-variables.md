@@ -56,6 +56,11 @@ NODE_ENV=prod npm run ops:check
 | `HTTP_TIMEOUT_MS` | `15000` | Timeout por defecto del HTTP client centralizado. |
 | `DB_CACHE_TTL_MS` | `300000` | TTL del cache en memoria de settings de grupo y subbot config. |
 | `AUDIO_CACHE_TTL_MS` | `300000` | TTL del cache de audios dinamicos. |
+| `REDIS_URL` | vacio | URL `redis://`/`rediss://` del cache compartido. Sin valor, el bot usa fallback local. |
+| `REDIS_REQUIRED` | `false` | Si es `true`, el arranque y readiness fallan cuando Redis no está disponible. |
+| `REDIS_KEY_PREFIX` | `zycryx` | Prefijo aislado para todas las claves del bot. |
+| `REDIS_CONNECT_TIMEOUT_MS` | `5000` | Timeout de cada intento inicial de conexión a Redis. |
+| `REDIS_CACHE_TTL_SECONDS` | `300` | TTL del cache L2 de configuración caliente. |
 | `BACKGROUND_TASK_CONCURRENCY` | `4` | Concurrencia de la cola de tareas en segundo plano (upserts no criticos). |
 | `PLUGIN_HOT_RELOAD_ENABLED` | `false` | Activa watchers de plugins; recomendado sólo en desarrollo. |
 | `REQUIRED_PLUGIN_PATHS` | hooks críticos | Lista separada por coma que debe existir al arrancar. |

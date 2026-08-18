@@ -10,7 +10,7 @@ import {
     selectQuality,
 } from '../../providers/downloads/youtube.provider.js';
 
-const userRequests = createUserRequestLocks();
+const userRequests = createUserRequestLocks('downloads:play2');
 export default defineSdkPlugin({
     help: ['ytmp4', 'ytmp3'],
     tags: ['downloader'],
@@ -25,7 +25,7 @@ export default defineSdkPlugin({
         senderId: sdk.sender,
     });
 
-    if (!userRequests.acquire(sdk.sender)) {
+    if (!await userRequests.acquire(sdk.sender)) {
         return sdk.reply.message('downloads.play2.locked')
     }
     try {
@@ -73,7 +73,7 @@ export default defineSdkPlugin({
         logError(error);
         await sdk.reply.react("❌️")
     } finally {
-        userRequests.release(sdk.sender);
+        await userRequests.release(sdk.sender);
     }
     }
 })

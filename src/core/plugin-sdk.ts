@@ -138,7 +138,7 @@ export function createPluginSdk(m: BotMessage, ctx: PluginContext): PluginSdk {
             buffer: httpBuffer,
         },
         locks: createPluginLocks(ctx.pluginId),
-        createUserLocks: createUserRequestLocks,
+        createUserLocks: <TPayload = true>() => createUserRequestLocks<TPayload>(ctx.pluginId),
         sendMessage(messageContent, options) {
             return ctx.conn.sendMessage(chatId, messageContent, {quoted: m, ...options});
         },

@@ -2,11 +2,13 @@ import {logError} from '../lib/logger.js';
 import {enqueueBackgroundTask} from '../lib/background-task-queue.js';
 import {
     getCachedGroupSettings,
+    DISTRIBUTED_DB_CACHE,
     getCachedFullGroupSettings,
     invalidateGroupSettings,
     setCachedFullGroupSettings,
     setCachedGroupSettings,
 } from '../lib/db-cache.js';
+import {getRedisJson, setRedisJson} from '../lib/redis-runtime.js';
 import {repositories} from './data-source.js';
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode} from '../types/config.js';
 import type {CommandAccessRule, ConfigurableFeatureKey, ContextGroupSettings, FamilyAccessRule, GroupBooleanFlag, GroupSettingsRecord} from '../domain/groups.js';
@@ -48,6 +50,12 @@ export async function getContextGroupSettings(chatId: string): Promise<ContextGr
     const cached = getCachedGroupSettings<ContextGroupSettings>(chatId);
     if (cached) return cached;
 
+    const distributed = await getRedisJson<ContextGroupSettings>(DISTRIBUTED_DB_CACHE.groupContext, chatId);
+    if (distributed.value) {
+        setCachedGroupSettings(chatId, distributed.value);
+        return distributed.value;
+    }
+
     try {
         const row = await repositories.groupSettings.findContextSettings(chatId);
         const settings = row ?? {
@@ -56,6 +64,7 @@ export async function getContextGroupSettings(chatId: string): Promise<ContextGr
             commandAccess: Object.fromEntries((await repositories.groupSettings.listCommandAccessRules(chatId)).map(item => [item.target, item.rule])),
         };
         setCachedGroupSettings(chatId, settings);
+        await setRedisJson(DISTRIBUTED_DB_CACHE.groupContext, chatId, settings);
         return settings;
     } catch (err) {
         logError('Error leyendo group_settings:', err);

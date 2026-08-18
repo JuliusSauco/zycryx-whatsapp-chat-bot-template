@@ -4,7 +4,7 @@ import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 import {downloadTikTokVideo, isTikTokUrl} from '../../providers/downloads/tiktok.provider.js';
 import {renderDownloadFailure} from './download-error.js';
 
-const userRequests = createUserRequestLocks();
+const userRequests = createUserRequestLocks('downloads:tiktok');
 
 export default defineSdkPlugin({
     help: ['tiktok'],
@@ -17,7 +17,7 @@ export default defineSdkPlugin({
             command: sdk.usedPrefix + sdk.command,
         });
         if (!isTikTokUrl(sdk.text)) return sdk.reply.message('downloads.tiktok.invalidUrl');
-        if (!userRequests.acquire(sdk.sender)) return sdk.reply.message('downloads.tiktok.locked', {
+        if (!await userRequests.acquire(sdk.sender)) return sdk.reply.message('downloads.tiktok.locked', {
             user: sdk.sender.split('@')[0],
         });
 
@@ -34,7 +34,7 @@ export default defineSdkPlugin({
             logInfo(e);
             await sdk.reply.react('❌');
         } finally {
-            userRequests.release(sdk.sender);
+            await userRequests.release(sdk.sender);
         }
     },
 });

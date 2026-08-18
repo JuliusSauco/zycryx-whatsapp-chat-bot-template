@@ -26,6 +26,7 @@ let connectPromise: Promise<void> | null = null;
 let stopping = false;
 let reconnectAttempts = 0;
 let lastNotificationAt: number | null = null;
+let hasConnectedBefore = false;
 
 export function getCacheInvalidationListenerStatus(): CacheInvalidationListenerStatus {
     return {connected: Boolean(client), reconnectAttempts, lastNotificationAt};
@@ -55,7 +56,16 @@ async function connectListener(): Promise<void> {
     reconnectAttempts = 0;
     connected.on('notification', handleNotification);
     connected.on('error', error => handleConnectionError(connected, error));
-    logInfo('[CACHE] Invalidación distribuida LISTEN/NOTIFY activa.');
+    if (hasConnectedBefore) {
+        // Una desconexión puede perder NOTIFY; vaciar L1/L2 evita servir datos
+        // anteriores al restablecimiento del listener.
+        invalidateAllDatabaseCaches();
+        invalidateApiTokenCache();
+        logInfo('[CACHE] Listener restablecido; caches reconciliados.');
+    } else {
+        hasConnectedBefore = true;
+        logInfo('[CACHE] Invalidación distribuida LISTEN/NOTIFY activa.');
+    }
 }
 
 function handleNotification(notification: Notification): void {

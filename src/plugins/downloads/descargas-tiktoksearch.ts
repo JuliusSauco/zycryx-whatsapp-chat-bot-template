@@ -4,7 +4,7 @@ import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 import {searchTikTokVideos} from '../../providers/downloads/tiktok.provider.js';
 import {randomInt} from '../../utils/random.js';
 
-const userRequests = createUserRequestLocks();
+const userRequests = createUserRequestLocks('downloads:tiktok-search');
 
 export default defineSdkPlugin({
     help: ['tiktoksearch <texto>'],
@@ -16,7 +16,7 @@ export default defineSdkPlugin({
     if (!sdk.text) throw sdk.content.renderMessage('downloads.tiktokSearch.missingQuery', {
         command: sdk.usedPrefix + sdk.command
     })
-    if (!userRequests.acquire(sdk.sender)) return sdk.reply.message('downloads.tiktokSearch.locked')
+    if (!await userRequests.acquire(sdk.sender)) return sdk.reply.message('downloads.tiktokSearch.locked')
     await sdk.reply.react("⏳")
     try {
         const searchResults = await searchTikTokVideos(sdk.text);
@@ -30,7 +30,7 @@ export default defineSdkPlugin({
         await sdk.reply.react("❌️")
         logError(error);
     } finally {
-        userRequests.release(sdk.sender);
+        await userRequests.release(sdk.sender);
     }
     }
 });

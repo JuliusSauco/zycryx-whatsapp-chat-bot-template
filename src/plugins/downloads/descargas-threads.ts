@@ -10,7 +10,7 @@ interface UserRequest {
     message: {key?: proto.IMessageKey | null; chat: string; fromMe: boolean};
 }
 
-const userRequests = createUserRequestLocks<UserRequest>();
+const userRequests = createUserRequestLocks<UserRequest>('downloads:threads');
 
 export default defineSdkPlugin({
     help: ['thread'],
@@ -25,12 +25,12 @@ export default defineSdkPlugin({
         });
 
         const activeRequest = userRequests.get(sdk.sender);
-        if (activeRequest) return sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.threads.locked', {
+        if (!await userRequests.acquire(sdk.sender, {active: true, message: {chat: sdk.chatId, fromMe: true}})) return sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.threads.locked', {
             user: sdk.sender.split('@')[0],
-        }), activeRequest.message || m);
+        }), activeRequest?.message || m);
 
         const {key} = await sdk.sendMessage({text: sdk.content.message('downloads.threads.downloading')});
-        userRequests.acquire(sdk.sender, {active: true, message: {key, chat: sdk.chatId, fromMe: true}});
+        userRequests.setPayload(sdk.sender, {active: true, message: {key, chat: sdk.chatId, fromMe: true}});
         await sdk.reply.react('⌛');
 
         try {
@@ -50,7 +50,7 @@ export default defineSdkPlugin({
             });
             logInfo(e);
         } finally {
-            userRequests.release(sdk.sender);
+            await userRequests.release(sdk.sender);
         }
     },
 });

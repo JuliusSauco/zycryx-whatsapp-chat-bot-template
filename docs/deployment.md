@@ -6,6 +6,7 @@ Guia operativa para correr el bot en produccion (VPS Linux o Windows). Fecha de 
 
 - Node.js 24 LTS (usar siempre el parche 24.x mas reciente).
 - PostgreSQL 18+ accesible desde el servidor (incluido un proyecto Supabase con PG18).
+- Redis 7+ recomendado para despliegues con más de una réplica o reinicios frecuentes.
 - Cliente PostgreSQL en PATH (`pg_dump`, `pg_restore`, `createdb`) para backups y recuperacion.
 - FFmpeg en el PATH (stickers, conversiones, audios).
 - git (para despliegues y actualizaciones administrativas con `git pull`).
@@ -99,6 +100,12 @@ Usalo antes de dejar un servidor en produccion y despues de cambios en `.env.pro
 La consola operativa se sirve en `/console` desde `HEALTH_PORT`. Para habilitar sus APIs configura `CONSOLE_VIEW_TOKEN` con un valor aleatorio largo y publica únicamente ese puerto mediante el proxy de la plataforma. La autenticación se valida con comparación constante y los mensajes se redactan antes de entrar al buffer en memoria.
 
 No reutilices claves de APIs, contraseñas de base de datos ni la clave maestra de sesiones como token de consola.
+
+## Redis en Railway
+
+Provisiona Redis en el mismo proyecto y entorno del bot. En el servicio de la aplicación define `REDIS_URL` como referencia a `${{Redis.REDIS_URL}}`, habilita `REDIS_REQUIRED=true` y conserva `REDIS_KEY_PREFIX=zycryx`. La referencia usa la red privada de Railway y evita copiar credenciales.
+
+Redis no sustituye a PostgreSQL: sólo guarda cache L2 con TTL, deduplicación y locks efímeros. Las credenciales y Signal keys de Baileys continúan cifradas en PostgreSQL.
 
 ## Backups
 

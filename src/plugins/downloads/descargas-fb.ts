@@ -4,7 +4,7 @@ import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 import {downloadFacebookMedia, isFacebookUrl, type FacebookProviderMedia} from '../../providers/downloads/facebook.provider.js';
 import {renderDownloadFailure} from './download-error.js';
 
-const userRequests = createUserRequestLocks();
+const userRequests = createUserRequestLocks('downloads:facebook');
 
 export default defineSdkPlugin({
     help: ['fb', 'facebook', 'fbdl'],
@@ -19,7 +19,7 @@ export default defineSdkPlugin({
         });
         if (!sdk.args[0]) return sdk.reply.text(missingUrlMessage);
         if (!isFacebookUrl(sdk.args[0])) return sdk.reply.text(missingUrlMessage);
-        if (!userRequests.acquire(sdk.sender)) return sdk.reply.message('downloads.facebook.locked', {
+        if (!await userRequests.acquire(sdk.sender)) return sdk.reply.message('downloads.facebook.locked', {
             user: sdk.sender.split('@')[0],
         });
 
@@ -34,7 +34,7 @@ export default defineSdkPlugin({
             await sdk.reply.react('❌');
             logInfo(e);
         } finally {
-            userRequests.release(sdk.sender);
+            await userRequests.release(sdk.sender);
         }
     },
 });

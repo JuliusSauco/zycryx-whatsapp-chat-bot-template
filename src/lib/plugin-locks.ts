@@ -2,6 +2,7 @@ interface LockEntry {
     expiresAt: number;
     timer: ReturnType<typeof setTimeout>;
 }
+import {acquireRedisLock, releaseRedisLock} from './redis-runtime.js';
 
 export interface PluginLocks {
     runExclusive<T>(key: string, operation: () => Promise<T>, ttlMs?: number): Promise<{acquired: true; value: T} | {acquired: false}>;
@@ -23,9 +24,15 @@ export function createPluginLocks(pluginId: string): PluginLocks {
             const timer = setTimeout(() => release(id), safeTtl);
             timer.unref?.();
             locks.set(id, {expiresAt: Date.now() + safeTtl, timer});
+            const distributed = await acquireRedisLock('lock:plugin', id, safeTtl);
+            if (distributed.available && !distributed.acquired) {
+                release(id);
+                return {acquired: false};
+            }
             try {
                 return {acquired: true, value: await operation()};
             } finally {
+                if (distributed.acquired) await releaseRedisLock('lock:plugin', id, distributed.token);
                 release(id);
             }
         },

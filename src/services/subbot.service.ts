@@ -1,7 +1,8 @@
 import {logError} from '../lib/logger.js';
 import type {BotInstanceType, SubbotBooleanFlag, SubbotConfig, SubbotTypeCounts} from '../domain/subbots.js';
 import {cleanSubbotId, DEFAULT_SUBBOT_CONFIG} from '../domain/subbots.js';
-import {getCachedSubbotConfig, invalidateSubbotConfig, setCachedSubbotConfig} from '../lib/db-cache.js';
+import {DISTRIBUTED_DB_CACHE, getCachedSubbotConfig, invalidateSubbotConfig, setCachedSubbotConfig} from '../lib/db-cache.js';
+import {getRedisJson, setRedisJson} from '../lib/redis-runtime.js';
 import {repositories} from './data-source.js';
 
 export async function getSubbotConfig(botId: string): Promise<SubbotConfig> {
@@ -9,10 +10,17 @@ export async function getSubbotConfig(botId: string): Promise<SubbotConfig> {
     const cached = getCachedSubbotConfig<SubbotConfig>(cleanId);
     if (cached) return cached;
 
+    const distributed = await getRedisJson<SubbotConfig>(DISTRIBUTED_DB_CACHE.subbot, cleanId);
+    if (distributed.value) {
+        setCachedSubbotConfig(cleanId, distributed.value);
+        return distributed.value;
+    }
+
     try {
         const config = await repositories.subbots.findConfig(cleanId);
         const resolved = config ?? {...DEFAULT_SUBBOT_CONFIG};
         setCachedSubbotConfig(cleanId, resolved);
+        await setRedisJson(DISTRIBUTED_DB_CACHE.subbot, cleanId, resolved);
         return resolved;
     } catch (err) {
         logError('Error obteniendo configuracion del subbot:', err);

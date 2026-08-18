@@ -7,7 +7,7 @@ import {downloadAppleMusicTrack} from '../../providers/downloads/applemusic.prov
 import {renderDownloadFailure} from './download-error.js';
 
 const userMessages = createExpiringMap<proto.WebMessageInfo>({ttlMs: 10 * 60 * 1000});
-const userRequests = createUserRequestLocks();
+const userRequests = createUserRequestLocks('downloads:apple-music');
 
 export default defineSdkPlugin({
     help: ['applemusic'],
@@ -20,7 +20,7 @@ export default defineSdkPlugin({
     if (!sdk.text) return sdk.reply.message('downloads.appleMusic.missingUrl', {
         command: sdk.usedPrefix + sdk.command
     });
-    if (!userRequests.acquire(sdk.sender)) {
+    if (!await userRequests.acquire(sdk.sender)) {
         await sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.appleMusic.locked', {
             user: sdk.sender.split('@')[0]
         }), userMessages.get(sdk.sender) || m)
@@ -53,7 +53,7 @@ export default defineSdkPlugin({
         await sdk.reply.message('downloads.appleMusic.error');
         await sdk.reply.react("❌");
     } finally {
-        userRequests.release(sdk.sender);
+        await userRequests.release(sdk.sender);
     }
     }
 });

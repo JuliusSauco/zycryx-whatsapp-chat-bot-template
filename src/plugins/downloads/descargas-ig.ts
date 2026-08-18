@@ -4,7 +4,7 @@ import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 import {downloadInstagramMedia, type InstagramProviderMedia} from '../../providers/downloads/instagram.provider.js';
 import {renderDownloadFailure} from './download-error.js';
 
-const userRequests = createUserRequestLocks();
+const userRequests = createUserRequestLocks('downloads:instagram');
 
 export default defineSdkPlugin({
     help: ['instagram *<link ig>*'],
@@ -17,7 +17,7 @@ export default defineSdkPlugin({
         if (!sdk.args[0]) return sdk.reply.message('downloads.instagram.missingUrl', {
             command: sdk.usedPrefix + sdk.command,
         });
-        if (!userRequests.acquire(sdk.sender)) return sdk.reply.message('downloads.instagram.locked', {
+        if (!await userRequests.acquire(sdk.sender)) return sdk.reply.message('downloads.instagram.locked', {
             user: sdk.sender.split('@')[0],
         });
 
@@ -32,7 +32,7 @@ export default defineSdkPlugin({
             await sdk.reply.react('❌');
             logInfo(e);
         } finally {
-            userRequests.release(sdk.sender);
+            await userRequests.release(sdk.sender);
         }
     },
 });

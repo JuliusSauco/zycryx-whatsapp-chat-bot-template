@@ -7,7 +7,7 @@ import {createUserRequestLocks} from '../../lib/user-request-locks.js';
 
 const regex = /(?:https|git)(?::\/\/|@)github\.com[\/:]([^\/:]+)\/(.+)/i;
 const userCaptions = createExpiringMap<QuotedMessage>({ttlMs: 10 * 60 * 1000});
-const userRequests = createUserRequestLocks();
+const userRequests = createUserRequestLocks('downloads:gitclone');
 
 export default defineSdkPlugin({
     help: ['gitclone <url>'],
@@ -22,7 +22,7 @@ export default defineSdkPlugin({
         command: sdk.usedPrefix + sdk.command
     })
     if (!regex.test(sdk.args[0])) return sdk.reply.message('downloads.gitclone.invalidUrl')
-    if (!userRequests.acquire(sdk.sender)) {
+    if (!await userRequests.acquire(sdk.sender)) {
         await sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.gitclone.locked', {
             user: sdk.sender.split('@')[0]
         }), userCaptions.get(sdk.sender) || m)
@@ -54,7 +54,7 @@ export default defineSdkPlugin({
         await sdk.reply.reportableError(e);
         logInfo(e);
     } finally {
-        userRequests.release(sdk.sender);
+        await userRequests.release(sdk.sender);
     }
     }
 });

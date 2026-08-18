@@ -19,7 +19,7 @@ import {
 const LimitAud = 725 * 1024 * 1024; // 725MB
 const LimitVid = 425 * 1024 * 1024; // 425MB
 const userCaptions = createExpiringMap<QuotedMessage>({ttlMs: 10 * 60 * 1000});
-const userRequests = createUserRequestLocks();
+const userRequests = createUserRequestLocks('downloads:play');
 
 
 export default defineSdkPlugin({
@@ -33,7 +33,7 @@ export default defineSdkPlugin({
     });
     const command = sdk.command;
     const tipoDescarga = command === 'play' || command === 'musica' ? 'audio' : command === 'play2' ? 'video' : command === 'play3' ? 'audio (documento)' : command === 'play4' ? 'video (documento)' : '';
-    if (!userRequests.acquire(sdk.sender)) return sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.play.locked', {
+    if (!await userRequests.acquire(sdk.sender)) return sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.play.locked', {
         user: sdk.sender.split('@')[0]
     }), userCaptions.get(sdk.sender) || m);
     try {
@@ -163,7 +163,7 @@ export default defineSdkPlugin({
         logError(error);
         await sdk.reply.react("❌️")
     } finally {
-        userRequests.release(sdk.sender);
+        await userRequests.release(sdk.sender);
     }
     }
 })

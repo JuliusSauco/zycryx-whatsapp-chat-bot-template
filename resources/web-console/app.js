@@ -12,7 +12,7 @@
     const elements = Object.fromEntries([
         'authPanel', 'authForm', 'tokenInput', 'authError', 'dashboard', 'logoutButton',
         'connectionBadge', 'mainStatus', 'mainStatusHint', 'lifecycleStatus', 'messageQueue',
-        'messageQueueHint', 'uptime', 'databaseStatus', 'cacheStatus', 'subbotCount',
+        'messageQueueHint', 'uptime', 'databaseStatus', 'redisStatus', 'cacheStatus', 'subbotCount',
         'linkingHelp', 'linkPhase', 'linkForm', 'linkMethodFields', 'phoneField', 'botPhone',
         'linkError', 'startLinkButton', 'qrBox', 'qrImage', 'pairingCodeBox', 'pairingCode',
         'copyCodeButton', 'linkedAccount', 'linkedNumber',
@@ -58,6 +58,9 @@
         elements.messageQueueHint.textContent = `${metrics.messages.pending} / ${metrics.messages.capacity} pendientes`;
         elements.uptime.textContent = formatUptime(payload.uptimeSeconds);
         elements.databaseStatus.textContent = payload.database === 'ok' ? 'Operativa' : 'No disponible';
+        elements.redisStatus.textContent = metrics.redis?.ready
+            ? 'Conectado'
+            : metrics.redis?.configured ? 'Desconectado' : 'No configurado';
         elements.cacheStatus.textContent = metrics.cacheInvalidation.connected ? 'Conectada' : 'Desconectada';
         elements.subbotCount.textContent = String(metrics.sessions.subbotsConnected);
         renderLinking(payload.linking, connected);

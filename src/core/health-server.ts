@@ -14,6 +14,8 @@ import {getCacheInvalidationListenerStatus} from '../lib/cache-invalidation-list
 import {getBotInstanceIdentity} from './bot-instance-identity.js';
 import {getRuntimeConsoleEntries} from '../lib/runtime-console.js';
 import {getMainLinkState, startMainLink, type MainLinkMethod} from './main-linking.js';
+import {getRedisRuntimeStatus} from '../lib/redis-runtime.js';
+import {getDatabaseCacheStats} from '../lib/db-cache.js';
 
 let server: Server | null = null;
 const consoleAssets = {
@@ -192,6 +194,13 @@ function runtimeMetrics() {
         auth: getAuthStateStats(),
         lifecycle: {phase: getApplicationPhase()},
         cacheInvalidation: listener,
+        cache: getDatabaseCacheStats(),
+        redis: getRedisRuntimeStatus(),
+        memory: {
+            rssBytes: process.memoryUsage().rss,
+            heapUsedBytes: process.memoryUsage().heapUsed,
+            heapTotalBytes: process.memoryUsage().heapTotal,
+        },
         sessions: {
             mainConnected: Boolean(main && getBotInstanceIdentity(main)?.botJid),
             subbotsConnected: subbots.filter(socket => Boolean(getBotInstanceIdentity(socket)?.botJid)).length,
@@ -204,6 +213,7 @@ function readinessStatus(): {ready: boolean; reasons: string[]} {
     const reasons: string[] = [];
     if (metrics.lifecycle.phase !== 'running') reasons.push(`lifecycle:${metrics.lifecycle.phase}`);
     if (!metrics.cacheInvalidation.connected) reasons.push('cache-listener-disconnected');
+    if (metrics.redis.required && !metrics.redis.ready) reasons.push('redis-disconnected');
     if (!metrics.sessions.mainConnected && metrics.sessions.subbotsConnected === 0) reasons.push('no-connected-bot');
     if (metrics.messages.pending >= Math.floor(metrics.messages.capacity * 0.9)) reasons.push('message-queue-saturated');
     if (metrics.background.pending >= Math.floor(metrics.background.capacity * 0.9)) reasons.push('background-queue-saturated');

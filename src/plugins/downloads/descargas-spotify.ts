@@ -7,7 +7,7 @@ import {downloadSpotifyTrack, searchSpotify} from '../../providers/downloads/spo
 import {renderDownloadFailure} from './download-error.js';
 
 const userMessages = createExpiringMap<QuotedMessage>({ttlMs: 10 * 60 * 1000});
-const userRequests = createUserRequestLocks();
+const userRequests = createUserRequestLocks('downloads:spotify');
 
 export default defineSdkPlugin({
     help: ['spotify'],
@@ -20,7 +20,7 @@ export default defineSdkPlugin({
     if (!sdk.text) return sdk.reply.message('downloads.spotify.missingQuery', {
         command: sdk.usedPrefix + sdk.command
     })
-    if (!userRequests.acquire(sdk.sender)) return sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.spotify.locked', {
+    if (!await userRequests.acquire(sdk.sender)) return sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.spotify.locked', {
         user: sdk.sender.split('@')[0]
     }), userMessages.get(sdk.sender) || m)
     await sdk.reply.react(`⌛`);
@@ -69,7 +69,7 @@ export default defineSdkPlugin({
         logInfo(error);
         await sdk.reply.react('❌');
     } finally {
-        userRequests.release(sdk.sender);
+        await userRequests.release(sdk.sender);
     }
     }
 });

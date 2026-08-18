@@ -44,6 +44,7 @@ import {BaileysMessageCache} from '../lib/baileys-message-cache.js';
 import {getBaileysVersion} from '../lib/baileys-version.js';
 import {groupMetadataCache} from './group-metadata-cache.js';
 import {startCacheInvalidationListener, stopCacheInvalidationListener} from '../lib/cache-invalidation-listener.js';
+import {startRedisRuntime, stopRedisRuntime} from '../lib/redis-runtime.js';
 import {startHealthServer, stopHealthServer} from './health-server.js';
 import {preloadConfigResources} from './config.js';
 import {getBotInstanceIdentity, markBotInstanceConnected, registerBotInstanceIdentity, unregisterBotInstanceIdentity} from './bot-instance-identity.js';
@@ -105,6 +106,7 @@ export async function startApplication(): Promise<void> {
     try {
         await loadPlugins();
         await preloadConfigResources();
+        await startRedisRuntime();
         await startCacheInvalidationListener();
         await startHealthServer();
         startScheduledTasks();
@@ -513,6 +515,7 @@ async function performShutdown(exitCode: number): Promise<void> {
     await flushAllDatabaseAuthStates().catch(error => logError('[AUTH] Error vaciando sesiones durante cierre:', error));
     await disposeAllDatabaseAuthStates().catch(error => logError('[AUTH] Error liberando sesiones durante cierre:', error));
     await stopCacheInvalidationListener().catch(error => logError('[CACHE] Error cerrando listener:', error));
+    await stopRedisRuntime().catch(error => logError('[REDIS] Error cerrando cliente:', error));
     for (const socket of sockets) unregisterBotInstanceIdentity(socket);
     clearMainConnection();
     await application.databasePool.end().catch(error => logError('[DB] Error cerrando pool:', error));

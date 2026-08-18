@@ -9,7 +9,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18%2B-4169E1?logo=postgresql&logoColor=white)
 ![npm](https://img.shields.io/badge/npm-package-CB3837?logo=npm&logoColor=white)
 
-Plantilla modular para construir bots de WhatsApp con TypeScript, Baileys, Drizzle ORM y PostgreSQL. Esta base esta pensada para reutilizar core, arquitectura, persistencia, guards, subbots, observabilidad y utilidades entre varios proyectos, cambiando marca, comandos, textos, recursos multimedia, owners y APIs externas.
+Plantilla modular para construir bots de WhatsApp con TypeScript, Baileys, Drizzle ORM, PostgreSQL y cache Redis opcional. Esta base esta pensada para reutilizar core, arquitectura, persistencia, guards, subbots, observabilidad y utilidades entre varios proyectos, cambiando marca, comandos, textos, recursos multimedia, owners y APIs externas.
 
 El proyecto esta orientado a capas: los plugins no deberian consultar la base directamente; pasan por servicios, puertos y repositorios. La persistencia oficial es conexion directa a PostgreSQL mediante Drizzle ORM.
 
@@ -83,6 +83,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 | Baileys | Conexion WebSocket con WhatsApp. |
 | Drizzle ORM | Acceso tipado al modelo PostgreSQL normalizado. |
 | PostgreSQL 18 | Persistencia, UUIDv7 y restricciones temporales. |
+| Redis | Cache L2, deduplicación y locks compartidos entre réplicas. |
 | drizzle-kit | Verificacion/exportacion del schema y Drizzle Studio. |
 | tsx | Ejecucion TypeScript en desarrollo. |
 | Pino | Logger silencioso usado internamente por Baileys. |
@@ -197,6 +198,8 @@ LOG_LEVEL=command
 PERF_LOG_THRESHOLD_MS=750
 HTTP_TIMEOUT_MS=15000
 DB_CACHE_TTL_MS=300000
+REDIS_URL=
+REDIS_REQUIRED=false
 AUDIO_CACHE_TTL_MS=300000
 BACKGROUND_TASK_CONCURRENCY=4
 
@@ -296,7 +299,7 @@ BOT_OWNER_NUMBERS=573001112233,51999888777
 
 ### Consola web operativa
 
-El mismo proceso expone una consola responsiva en `/console` mediante el puerto de health. La interfaz muestra estado de WhatsApp, lifecycle, colas, PostgreSQL, cache distribuida y un buffer redactado de la salida del proceso.
+El mismo proceso expone una consola responsiva en `/console` mediante el puerto de health. La interfaz muestra estado de WhatsApp, lifecycle, colas, PostgreSQL, Redis, invalidación distribuida y un buffer redactado de la salida del proceso.
 
 Configura un token aleatorio largo antes de exponer el servicio:
 
@@ -962,7 +965,7 @@ Oportunidades de optimizacion detectadas:
 | P2 | P0 architecture tests | Ampliar gradualmente la compuerta de mapas/timers manuales a nuevas familias cuando se migren mas flujos a `ephemeral-state`. |
 | P2 | Pruebas de plugins complejos | Cubrir comandos RPG, grupo y owner con mocks de servicios/repositorios para validar permisos, dinero, limites y mensajes sin conectar Baileys. |
 | P2 | i18n | Convertir `resources/data/messages.json` en estructura por locales con fallback (`es` como default) y tests de keys requeridas. |
-| P3 | Runtime multi-proceso | Mantener single-process por ahora. Si se escala, mover cooldowns, juegos, pending actions y deduplicacion a Redis o cache compatible. |
+| P3 | Runtime multi-proceso | En progreso: cache L2, deduplicación y locks ya usan Redis; cooldowns, juegos y pending actions siguen locales. |
 
 Arquitecturas futuras razonables:
 

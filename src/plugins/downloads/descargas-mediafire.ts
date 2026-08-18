@@ -8,7 +8,7 @@ import type {QuotedMessage} from '../../types/context.js';
 import {renderDownloadFailure} from './download-error.js';
 
 const userCaptions = createExpiringMap<QuotedMessage>({ttlMs: 10 * 60 * 1000});
-const userRequests = createUserRequestLocks();
+const userRequests = createUserRequestLocks('downloads:mediafire');
 
 export default defineSdkPlugin({
     help: ['mediafire', 'mediafiredl'],
@@ -23,7 +23,7 @@ export default defineSdkPlugin({
             command: sdk.usedPrefix + sdk.command,
         });
 
-        if (!userRequests.acquire(sdk.sender)) return sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.mediafire.locked', {
+        if (!await userRequests.acquire(sdk.sender)) return sdk.conn.reply(sdk.chatId, sdk.content.renderMessage('downloads.mediafire.locked', {
             user: sdk.sender.split('@')[0],
         }), userCaptions.get(sdk.sender) || m);
 
@@ -48,7 +48,7 @@ export default defineSdkPlugin({
             await sdk.reply.react('❌');
             logError(e);
         } finally {
-            userRequests.release(sdk.sender);
+            await userRequests.release(sdk.sender);
         }
     },
 });
