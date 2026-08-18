@@ -16,8 +16,9 @@
         'linkingHelp', 'linkPhase', 'linkForm', 'linkMethodFields', 'phoneField', 'botPhone',
         'linkError', 'startLinkButton', 'qrBox', 'qrImage', 'pairingCodeBox', 'pairingCode',
         'copyCodeButton', 'linkedAccount', 'linkedNumber',
-        'consoleOutput', 'streamStatus', 'clearButton',
+        'consoleOutput', 'streamStatus', 'clearButton', 'operationStatus',
     ].map(id => [id, document.getElementById(id)]));
+    const operationButtons = [...document.querySelectorAll('[data-operation]')];
 
     function authHeaders() {
         return {Authorization: `Bearer ${state.token}`};
@@ -50,9 +51,12 @@
     function renderStatus(payload) {
         const metrics = payload.metrics;
         const connected = metrics.sessions.mainConnected;
+        const manuallyStopped = payload.operations?.mainStopped === true;
         state.connected = connected;
-        elements.mainStatus.textContent = connected ? 'Conectado' : 'Sin vincular';
-        elements.mainStatusHint.textContent = connected ? 'WhatsApp operativo' : 'Configura tu sesión en Vinculación';
+        elements.mainStatus.textContent = connected ? 'Conectado' : manuallyStopped ? 'Detenido' : 'Sin vincular';
+        elements.mainStatusHint.textContent = connected
+            ? 'WhatsApp operativo'
+            : manuallyStopped ? 'Sesión conservada; puedes iniciarlo de nuevo' : 'Configura tu sesión en Vinculación';
         elements.lifecycleStatus.textContent = metrics.lifecycle.phase;
         elements.messageQueue.textContent = String(metrics.messages.pending);
         elements.messageQueueHint.textContent = `${metrics.messages.pending} / ${metrics.messages.capacity} pendientes`;
@@ -63,11 +67,27 @@
             : metrics.redis?.configured ? 'Desconectado' : 'No configurado';
         elements.cacheStatus.textContent = metrics.cacheInvalidation.connected ? 'Conectada' : 'Desconectada';
         elements.subbotCount.textContent = String(metrics.sessions.subbotsConnected);
-        renderLinking(payload.linking, connected);
-        setBadge(connected ? 'online' : payload.ready ? 'warning' : 'warning', connected ? 'WhatsApp conectado' : 'Esperando vinculación');
+        renderLinking(payload.linking, connected, manuallyStopped);
+        renderOperations(payload.operations);
+        setBadge(
+            connected ? 'online' : 'warning',
+            connected ? 'WhatsApp conectado' : manuallyStopped ? 'Bot detenido · sesión conservada' : 'Esperando vinculación',
+        );
     }
 
-    function renderLinking(linking, connected) {
+    function renderOperations(operations) {
+        const running = operations?.phase === 'running';
+        for (const button of operationButtons) button.disabled = running;
+        if (!operations || operations.phase === 'idle') return;
+        const type = operations.phase === 'error' ? 'danger' : operations.phase === 'success' ? 'success' : 'warning';
+        let message = operations.message;
+        if (operations.reset) {
+            message += ` Eliminados: ${operations.reset.users} integrantes, ${operations.reset.groupSettings} configuraciones, ${operations.reset.chats} chats y ${operations.reset.chatMemories} memorias.`;
+        }
+        showOperationStatus(message, type);
+    }
+
+    function renderLinking(linking, connected, manuallyStopped = false) {
         const phaseLabels = {idle: 'Sin sesión', preparing: 'Preparando', awaiting: 'Esperando', connected: 'Conectado', error: 'Error'};
         elements.linkPhase.textContent = phaseLabels[linking.phase] || linking.phase;
         elements.linkingHelp.textContent = linking.message;
@@ -79,12 +99,13 @@
         elements.linkedNumber.textContent = linking.linkedNumber ? `+${linking.linkedNumber}` : 'Cuenta de WhatsApp conectada';
 
         const method = selectedLinkMethod();
-        const busy = linking.phase === 'preparing';
+        const busy = linking.phase === 'preparing' || manuallyStopped;
         elements.linkMethodFields.disabled = busy;
         elements.botPhone.disabled = busy;
         elements.startLinkButton.disabled = busy;
-        elements.startLinkButton.textContent = busy
-            ? 'Preparando…'
+        elements.startLinkButton.textContent = manuallyStopped
+            ? 'Sesión conservada · inicia el bot'
+            : busy ? 'Preparando…'
             : connected
                 ? `Cambiar sesión con ${method === 'qr' ? 'QR' : 'código'}`
                 : `${linking.phase === 'awaiting' ? 'Generar nuevo' : 'Generar'} ${method === 'qr' ? 'QR' : 'código'}`;
@@ -183,6 +204,40 @@
     elements.clearButton.addEventListener('click', () => {
         elements.consoleOutput.replaceChildren();
     });
+    for (const button of operationButtons) {
+        button.addEventListener('click', async () => {
+            const action = button.dataset.operation;
+            const confirmation = button.dataset.confirmation;
+            const destructive = action === 'clear-data' || action === 'delete-session';
+            const warning = destructive
+                ? 'Esta acción es irreversible.'
+                : 'La conexión de WhatsApp se interrumpirá brevemente.';
+            const entered = window.prompt(`${warning}\n\nEscribe exactamente ${confirmation} para continuar.`);
+            if (entered === null) return;
+            if (entered !== confirmation) {
+                return showOperationStatus(`Confirmación incorrecta. Debes escribir ${confirmation}.`, 'danger');
+            }
+            for (const item of operationButtons) item.disabled = true;
+            showOperationStatus('Ejecutando operación…', 'warning');
+            try {
+                const payload = await api(`/api/console/operations/${action}`, {
+                    method: 'POST',
+                    body: JSON.stringify({confirmation}),
+                });
+                const reset = payload.result.reset;
+                const details = reset
+                    ? ` Eliminados: ${reset.users} integrantes, ${reset.groupSettings} configuraciones, ${reset.chats} chats y ${reset.chatMemories} memorias.`
+                    : '';
+                showOperationStatus(payload.result.message + details, 'success');
+                await refresh();
+            } catch (error) {
+                if (error.message === 'unauthorized') return logout('El token no es válido o cambió.');
+                showOperationStatus(error.message || 'No fue posible completar la operación.', 'danger');
+            } finally {
+                for (const item of operationButtons) item.disabled = false;
+            }
+        });
+    }
     elements.linkForm.addEventListener('change', event => {
         if (event.target.name !== 'linkMethod') return;
         updateMethodForm();
@@ -241,6 +296,11 @@
     function showLinkError(message) {
         elements.linkError.textContent = message;
         elements.linkError.classList.remove('d-none');
+    }
+
+    function showOperationStatus(message, type) {
+        elements.operationStatus.className = `operation-status operation-status-${type} mb-3`;
+        elements.operationStatus.textContent = message;
     }
 
     updateMethodForm();

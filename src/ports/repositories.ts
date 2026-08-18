@@ -435,8 +435,16 @@ export interface DatabaseInfo {
     totalSize: string | null;
 }
 
+export interface SyncedDataResetResult {
+    users: number;
+    groupSettings: number;
+    chats: number;
+    chatMemories: number;
+}
+
 export interface DatabaseRepository {
     getInfo(): Promise<DatabaseInfo>;
+    resetSyncedData(): Promise<SyncedDataResetResult>;
 }
 
 export interface AppRepositories {

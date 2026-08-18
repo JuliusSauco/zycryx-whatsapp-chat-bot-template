@@ -161,6 +161,36 @@
                     </article>
 
                     <article class="card-surface info-card">
+                        <p class="eyebrow mb-2">CONTROLES OPERATIVOS</p>
+                        <h2 class="h5 mb-1">Administrar el bot</h2>
+                        <p class="text-secondary small mb-3">Las acciones conservan la sesión salvo cuando eliges explícitamente borrarla.</p>
+
+                        <div id="operationStatus" class="operation-status d-none mb-3" role="status" aria-live="polite"></div>
+                        <div class="operation-grid">
+                            <button class="operation-button operation-warning" type="button"
+                                    data-operation="clear-data" data-confirmation="LIMPIAR DATOS">
+                                <strong>Limpiar integrantes y grupos</strong>
+                                <small>Borra usuarios, progreso, economía, configuraciones, actividad y memoria de grupos. Conserva la sesión y reinicia.</small>
+                            </button>
+                            <button class="operation-button" type="button"
+                                    data-operation="restart-bot" data-confirmation="REINICIAR BOT">
+                                <strong>Iniciar / reiniciar bot</strong>
+                                <small>Reconecta usando la sesión guardada, sin eliminar datos.</small>
+                            </button>
+                            <button class="operation-button operation-warning" type="button"
+                                    data-operation="stop-bot" data-confirmation="DETENER BOT">
+                                <strong>Detener bot</strong>
+                                <small>Cierra la conexión y libera el lease, pero conserva credenciales y Signal keys.</small>
+                            </button>
+                            <button class="operation-button operation-danger" type="button"
+                                    data-operation="delete-session" data-confirmation="BORRAR SESION">
+                                <strong>Borrar sesión de WhatsApp</strong>
+                                <small>Desvincula la cuenta y elimina credenciales. Esta acción requiere una nueva vinculación.</small>
+                            </button>
+                        </div>
+                    </article>
+
+                    <article class="card-surface info-card">
                         <p class="eyebrow mb-2">SEGURIDAD</p>
                         <p class="text-secondary small mb-0">Los secretos conocidos se redactan antes de almacenarse en el buffer. El token vive sólo en <code>sessionStorage</code>.</p>
                     </article>

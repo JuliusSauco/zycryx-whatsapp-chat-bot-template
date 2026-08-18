@@ -49,7 +49,7 @@
     "test:catalog": "tsx tests/command-catalog.test.ts",
     "test:catalog-audit": "tsx tests/command-catalog-audit.test.ts",
     "test:help": "tsx tests/command-help.test.ts",
-    "test:p0": "tsx tests/p0-architecture.test.ts && tsx tests/message-task-queue.test.ts && tsx tests/reconnect-coordinator.test.ts && tsx tests/baileys-message-cache.test.ts && tsx tests/secret-crypto.test.ts",
+    "test:p0": "tsx tests/p0-architecture.test.ts && tsx tests/message-task-queue.test.ts && tsx tests/reconnect-coordinator.test.ts && tsx tests/console-operations.test.ts && tsx tests/baileys-message-cache.test.ts && tsx tests/secret-crypto.test.ts",
     "ops:check": "tsx scripts/ops-check.ts",
     "benchmark:auth-crypto": "tsx scripts/benchmark-auth-crypto.ts",
     "ops:backup": "tsx scripts/ops-backup.ts",

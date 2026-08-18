@@ -417,6 +417,11 @@ export async function deleteStoredAuthSession(sessionId: string): Promise<void> 
     await authRepository().deleteSession(sessionId);
 }
 
+export async function disposeStoredAuthSession(sessionId: string): Promise<void> {
+    const active = activeStates.get(sessionId);
+    if (active) await active.dispose();
+}
+
 export async function flushAllDatabaseAuthStates(): Promise<void> {
     const results = await Promise.allSettled([...activeStates.values()].map(state => state.flush()));
     const failures = results.filter(result => result.status === 'rejected');

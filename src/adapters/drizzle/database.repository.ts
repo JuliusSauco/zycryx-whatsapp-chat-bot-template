@@ -56,4 +56,41 @@ export const databaseRepository: DatabaseRepository = {
             totalSize: totalRows[0]?.total ?? null,
         };
     },
+    async resetSyncedData() {
+        return orm.transaction(async tx => {
+            const [usersResult, groupSettingsResult, chatsResult, chatMemoriesResult] = await Promise.all([
+                tx.execute(sql`SELECT COUNT(*)::int AS count FROM bot_identity.users`),
+                tx.execute(sql`SELECT COUNT(*)::int AS count FROM bot_groups.group_settings`),
+                tx.execute(sql`SELECT COUNT(*)::int AS count FROM bot_groups.chats`),
+                tx.execute(sql`SELECT COUNT(*)::int AS count FROM bot_ai.chat_memory`),
+            ]);
+            const counts = {
+                users: resultRows<{count: number}>(usersResult)[0]?.count ?? 0,
+                groupSettings: resultRows<{count: number}>(groupSettingsResult)[0]?.count ?? 0,
+                chats: resultRows<{count: number}>(chatsResult)[0]?.count ?? 0,
+                chatMemories: resultRows<{count: number}>(chatMemoriesResult)[0]?.count ?? 0,
+            };
+            await tx.execute(sql`DELETE FROM bot_economy.raffle_entries`);
+            await tx.execute(sql`DELETE FROM bot_economy.raffle_tickets`);
+            await tx.execute(sql`DELETE FROM bot_economy.raffles`);
+            await tx.execute(sql`DELETE FROM bot_economy.bank_loan_payments`);
+            await tx.execute(sql`
+                DELETE FROM bot_economy.ledger_entries
+                WHERE operation_id IN (
+                    SELECT id FROM bot_economy.financial_operations
+                    WHERE external_id IS DISTINCT FROM 'bootstrap:reserve-capitalization'
+                )
+            `);
+            await tx.execute(sql`
+                DELETE FROM bot_economy.financial_operations
+                WHERE external_id IS DISTINCT FROM 'bootstrap:reserve-capitalization'
+            `);
+            await tx.execute(sql`DELETE FROM bot_content.character_market_listings`);
+            await tx.execute(sql`DELETE FROM bot_groups.group_settings`);
+            await tx.execute(sql`DELETE FROM bot_groups.chats`);
+            await tx.execute(sql`DELETE FROM bot_ai.chat_memory`);
+            await tx.execute(sql`DELETE FROM bot_identity.users`);
+            return counts;
+        });
+    },
 };

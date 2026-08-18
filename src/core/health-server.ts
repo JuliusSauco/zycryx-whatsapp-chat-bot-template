@@ -16,6 +16,11 @@ import {getRuntimeConsoleEntries} from '../lib/runtime-console.js';
 import {getMainLinkState, startMainLink, type MainLinkMethod} from './main-linking.js';
 import {getRedisRuntimeStatus} from '../lib/redis-runtime.js';
 import {getDatabaseCacheStats} from '../lib/db-cache.js';
+import {
+    getConsoleOperationState,
+    runConsoleOperation,
+    type ConsoleOperationAction,
+} from './console-operations.js';
 
 let server: Server | null = null;
 const consoleAssets = {
@@ -119,6 +124,7 @@ async function handleRequest(
                     uptimeSeconds: process.uptime(),
                     metrics: runtimeMetrics(),
                     linking: getMainLinkState(),
+                    operations: getConsoleOperationState(),
                 });
             }
             if (url.pathname === '/api/console/logs') {
@@ -152,8 +158,51 @@ async function handleRequest(
                     });
                 }
             }
+            const operationAction = consoleOperationFromPath(url.pathname);
+            if (operationAction) {
+                if (request.method !== 'POST') return sendJson(response, 405, {error: 'method-not-allowed'});
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonBody(request);
+                } catch (error) {
+                    return sendJson(response, 400, {error: 'invalid-body', message: error instanceof Error ? error.message : 'Solicitud inválida.'});
+                }
+                const expected = CONSOLE_OPERATION_CONFIRMATIONS[operationAction];
+                if (body.confirmation !== expected) {
+                    return sendJson(response, 400, {
+                        error: 'confirmation-required',
+                        message: `Escribe exactamente ${expected} para confirmar.`,
+                    });
+                }
+                try {
+                    const result = await runConsoleOperation(operationAction);
+                    return sendJson(response, 200, {result, operations: getConsoleOperationState()});
+                } catch (error) {
+                    return sendJson(response, 409, {
+                        error: 'operation-failed',
+                        message: error instanceof Error ? error.message : String(error),
+                        operations: getConsoleOperationState(),
+                    });
+                }
+            }
         }
         return sendJson(response, 404, {error: 'not-found'});
+}
+
+const CONSOLE_OPERATION_CONFIRMATIONS: Record<ConsoleOperationAction, string> = {
+    'clear-data': 'LIMPIAR DATOS',
+    'stop-bot': 'DETENER BOT',
+    'restart-bot': 'REINICIAR BOT',
+    'delete-session': 'BORRAR SESION',
+};
+
+function consoleOperationFromPath(pathname: string): ConsoleOperationAction | null {
+    const prefix = '/api/console/operations/';
+    if (!pathname.startsWith(prefix)) return null;
+    const action = pathname.slice(prefix.length);
+    return Object.hasOwn(CONSOLE_OPERATION_CONFIRMATIONS, action)
+        ? action as ConsoleOperationAction
+        : null;
 }
 
 async function readJsonBody(request: IncomingMessage): Promise<Record<string, unknown>> {

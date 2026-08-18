@@ -25,6 +25,7 @@ import {
 import {application} from './composition-root.js';
 import {
     BaileysAuthLeaseConflictError,
+    disposeStoredAuthSession,
     disposeAllDatabaseAuthStates,
     configureBaileysAuthRepository,
     deleteStoredAuthSession,
@@ -34,6 +35,7 @@ import {
     useConfiguredAuthState,
 } from '../services/baileys-auth-state.service.js';
 import {
+    getMainLinkState,
     registerMainLinkStarter,
     resetMainLinkState,
     type MainLinkRequest,
@@ -56,6 +58,13 @@ import {
     markApplicationStopped,
 } from './application-lifecycle.js';
 import {drainBotSocketEvents, registerBotSocketEvents} from './bot-socket-events.js';
+import {
+    registerConsoleOperationHandler,
+    setConsoleMainStopped,
+    type ConsoleOperationAction,
+    type ConsoleOperationResult,
+} from './console-operations.js';
+import {resetSyncedData} from '../services/database.service.js';
 
 type BotSocket = baileys.WASocket & {
     groupCache?: typeof groupMetadataCache;
@@ -85,6 +94,7 @@ const mainReconnect = new ReconnectCoordinator({
 });
 let activeLinkRequest: MainLinkRequest | null = null;
 const manualSocketClosures = new WeakSet<object>();
+let mainBotManuallyStopped = false;
 
 // Códigos de cierre que indican sesión inválida/terminada: reconectar no sirve;
 // se revoca el estado activo y se solicita una nueva vinculación.
@@ -103,6 +113,7 @@ export async function startApplication(): Promise<void> {
     applicationStarted = true;
     configureBaileysAuthRepository(application.baileysAuth);
     registerMainLinkStarter(replaceMainSession);
+    registerConsoleOperationHandler(handleConsoleOperation);
     installProcessHandlers();
     try {
         await loadPlugins();
@@ -168,6 +179,9 @@ async function main() {
 }
 
 async function replaceMainSession(request: MainLinkRequest): Promise<void> {
+    if (mainBotManuallyStopped) {
+        throw new Error('La sesión está conservada con el bot detenido. Usa Iniciar / reiniciar bot antes de vincular otra cuenta.');
+    }
     const current = getMainConnection();
     const connected = Boolean(getBotInstanceIdentity(current)?.botJid);
     const hasAccount = Boolean(current?.user?.id);
@@ -223,6 +237,117 @@ async function deleteMainSessionStorage(): Promise<void> {
     }
     await fs.promises.rm(BOT_SESSION_FOLDER, {recursive: true, force: true});
     await fs.promises.mkdir(BOT_SESSION_FOLDER, {recursive: true});
+}
+
+async function handleConsoleOperation(action: ConsoleOperationAction): Promise<ConsoleOperationResult> {
+    if (activeLinkRequest || ['preparing', 'awaiting'].includes(getMainLinkState().phase)) {
+        throw new Error('Termina o espera a que expire la vinculación actual antes de usar los controles operativos.');
+    }
+    switch (action) {
+        case 'stop-bot':
+            await stopMainBotPreservingSession();
+            return {message: 'Bot principal detenido. La sesión de WhatsApp permanece guardada.', mainStopped: true};
+        case 'restart-bot':
+            await stopMainBotPreservingSession();
+            await startMainBotFromStoredSession();
+            return {message: 'Bot principal reiniciado con la sesión guardada.', mainStopped: false};
+        case 'delete-session':
+            await deleteMainBotSession();
+            return {message: 'Sesión principal eliminada. Debes volver a vincular WhatsApp.', mainStopped: false};
+        case 'clear-data':
+            return clearSyncedDataAndRestart();
+    }
+}
+
+async function stopMainBotPreservingSession(): Promise<void> {
+    mainBotManuallyStopped = true;
+    setConsoleMainStopped(true);
+    mainReconnect.cancel('main');
+    activeLinkRequest = null;
+    await disconnectMainSocket(false);
+    await disposeStoredAuthSession('main');
+    resetMainLinkState('Bot detenido manualmente. La sesión está conservada y puedes iniciarlo de nuevo.');
+    logInfo('[CONTROL] Bot principal detenido sin borrar la sesión.');
+}
+
+async function startMainBotFromStoredSession(): Promise<void> {
+    if (getMainConnection()) {
+        mainBotManuallyStopped = false;
+        setConsoleMainStopped(false);
+        return;
+    }
+    const hasCredentials = ENV.BAILEYS_AUTH_STATE_SOURCE === 'database'
+        ? await hasStoredAuthCredentials('main')
+        : fs.existsSync(BOT_CREDS_PATH);
+    if (!hasCredentials) {
+        mainBotManuallyStopped = false;
+        setConsoleMainStopped(false);
+        resetMainLinkState('No hay una sesión guardada. Elige QR o código para vincular WhatsApp.');
+        throw new Error('No hay una sesión guardada para iniciar el bot.');
+    }
+    mainBotManuallyStopped = false;
+    setConsoleMainStopped(false);
+    await startBot();
+}
+
+async function deleteMainBotSession(): Promise<void> {
+    mainBotManuallyStopped = true;
+    setConsoleMainStopped(true);
+    mainReconnect.cancel('main');
+    activeLinkRequest = null;
+    await disconnectMainSocket(true);
+    await deleteMainSessionStorage();
+    mainBotManuallyStopped = false;
+    setConsoleMainStopped(false);
+    resetMainLinkState('Sesión eliminada. Elige QR o código para vincular otra cuenta.');
+    logWarn('[CONTROL] Sesión principal eliminada desde la consola operativa.');
+}
+
+async function clearSyncedDataAndRestart(): Promise<ConsoleOperationResult> {
+    stopScheduledTasks();
+    await stopMainBotPreservingSession();
+    try {
+        const [messagesDrained, backgroundDrained, scheduledDrained] = await Promise.all([
+            drainMessageQueue(10_000),
+            drainBackgroundTasks(10_000),
+            drainScheduledTasks(10_000),
+        ]);
+        if (!messagesDrained || !backgroundDrained || !scheduledDrained) {
+            throw new Error('No fue posible vaciar todas las tareas pendientes; no se borró ningún dato.');
+        }
+        const reset = await resetSyncedData();
+        await startMainBotFromStoredSession();
+        logWarn(`[CONTROL] Datos sincronizados eliminados: ${reset.users} usuarios, ${reset.groupSettings} configuraciones de grupo, ${reset.chats} chats y ${reset.chatMemories} memorias.`);
+        return {
+            message: 'Integrantes y grupos eliminados; el bot se reinició con la misma sesión.',
+            mainStopped: false,
+            reset,
+        };
+    } catch (error) {
+        if (mainBotManuallyStopped) {
+            await startMainBotFromStoredSession().catch(startError =>
+                logError('[CONTROL] No se pudo recuperar el bot después de fallar la limpieza:', startError));
+        }
+        throw error;
+    } finally {
+        startScheduledTasks();
+    }
+}
+
+async function disconnectMainSocket(logout: boolean): Promise<void> {
+    const current = getMainConnection();
+    if (!current) return;
+    manualSocketClosures.add(current);
+    if (logout && current.user?.id) {
+        await Promise.race([
+            current.logout(),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8_000)),
+        ]).catch(error => logWarn('[CONTROL] WhatsApp no confirmó el cierre remoto:', error));
+    }
+    current.end(new Error(logout ? 'Sesión eliminada desde la consola' : 'Bot detenido desde la consola'));
+    clearMainConnection(current);
+    unregisterBotInstanceIdentity(current);
+    await new Promise(resolve => setTimeout(resolve, 250));
 }
 
 async function cargarSubbots() {
@@ -333,6 +458,8 @@ async function startBot(linkRequest: MainLinkRequest | null = activeLinkRequest)
         }
 
         if (connection === "open") {
+            mainBotManuallyStopped = false;
+            setConsoleMainStopped(false);
             mainReconnect.reset('main');
             activeLinkRequest = null;
             markBotInstanceConnected(sock, sock.user?.id);
