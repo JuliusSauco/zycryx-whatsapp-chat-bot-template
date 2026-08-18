@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
 import moment from 'moment-timezone';
 import {botInfo} from '../../core/config.js';
-import {defineSdkPlugin, type PluginSdk} from '../../core/plugin-sdk.js';
+import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import {lookupCountry} from '../../providers/main-api.provider.js';
 import {content} from '../../services/content.service.js';
 import {resolveProfileUser} from '../../services/profile-user.service.js';
@@ -33,7 +33,7 @@ import {
 } from './rpg-registration.helpers.js';
 
 interface RegistrationState {
-    step: 1 | 2 | 3;
+    step: 0 | 1 | 2 | 3;
     name: string;
     age: number;
     gender?: ProfileGender;
@@ -62,6 +62,18 @@ export default defineSdkPlugin({
 
         const input = (m.originalText || m.text || '').trim();
         if (!input || input.startsWith(state.usedPrefix)) return;
+
+        if (state.step === 0) {
+            const identity = parseRegistrationIdentity(input);
+            if (!identity.ok) {
+                return m.reply(registrationIdentityErrorText(identity.reason, state.usedPrefix, 'reg', null));
+            }
+            state.name = identity.name;
+            state.age = identity.age;
+            state.suggestedNationality = await inferNationality(state.userId);
+            state.step = 1;
+            return m.reply(content.message('rpg.registration.genderStep'));
+        }
 
         if (state.step === 1) {
             const gender = normalizeGender(input);
@@ -184,7 +196,12 @@ export default defineSdkPlugin({
             if (user.registered) return sdk.reply.message('rpg.registration.alreadyRegisteredWithEdits', {prefix: usedPrefix});
             if (registrationStates.has(who)) return sdk.reply.message('rpg.registration.alreadyInProgress');
             const identity = parseRegistrationIdentity(text);
-            if (!identity.ok) return replyRegistrationIdentityError(identity.reason, sdk, usedPrefix, normalizedCommand, m.pushName);
+            if (!identity.ok) {
+                registrationStates.set(who, emptyRegistrationState(who, usedPrefix));
+                return sdk.reply.text(registrationIdentityErrorText(
+                    identity.reason, usedPrefix, normalizedCommand, m.pushName,
+                ));
+            }
             registrationStates.set(who, {
                 step: 1,
                 name: identity.name,
@@ -286,11 +303,9 @@ async function buildPrivateContinuation(
     if (registrationStates.has(userId)) return content.message('rpg.registration.alreadyInProgress');
     const identity = parseRegistrationIdentity(text);
     if (!identity.ok) {
+        registrationStates.set(userId, emptyRegistrationState(userId, prefix));
         return content.renderMessage('rpg.registration.privateRegistrationStart', {
-            usage: content.renderMessage('rpg.registration.usage', {
-                command: `${prefix}reg`,
-                name: pushName || 'Loli',
-            }),
+            identityStep: registrationIdentityErrorText(identity.reason, prefix, 'reg', pushName),
         });
     }
     registrationStates.set(userId, {
@@ -319,20 +334,36 @@ async function inferNationality(userId: string): Promise<string | null> {
     }
 }
 
-function replyRegistrationIdentityError(
+function emptyRegistrationState(userId: string, usedPrefix: string): RegistrationState {
+    return {
+        step: 0,
+        name: '',
+        age: 0,
+        birthday: null,
+        birthdayText: null,
+        suggestedNationality: null,
+        usedPrefix,
+        userId,
+    };
+}
+
+function registrationIdentityErrorText(
     reason: 'format' | 'name_too_long' | 'too_old' | 'too_young',
-    sdk: PluginSdk,
     prefix: string,
     command: string,
     pushName: string | null | undefined,
-) {
-    if (reason === 'name_too_long') return sdk.reply.message('rpg.registration.nameTooLong');
-    if (reason === 'too_old') return sdk.reply.message('rpg.registration.tooOld');
-    if (reason === 'too_young') return sdk.reply.message('rpg.registration.tooYoung');
-    return sdk.reply.message('rpg.registration.usage', {
-        command: prefix + command,
-        name: pushName || 'Loli',
-    });
+): string {
+    const error = reason === 'name_too_long'
+        ? content.message('rpg.registration.nameTooLong')
+        : reason === 'too_old'
+            ? content.message('rpg.registration.tooOld')
+            : reason === 'too_young'
+                ? content.message('rpg.registration.tooYoung')
+                : content.renderMessage('rpg.registration.usage', {
+                    command: prefix + command,
+                    name: pushName || 'Loli',
+                });
+    return `${error}\n\n${content.message('rpg.registration.identityStep')}`;
 }
 
 function compactNumber(number: number): string {

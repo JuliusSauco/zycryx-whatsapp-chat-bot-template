@@ -33,6 +33,7 @@ assert.deepEqual(parseRegistrationIdentity('Alex.25'), {ok: true, name: 'Alex', 
 assert.deepEqual(parseRegistrationIdentity('María José|18'), {ok: true, name: 'María José', age: 18});
 assert.deepEqual(parseRegistrationIdentity('Alex.4'), {ok: false, reason: 'too_young'});
 assert.deepEqual(parseRegistrationIdentity('Alex.101'), {ok: false, reason: 'too_old'});
+assert.deepEqual(parseRegistrationIdentity(`${'a'.repeat(45)}.20`), {ok: false, reason: 'name_too_long'});
 assert.deepEqual(parseRegistrationIdentity('sin edad'), {ok: false, reason: 'format'});
 
 assert.equal(normalizeProfileName('  María   José✓  '), 'María José');

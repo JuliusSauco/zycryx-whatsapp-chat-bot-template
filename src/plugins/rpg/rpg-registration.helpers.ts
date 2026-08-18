@@ -33,10 +33,11 @@ export function isProfileEditCommand(command: string): boolean {
 export function parseRegistrationIdentity(input: string): RegistrationIdentity {
     const match = input.match(REGISTRATION_PATTERN);
     if (!match) return {ok: false, reason: 'format'};
-    const name = normalizeProfileName(match[1] || '');
+    const rawName = (match[1] || '').trim().replace(/✓+$/u, '').replace(/\s+/gu, ' ').trim();
+    if (rawName.length >= 45) return {ok: false, reason: 'name_too_long'};
+    const name = normalizeProfileName(rawName);
     const age = Number.parseInt(match[2] || '', 10);
     if (!name) return {ok: false, reason: 'format'};
-    if (name.length >= 45) return {ok: false, reason: 'name_too_long'};
     if (age > 100) return {ok: false, reason: 'too_old'};
     if (age < 5) return {ok: false, reason: 'too_young'};
     return {ok: true, name, age};
