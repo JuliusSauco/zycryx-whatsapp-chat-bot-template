@@ -26,7 +26,10 @@ assert.match(
     /if \(!state\.creds\.registered && !linkRequest\) \{\s*await authState\.dispose\(\);[\s\S]*?Sesión principal incompleta conservada/,
     'an incomplete main session must release its lease without deleting stored credentials',
 );
+assert.match(mainSource, /!state\.creds\.registered[\s\S]*?hasStoredConnectedIdentity\('main'\)[\s\S]*?saveCreds\(\{registered: true}\)/);
 const authSource = readFileSync('src/services/baileys-auth-state.service.ts', 'utf8');
 assert.match(authSource, /throw new BaileysAuthLeaseConflictError\(input\.sessionId\)/);
+assert.match(authSource, /if \(update\) Object\.assign\(credentials, update\)/);
+assert.match(authSource, /cloneCredentials\(this\.getCredentials\(\)\)/);
 
 console.log('reconnect-coordinator.test.ts OK');

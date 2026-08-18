@@ -31,6 +31,7 @@ import {
     deleteStoredAuthSession,
     flushAllDatabaseAuthStates,
     hasStoredAuthCredentials,
+    hasStoredConnectedIdentity,
     listStoredSubbotSessionIds,
     useConfiguredAuthState,
 } from '../services/baileys-auth-state.service.js';
@@ -385,6 +386,14 @@ async function startBot(linkRequest: MainLinkRequest | null = activeLinkRequest)
         sessionId: 'main', botInstanceId: 'main', sessionType: 'main', legacyFolder: BOT_SESSION_FOLDER,
     });
     const {state, saveCreds} = authState;
+    if (!state.creds.registered
+        && ENV.BAILEYS_AUTH_STATE_SOURCE === 'database'
+        && await hasStoredConnectedIdentity('main')) {
+        state.creds.registered = true;
+        await saveCreds({registered: true});
+        await authState.flush();
+        logWarn('[AUTH] Se reparó el indicador registered de una sesión previamente conectada.');
+    }
     if (!state.creds.registered && !linkRequest) {
         await authState.dispose();
         resetMainLinkState('Hay una vinculación incompleta conservada. Elige QR o código para continuarla o reemplazarla.');
@@ -435,7 +444,7 @@ async function startBot(linkRequest: MainLinkRequest | null = activeLinkRequest)
         acceptMessage: message => !message.messageTimestamp
             || Date.now() / 1000 - Number(message.messageTimestamp) <= 120,
     });
-    sock.ev.on("creds.update", saveCreds);
+    sock.ev.on("creds.update", update => saveCreds(update));
 
     sock.ev.on("connection.update", async ({connection, lastDisconnect, qr}) => {
         const code = (lastDisconnect?.error as DisconnectErrorLike | undefined)?.output?.statusCode || 0;
@@ -460,6 +469,9 @@ async function startBot(linkRequest: MainLinkRequest | null = activeLinkRequest)
         if (connection === "open") {
             mainBotManuallyStopped = false;
             setConsoleMainStopped(false);
+            state.creds.registered = true;
+            await saveCreds({registered: true});
+            await authState.flush();
             mainReconnect.reset('main');
             activeLinkRequest = null;
             markBotInstanceConnected(sock, sock.user?.id);

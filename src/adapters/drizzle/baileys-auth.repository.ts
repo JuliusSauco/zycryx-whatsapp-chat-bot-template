@@ -79,6 +79,18 @@ export const baileysAuthRepository: BaileysAuthRepository = {
         return Boolean(row);
     },
 
+    async hasConnectedIdentity(sessionId) {
+        const [row] = await orm.select({botJid: botInstances.botJid})
+            .from(baileysAuthSessions)
+            .innerJoin(botInstances, eq(baileysAuthSessions.botInstanceId, botInstances.id))
+            .where(and(
+                eq(baileysAuthSessions.sessionId, sessionId),
+                eq(botInstances.status, 'active'),
+            ))
+            .limit(1);
+        return Boolean(row?.botJid);
+    },
+
     async loadCredentials(sessionId) {
         const [row] = await orm.select({
             keyVersion: baileysAuthCredentials.keyVersion,

@@ -20,6 +20,7 @@ export interface BaileysAuthRepository {
     renewLease(sessionId: string, leaseOwner: string, leaseSeconds: number): Promise<boolean>;
     releaseLease(sessionId: string, leaseOwner: string): Promise<void>;
     hasCredentials(sessionId: string): Promise<boolean>;
+    hasConnectedIdentity(sessionId: string): Promise<boolean>;
     loadCredentials(sessionId: string): Promise<EncryptedPayload | null>;
     listSignalKeys(sessionId: string): Promise<StoredSignalKey[]>;
     saveCredentials(sessionId: string, payload: EncryptedPayload): Promise<void>;

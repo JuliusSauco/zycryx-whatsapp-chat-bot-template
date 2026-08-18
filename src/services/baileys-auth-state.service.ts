@@ -36,7 +36,7 @@ type StoredValue = SignalDataTypeMap[SignalKeyType];
 
 export interface ManagedAuthState {
     state: AuthenticationState;
-    saveCreds: () => Promise<void>;
+    saveCreds: (update?: Partial<AuthenticationCreds>) => Promise<void>;
     flush: () => Promise<void>;
     dispose: () => Promise<void>;
     markConnected: (botJid?: string | null) => Promise<void>;
@@ -126,7 +126,7 @@ class AuthWriteBehind {
         if (!this.credentialsDirty && !this.pending.size) return;
 
         const saveCredentials = this.credentialsDirty;
-        const credentialsSnapshot = saveCredentials ? this.getCredentials() : null;
+        const credentialsSnapshot = saveCredentials ? cloneCredentials(this.getCredentials()) : null;
         const changes = [...this.pending.entries()];
         this.credentialsDirty = false;
         this.pending.clear();
@@ -333,7 +333,10 @@ async function createDatabaseAuthState(input: {
         };
         const managed: ManagedAuthState = {
             state,
-            saveCreds: async () => writer.enqueueCredentials(),
+            saveCreds: async update => {
+                if (update) Object.assign(credentials, update);
+                writer.enqueueCredentials();
+            },
             flush: () => writer.flush(),
             dispose: () => close(false),
             markConnected: botJid => authRepository().markConnected(input.sessionId, botJid ? cleanJid(botJid) : null),
@@ -408,6 +411,10 @@ export function hasStoredAuthCredentials(sessionId: string): Promise<boolean> {
     return authRepository().hasCredentials(sessionId);
 }
 
+export function hasStoredConnectedIdentity(sessionId: string): Promise<boolean> {
+    return authRepository().hasConnectedIdentity(sessionId);
+}
+
 export async function deleteStoredAuthSession(sessionId: string): Promise<void> {
     const active = activeStates.get(sessionId);
     if (active) {
@@ -432,6 +439,10 @@ export async function disposeAllDatabaseAuthStates(): Promise<void> {
     const results = await Promise.allSettled([...activeStates.values()].map(state => state.dispose()));
     const failures = results.filter(result => result.status === 'rejected');
     if (failures.length) throw new Error(`No se pudieron cerrar ${failures.length} sesiones Baileys.`);
+}
+
+function cloneCredentials(credentials: AuthenticationCreds): AuthenticationCreds {
+    return JSON.parse(JSON.stringify(credentials, BufferJSON.replacer), BufferJSON.reviver) as AuthenticationCreds;
 }
 
 export function getAuthStateStats(): {active: number; opening: number} {
