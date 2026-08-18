@@ -1,106 +1,63 @@
-# Flujo de conexion con Baileys
+# Flujo de conexión con Baileys
 
-Como se conecta, vincula y reconecta el bot principal y los subbots. Fecha de referencia: 2026-06-10. Version de Baileys: `@whiskeysockets/baileys ^7.0.0-rc.9`.
+Referencia del arranque, vinculación y reconexión del bot principal y los subbots. La versión soportada está fijada en `package.json`.
 
-## Arranque del bot principal
-
-Secuencia de `src/core/index.ts` y `src/core/main.ts`:
+## Arranque
 
 1. `core/env.ts` carga `.env.<NODE_ENV>`.
-2. `core/config.ts` construye `global.owner` y `globalThis.info` (marca, links, imagenes).
-3. `loadPlugins()` carga recursivamente `src/plugins/**` y registra el router.
-4. `startScheduledTasks()` inicia tareas recurrentes (expiracion de grupos, reportes, limpieza de memoria).
-5. `main()` decide el modo de arranque:
-   - Si no hay credenciales (`BotSession/creds.json`) ni subbots, pregunta interactivamente por consola: QR (opcion 1) o codigo de emparejamiento de 8 digitos (opcion 2).
-   - Si hay subbots activos pero no credenciales del principal, arranca solo los subbots.
-6. `startBot()` crea el socket con `makeWASocket`.
+2. Se cargan y validan plugins críticos.
+3. Arrancan scheduler, mantenimiento y colas con shutdown explícito.
+4. `useConfiguredAuthState()` abre la sesión `main` y las sesiones de subbots.
+5. Si no hay credenciales registradas, el proceso ofrece QR o código de emparejamiento.
+6. `makeWASocket` recibe el auth state cacheado y crea el WebSocket.
 
-## Vinculacion (primer login)
+## Vinculación
 
-### Por QR
+El QR se renderiza desde `connection.update` con `qrcode-terminal`. Para código de emparejamiento se solicita el número internacional sin `+`; los números mexicanos `52` se normalizan a `521`.
 
-Baileys 7 deprecó `printQRInTerminal` (la opcion existe pero no hace nada). El QR se renderiza manualmente: el handler de `connection.update` lee el campo `qr` y lo dibuja en terminal con `qrcode-terminal` cuando el usuario eligio el modo QR y las credenciales aun no estan registradas.
+Por defecto `BAILEYS_AUTH_STATE_SOURCE=database`. Credenciales y Signal keys se cifran en PostgreSQL. Si no existe una sesión en DB y hay un `BotSession/creds.json` o una carpeta legacy de subbot, se importa automáticamente sin borrar el origen. Consulta `docs/baileys-database-sessions.md`.
 
-### Por codigo de emparejamiento
+`BAILEYS_AUTH_STATE_SOURCE=files` conserva el multi-file auth state sólo como compatibilidad temporal.
 
-Si el usuario elige la opcion 2, se pide el numero por consola y ~2 segundos despues de crear el socket se llama `sock.requestPairingCode(numero)`. El codigo se muestra en terminal y se ingresa en WhatsApp > Dispositivos vinculados.
+## Camino crítico y persistencia
 
-Detalle regional: numeros que empiezan con `52` (Mexico) se normalizan a `521`.
+- Al abrir, las Signal keys se descifran una vez y quedan en un mapa en memoria.
+- `keys.get()` no consulta DB.
+- `keys.set()` actualiza memoria primero y agrupa persistencia mediante write-behind.
+- `creds.update`, cierre y shutdown hacen flush.
+- Un lease renovable impide que dos procesos usen la misma sesión; perderlo cancela el socket.
 
-## Sesiones
+## Reconexión
 
-- La sesion del bot principal vive en `./BotSession` (multi-file auth state: `creds.json` + archivos de claves de sesion/pre-keys).
-- Cada subbot vive en `./jadibot/<numero>/`.
-- Ninguna de las dos carpetas debe versionarse (ya estan en `.gitignore`). Tratarlas como secretos: quien tenga esos archivos controla la cuenta de WhatsApp.
-- `creds.update` dispara `saveCreds` para persistir cambios de credenciales.
+Los códigos terminales `loggedOut` (401), `forbidden` (403) y `badSession` (500) revocan/eliminan la sesión activa y no se reintentan. Los cierres transitorios pasan por un coordinador single-flight con backoff exponencial y jitter, por lo que varios eventos no crean sockets paralelos.
 
-### Limpieza automatica de sesiones
+El proceso ya no se reinicia cada tres horas. `uncaughtException` y `unhandledRejection` inician un shutdown controlado: detienen reconexiones, scheduler y watchers; drenan mensajes, tareas de fondo y auth; cierran sockets y finalmente el pool PostgreSQL.
 
-`main.ts` ejecuta cada 10 minutos un limpiador que:
+## Configuración del socket
 
-- recorta pre-keys a un maximo (~500, conservando las 300 mas recientes);
-- elimina archivos de sesion con mas de 30 minutos sin modificar (excepto `creds.json`) cuando la conexion no esta activa.
-
-Ademas hay un detector de spam de "Closing stale open session": si se detectan mas de 50 en un minuto, el proceso sale con codigo 1 para que el process manager lo reinicie limpio.
-
-## Configuracion del socket
-
-Opciones relevantes en `makeWASocket` (bot principal):
-
-| Opcion | Valor | Motivo |
-|---|---|---|
-| `logger` | pino `silent` | Baileys es muy verboso; el proyecto usa su propio logger. |
-| `browser` | `['Windows', 'Chrome', '']` | Firma de dispositivo vinculado. |
-| `markOnlineOnConnect` | `false` | No marcar el bot como "en linea" (los subbots usan `true`). |
-| `syncFullHistory` | `false` | No sincronizar historial completo. |
-| `getMessage` | `async () => undefined` | No hay store de mensajes; afecta reintentos de descifrado y polls, asumido como trade-off. |
-| `cachedGroupMetadata` | NodeCache TTL 1h | Evita IQs repetidos de metadata de grupo. |
-| `msgRetryCounterCache` / `userDevicesCache` | NodeCache sin TTL | Caches estandar de Baileys. |
-| `defaultQueryTimeoutMs` | 30s | Timeout de queries IQ. |
-| `keepAliveIntervalMs` | 55s | Keep-alive del WebSocket. |
-
-Al conectar (`connection === 'open'`) se precarga la metadata de todos los grupos con `groupFetchAllParticipating()` y se sincronizan los admins de cada grupo hacia `user_group_roles` (`syncStartupGroupAdmins`).
-
-## Reconexion
-
-### Bot principal
-
-En `connection === 'close'` el comportamiento depende del codigo de desconexion:
-
-- **Codigos terminales de sesion** — `loggedOut` (401), `forbidden` (403) y `badSession` (500): el bot **no reintenta**. Loguea el aviso y queda detenido hasta que el operador borre `BotSession/` y vuelva a vincular.
-- **Cualquier otro codigo** (perdida de red, `connectionClosed` 428, `connectionReplaced` 440, `restartRequired` 515, etc.): espera 3 segundos y vuelve a llamar `startBot()`.
-
-Los listeners de proceso (`uncaughtException`/`unhandledRejection`) y las tareas de mantenimiento (`startMaintenanceTasks()`: limpieza de tmp, reinicio de 3h, limpieza de sesiones) se registran una sola vez a nivel de modulo, por lo que las reconexiones no los duplican.
-
-El reinicio automatico del proceso cada 3 horas (`process.exit(0)`) **requiere un process manager** (PM2, systemd, Docker restart policy) que reinicie el proceso; sin el, el bot se apaga solo.
-
-### Subbots
-
-`src/lib/subbot.ts` maneja la reconexion por codigo:
-
-- `401`/`403`: hasta 5 reintentos; si fallan, se elimina la carpeta de sesion del subbot.
-- Cierres de red (`connectionClosed`, `connectionLost`, `timedOut`, `connectionReplaced`): reintento a los 3s.
-- Cualquier otro codigo: reintento a los 3s.
-
-Los subbots se cargan al inicio (`cargarSubbots`) y se re-escanean cada 60 segundos buscando sesiones nuevas en `./jadibot`.
-
-Al cerrar la conexion de un subbot, su socket se remueve de `globalThis.conns` (por `userId`); cuando la reconexion abre, el socket nuevo reemplaza cualquier entrada previa. Asi `conns` nunca apunta a sockets muertos.
+| Opción | Decisión |
+|---|---|
+| `logger` | Pino silencioso; el proyecto usa su logger propio. |
+| `markOnlineOnConnect` | `false` en principal, `true` en subbots. |
+| `syncFullHistory` | `false`. |
+| `cachedGroupMetadata` | Cache con TTL para evitar IQs repetidos. |
+| `defaultQueryTimeoutMs` | 30 segundos. |
+| `keepAliveIntervalMs` | 55 segundos. |
 
 ## Pipeline de mensajes
 
-- `messages.upsert` filtra: solo `type === 'notify'`, descarta mensajes sin contenido, mensajes con mas de 120s de antiguedad y ecos de otros bots (`isOtherBotKey`).
-- Cada chat tiene una cola FIFO propia (`chatQueues`): los mensajes de un mismo chat se procesan en serie, chats distintos en paralelo.
-- El resto del pipeline (dedup, contexto, hooks, guards, plugin) vive en `src/core/handler.ts` y esta descrito en el README.
+`messages.upsert` descarta mensajes inválidos, antiguos o ecos de otros bots. El dispatcher garantiza orden por `(bot, chat)`, limita concurrencia global y aplica backpressure con `MESSAGE_QUEUE_PER_CHAT_LIMIT` y `MESSAGE_QUEUE_GLOBAL_LIMIT`. Un chat lento no bloquea todos los demás.
 
-## Eventos suscritos
+El pipeline restante vive en `core/handler.ts`: deduplicación, contexto, interceptores, guards, ejecución, métricas y logging.
 
-| Evento | Modulo |
+## Eventos
+
+| Evento | Responsabilidad |
 |---|---|
-| `messages.upsert` | `core/handler.ts` (via cola por chat) |
-| `messages.update` | `core/message-update.ts` (ediciones/eliminaciones) |
-| `group-participants.update` | `core/group-events.ts` |
-| `groups.update` | `core/group-update-events.ts` |
-| `group.join-request` | `core/group-join-request.ts` |
-| `call` | `core/call-events.ts` |
-| `creds.update` | persistencia de sesion |
-| `connection.update` | vinculacion y reconexion |
+| `messages.upsert` | Dispatcher y handler. |
+| `messages.update` | Ediciones/eliminaciones. |
+| `group-participants.update` | Participantes y roles. |
+| `groups.update` / `group.join-request` | Cambios y solicitudes. |
+| `call` | Política de llamadas. |
+| `creds.update` | Persistencia cifrada. |
+| `connection.update` | Vinculación, lease y reconexión. |

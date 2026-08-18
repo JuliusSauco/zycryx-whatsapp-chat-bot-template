@@ -6,7 +6,6 @@ import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import {pickRandom} from '../../utils/random.js'
 import {getLoadedPlugins, getSubbotConnections} from '../../core/runtime-state.js'
 import os from 'os'
-import speed from 'performance-now'
 
 const getCpuUsage = () => {
     const load = os.loadavg()[0]
@@ -39,7 +38,7 @@ export default defineSdkPlugin({
     command: /^(infobot|informacionbot|infololi)$/i,
     register: true,
     async execute(_m, {sdk}) {
-    const start = speed();
+    const start = performance.now();
     const subbotsCount = getSubbotConnections().filter(sock => {
         const id = sock?.userId || sock?.user?.id?.split('@')[0]
         const isAlive = sock?.userId && typeof sock?.uptime === 'number'
@@ -54,7 +53,7 @@ export default defineSdkPlugin({
     const privates = botChats.privateChats;
     const chatsTotales = totalGrupos + privates;
     const totalPlugins = Object.values(getLoadedPlugins()).filter((p) => p.help && p.tags).length;
-    const latencia = speed() - start;
+    const latencia = performance.now() - start;
     const uptime = process.uptime() * 1000;
     const config = await getSubbotConfig(sdk.conn.user?.id || '');
     const prefijos = Array.isArray(config.prefix) ? config.prefix.join(' ') : config.prefix;

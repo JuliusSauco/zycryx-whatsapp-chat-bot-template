@@ -5,7 +5,7 @@ const schemaSource = readFileSync('src/db/schema.ts', 'utf8');
 const sql = readFileSync('database/schema.sql', 'utf8');
 const expectedSchemas = [
     'bot_identity', 'bot_economy', 'bot_groups', 'bot_runtime',
-    'bot_content', 'bot_ai', 'bot_audit',
+    'bot_content', 'bot_ai', 'bot_audit', 'bot_security', 'bot_sessions',
 ];
 
 for (const schema of expectedSchemas) {
@@ -20,7 +20,8 @@ for (const table of [
     'group_moderation_settings', 'group_greetings', 'group_command_access_rules',
     'subbot_prefixes', 'subbot_owners', 'bot_chat_memberships',
     'character_ownerships', 'character_price_events', 'character_market_listings',
-    'chat_memory_messages', 'audio_response_assets',
+    'chat_memory_messages', 'audio_response_assets', 'encryption_key_versions',
+    'encrypted_secrets', 'auth_sessions', 'auth_credentials', 'signal_keys',
 ]) {
     assert.match(sql, new RegExp(`CREATE TABLE "[^"]+"\\."${table}"`), `missing normalized table ${table}`);
 }
@@ -42,5 +43,9 @@ assert.match(sql, /bootstrap:reserve-capitalization/);
 assert.doesNotMatch(schemaSource, /\bjsonb\s*\(/i);
 assert.doesNotMatch(schemaSource, /\.array\s*\(\)/i);
 assert.doesNotMatch(schemaSource, /serial\s*\(/i);
+assert.doesNotMatch(sql, /CREATE TABLE "bot_runtime"\."api_tokens"/);
+assert.doesNotMatch(sql, /"token_b64"/);
+assert.match(sql, /"ciphertext" bytea NOT NULL/);
+assert.match(sql, /"auth_tag" bytea NOT NULL/);
 
 console.log('database-normalization.test.ts OK');

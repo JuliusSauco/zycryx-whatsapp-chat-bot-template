@@ -48,12 +48,12 @@ function collectInterceptors(plugin: Plugin, isCommand: boolean): Array<{pluginI
     if (!plugin.before || (isCommand && !plugin.runBeforeOnCommand)) {
         return declared.map(interceptor => ({pluginId, interceptor}));
     }
-    const security = /antilink|antiprivado|virustotal/i.test(pluginId);
+    const policy = plugin.beforePolicy ?? {phase: 'conversation', priority: 0, failurePolicy: 'fail-open'} as const;
     const legacy: PluginInterceptor = {
-        phase: security ? 'security' : 'conversation',
-        priority: security ? 100 : 0,
+        phase: policy.phase,
+        priority: policy.priority,
         appliesTo: isCommand ? 'commands' : 'messages',
-        failurePolicy: security ? 'fail-closed' : 'fail-open',
+        failurePolicy: policy.failurePolicy,
         async run(message, context) {
             const result = await plugin.before!(message, context);
             return result === false ? {kind: 'handled'} : {kind: 'continue'};

@@ -183,7 +183,6 @@ function testTikTokProviders(): void {
         'tikdown',
         'delirius-tiktok',
         'dorratz-tiktok',
-        'api-dylux-tiktok',
     ]);
     assert.equal(providers[0]?.timeoutMs, 20_000);
     assert.equal(providers.slice(1).every(provider => provider.timeoutMs === 12_000), true);
@@ -221,7 +220,6 @@ function testFacebookProviders(): void {
         'fgmods-facebook',
         'main-facebook',
         'dorratz-facebook',
-        'api-dylux-facebook',
     ]);
 }
 
@@ -304,7 +302,6 @@ function testInstagramStalkProviders(): void {
 
     assert.deepEqual(providers.map(provider => provider.name), [
         'main-instagram-stalk',
-        'api-dylux-instagram-stalk',
     ]);
 }
 
@@ -313,7 +310,6 @@ function testTikTokStalkProviders(): void {
 
     assert.deepEqual(providers.map(provider => provider.name), [
         'main-tiktok-stalk',
-        'api-dylux-tiktok-stalk',
     ]);
 }
 

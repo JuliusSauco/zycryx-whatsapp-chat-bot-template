@@ -1,17 +1,14 @@
 import {
     DisconnectReason,
-    fetchLatestBaileysVersion,
     makeWASocket,
-    useMultiFileAuthState,
     type WASocket
 } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import type {Logger} from 'pino';
-import fs from 'fs';
 import qrcode from 'qrcode';
 import chalk from "chalk";
 import NodeCache from 'node-cache';
-import {callUpdate, groupsUpdate, handler, messageUpdate, participantsUpdate} from '../core/handler.js';
+import {callUpdate, groupsUpdate, messageUpdate, participantsUpdate} from '../core/handler.js';
 import {logError, logInfo, logWarn} from './logger.js';
 import type {BotMessage} from '../types/message.js';
 import type {ExtendedConn} from '../types/context.js';
@@ -22,6 +19,11 @@ import {
     unregisterSubbotConnection,
 } from '../core/runtime-state.js';
 import {registerContactUserSync} from '../core/contact-user-sync.js';
+import {useConfiguredAuthState} from '../services/baileys-auth-state.service.js';
+import {enqueueBotMessage} from '../core/message-dispatch.js';
+import {ReconnectCoordinator} from '../core/reconnect-coordinator.js';
+import {BaileysMessageCache} from './baileys-message-cache.js';
+import {getBaileysVersion} from './baileys-version.js';
 
 getSubbotConnections()
 
@@ -45,7 +47,15 @@ const cleanJid = (jid: string = ""): string => jid.replace(/:\d+/, "").split("@"
 const msgRetryCounterCache = new NodeCache({stdTTL: 0, checkperiod: 0});
 const userDevicesCache = new NodeCache({stdTTL: 0, checkperiod: 0});
 const groupCache = new NodeCache({stdTTL: 3600, checkperiod: 300});
-let reintentos: Record<string, number> = {};
+const subbotReconnect = new ReconnectCoordinator({
+    baseDelayMs: 1_000,
+    maxDelayMs: 60_000,
+    onError: (key, error) => logError(`[RECONNECT] Falló la reconexión de ${key}:`, error),
+});
+
+export function stopSubbotReconnects(): void {
+    subbotReconnect.stop();
+}
 
 export async function startSubBot(
     m: BotMessage | null,
@@ -59,8 +69,17 @@ export async function startSubBot(
     const id = phone || (m?.sender || '').split('@')[0];
     const sessionFolder = `./jadibot/${id}`;
     const senderId = m?.sender;
-    const {state, saveCreds} = await useMultiFileAuthState(sessionFolder);
-    const {version} = await fetchLatestBaileysVersion();
+    const authState = await useConfiguredAuthState({
+        sessionId: id,
+        sessionType: 'subbot',
+        ownerId: senderId ?? id,
+        legacyFolder: sessionFolder,
+    });
+    const {state, saveCreds} = authState;
+    const scheduleReconnect = (key: string) => subbotReconnect.schedule(key, () =>
+        startSubBot(m, conn, caption, isCode, phone, chatId, {}));
+    const messageCache = new BaileysMessageCache();
+    const version = await getBaileysVersion();
 
     const sock = makeWASocket({
         logger: createPino({level: 'silent'}),
@@ -70,7 +89,7 @@ export async function startSubBot(
         markOnlineOnConnect: true,
         generateHighQualityLinkPreview: true,
         syncFullHistory: false,
-        getMessage: async () => undefined,
+        getMessage: async key => messageCache.get(key),
         msgRetryCounterCache,
         userDevicesCache: userDevicesCache as unknown as SocketConfig['userDevicesCache'],
         cachedGroupMetadata: async (jid: string) => groupCache.get(jid),
@@ -78,6 +97,7 @@ export async function startSubBot(
         keepAliveIntervalMs: 60_000,
         maxIdleTimeMs: 120_000,
     } as SocketConfig & {maxIdleTimeMs: number}) as BotSocket;
+    authState.leaseLost.addEventListener('abort', () => sock.end(new Error('Baileys auth lease perdido')), {once: true});
 
     sock.groupCache = groupCache;
     registerContactUserSync(sock);
@@ -93,10 +113,12 @@ export async function startSubBot(
             sock.userId = cleanJid(sock.user?.id?.split("@")[0])
             const ownerName = sock.authState.creds.me?.name || "-";
             sock.uptime = Date.now();
-            reintentos[sock.userId] = 0;
+            subbotReconnect.reset(id);
+            subbotReconnect.reset(sock.userId);
             // Si quedó un socket previo con el mismo userId (reconexión), se reemplaza
             // por el nuevo para que conns nunca apunte a un socket muerto.
             registerSubbotConnection(sock);
+            await authState.markConnected(sock.user?.id ?? null);
 
             // Precarga de metadata de grupos para evitar IQs lentos en el primer comando.
             void (async () => {
@@ -123,41 +145,27 @@ export async function startSubBot(
         if (connection === 'close') {
             const botId = sock.userId || id;
             const reason = (lastDisconnect?.error as DisconnectErrorLike | undefined)?.output?.statusCode || 0;
-            const intentos = reintentos[botId] || 0;
-            reintentos[botId] = intentos + 1;
+            messageCache.clear();
 
             // Sacar el socket muerto de conns antes de reintentar; la reconexión
             // exitosa registrará el socket nuevo en el evento 'open'.
             removeConnByUserId(botId);
 
-            if ([401, 403].includes(reason)) {
-                if (intentos < 5) {
-                    logWarn(`${chalk.red(`[❌ SUB-BOT ${botId}] Conexión cerrada (código ${reason}) intento ${intentos}/5`)} → Reintentando...`);
-                    setTimeout(() => {
-                        startSubBot(m, conn, caption, isCode, phone, chatId, {});
-                    }, 3000);
-                } else {
-                    logError(chalk.red(`[💥 SUB-BOT ${botId}] Falló tras 5 intentos. Eliminando sesión.`));
-                    try {
-                        fs.rmSync(sessionFolder, {recursive: true, force: true});
-                    } catch (e) {
-                        logError(`[⚠️] No se pudo eliminar la carpeta ${sessionFolder}:`, e);
-                    }
-                    delete reintentos[botId];
-                }
+            if ([DisconnectReason.loggedOut, DisconnectReason.forbidden, DisconnectReason.badSession].includes(reason)) {
+                logError(chalk.red(`[💥 SUB-BOT ${botId}] Sesión inválida (código ${reason}). Revocando sin reintentar.`));
+                await authState.deleteSession();
+                subbotReconnect.cancel(botId);
                 return;
             }
 
             if ([DisconnectReason.connectionClosed, DisconnectReason.connectionLost, DisconnectReason.timedOut, DisconnectReason.connectionReplaced].includes(reason)) {
-                setTimeout(() => {
-                    startSubBot(m, conn, caption, isCode, phone, chatId, {});
-                }, 3000);
+                await authState.dispose();
+                scheduleReconnect(botId);
                 return;
             }
 
-            setTimeout(() => {
-                startSubBot(m, conn, caption, isCode, phone, chatId, {});
-            }, 3000);
+            await authState.dispose();
+            scheduleReconnect(botId);
         }
 
         if (qr && !isCode && m && conn && senderId && commandFlags[senderId]) {
@@ -199,15 +207,12 @@ export async function startSubBot(
         if (type !== "notify") return;
         for (const msg of messages) {
             if (!msg.message) continue;
+            messageCache.set(msg.key, msg.message);
             const start = Math.floor((sock.uptime || Date.now()) / 1000);
             const messageTimestamp = Number(msg.messageTimestamp || 0);
             if (messageTimestamp < start || ((Date.now() / 1000) - messageTimestamp) > 60) continue;
             if (isOtherBotKey(msg.key.id)) continue;
-            try {
-                await handler(sock as unknown as ExtendedConn, msg as unknown as BotMessage);
-            } catch (err) {
-                logError(err);
-            }
+            enqueueBotMessage(sock, msg);
         }
     });
 

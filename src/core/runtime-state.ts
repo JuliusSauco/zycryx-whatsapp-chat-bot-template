@@ -7,22 +7,20 @@ export type RuntimeConnection = WASocket & {
     isInit?: boolean;
 };
 
-function ensureSubbotConnections(): RuntimeConnection[] {
-    if (!(globalThis.conns instanceof Array)) globalThis.conns = [];
-    return globalThis.conns as RuntimeConnection[];
-}
-
-function ensureLoadedPlugins(): Record<string, Plugin> {
-    if (!globalThis.plugins) globalThis.plugins = {};
-    return globalThis.plugins;
-}
+const subbotConnections: RuntimeConnection[] = [];
+const loadedPlugins: Record<string, Plugin> = {};
+let mainConnection: WASocket | undefined;
 
 export function getMainConnection(): WASocket | undefined {
-    return globalThis.conn;
+    return mainConnection;
 }
 
 export function setMainConnection(conn: unknown): void {
-    globalThis.conn = conn as WASocket;
+    mainConnection = conn as WASocket;
+}
+
+export function clearMainConnection(conn?: unknown): void {
+    if (!conn || mainConnection === conn) mainConnection = undefined;
 }
 
 export function isMainConnection(conn: unknown): boolean {
@@ -30,7 +28,7 @@ export function isMainConnection(conn: unknown): boolean {
 }
 
 export function getSubbotConnections(): RuntimeConnection[] {
-    return ensureSubbotConnections();
+    return subbotConnections;
 }
 
 export function hasSubbotConnection(userId: string): boolean {
@@ -60,7 +58,7 @@ export function isRuntimeSessionActive(sessionId: string): boolean {
 }
 
 export function getLoadedPlugins(): Record<string, Plugin> {
-    return ensureLoadedPlugins();
+    return loadedPlugins;
 }
 
 export function setLoadedPlugin(filename: string, plugin: Plugin): void {

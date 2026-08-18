@@ -5,6 +5,15 @@ import fs from 'fs';
 const env = process.env.NODE_ENV || 'local';
 const envFile = path.resolve(`.env.${env}`);
 
+function positiveInteger(value: string | undefined, fallback: number): number {
+    const parsed = Number.parseInt(value || '', 10);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function authStateSource(value: string | undefined): 'database' | 'files' {
+    return value?.toLowerCase() === 'files' ? 'files' : 'database';
+}
+
 if (fs.existsSync(envFile)) {
     dotenv.config({path: envFile});
     console.log(`✅ Variables de entorno cargadas desde: .env.${env}`);
@@ -54,20 +63,37 @@ export const ENV = {
     SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET || '',
     VIRUSTOTAL_API_KEY: process.env.VIRUSTOTAL_API_KEY || '',
     VIRUSTOTAL_ENABLED: (process.env.VIRUSTOTAL_ENABLED || 'true').toLowerCase() !== 'false',
-    VIRUSTOTAL_MAX_FILE_MB: parseInt(process.env.VIRUSTOTAL_MAX_FILE_MB || '32', 10),
-    VIRUSTOTAL_POLL_ATTEMPTS: parseInt(process.env.VIRUSTOTAL_POLL_ATTEMPTS || '6', 10),
-    VIRUSTOTAL_POLL_INTERVAL_MS: parseInt(process.env.VIRUSTOTAL_POLL_INTERVAL_MS || '10000', 10),
+    VIRUSTOTAL_MAX_FILE_MB: positiveInteger(process.env.VIRUSTOTAL_MAX_FILE_MB, 32),
+    VIRUSTOTAL_POLL_ATTEMPTS: positiveInteger(process.env.VIRUSTOTAL_POLL_ATTEMPTS, 6),
+    VIRUSTOTAL_POLL_INTERVAL_MS: positiveInteger(process.env.VIRUSTOTAL_POLL_INTERVAL_MS, 10_000),
     DEFAULT_MENU_IMAGE: process.env.DEFAULT_MENU_IMAGE || './resources/media/menus/Menu2.jpg',
     DB_HOST: process.env.DB_HOST || 'localhost',
-    DB_PORT: parseInt(process.env.DB_PORT || '5432', 10),
+    DB_PORT: positiveInteger(process.env.DB_PORT, 5432),
     DB_NAME: process.env.DB_NAME || 'zycryx_bot',
     DB_USER: process.env.DB_USER || 'postgres',
     DB_PASSWORD: process.env.DB_PASSWORD || '',
     DATABASE_URL: process.env.DATABASE_URL || '',
+    DB_POOL_MAX: positiveInteger(process.env.DB_POOL_MAX, 20),
+    DB_IDLE_TIMEOUT_MS: positiveInteger(process.env.DB_IDLE_TIMEOUT_MS, 30_000),
+    DB_CONNECTION_TIMEOUT_MS: positiveInteger(process.env.DB_CONNECTION_TIMEOUT_MS, 10_000),
+    DB_STATEMENT_TIMEOUT_MS: positiveInteger(process.env.DB_STATEMENT_TIMEOUT_MS, 30_000),
     LOG_LEVEL: process.env.LOG_LEVEL || 'command',
-    PERF_LOG_THRESHOLD_MS: parseInt(process.env.PERF_LOG_THRESHOLD_MS || '750', 10),
-    HTTP_TIMEOUT_MS: parseInt(process.env.HTTP_TIMEOUT_MS || '15000', 10),
-    DB_CACHE_TTL_MS: parseInt(process.env.DB_CACHE_TTL_MS || '300000', 10),
-    AUDIO_CACHE_TTL_MS: parseInt(process.env.AUDIO_CACHE_TTL_MS || '300000', 10),
-    BACKGROUND_TASK_CONCURRENCY: parseInt(process.env.BACKGROUND_TASK_CONCURRENCY || '4', 10),
+    PERF_LOG_THRESHOLD_MS: positiveInteger(process.env.PERF_LOG_THRESHOLD_MS, 750),
+    HTTP_TIMEOUT_MS: positiveInteger(process.env.HTTP_TIMEOUT_MS, 15_000),
+    DB_CACHE_TTL_MS: positiveInteger(process.env.DB_CACHE_TTL_MS, 300_000),
+    AUDIO_CACHE_TTL_MS: positiveInteger(process.env.AUDIO_CACHE_TTL_MS, 300_000),
+    BACKGROUND_TASK_CONCURRENCY: positiveInteger(process.env.BACKGROUND_TASK_CONCURRENCY, 4),
+    PLUGIN_HOT_RELOAD_ENABLED: (process.env.PLUGIN_HOT_RELOAD_ENABLED || 'false').toLowerCase() === 'true',
+    REQUIRED_PLUGIN_PATHS: process.env.REQUIRED_PLUGIN_PATHS || 'hooks/_antilink,hooks/_antilink2,hooks/_antiprivado,hooks/_virustotal,hooks/_censored',
+    MESSAGE_QUEUE_CONCURRENCY: positiveInteger(process.env.MESSAGE_QUEUE_CONCURRENCY, 32),
+    MESSAGE_QUEUE_PER_CHAT_LIMIT: positiveInteger(process.env.MESSAGE_QUEUE_PER_CHAT_LIMIT, 50),
+    MESSAGE_QUEUE_GLOBAL_LIMIT: positiveInteger(process.env.MESSAGE_QUEUE_GLOBAL_LIMIT, 2_000),
+    BAILEYS_AUTH_STATE_SOURCE: authStateSource(process.env.BAILEYS_AUTH_STATE_SOURCE),
+    BAILEYS_AUTH_WRITE_DELAY_MS: positiveInteger(process.env.BAILEYS_AUTH_WRITE_DELAY_MS, 25),
+    BAILEYS_AUTH_LEASE_SECONDS: positiveInteger(process.env.BAILEYS_AUTH_LEASE_SECONDS, 120),
+    BOT_SECRETS_KEY_VERSION: positiveInteger(process.env.BOT_SECRETS_KEY_VERSION, 1),
+    BOT_SECRETS_MASTER_KEY_B64: process.env.BOT_SECRETS_MASTER_KEY_B64 || '',
+    BOT_SECRETS_KEYRING_JSON: process.env.BOT_SECRETS_KEYRING_JSON || '',
+    BOT_SECRETS_PASSPHRASE: process.env.BOT_SECRETS_PASSPHRASE || '',
+    BOT_SECRETS_KDF_SALT_B64: process.env.BOT_SECRETS_KDF_SALT_B64 || '',
 } as const;

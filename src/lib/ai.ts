@@ -4,7 +4,7 @@
  * Todos los proveedores listados son compatibles con el formato de OpenAI
  * (mismo body, misma estructura de respuesta), así que se usan con un solo `fetch`.
  *
- * Las API keys se leen de la tabla `api_tokens` (columna `token_b64`, en base64)
+ * Las API keys se leen cifradas desde `bot_security.encrypted_secrets`.
  * y se cachean en memoria.
  *
  * Para agregar / reordenar / cambiar modelos: edita el array PROVIDERS.
@@ -14,7 +14,7 @@ import {httpJson} from './http-client.js';
 import {logDebug, logWarn} from './logger.js';
 
 interface AIProvider {
-    /** Nombre de la fila en api_tokens (columna `name`). */
+    /** Nombre de la fila cifrada en bot_security.encrypted_secrets. */
     token: string;
     /** Endpoint compatible con OpenAI. */
     url: string;

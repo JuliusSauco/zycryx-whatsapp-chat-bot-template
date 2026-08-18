@@ -1,8 +1,7 @@
 import {dirname, join, relative, sep} from 'path'
 import {fileURLToPath, pathToFileURL} from 'url'
-import {existsSync, readdirSync, readFileSync, statSync, watch, type FSWatcher} from 'fs'
+import {existsSync, readdirSync, statSync, watch, type FSWatcher} from 'fs'
 import chalk from "chalk"
-import syntaxerror from 'syntax-error'
 import {format} from 'util'
 import {router} from '../core/router.js'
 import {logDebug, logError, logInfo, logWarn} from './logger.js';
@@ -13,6 +12,7 @@ import {
     removeLoadedPlugin,
     setLoadedPlugin,
 } from '../core/runtime-state.js'
+import {ENV} from '../core/env.js'
 
 const __libDir = dirname(fileURLToPath(import.meta.url))
 const pluginFolder = join(__libDir, '..', 'plugins')
@@ -83,6 +83,10 @@ export async function loadPlugins(): Promise<void> {
             removeLoadedPlugin(filename)
         }
     }
+    const loaded = new Set(Object.keys(getLoadedPlugins()).map(filename => filename.replace(/\.(?:js|ts)$/, '')));
+    const missingRequired = ENV.REQUIRED_PLUGIN_PATHS.split(',').map(value => value.trim()).filter(Boolean)
+        .filter(required => !loaded.has(required));
+    if (missingRequired.length) throw new Error(`Plugins críticos ausentes o inválidos: ${missingRequired.join(', ')}`);
     router.registerAll(getLoadedPlugins())
 }
 
@@ -91,16 +95,6 @@ const reload = async (filename: string): Promise<void> => {
 
     const fullPath = getPluginFullPath(filename)
     if (existsSync(fullPath)) {
-        const err = syntaxerror(readFileSync(fullPath, 'utf8'), filename, {
-            sourceType: 'module',
-            allowAwaitOutsideFunction: true
-        })
-
-        if (err) {
-            logError(chalk.red(`ERROR DE SINTAXIS EN ${filename}:\n${format(err)}`))
-            return
-        }
-
         const previousPlugin = getLoadedPlugins()[filename];
         try {
             const pathFile = pathToFileURL(fullPath).href
@@ -164,4 +158,4 @@ export function stopPluginWatchers(): void {
     watchedDirs.clear();
 }
 
-if (process.env.NODE_ENV !== 'prod') watchPluginDirectory(pluginFolder)
+if (ENV.PLUGIN_HOT_RELOAD_ENABLED && ENV.NODE_ENV !== 'prod') watchPluginDirectory(pluginFolder)

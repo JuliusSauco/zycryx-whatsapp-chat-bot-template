@@ -10,8 +10,8 @@ export async function clearGroupExpiration(groupId: string): Promise<void> {
     await repositories.groupSettings.clearExpiration(groupId);
 }
 
-export async function listPendingReports(limit: number) {
-    return repositories.reports.listPending(limit);
+export async function claimPendingReports(limit: number, workerId: string, leaseSeconds = 120) {
+    return repositories.reports.claimPending(limit, workerId, leaseSeconds);
 }
 
 export async function createReport(input: {
@@ -23,8 +23,12 @@ export async function createReport(input: {
     await repositories.reports.create(input);
 }
 
-export async function deleteReport(id: number): Promise<void> {
-    await repositories.reports.deleteById(id);
+export async function markReportDelivered(id: number, workerId: string, deliveredMessageId: string | null): Promise<void> {
+    await repositories.reports.markDelivered(id, workerId, deliveredMessageId);
+}
+
+export async function markReportFailed(id: number, workerId: string, error: string): Promise<void> {
+    await repositories.reports.markFailed(id, workerId, error);
 }
 
 export async function cleanExpiredChatMemories(now: number = Date.now()): Promise<string[]> {

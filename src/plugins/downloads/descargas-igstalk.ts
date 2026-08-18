@@ -28,27 +28,15 @@ export default defineSdkPlugin({
 })
 
 function renderInstagramProfile(content: PluginContentSdk, profile: InstagramStalkProfile): string {
-    if (profile.source === 'main') {
-        return content.renderMessage('downloads.instagramStalk.profile', {
-            username: profile.username,
-            fullName: profile.fullName,
-            bio: profile.biography,
-            verified: profile.verified ? content.message('downloads.instagramStalk.yes') : content.message('downloads.instagramStalk.no'),
-            private: profile.private ? content.message('downloads.instagramStalk.yes') : content.message('downloads.instagramStalk.no'),
-            followers: profile.followers,
-            following: profile.following,
-            posts: profile.posts,
-            url: profile.url
-        });
-    }
-
-    return content.renderMessage('downloads.instagramStalk.fallbackProfile', {
-        name: profile.name,
+    return content.renderMessage('downloads.instagramStalk.profile', {
         username: profile.username,
+        fullName: profile.fullName,
+        bio: profile.biography,
+        verified: profile.verified ? content.message('downloads.instagramStalk.yes') : content.message('downloads.instagramStalk.no'),
+        private: profile.private ? content.message('downloads.instagramStalk.yes') : content.message('downloads.instagramStalk.no'),
         followers: profile.followers,
         following: profile.following,
-        bio: profile.description,
         posts: profile.posts,
-        usernameClean: profile.username.replace(/^@/, '')
+        url: profile.url
     });
 }

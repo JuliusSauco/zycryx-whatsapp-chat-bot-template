@@ -263,16 +263,15 @@ async function getCachedGroupMetadata(conn: ExtendedConn, chatId: string): Promi
 /** Exportar para que otros módulos puedan actualizar el cache (ej: participantsUpdate). */
 export {groupMetaCache};
 
-/** Construye la lista de adminIds con ambas variantes (JID y LID). */
+/** Construye adminIds solo con identidades observadas; un LID nunca se convierte en teléfono por sufijo. */
 function buildAdminIds(participants: GroupParticipant[]): string[] {
-    return participants
+    const ids = participants
         .filter(p => p.admin === "admin" || p.admin === "superadmin")
         .flatMap(p => {
-            const clean = cleanJid(p.id || "");
-            return clean.endsWith("@lid")
-                ? [clean, clean.replace("@lid", "@s.whatsapp.net")]
-                : [clean, clean.replace("@s.whatsapp.net", "@lid")];
+            const participant = p as GroupParticipant & {participantAlt?: string | null};
+            return [participant.id, participant.participantAlt].map(value => cleanJid(value || '')).filter(Boolean);
         });
+    return [...new Set(ids)];
 }
 
 /** Construye las variantes de JID del sender para comparación con adminIds. */

@@ -20,10 +20,12 @@ const domainSchemas = [
     'bot_content',
     'bot_ai',
     'bot_audit',
+    'bot_security',
+    'bot_sessions',
 ];
 
 function buildConnectionUrl(): string {
-    const searchPath = encodeURIComponent(`-c search_path=${[...domainSchemas, 'public', 'extensions'].join(',')}`);
+    const searchPath = encodeURIComponent('-c search_path=pg_catalog,public,extensions');
     if (process.env.DATABASE_URL) {
         const separator = process.env.DATABASE_URL.includes('?') ? '&' : '?';
         return `${process.env.DATABASE_URL}${separator}options=${searchPath}`;
@@ -39,7 +41,7 @@ function buildConnectionUrl(): string {
 
 export default defineConfig({
     schema: './src/db/schema.ts',
-    out: './src/db/migrations',
+    out: './database/migrations',
     dialect: 'postgresql',
     schemaFilter: domainSchemas,
     dbCredentials: {url: buildConnectionUrl()},

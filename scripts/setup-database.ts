@@ -24,3 +24,5 @@ try {
 } finally {
     await client.end();
 }
+
+await import('./migrate-database.js');

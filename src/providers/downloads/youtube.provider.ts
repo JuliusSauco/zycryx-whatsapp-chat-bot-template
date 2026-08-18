@@ -1,4 +1,3 @@
-import yts from 'yt-search';
 import ytdl from 'ytdl-core';
 import {ENV} from '../../core/env.js';
 import {httpJson, httpRequest, httpText} from '../../lib/http-client.js';
@@ -16,6 +15,7 @@ import {
     type ProviderResult,
     withProviderPolicy,
 } from '../provider.types.js';
+import {searchYouTubeVideos} from '../youtube-search.provider.js';
 
 export interface DownloadResult {
     result?: {
@@ -67,8 +67,8 @@ export const VIDEO_QUALITIES = ['240', '360', '480', '720', '1080'];
 
 export const youtubeRegexID = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/;
 
-export async function searchYouTube(query: string, options: Record<string, unknown> = {}) {
-    const search = await yts.search({query, hl: 'es', gl: 'ES', ...options});
+export async function searchYouTube(query: string) {
+    const search = await searchYouTubeVideos(query);
     return search.videos;
 }
 
@@ -471,7 +471,7 @@ function delay(ms: number): Promise<void> {
 }
 
 async function downloadYoutubeAudioWithYtdl(url: string): Promise<YouTubeProviderMedia | null> {
-    const search = await yts(url);
+    const search = await searchYouTubeVideos(url, 5);
     const fallbackVideo = search.all.find(video => video.type === 'video');
     if (!fallbackVideo?.videoId) return null;
 

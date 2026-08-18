@@ -2,7 +2,6 @@ import {logInfo} from './logger.js';
 import {Blob, FormData} from 'formdata-node'
 import {fileTypeFromBuffer} from 'file-type'
 import {httpJson, httpText} from './http-client.js'
-import type {RequestInit} from 'node-fetch'
 
 type FetchBody = RequestInit['body'];
 type UploadFileItem = {url?: string; src?: string};

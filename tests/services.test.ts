@@ -29,10 +29,11 @@ import {
 import {createDefaultFamilyAccessMap} from '../src/utils/family-access.js';
 import {
     cleanExpiredChatMemories,
+    claimPendingReports,
     createReport,
-    deleteReport,
     listExpiredGroups,
-    listPendingReports,
+    markReportDelivered,
+    markReportFailed,
 } from '../src/services/runtime-tasks.service.js';
 import {
     getSubbotConfig,
@@ -312,12 +313,13 @@ async function testRuntimeTasksService(): Promise<void> {
     };
     repositories.reports = {
         ...originals.reports,
-        listPending: async limit => {
-            calls.push(['listPending', limit]);
+        claimPending: async (limit, workerId, leaseSeconds) => {
+            calls.push(['claimPending', limit, workerId, leaseSeconds]);
             return [{id: 1, sender_id: 'u1', mensaje: 'hola', tipo: 'reporte'}];
         },
         create: async input => calls.push(['reportCreate', input]),
-        deleteById: async id => calls.push(['reportDelete', id]),
+        markDelivered: async (id, workerId, messageId) => calls.push(['reportDelivered', id, workerId, messageId]),
+        markFailed: async (id, workerId, error) => calls.push(['reportFailed', id, workerId, error]),
     };
     repositories.chatMemory = {
         ...originals.chatMemory,
@@ -330,9 +332,10 @@ async function testRuntimeTasksService(): Promise<void> {
 
     try {
         assert.deepEqual(await listExpiredGroups(100), [{group_id: 'g1', expired: 99}]);
-        assert.deepEqual(await listPendingReports(5), [{id: 1, sender_id: 'u1', mensaje: 'hola', tipo: 'reporte'}]);
+        assert.deepEqual(await claimPendingReports(5, 'worker', 30), [{id: 1, sender_id: 'u1', mensaje: 'hola', tipo: 'reporte'}]);
         await createReport({senderId: 'u1', senderName: 'User', message: 'hola', type: 'reporte'});
-        await deleteReport(1);
+        await markReportDelivered(1, 'worker', 'message-1');
+        await markReportFailed(2, 'worker', 'network');
         assert.deepEqual(
             await cleanExpiredChatMemories(new Date('2026-01-01T00:20:00Z').getTime()),
             ['old'],
@@ -407,9 +410,9 @@ async function testWalletAndApiTokenServices(): Promise<void> {
     };
     repositories.apiTokens = {
         ...originals.apiTokens,
-        findTokenB64: async name => {
-            calls.push(['findTokenB64', name]);
-            return Buffer.from(' secret-token ', 'utf8').toString('base64');
+        findToken: async name => {
+            calls.push(['findToken', name]);
+            return 'secret-token';
         },
     };
 
@@ -437,7 +440,7 @@ async function testWalletAndApiTokenServices(): Promise<void> {
         invalidateApiTokenCache('service');
         assert.equal(await getDecodedApiToken('service'), 'secret-token');
         assert.equal(await getDecodedApiToken('service'), 'secret-token');
-        assert.equal(calls.filter(call => Array.isArray(call) && call[0] === 'findTokenB64').length, 1);
+        assert.equal(calls.filter(call => Array.isArray(call) && call[0] === 'findToken').length, 1);
     } finally {
         restoreRepositories();
     }

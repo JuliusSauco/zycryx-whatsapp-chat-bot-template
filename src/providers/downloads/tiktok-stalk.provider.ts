@@ -1,29 +1,18 @@
-import fg from 'api-dylux';
 import {httpJson} from '../../lib/http-client.js';
 import {DEFAULT_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
-export type TikTokStalkProfile =
-    | {
+export type TikTokStalkProfile = {
         source: 'main';
-        username?: string;
+        username: string;
         nickname?: string;
         verified?: boolean;
         signature?: string;
         url?: string;
-        avatar?: string;
+        avatar: string;
         followers: number;
         following: number;
         likes: number;
         videos: number;
-    }
-    | {
-        source: 'api-dylux';
-        name?: string;
-        username: string;
-        followers?: string | number;
-        following?: string | number;
-        description?: string;
-        avatar?: string;
     };
 
 interface TikTokStalkResponse {
@@ -43,15 +32,6 @@ interface TikTokStalkResponse {
             videoCount?: number;
         };
     };
-}
-
-interface DyluxTikTokProfile {
-    name?: string;
-    username?: string;
-    followers?: string | number;
-    following?: string | number;
-    desc?: string;
-    profile?: string;
 }
 
 export function buildTikTokStalkProviders(username: string): ProviderCandidate<TikTokStalkProfile>[] {
@@ -75,22 +55,6 @@ export function buildTikTokStalkProviders(username: string): ProviderCandidate<T
                     following: stats.followingCount || 0,
                     likes: stats.heartCount || 0,
                     videos: stats.videoCount || 0,
-                };
-            },
-        },
-        {
-            name: 'api-dylux-tiktok-stalk',
-            run: async () => {
-                const profile = await fg.ttStalk(username) as DyluxTikTokProfile;
-                if (!profile?.username || !profile.profile) return null;
-                return {
-                    source: 'api-dylux',
-                    name: profile.name,
-                    username: profile.username,
-                    followers: profile.followers,
-                    following: profile.following,
-                    description: profile.desc,
-                    avatar: profile.profile,
                 };
             },
         },

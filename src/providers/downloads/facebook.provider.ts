@@ -1,4 +1,3 @@
-import fg from 'api-dylux';
 import {httpJson} from '../../lib/http-client.js';
 import {DEFAULT_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
@@ -79,14 +78,6 @@ export function buildFacebookDownloadProviders(postUrl: string): ProviderCandida
                 const data = await httpJson<DorratzFacebookResponse>(`https://api.dorratz.com/fbvideo?url=${encodeURIComponent(postUrl)}`);
                 const url = data.result?.hd || data.result?.sd;
                 return url ? {type: 'video', url, fileName: 'video.mp4'} : null;
-            },
-        },
-        {
-            name: 'api-dylux-facebook',
-            run: async () => {
-                const data = await fg.fbdl(postUrl) as {data?: Array<{url?: string}>};
-                const url = data.data?.[0]?.url;
-                return url ? {type: 'video', url, fileName: 'video.mp4', captionVariant: 'bold'} : null;
             },
         },
     ], {timeoutMs: DEFAULT_PROVIDER_TIMEOUT_MS, retries: 1});

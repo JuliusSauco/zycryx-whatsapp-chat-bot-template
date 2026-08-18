@@ -330,8 +330,23 @@ export interface CharacterRepository {
 }
 
 export interface ApiTokenRepository {
-    findTokenB64(name: string): Promise<string | null>;
+    findToken(name: string): Promise<string | null>;
+    upsertToken(name: string, token: string): Promise<void>;
 }
+
+export type UserIdentityRepository = Pick<UserRepository,
+    'findById' | 'findNameById' | 'upsertBasicUser' | 'clearLidFromOtherUsers' | 'setUserLid' | 'findNumberByLid'>;
+export type UserRegistrationRepository = Pick<UserRepository,
+    'upsertRegisteredAdmin' | 'completeRegistration' | 'unregister' | 'setGender' | 'setBirthday' | 'countUsers'>;
+export type UserModerationRepository = Pick<UserRepository,
+    'findBanInfo' | 'incrementBanNotice' | 'setBanStatus' | 'findWarnInfo' | 'incrementWarn' |
+    'decrementWarn' | 'resetWarn' | 'listWarnedUsers' | 'listBannedUsers' | 'getPrivateWarn' | 'setPrivateWarn'>;
+export type UserRelationshipRepository = Pick<UserRepository,
+    'listMarriedUsers' | 'setMarriageRequest' | 'getMarriageRequest' | 'marryUsers' | 'divorceUsers'>;
+export type UserEconomyRepository = Pick<UserRepository,
+    'findWallet' | 'listWallets' | 'getResources' | 'addWalletResource' | 'addWalletResourceAndSetWait' |
+    'addWalletResourcesAndSetFields' | 'exchangeWalletResources' | 'transferWalletResource' |
+    'listWalletTransferHistory' | 'robExperience' | 'decrementLimit' | 'decrementCoins'>;
 
 export interface AudioResponseRepository {
     listByScopes(scopes: string[]): Promise<AudioResponseRecord[]>;
@@ -347,6 +362,7 @@ export interface PendingReport {
     mensaje: string;
     tipo: string;
     fecha?: Date | string;
+    attempt_count?: number;
 }
 
 export interface ReportRepository {
@@ -356,8 +372,9 @@ export interface ReportRepository {
         message: string;
         type: string;
     }): Promise<void>;
-    listPending(limit: number): Promise<PendingReport[]>;
-    deleteById(id: number): Promise<void>;
+    claimPending(limit: number, workerId: string, leaseSeconds: number): Promise<PendingReport[]>;
+    markDelivered(id: number, workerId: string, deliveredMessageId: string | null): Promise<void>;
+    markFailed(id: number, workerId: string, error: string): Promise<void>;
 }
 
 export interface ChatMemoryRepository {

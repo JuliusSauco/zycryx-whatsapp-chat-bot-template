@@ -3,16 +3,20 @@ import {
     cleanExpiredChatMemories,
     cleanExpiredCommandResourceReservations,
     clearGroupExpiration,
-    deleteReport,
+    claimPendingReports,
     listExpiredGroups,
-    listPendingReports,
+    markReportDelivered,
+    markReportFailed,
     updateBankLoanStatuses,
 } from '../services/runtime-tasks.service.js';
 import {logDebug, logError, logInfo} from '../lib/logger.js';
 import {pickRandom} from '../utils/random.js';
 import {getMainConnection} from './runtime-state.js';
+import {hostname} from 'node:os';
 
 let started = false;
+const timers = new Set<NodeJS.Timeout>();
+const reportWorkerId = `${hostname()}:${process.pid}:reports`;
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -20,11 +24,33 @@ export function startScheduledTasks(): void {
     if (started) return;
     started = true;
 
-    setInterval(handleExpiredGroups, 60_000).unref?.();
-    setInterval(forwardPendingReports, 120_000).unref?.();
-    setInterval(cleanExpiredChatMemory, 300_000).unref?.();
-    setInterval(cleanExpiredResourceReservations, 300_000).unref?.();
-    setInterval(refreshLoans, 300_000).unref?.();
+    scheduleNonOverlapping('expired-groups', 60_000, handleExpiredGroups);
+    scheduleNonOverlapping('pending-reports', 120_000, forwardPendingReports);
+    scheduleNonOverlapping('chat-memory', 300_000, cleanExpiredChatMemory);
+    scheduleNonOverlapping('resource-reservations', 300_000, cleanExpiredResourceReservations);
+    scheduleNonOverlapping('loan-status', 300_000, refreshLoans);
+}
+
+export function stopScheduledTasks(): void {
+    for (const timer of timers) clearInterval(timer);
+    timers.clear();
+    started = false;
+}
+
+function scheduleNonOverlapping(name: string, intervalMs: number, task: () => Promise<void>): void {
+    let running = false;
+    const timer = setInterval(() => {
+        if (running) {
+            logDebug(`[SCHEDULER] Se omitió ${name}: la ejecución anterior sigue activa.`);
+            return;
+        }
+        running = true;
+        void task().catch(error => logError(`[SCHEDULER] Error en ${name}:`, error)).finally(() => {
+            running = false;
+        });
+    }, intervalMs);
+    timer.unref?.();
+    timers.add(timer);
 }
 
 async function refreshLoans(): Promise<void> {
@@ -88,15 +114,21 @@ async function forwardPendingReports(): Promise<void> {
             return;
         }
 
-        const rows = await listPendingReports(10);
+        const rows = await claimPendingReports(10, reportWorkerId, 120);
         if (!rows.length) return;
 
         for (const row of rows) {
-            const header = row.tipo === 'sugerencia' ? '*SUGERENCIA*' : '*REPORTE*';
-            const label = row.tipo === 'sugerencia' ? '*Sugerencia:*' : '*Mensaje:*';
-            const txt = `${header}\n\n*Usuario:* wa.me/${row.sender_id.split('@')[0]}\n${label} ${row.mensaje}`;
-            await conn.sendMessage(modGroupId, {text: txt});
-            await deleteReport(row.id);
+            try {
+                const header = row.tipo === 'sugerencia' ? '*SUGERENCIA*' : '*REPORTE*';
+                const label = row.tipo === 'sugerencia' ? '*Sugerencia:*' : '*Mensaje:*';
+                const txt = `${header}\n\n*Usuario:* wa.me/${row.sender_id.split('@')[0]}\n${label} ${row.mensaje}`;
+                const sent = await conn.sendMessage(modGroupId, {text: txt});
+                await markReportDelivered(row.id, reportWorkerId, sent?.key?.id ?? null);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                await markReportFailed(row.id, reportWorkerId, message);
+                logError(`[REPORT] Falló entrega ${row.id}, intento ${row.attempt_count ?? 1}:`, error);
+            }
         }
     } catch (err) {
         logError('[REPORT/SUGGE SYSTEM ERROR]', err);

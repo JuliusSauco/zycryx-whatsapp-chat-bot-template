@@ -1,5 +1,5 @@
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
-import yts from 'yt-search';
+import {searchYouTubeVideos} from '../../providers/youtube-search.provider.js';
 
 export default defineSdkPlugin({
     help: ['playlist', 'yts'],
@@ -11,7 +11,7 @@ export default defineSdkPlugin({
         command: sdk.usedPrefix + sdk.command
     });
     await sdk.reply.react('📀');
-    const result = await yts(sdk.text);
+    const result = await searchYouTubeVideos(sdk.text, 15);
     const ytres = result.videos;
     if (!ytres.length) return sdk.reply.message('downloads.playlist.noResults');
     let textoo = sdk.content.renderMessage('downloads.playlist.header', {query: sdk.text});

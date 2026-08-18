@@ -1,0 +1,27 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false,
+    "rootDir": "."
+  },
+  "include": [
+    "src/**/*.ts",
+    "tests/database-normalization.test.ts",
+    "tests/baileys-auth-state.integration.test.ts",
+    "tests/baileys-message-cache.test.ts",
+    "tests/report-outbox.integration.test.ts",
+    "tests/message-task-queue.test.ts",
+    "tests/reconnect-coordinator.test.ts",
+    "tests/secret-crypto.test.ts",
+    "scripts/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tmp",
+    "media",
+    "BotSession",
+    "jadibot"
+  ]
+}

@@ -1142,7 +1142,7 @@ const amdl = {
         'User-Agent': 'Postify/1.0.0',
     },
     jar: new CookieJar(),
-    client: wrapper(axios.create({jar: new CookieJar()} as unknown as Parameters<typeof axios.create>[0])),
+    client: wrapper(axios.create({jar: new CookieJar()} as unknown as Parameters<typeof axios.create>[0]) as unknown as Parameters<typeof wrapper>[0]),
 
     ytRegex: /^((?:https?:)?\/\/)?((?:www|m|music)\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(?:embed\/)?(?:v\/)?(?:shorts\/)?([a-zA-Z0-9_-]{11})/,
 

@@ -1,6 +1,8 @@
 import {getPrivateWarn, setPrivateWarn} from '../../services/user.service.js'
 import type {BeforePluginContext} from '../../types/context.js'
 import type {BotMessage} from '../../types/message.js'
+
+export const beforePolicy = {phase: 'security', priority: 110, failurePolicy: 'fail-closed'} as const
 import {content} from '../../services/content.service.js'
 import {pickRandom} from '../../utils/random.js'
 

@@ -1,4 +1,3 @@
-import fg from 'api-dylux';
 import cheerio from 'cheerio';
 import {httpJson, httpText} from '../../lib/http-client.js';
 import {DEFAULT_PROVIDER_TIMEOUT_MS, LONG_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
@@ -58,13 +57,6 @@ export function buildTikTokDownloadProviders(videoUrl: string): ProviderCandidat
             run: async () => {
                 const response = await httpJson<{data?: {media?: {org?: string}}}>(`https://api.dorratz.com/v2/tiktok-dl?url=${encodeURIComponent(videoUrl)}`);
                 return response.data?.media?.org;
-            },
-        },
-        {
-            name: 'api-dylux-tiktok',
-            run: async () => {
-                const data = await fg.tiktok(videoUrl) as {nowm?: string};
-                return data.nowm;
             },
         },
     ], {timeoutMs: DEFAULT_PROVIDER_TIMEOUT_MS, retries: 1});

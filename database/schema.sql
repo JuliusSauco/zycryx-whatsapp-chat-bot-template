@@ -29,6 +29,10 @@ CREATE SCHEMA "bot_identity";
 
 CREATE SCHEMA "bot_runtime";
 
+CREATE SCHEMA "bot_security";
+
+CREATE SCHEMA "bot_sessions";
+
 CREATE TABLE "bot_economy"."account_balances" (
 	"account_id" uuid NOT NULL,
 	"resource_code" text NOT NULL,
@@ -38,9 +42,63 @@ CREATE TABLE "bot_economy"."account_balances" (
 	CONSTRAINT "account_balances_non_negative" CHECK ("bot_economy"."account_balances"."balance" >= 0)
 );
 
-CREATE TABLE "bot_runtime"."api_tokens" (
+CREATE TABLE "bot_security"."encryption_key_versions" (
+	"version" integer PRIMARY KEY NOT NULL,
+	"algorithm" text DEFAULT 'aes-256-gcm' NOT NULL,
+	"kdf" text DEFAULT 'raw-key' NOT NULL,
+	"active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"retired_at" timestamp with time zone,
+	CONSTRAINT "encryption_key_versions_version_positive" CHECK ("bot_security"."encryption_key_versions"."version" > 0),
+	CONSTRAINT "encryption_key_versions_algorithm_check" CHECK ("bot_security"."encryption_key_versions"."algorithm" = 'aes-256-gcm'),
+	CONSTRAINT "encryption_key_versions_kdf_check" CHECK ("bot_security"."encryption_key_versions"."kdf" in ('raw-key', 'argon2id'))
+);
+
+CREATE TABLE "bot_security"."encrypted_secrets" (
 	"name" text PRIMARY KEY NOT NULL,
-	"token_b64" text NOT NULL
+	"purpose" text DEFAULT 'api-token' NOT NULL,
+	"key_version" integer NOT NULL REFERENCES "bot_security"."encryption_key_versions"("version"),
+	"ciphertext" bytea NOT NULL,
+	"iv" bytea NOT NULL,
+	"auth_tag" bytea NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE "bot_sessions"."auth_sessions" (
+	"id" text PRIMARY KEY NOT NULL,
+	"session_type" text NOT NULL,
+	"owner_id" text,
+	"bot_jid" text,
+	"status" text DEFAULT 'active' NOT NULL,
+	"lease_owner" text,
+	"lease_expires_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"last_connected_at" timestamp with time zone,
+	CONSTRAINT "auth_sessions_type_check" CHECK ("bot_sessions"."auth_sessions"."session_type" in ('main', 'subbot')),
+	CONSTRAINT "auth_sessions_status_check" CHECK ("bot_sessions"."auth_sessions"."status" in ('active', 'logged_out', 'revoked', 'error'))
+);
+
+CREATE TABLE "bot_sessions"."auth_credentials" (
+	"session_id" text PRIMARY KEY NOT NULL REFERENCES "bot_sessions"."auth_sessions"("id") ON DELETE cascade,
+	"key_version" integer NOT NULL REFERENCES "bot_security"."encryption_key_versions"("version"),
+	"ciphertext" bytea NOT NULL,
+	"iv" bytea NOT NULL,
+	"auth_tag" bytea NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE "bot_sessions"."signal_keys" (
+	"session_id" text NOT NULL REFERENCES "bot_sessions"."auth_sessions"("id") ON DELETE cascade,
+	"key_type" text NOT NULL,
+	"key_id" text NOT NULL,
+	"key_version" integer NOT NULL REFERENCES "bot_security"."encryption_key_versions"("version"),
+	"ciphertext" bytea NOT NULL,
+	"iv" bytea NOT NULL,
+	"auth_tag" bytea NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "signal_keys_session_id_key_type_key_id_pk" PRIMARY KEY("session_id", "key_type", "key_id")
 );
 
 CREATE TABLE "bot_content"."audio_response_assets" (
@@ -398,8 +456,23 @@ CREATE TABLE "bot_runtime"."reports" (
 	"sender_name" text,
 	"mensaje" text NOT NULL,
 	"fecha" timestamp with time zone DEFAULT now() NOT NULL,
-	"enviado" boolean DEFAULT false NOT NULL,
 	"tipo" text DEFAULT 'reporte' NOT NULL
+);
+
+CREATE TABLE "bot_runtime"."report_deliveries" (
+	"report_id" integer PRIMARY KEY NOT NULL,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"attempt_count" integer DEFAULT 0 NOT NULL,
+	"next_attempt_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"locked_by" text,
+	"locked_until" timestamp with time zone,
+	"last_error" text,
+	"delivered_message_id" text,
+	"sent_at" timestamp with time zone,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "report_deliveries_report_id_reports_id_fk" FOREIGN KEY ("report_id") REFERENCES "bot_runtime"."reports"("id") ON DELETE cascade,
+	CONSTRAINT "report_deliveries_status_check" CHECK ("status" in ('pending', 'processing', 'sent', 'dead')),
+	CONSTRAINT "report_deliveries_attempt_non_negative" CHECK ("attempt_count" >= 0)
 );
 
 CREATE TABLE "bot_runtime"."stats" (
@@ -603,6 +676,11 @@ ALTER TABLE "bot_identity"."user_robbery_states" ADD CONSTRAINT "user_robbery_st
 ALTER TABLE "bot_identity"."user_sticker_preferences" ADD CONSTRAINT "user_sticker_preferences_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_identity"."user_warnings" ADD CONSTRAINT "user_warnings_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
 CREATE UNIQUE INDEX "audio_response_assets_response_position_uidx" ON "bot_content"."audio_response_assets" USING btree ("response_id","position");
+CREATE INDEX "auth_sessions_type_status_idx" ON "bot_sessions"."auth_sessions" USING btree ("session_type","status");
+CREATE INDEX "auth_sessions_lease_idx" ON "bot_sessions"."auth_sessions" USING btree ("lease_expires_at");
+CREATE INDEX "signal_keys_session_type_idx" ON "bot_sessions"."signal_keys" USING btree ("session_id","key_type");
+CREATE INDEX "report_deliveries_pending_idx" ON "bot_runtime"."report_deliveries" USING btree ("status","next_attempt_at");
+CREATE INDEX "report_deliveries_lock_idx" ON "bot_runtime"."report_deliveries" USING btree ("locked_until");
 CREATE UNIQUE INDEX "audio_responses_scope_phrase_uidx" ON "bot_content"."audio_responses" USING btree ("scope","phrase");
 CREATE INDEX "bank_loan_payments_loan_created_at_idx" ON "bot_economy"."bank_loan_payments" USING btree ("loan_id","created_at");
 CREATE INDEX "bank_loans_user_status_idx" ON "bot_economy"."bank_loans" USING btree ("user_id","status");
@@ -707,7 +785,7 @@ BEGIN
         WHERE column_name = 'updated_at'
           AND table_schema = ANY (ARRAY[
               'bot_identity', 'bot_economy', 'bot_groups', 'bot_runtime',
-              'bot_content', 'bot_ai', 'bot_audit'
+              'bot_content', 'bot_ai', 'bot_audit', 'bot_security', 'bot_sessions'
           ])
     LOOP
         EXECUTE format(
@@ -723,10 +801,12 @@ $$;
 COMMENT ON SCHEMA bot_identity IS 'Canonical users, identities, registration, progression and relationships.';
 COMMENT ON SCHEMA bot_economy IS 'Resource catalog, accounts, balances, immutable financial operations and ledger.';
 COMMENT ON SCHEMA bot_groups IS 'Chats, group configuration modules, roles and aggregate activity.';
-COMMENT ON SCHEMA bot_runtime IS 'Bot instances, memberships, operational reports, counters and protected tokens.';
+COMMENT ON SCHEMA bot_runtime IS 'Bot instances, memberships, operational reports and counters.';
 COMMENT ON SCHEMA bot_content IS 'Characters, ownership, market history and audio-response assets.';
 COMMENT ON SCHEMA bot_ai IS 'Normalized AI chat sessions and ordered messages.';
 COMMENT ON SCHEMA bot_audit IS 'Append-oriented message audit records.';
+COMMENT ON SCHEMA bot_security IS 'Encrypted application secrets and non-secret encryption key metadata.';
+COMMENT ON SCHEMA bot_sessions IS 'Encrypted Baileys credentials and normalized Signal key material.';
 
 -- Custom schemas are private by default. Direct PostgreSQL owner connections still work.
 DO $$
@@ -736,7 +816,7 @@ DECLARE
 BEGIN
     FOREACH schema_name IN ARRAY ARRAY[
         'bot_identity', 'bot_economy', 'bot_groups', 'bot_runtime',
-        'bot_content', 'bot_ai', 'bot_audit'
+        'bot_content', 'bot_ai', 'bot_audit', 'bot_security', 'bot_sessions'
     ]
     LOOP
         EXECUTE format('REVOKE ALL ON SCHEMA %I FROM PUBLIC', schema_name);
@@ -765,7 +845,7 @@ BEGIN
         FROM pg_tables
         WHERE schemaname = ANY (ARRAY[
             'bot_identity', 'bot_economy', 'bot_groups', 'bot_runtime',
-            'bot_content', 'bot_ai', 'bot_audit'
+            'bot_content', 'bot_ai', 'bot_audit', 'bot_security', 'bot_sessions'
         ])
     LOOP
         EXECUTE format(

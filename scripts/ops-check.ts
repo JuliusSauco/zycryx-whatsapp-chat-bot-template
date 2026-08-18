@@ -83,6 +83,23 @@ function checkEnv(): void {
     if (hasValue('BOT_FIXED_OWNER_JIDS')) {
         add('warn', 'BOT_FIXED_OWNER_JIDS', 'obsoleto; mueve sus valores a BOT_OWNER_NUMBERS');
     }
+
+    const authSource = process.env.BAILEYS_AUTH_STATE_SOURCE || 'database';
+    if (authSource === 'database') {
+        const hasRawKey = hasValue('BOT_SECRETS_MASTER_KEY_B64') || hasValue('BOT_SECRETS_KEYRING_JSON');
+        const hasPassphrase = hasValue('BOT_SECRETS_PASSPHRASE') && hasValue('BOT_SECRETS_KDF_SALT_B64');
+        add(
+            hasRawKey || hasPassphrase ? 'ok' : 'fail',
+            'Cifrado de sesiones',
+            hasRawKey || hasPassphrase
+                ? 'clave/keyring configurado para sesiones en PostgreSQL'
+                : 'falta BOT_SECRETS_MASTER_KEY_B64, keyring o el par passphrase/salt',
+        );
+    } else if (authSource === 'files') {
+        add('warn', 'Sesiones Baileys', 'modo files habilitado; úsalo sólo para compatibilidad temporal');
+    } else {
+        add('fail', 'BAILEYS_AUTH_STATE_SOURCE', `${authSource}; valores válidos: database o files`);
+    }
 }
 
 function checkDatabase(): void {
@@ -144,12 +161,17 @@ function checkRuntimeFiles(): void {
     const distIndex = path.resolve(process.cwd(), 'dist/core/index.js');
     add(fs.existsSync(distIndex) ? 'ok' : 'warn', 'Build', fs.existsSync(distIndex) ? 'dist/core/index.js existe' : 'no existe dist/core/index.js; ejecuta npm run build');
 
+    const authSource = process.env.BAILEYS_AUTH_STATE_SOURCE || 'database';
     const sessionDir = path.resolve(process.cwd(), 'BotSession');
     const creds = path.join(sessionDir, 'creds.json');
-    if (fs.existsSync(creds)) {
-        add('ok', 'Sesion principal', 'BotSession/creds.json existe');
+    if (authSource === 'database') {
+        add('ok', 'Sesion principal', fs.existsSync(creds)
+            ? 'PostgreSQL activo; BotSession/ será importado si la sesión aún no existe'
+            : 'PostgreSQL activo; el estado se verifica al abrir la conexión');
+    } else if (fs.existsSync(creds)) {
+        add('ok', 'Sesion principal', 'BotSession/creds.json existe (modo files)');
     } else if (fs.existsSync(sessionDir)) {
-        add('warn', 'Sesion principal', 'BotSession existe pero falta creds.json');
+        add('warn', 'Sesion principal', 'BotSession existe pero falta creds.json (modo files)');
     } else {
         add('warn', 'Sesion principal', 'no vinculada aun; primer arranque sera interactivo');
     }

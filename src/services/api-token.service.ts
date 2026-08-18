@@ -8,10 +8,7 @@ export async function getDecodedApiToken(name: string): Promise<string | null> {
 
     let token: string | null = null;
     try {
-        const tokenB64 = await repositories.apiTokens.findTokenB64(name);
-        if (tokenB64) {
-            token = Buffer.from(tokenB64, 'base64').toString('utf8').trim();
-        }
+        token = await repositories.apiTokens.findToken(name);
     } catch (e: unknown) {
         const message = e instanceof Error ? e.message : String(e);
         logError(`[API_TOKEN] error leyendo token '${name}':`, message);
@@ -19,6 +16,12 @@ export async function getDecodedApiToken(name: string): Promise<string | null> {
 
     tokenCache.set(name, token);
     return token;
+}
+
+export async function setEncryptedApiToken(name: string, token: string): Promise<void> {
+    if (!name.trim() || !token.trim()) throw new Error('El nombre y el token son obligatorios.');
+    await repositories.apiTokens.upsertToken(name.trim(), token.trim());
+    invalidateApiTokenCache(name.trim());
 }
 
 export function invalidateApiTokenCache(name?: string): void {

@@ -5,7 +5,7 @@ import {logInfo} from '../lib/logger.js';
 const {Client} = pg;
 const REQUIRED_SCHEMAS = [
     'bot_identity', 'bot_economy', 'bot_groups', 'bot_runtime',
-    'bot_content', 'bot_ai', 'bot_audit',
+    'bot_content', 'bot_ai', 'bot_audit', 'bot_security', 'bot_sessions',
 ] as const;
 
 const client = new Client(ENV.DATABASE_URL

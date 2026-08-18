@@ -6,7 +6,7 @@ La regla general del proyecto es usar `src/lib/http-client.ts` para peticiones H
 
 - `src/lib/scraper.ts`: mantiene `axios` porque algunas integraciones requieren `axios-cookiejar-support`, `CookieJar`, sesiones con cookies, parametros avanzados de scraping y polling de progreso.
 - `src/lib/ezgif-convert.ts`: mantiene `axios` porque depende de multipart avanzado, redirecciones y detalles de respuesta que no quedan cubiertos de forma simple por el wrapper actual.
-- `src/lib/http-client.ts`: usa `node-fetch` internamente como implementacion centralizada.
+- `src/lib/http-client.ts`: usa Fetch nativo de Node 24 como implementacion centralizada.
 
 ## Criterio para nuevas excepciones
 
