@@ -12,10 +12,12 @@ export default defineSdkPlugin({
     async execute(_m, {command, sdk}) {
         const suffix = command.match(/(\d+)$/)?.[1];
         const page = suffix ? Number(suffix) : 1;
-        if (!Number.isSafeInteger(page) || page < 1) return sdk.reply.message('store.raffleInvalidPage');
+        if (!Number.isSafeInteger(page) || page < 1) return sdk.reply.message('store.raffleInvalidPage', {prefix: sdk.usedPrefix});
         const result = await listAvailableRaffleTickets(page);
         if (!result.totalItems) return sdk.reply.message('store.raffleListEmpty');
-        if (!result.items.length || page > result.totalPages) return sdk.reply.message('store.raffleInvalidPage');
+        if (!result.items.length || page > result.totalPages) {
+            return sdk.reply.message('store.raffleInvalidPage', {prefix: sdk.usedPrefix});
+        }
         const mentions = result.items.map(item => item.buyerId);
         const rows = result.items.map(item => sdk.content.renderMessage('store.raffleListItem', {
             user: item.buyerId.split('@')[0], quantity: item.quantity,

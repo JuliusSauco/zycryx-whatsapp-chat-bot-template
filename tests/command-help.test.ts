@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {definePlugin} from '../src/core/define-plugin.js';
-import {buildInlineHelpQuery, isInlineHelpRequest, renderCommandHelp} from '../src/services/command-help.service.js';
+import {
+    appendCommandInfoHint, buildInlineHelpQuery, isInlineHelpRequest, looksLikeUsageError, renderCommandHelp,
+} from '../src/services/command-help.service.js';
 
 const playHelp = renderCommandHelp({query: 'play', usedPrefix: '.'});
 assert.match(playHelp, /^🎵 \*play\*/);
@@ -38,8 +40,20 @@ assert.match(fallbackHelp, /^🎮 \*volado\*/);
 assert.match(fallbackHelp, /\*Uso:\* \/volado <cantidad>/);
 
 assert.equal(isInlineHelpRequest(['song', '--help']), true);
+assert.equal(isInlineHelpRequest(['song', '--info']), true);
 assert.equal(isInlineHelpRequest(['song']), false);
 assert.equal(buildInlineHelpQuery('enable', 'bot --help'), 'enable bot');
+assert.equal(buildInlineHelpQuery('store', '--info'), 'store');
 assert.match(renderCommandHelp({query: '', usedPrefix: '.'}), /^📚 \*Ayuda\*/);
+assert.equal(looksLikeUsageError('⚠️ Uso: .store buy ticket 1'), true);
+assert.equal(looksLikeUsageError('⚠️ No tienes Coins suficientes.'), false);
+assert.equal(
+    appendCommandInfoHint('⚠️ Ingresa una cantidad válida.', '.', 'buy'),
+    '⚠️ Ingresa una cantidad válida.\n\n📚 *Guía completa:* .buy --info',
+);
+assert.equal(
+    appendCommandInfoHint('⚠️ Usa .buy --info para aprender.', '.', 'buy'),
+    '⚠️ Usa .buy --info para aprender.',
+);
 
 console.log('command-help.test.ts OK');

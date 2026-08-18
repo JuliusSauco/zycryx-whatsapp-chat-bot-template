@@ -12,7 +12,9 @@ import {trackGroupMessageLog, trackMessageCount} from './message-log.js';
 import {logPerfIfSlow, markPerf, type PerfDetail, type PerfMarks} from './performance-logger.js';
 import {router} from './router.js';
 import {runGuards} from '../guards/index.js';
-import {buildInlineHelpQuery, isInlineHelpRequest, renderCommandHelp} from '../services/command-help.service.js';
+import {
+    appendCommandInfoHint, buildInlineHelpQuery, isInlineHelpRequest, renderCommandHelp,
+} from '../services/command-help.service.js';
 import {cleanJid, isUserJid, jidToPhone, resolveSenderInfo} from '../utils/jid.js';
 import {isBlockedPhoneNumber, MESSAGE_DEDUP_TTL} from '../utils/constants.js';
 import {
@@ -140,6 +142,9 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
     // 10. Route command
     const plugin = router.resolve(parsed.command, parsed.originalText, !!parsed.usedPrefix);
     if (!plugin) {
+        if (parsed.usedPrefix && parsed.command) {
+            await m.reply(renderCommandHelp({query: parsed.command, usedPrefix: parsed.usedPrefix}));
+        }
         logPerfIfSlow(marks, perfStart, parsed.command || 'no-command', chatId, perfDetails);
         return;
     }
@@ -205,6 +210,13 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
 
         const controller = new AbortController();
         const unlinkShutdown = linkToApplicationShutdown(controller);
+        const originalReply = m.reply;
+        m.reply = (message, options, sendOptions) => originalReply.call(
+            m,
+            appendCommandInfoHint(message, parsed.usedPrefix, parsed.command),
+            options,
+            sendOptions,
+        );
         try {
             await executePluginWithTimeout({
                 plugin,
@@ -234,6 +246,7 @@ export async function handler(conn: ExtendedConn, m: BotMessage) {
                 }),
             });
         } finally {
+            m.reply = originalReply;
             unlinkShutdown();
         }
         if (resourceReservation) {

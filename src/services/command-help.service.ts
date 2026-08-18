@@ -6,7 +6,8 @@ import {
     type CommandCatalogEntry,
 } from './command-catalog.service.js';
 
-const HELP_FLAGS = new Set(['--help', '-h', 'help', 'ayuda']);
+const HELP_FLAGS = new Set(['--info', '--help', '-h', 'help', 'ayuda']);
+const USAGE_ERROR_MARKERS = /\b(?:uso|usa|utiliza|ingresa|escribe|formato|sintaxis|cantidad válida|opción válida|recurso válido|comando inválido|parámetro|no válido|no válida)\b/iu;
 
 export interface CommandHelpOptions {
     query: string;
@@ -15,7 +16,19 @@ export interface CommandHelpOptions {
 }
 
 export function isInlineHelpRequest(args: string[]): boolean {
-    return args.some(arg => arg.toLowerCase() === '--help' || arg.toLowerCase() === '-h');
+    return args.some(arg => ['--info', '--help', '-h'].includes(arg.toLowerCase()));
+}
+
+/** Añade una ruta uniforme a la guía cuando el plugin informa un error claro de sintaxis. */
+export function appendCommandInfoHint(message: string, usedPrefix: string, command: string): string {
+    if (!looksLikeUsageError(message) || /(?:^|\s)--info(?:\s|$)/i.test(message)) return message;
+    const prefix = usedPrefix || '#';
+    return `${message.trim()}\n\n📚 *Guía completa:* ${prefix}${command} --info`;
+}
+
+export function looksLikeUsageError(message: string): boolean {
+    const normalized = message.trim();
+    return /^(?:⚠️|❌)/u.test(normalized) && USAGE_ERROR_MARKERS.test(normalized);
 }
 
 export function buildInlineHelpQuery(command: string, text: string): string {

@@ -185,3 +185,9 @@ if (!result.acquired) return sdk.reply.userError('Ya tienes una solicitud en pro
 No crees locks dentro de `execute` con `createUserRequestLocks`; esa API queda solo para compatibilidad. Los costos `limit` y `money` son reservados por el handler y se confirman solo si `execute` completa.
 
 Los interceptores nuevos deben declarar fase, prioridad, mensajes a los que aplican y politica de fallo. Usa `fail-closed` solo para controles de seguridad; respuestas auxiliares y telemetria deben usar `fail-open` o `report-only`.
+
+## Ayuda uniforme con `--info`
+
+Todo comando registrado responde automáticamente a `<comando> --info` usando su entrada de `resources/data/commands.json` y, como respaldo, la propiedad `help` del plugin. No es necesario implementar una rama manual para `--info`.
+
+Los errores de sintaxis deben usar `sdk.reply.usage(...)` o comenzar con una indicación clara como `⚠️ Uso`, `⚠️ Usa` o `⚠️ Ingresa`; el pipeline añadirá automáticamente el enlace `<comando> --info`. Las validaciones de negocio —por ejemplo, saldo insuficiente o cooldown— no deben presentarse como errores de sintaxis.

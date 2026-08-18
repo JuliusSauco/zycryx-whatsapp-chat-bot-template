@@ -400,7 +400,7 @@
       "raffleListEmpty": "📭 No hay tickets pendientes para la próxima rifa.",
       "raffleList": "`🎟️ PARTICIPANTES DE LA RIFA`\n\n{rows}\n\n📊 Tickets totales: *{total}*\n📄 Página *{page}/{pages}*",
       "raffleListItem": "• @{user} — *{quantity} ticket(s)*",
-      "raffleInvalidPage": "⚠️ Esa página no existe."
+      "raffleInvalidPage": "⚠️ Página no válida. Usa *{prefix}listrifas1 --info* para consultar el formato."
     },
     "economy": {
       "shared": {
