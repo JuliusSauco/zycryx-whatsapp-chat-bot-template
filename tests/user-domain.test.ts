@@ -18,6 +18,7 @@ const baseUserRow: UserRow = {
     warnEstado: null,
     edad: null,
     gender: null,
+    nationality: null,
     birthday: null,
     level: null,
     role: null,
@@ -52,6 +53,7 @@ const baseUserRow: UserRow = {
     assert.equal(user.limite, 0);
     assert.equal(user.exp, 0);
     assert.equal(user.role, 'novato');
+    assert.equal(user.nationality, null);
     assert.equal(user.serial_number, null);
 }
 

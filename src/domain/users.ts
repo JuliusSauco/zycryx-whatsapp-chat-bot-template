@@ -101,6 +101,7 @@ export interface UserRecord {
     warnEstado: number;
     edad: number | null;
     gender: string | null;
+    nationality: string | null;
     birthday: string | null;
     coins: number;
     limite: number;
@@ -169,6 +170,7 @@ export interface CompleteRegistrationInput {
     nombre: string;
     edad: number;
     gender: string;
+    nationality: string | null;
     birthday: string | null;
     regTime: Date;
     serialNumber: string;

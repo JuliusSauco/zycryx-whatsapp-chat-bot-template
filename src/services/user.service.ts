@@ -118,8 +118,16 @@ export async function unregisterUser(userId: string): Promise<void> {
     await repositories.userRegistration.unregister(userId);
 }
 
+export async function setUserProfileName(userId: string, name: string): Promise<boolean> {
+    return repositories.userRegistration.setProfileName(userId, name);
+}
+
 export async function setUserGender(userId: string, gender: string): Promise<boolean> {
     return repositories.userRegistration.setGender(userId, gender);
+}
+
+export async function setUserNationality(userId: string, nationality: string | null): Promise<boolean> {
+    return repositories.userRegistration.setNationality(userId, nationality);
 }
 
 export async function setUserBirthday(userId: string, birthday: string | null): Promise<boolean> {

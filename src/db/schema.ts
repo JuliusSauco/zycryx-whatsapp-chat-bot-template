@@ -130,9 +130,14 @@ export const userIdentities = botIdentitySchema.table('user_identities', {
 export const userProfiles = botIdentitySchema.table('user_profiles', {
     userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
     gender: text('gender'),
+    nationality: text('nationality'),
     birthday: date('birthday'),
     updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
-});
+}, table => ({
+    genderCheck: check('user_profiles_gender_check', sql`${table.gender} IS NULL OR ${table.gender} in ('hombre', 'mujer', 'otro')`),
+    nationalityCheck: check('user_profiles_nationality_check', sql`${table.nationality} IS NULL OR char_length(btrim(${table.nationality})) BETWEEN 2 AND 64`),
+    birthdayCheck: check('user_profiles_birthday_check', sql`${table.birthday} IS NULL OR (${table.birthday} <= current_date AND ${table.birthday} >= DATE '1900-01-01')`),
+}));
 
 export const userRegistrations = botIdentitySchema.table('user_registrations', {
     userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),

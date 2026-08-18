@@ -142,7 +142,9 @@ export interface UserRepository {
     upsertRegisteredAdmin(input: UpsertRegisteredAdminInput): Promise<void>;
     completeRegistration(input: CompleteRegistrationInput): Promise<void>;
     unregister(userId: string): Promise<void>;
+    setProfileName(userId: string, name: string): Promise<boolean>;
     setGender(userId: string, gender: string): Promise<boolean>;
+    setNationality(userId: string, nationality: string | null): Promise<boolean>;
     setBirthday(userId: string, birthday: string | null): Promise<boolean>;
     countUsers(): Promise<{total: number; registered: number}>;
     findStickerSettings(userId: string): Promise<UserStickerSettings | null>;
@@ -366,7 +368,8 @@ export interface ApiTokenRepository {
 export type UserIdentityRepository = Pick<UserRepository,
     'findById' | 'findNameById' | 'upsertBasicUser' | 'setUserLid' | 'findNumberByLid'>;
 export type UserRegistrationRepository = Pick<UserRepository,
-    'upsertRegisteredAdmin' | 'completeRegistration' | 'unregister' | 'setGender' | 'setBirthday' | 'countUsers'>;
+    'upsertRegisteredAdmin' | 'completeRegistration' | 'unregister' | 'setProfileName' | 'setGender' |
+    'setNationality' | 'setBirthday' | 'countUsers'>;
 export type UserModerationRepository = Pick<UserRepository,
     'findBanInfo' | 'incrementBanNotice' | 'setBanStatus' | 'findWarnInfo' | 'incrementWarn' |
     'decrementWarn' | 'resetWarn' | 'listWarnedUsers' | 'listBannedUsers' | 'getPrivateWarn' | 'setPrivateWarn'>;

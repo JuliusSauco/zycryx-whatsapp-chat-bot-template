@@ -57,16 +57,18 @@ export default defineSdkPlugin({
         fetchBuffer: sdk.http.buffer,
         onFallback: reason => logWarn(`[RPG PROFILE] Imagen no disponible (${reason}); se intentara el siguiente fallback.`),
     })
-    const {limite, nombre, registered, edad, marry, gender, birthday, exp, role: levelRole, dailystreak, regTime} = user
+    const {limite, nombre, registered, edad, marry, gender, nationality, birthday, exp, role: levelRole, dailystreak, regTime} = user
     const level = user.level ?? 0
     const phone = formatPhoneNumber(mentionJid)
 
-    let nacionalidad = sdk.content.message('rpg.shared.unknownFemale')
-    try {
-        const country = await lookupCountry(phone)
-        if (country?.name) nacionalidad = `${country.name} ${country.emoji}`
-    } catch (_) {
-        logWarn('[RPG PROFILE] No se pudo resolver la nacionalidad; se usara el valor por defecto.')
+    let nacionalidad = nationality || sdk.content.message('rpg.shared.unknownFemale')
+    if (!nationality) {
+        try {
+            const country = await lookupCountry(phone)
+            if (country?.name) nacionalidad = `${country.name} ${country.emoji}`
+        } catch (_) {
+            logWarn('[RPG PROFILE] No se pudo resolver la nacionalidad; se usara el valor por defecto.')
+        }
     }
 
     let relacion = sdk.content.message('rpg.profile.noRelationship')

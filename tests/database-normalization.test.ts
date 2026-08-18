@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const schemaSource = readFileSync('src/db/schema.ts', 'utf8');
+const ensureSchemaSource = readFileSync('src/db/ensure-schema.ts', 'utf8');
 const sql = readFileSync('database/schema.sql', 'utf8');
 const expectedSchemas = [
     'bot_identity', 'bot_economy', 'bot_groups', 'bot_runtime',
@@ -48,6 +49,12 @@ assert.doesNotMatch(schemaSource, /\bjsonb\s*\(/i);
 assert.doesNotMatch(schemaSource, /\.array\s*\(\)/i);
 assert.doesNotMatch(schemaSource, /serial\s*\(/i);
 assert.doesNotMatch(sql, /CREATE TABLE "bot_runtime"\."api_tokens"/);
+assert.match(schemaSource, /nationality: text\('nationality'\)/);
+assert.match(schemaSource, /user_profiles_gender_check/);
+assert.match(schemaSource, /user_profiles_nationality_check/);
+assert.match(sql, /"nationality" text/);
+assert.match(sql, /user_profiles_birthday_check/);
+assert.match(ensureSchemaSource, /bot_identity\.user_profiles\.nationality/);
 assert.doesNotMatch(sql, /"token_b64"/);
 assert.match(sql, /"ciphertext" bytea NOT NULL/);
 assert.match(sql, /"auth_tag" bytea NOT NULL/);

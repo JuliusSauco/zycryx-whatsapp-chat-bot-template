@@ -33,6 +33,11 @@ const REQUIRED_INDEXES = [
     'bot_economy.raffle_tickets_status_purchased_idx',
     'bot_groups.group_daily_reminder_deliveries_day_status_idx',
 ] as const;
+const REQUIRED_COLUMNS = [
+    'bot_identity.user_profiles.gender',
+    'bot_identity.user_profiles.nationality',
+    'bot_identity.user_profiles.birthday',
+] as const;
 const client = new Client(ENV.DATABASE_URL
     ? {connectionString: ENV.DATABASE_URL}
     : {
@@ -73,6 +78,16 @@ try {
         !relationResult.rows.some(row => row.relation === required));
     if (missingRelations.length) throw new Error(`Faltan tablas críticas: ${missingRelations.join(', ')}.`);
 
+    const columnResult = await client.query<{qualifiedColumn: string}>(
+        `SELECT table_schema || '.' || table_name || '.' || column_name AS "qualifiedColumn"
+         FROM information_schema.columns
+         WHERE table_schema || '.' || table_name || '.' || column_name = ANY($1::text[])`,
+        [REQUIRED_COLUMNS],
+    );
+    const presentColumns = new Set(columnResult.rows.map(row => row.qualifiedColumn));
+    const missingColumns = REQUIRED_COLUMNS.filter(column => !presentColumns.has(column));
+    if (missingColumns.length) throw new Error(`Faltan columnas críticas: ${missingColumns.join(', ')}.`);
+
     const indexResult = await client.query<{schemaName: string; indexName: string}>(
         `SELECT schemaname AS "schemaName", indexname AS "indexName"
          FROM pg_indexes WHERE (schemaname || '.' || indexname) = ANY($1::text[])`,
@@ -82,7 +97,7 @@ try {
     const missingIndexes = REQUIRED_INDEXES.filter(index => !presentIndexes.has(index));
     if (missingIndexes.length) throw new Error(`Faltan índices críticos: ${missingIndexes.join(', ')}.`);
 
-    logInfo(`[DB] PostgreSQL ${versionNumber}; ${REQUIRED_SCHEMAS.length} schemas, relaciones e índices críticos verificados.`);
+    logInfo(`[DB] PostgreSQL ${versionNumber}; schemas, relaciones, columnas e índices críticos verificados.`);
 } finally {
     await client.end();
 }

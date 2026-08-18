@@ -16,6 +16,7 @@ export type UserRecordRow = Pick<UserRow, 'id' | 'nombre'> & {
     warnEstado?: number | null;
     edad?: number | null;
     gender?: string | null;
+    nationality?: string | null;
     birthday?: string | null;
     level?: number | null;
     role?: string | null;
@@ -98,6 +99,7 @@ export function mapUserRecord(row: UserRecordRow): UserRecord {
         warnEstado: numberOrZero(row.warnEstado),
         edad: row.edad ?? null,
         gender: row.gender ?? null,
+        nationality: row.nationality ?? null,
         birthday: row.birthday ?? null,
         coins: numberOrZero(row.coins),
         limite: numberOrZero(row.limite),

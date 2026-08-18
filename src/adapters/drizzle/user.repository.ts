@@ -72,6 +72,7 @@ export const userRepository: UserRepository = {
             warnEstado: warningCount('status'),
             edad: sql<number | null>`CASE WHEN ${userProfiles.birthday} IS NULL THEN NULL ELSE EXTRACT(YEAR FROM age(current_date, ${userProfiles.birthday}))::int END`,
             gender: userProfiles.gender,
+            nationality: userProfiles.nationality,
             birthday: userProfiles.birthday,
             level: userProgress.level,
             role: userProgress.role,
@@ -152,7 +153,10 @@ export const userRepository: UserRepository = {
         await orm.transaction(async tx => {
             await tx.insert(usuarios).values({id, nombre}).onConflictDoUpdate({
                 target: usuarios.id,
-                set: {nombre: sql`CASE WHEN excluded.nombre IS NULL OR excluded.nombre = 'sin name' THEN ${usuarios.nombre} ELSE excluded.nombre END`, updatedAt: new Date()},
+                set: {nombre: sql`CASE
+                    WHEN EXISTS (SELECT 1 FROM ${userRegistrations} WHERE ${userRegistrations.userId} = ${usuarios.id}) THEN ${usuarios.nombre}
+                    WHEN excluded.nombre IS NULL OR excluded.nombre = 'sin name' THEN ${usuarios.nombre}
+                    ELSE excluded.nombre END`, updatedAt: new Date()},
             });
             if (num) await tx.insert(userIdentities).values({userId: id, identityType: 'phone', identityValue: num}).onConflictDoNothing();
             if (username !== undefined) await replaceIdentity(tx, id, 'username', username);
@@ -192,11 +196,11 @@ export const userRepository: UserRepository = {
         });
     },
 
-    async completeRegistration({id, nombre, gender, birthday, regTime, serialNumber}) {
+    async completeRegistration({id, nombre, gender, nationality, birthday, regTime, serialNumber}) {
         await orm.transaction(async tx => {
             await tx.insert(usuarios).values({id, nombre}).onConflictDoUpdate({target: usuarios.id, set: {nombre, updatedAt: new Date()}});
-            await tx.insert(userProfiles).values({userId: id, gender, birthday}).onConflictDoUpdate({
-                target: userProfiles.userId, set: {gender, birthday, updatedAt: new Date()},
+            await tx.insert(userProfiles).values({userId: id, gender, nationality, birthday}).onConflictDoUpdate({
+                target: userProfiles.userId, set: {gender, nationality, birthday, updatedAt: new Date()},
             });
             await tx.insert(userRegistrations).values({userId: id, serialNumber, registeredAt: regTime})
                 .onConflictDoUpdate({target: userRegistrations.userId, set: {serialNumber, registeredAt: regTime}});
@@ -243,9 +247,22 @@ export const userRepository: UserRepository = {
         });
     },
 
+    async setProfileName(userId, name) {
+        const [updated] = await orm.update(usuarios).set({nombre: name, updatedAt: new Date()})
+            .where(eq(usuarios.id, userId)).returning({id: usuarios.id});
+        return !!updated;
+    },
+
     async setGender(userId, gender) {
         const [updated] = await orm.insert(userProfiles).values({userId, gender}).onConflictDoUpdate({
             target: userProfiles.userId, set: {gender, updatedAt: new Date()},
+        }).returning({id: userProfiles.userId});
+        return !!updated;
+    },
+
+    async setNationality(userId, nationality) {
+        const [updated] = await orm.insert(userProfiles).values({userId, nationality}).onConflictDoUpdate({
+            target: userProfiles.userId, set: {nationality, updatedAt: new Date()},
         }).returning({id: userProfiles.userId});
         return !!updated;
     },
