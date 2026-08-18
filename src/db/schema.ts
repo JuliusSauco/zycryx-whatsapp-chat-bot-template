@@ -19,6 +19,30 @@ const encryptedBytes = customType<{data: Buffer; driverData: Buffer}>({
     dataType: () => 'bytea',
 });
 
+/** Raíz canónica de identidad y ciclo de vida para bot principal y subbots. */
+export const botInstances = botRuntimeSchema.table('bot_instances', {
+    id: text('id').primaryKey(),
+    instanceType: text('instance_type').notNull().default('subbot'),
+    botJid: text('bot_jid'),
+    status: text('status').notNull().default('active'),
+    name: text('name'),
+    logoUrl: text('logo_url'),
+    mode: text('mode').notNull().default('public'),
+    antiPrivate: boolean('anti_private').notNull().default(false),
+    antiCall: boolean('anti_call').notNull().default(true),
+    privacy: boolean('privacy').notNull().default(false),
+    prestar: boolean('prestar').notNull().default(false),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+    lastConnectedAt: timestamp('last_connected_at', {withTimezone: true}),
+}, table => ({
+    modeCheck: check('bot_instances_mode_check', sql`${table.mode} in ('public', 'private')`),
+    typeCheck: check('bot_instances_type_check', sql`${table.instanceType} in ('main', 'subbot')`),
+    statusCheck: check('bot_instances_status_check', sql`${table.status} in ('active', 'revoked', 'error')`),
+    typeStatusIdx: index('bot_instances_type_status_idx').on(table.instanceType, table.status),
+    botJidUnique: uniqueIndex('bot_instances_bot_jid_uidx').on(table.botJid),
+}));
+
 export const encryptionKeyVersions = botSecuritySchema.table('encryption_key_versions', {
     version: integer('version').primaryKey(),
     algorithm: text('algorithm').notNull().default('aes-256-gcm'),
@@ -30,10 +54,11 @@ export const encryptionKeyVersions = botSecuritySchema.table('encryption_key_ver
     versionPositive: check('encryption_key_versions_version_positive', sql`${table.version} > 0`),
     algorithmCheck: check('encryption_key_versions_algorithm_check', sql`${table.algorithm} = 'aes-256-gcm'`),
     kdfCheck: check('encryption_key_versions_kdf_check', sql`${table.kdf} in ('raw-key', 'argon2id')`),
+    retirementCheck: check('encryption_key_versions_retirement_check', sql`${table.active} = (${table.retiredAt} IS NULL)`),
 }));
 
 export const encryptedSecrets = botSecuritySchema.table('encrypted_secrets', {
-    name: text('name').primaryKey(),
+    name: text('name').notNull(),
     purpose: text('purpose').notNull().default('api-token'),
     keyVersion: integer('key_version').notNull().references(() => encryptionKeyVersions.version),
     ciphertext: encryptedBytes('ciphertext').notNull(),
@@ -41,28 +66,28 @@ export const encryptedSecrets = botSecuritySchema.table('encrypted_secrets', {
     authTag: encryptedBytes('auth_tag').notNull(),
     createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
-});
+}, table => ({
+    pk: primaryKey({name: 'encrypted_secrets_pkey', columns: [table.purpose, table.name]}),
+    purposeCheck: check('encrypted_secrets_purpose_check', sql`${table.purpose} in ('api-token', 'oauth-token', 'webhook-secret')`),
+}));
 
 export const baileysAuthSessions = botSessionsSchema.table('auth_sessions', {
-    id: text('id').primaryKey(),
-    sessionType: text('session_type').notNull(),
+    sessionId: text('session_id').primaryKey(),
+    botInstanceId: text('bot_instance_id').notNull()
+        .references(() => botInstances.id, {onDelete: 'cascade'}),
+    /** Compatibilidad temporal; la migración de owners queda fuera de esta etapa. */
     ownerId: text('owner_id'),
-    botJid: text('bot_jid'),
-    status: text('status').notNull().default('active'),
     leaseOwner: text('lease_owner'),
     leaseExpiresAt: timestamp('lease_expires_at', {withTimezone: true}),
     createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
-    lastConnectedAt: timestamp('last_connected_at', {withTimezone: true}),
 }, table => ({
-    typeCheck: check('auth_sessions_type_check', sql`${table.sessionType} in ('main', 'subbot')`),
-    statusCheck: check('auth_sessions_status_check', sql`${table.status} in ('active', 'logged_out', 'revoked', 'error')`),
-    typeStatusIdx: index('auth_sessions_type_status_idx').on(table.sessionType, table.status),
     leaseIdx: index('auth_sessions_lease_idx').on(table.leaseExpiresAt),
+    botInstanceUnique: uniqueIndex('auth_sessions_bot_instance_uidx').on(table.botInstanceId),
 }));
 
 export const baileysAuthCredentials = botSessionsSchema.table('auth_credentials', {
-    sessionId: text('session_id').primaryKey().references(() => baileysAuthSessions.id, {onDelete: 'cascade'}),
+    sessionId: text('session_id').primaryKey().references(() => baileysAuthSessions.sessionId, {onDelete: 'cascade'}),
     keyVersion: integer('key_version').notNull().references(() => encryptionKeyVersions.version),
     ciphertext: encryptedBytes('ciphertext').notNull(),
     iv: encryptedBytes('iv').notNull(),
@@ -71,7 +96,7 @@ export const baileysAuthCredentials = botSessionsSchema.table('auth_credentials'
 });
 
 export const baileysSignalKeys = botSessionsSchema.table('signal_keys', {
-    sessionId: text('session_id').notNull().references(() => baileysAuthSessions.id, {onDelete: 'cascade'}),
+    sessionId: text('session_id').notNull().references(() => baileysAuthSessions.sessionId, {onDelete: 'cascade'}),
     keyType: text('key_type').notNull(),
     keyId: text('key_id').notNull(),
     keyVersion: integer('key_version').notNull().references(() => encryptionKeyVersions.version),
@@ -360,7 +385,7 @@ export const groupSettings = botGroupsSchema.table('group_settings', {
     groupId: text('group_id').primaryKey(),
     banned: boolean('banned').notNull().default(false),
     expiresAt: timestamp('expires_at', {withTimezone: true}),
-    primaryBot: text('primary_bot'),
+    primaryBot: text('primary_bot').references(() => botInstances.id, {onDelete: 'set null'}),
     autoAcceptMode: text('autoaccept_mode').notNull().default('off'),
     botAccessMode: text('bot_access_mode').notNull().default('all'),
     messageLogging: boolean('message_logging').notNull().default(false),
@@ -369,6 +394,7 @@ export const groupSettings = botGroupsSchema.table('group_settings', {
 }, table => ({
     autoAcceptModeCheck: check('group_settings_autoaccept_mode_check', sql`${table.autoAcceptMode} in ('off', 'on', 'on_hidetag_admin', 'on_hidetag_all', 'off_hidetag_admin', 'off_hidetag_all')`),
     botAccessModeCheck: check('group_settings_bot_access_mode_check', sql`${table.botAccessMode} in ('all', 'admin', 'superadmin', 'owner')`),
+    primaryBotIdx: index('group_settings_primary_bot_idx').on(table.primaryBot),
 }));
 
 export const groupModerationSettings = botGroupsSchema.table('group_moderation_settings', {
@@ -505,19 +531,8 @@ export const messageLogs = botAuditSchema.table('message_logs', {
     userIdx: index('message_logs_user_idx').on(table.userId),
 }));
 
-export const subbots = botRuntimeSchema.table('subbots', {
-    id: text('id').primaryKey(),
-    tipo: text('tipo').notNull().default('null'),
-    name: text('name'),
-    logoUrl: text('logo_url'),
-    mode: text('mode').notNull().default('public'),
-    antiPrivate: boolean('anti_private').notNull().default(false),
-    antiCall: boolean('anti_call').notNull().default(true),
-    privacy: boolean('privacy').notNull().default(false),
-    prestar: boolean('prestar').notNull().default(false),
-}, table => ({
-    modeCheck: check('subbots_mode_check', sql`${table.mode} in ('public', 'private')`),
-}));
+/** @deprecated Nombre de dominio histórico; la tabla canónica es bot_instances. */
+export const subbots = botInstances;
 
 export const subbotPrefixes = botRuntimeSchema.table('subbot_prefixes', {
     botId: text('bot_id').notNull().references(() => subbots.id, {onDelete: 'cascade'}),

@@ -1,10 +1,7 @@
-import {logInfo, logWarn} from '../lib/logger.js';
-import {unwatchFile, watchFile} from 'fs'
-import chalk from 'chalk'
-import {fileURLToPath} from 'url'
+import {logWarn} from '../lib/logger.js';
+import {readFile} from 'node:fs/promises';
 import type {BotInfo} from '../types/config.js'
 import {ENV} from './env.js'
-import {getCachedBuffer} from '../lib/static-resource-cache.js';
 import {mergeOwnerNumbers} from '../utils/owner-numbers.js';
 
 const splitList = (value: string): string[] => value.split(',').map(v => v.trim()).filter(Boolean);
@@ -14,25 +11,18 @@ const legacyOwners = splitList(ENV.BOT_FIXED_OWNER_JIDS);
 if (legacyOwners.length) {
     logWarn('[DEPRECATION] BOT_FIXED_OWNER_JIDS ahora se interpreta como owner. Migra sus valores a BOT_OWNER_NUMBERS; la compatibilidad se retirará en una versión futura.');
 }
-const configuredOwners = mergeOwnerNumbers(ENV.BOT_OWNER_NUMBERS, ENV.BOT_FIXED_OWNER_JIDS);
+export const configuredOwners = mergeOwnerNumbers(ENV.BOT_OWNER_NUMBERS, ENV.BOT_FIXED_OWNER_JIDS);
 const menuImagePath = ENV.DEFAULT_MENU_IMAGE || './resources/media/menus/Menu2.jpg';
-const menuImage = getCachedBuffer(menuImagePath) || Buffer.alloc(0);
+let menuImageBuffer = Buffer.alloc(0);
 
-//owner
-global.owner = configuredOwners;
-
-//Información
-globalThis.info = {
+// Información inmutable del proceso; los consumidores la importan explícitamente.
+export const botInfo: Readonly<BotInfo> = Object.freeze({
     wm: ENV.BOT_DISPLAY_NAME,
     vs: "2.0.0",
     packname: ENV.BOT_PACKAGE_NAME,
     author: ENV.BOT_AUTHOR,
-    apis: ENV.API_BASE_URL,
-    apikey: ENV.API_KEY,
-    fgmods: {url: ENV.FGMODS_API_URL, key: ENV.FGMODS_API_KEY},
-    neoxr: {url: ENV.NEOXR_API_URL, key: ENV.NEOXR_API_KEY},
     img2: ENV.BOT_WEBSITE_URL || "https://telegra.ph/file/39fb047cdf23c790e0146.jpg",
-    img4: menuImage,
+    get img4() { return menuImageBuffer; },
     yt: ENV.BOT_YOUTUBE_URL,
     tiktok: ENV.BOT_TIKTOK_URL,
     md: ENV.BOT_REPOSITORY_URL,
@@ -46,13 +36,8 @@ globalThis.info = {
     nn6: groupLinks[5] || '',
     nna: channelLinks[0] || '',
     nna2: channelLinks[1] || ''
-} as BotInfo;
+});
 
-//----------------------------------------------------
-
-let file = fileURLToPath(import.meta.url)
-watchFile(file, () => {
-    unwatchFile(file)
-    logInfo(chalk.redBright("Update 'config.ts'"))
-    import(`${file}?update=${Date.now()}`)
-})
+export async function preloadConfigResources(): Promise<void> {
+    menuImageBuffer = await readFile(menuImagePath).catch(() => Buffer.alloc(0));
+}

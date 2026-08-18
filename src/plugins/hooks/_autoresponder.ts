@@ -1,4 +1,4 @@
-import {exoml} from '../../lib/scraper.js';
+import {exoml} from '../../providers/legacy-scrapers/ai.scraper.js';
 import {chatCompletion} from '../../lib/ai.js';
 import {logDebug, logError, logWarn} from '../../lib/logger.js';
 import {ensureSystemPrompt, getAiMemory, getAiPromptSettings, saveAiMemory} from '../../services/chat-memory.service.js';

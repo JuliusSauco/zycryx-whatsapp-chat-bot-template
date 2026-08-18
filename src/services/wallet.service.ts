@@ -22,11 +22,11 @@ export function isTransferableWalletResource(value: string): value is Transferab
 }
 
 export async function getWallet(userId: string): Promise<UserWallet | null> {
-    return repositories.users.findWallet(userId);
+    return repositories.userEconomy.findWallet(userId);
 }
 
 export async function listWallets(): Promise<UserWallet[]> {
-    return repositories.users.listWallets();
+    return repositories.userEconomy.listWallets();
 }
 
 export async function addWalletResource(
@@ -36,7 +36,7 @@ export async function addWalletResource(
     reason: WalletTransactionReason = 'other',
     operation?: string,
 ): Promise<number | null> {
-    return repositories.users.addWalletResource(userId, resource, amount, reason, operation);
+    return repositories.userEconomy.addWalletResource(userId, resource, amount, reason, operation);
 }
 
 export async function addWalletResourceAndSetWait(
@@ -47,7 +47,7 @@ export async function addWalletResourceAndSetWait(
     reason: WalletTransactionReason = 'other',
     operation?: string,
 ): Promise<number | null> {
-    return repositories.users.addWalletResourceAndSetWait(userId, resource, amount, wait, reason, operation);
+    return repositories.userEconomy.addWalletResourceAndSetWait(userId, resource, amount, wait, reason, operation);
 }
 
 export async function addWalletResourcesAndSetFields(input: {
@@ -57,7 +57,7 @@ export async function addWalletResourcesAndSetFields(input: {
     reason?: WalletTransactionReason;
     operation?: string;
 }): Promise<void> {
-    await repositories.users.addWalletResourcesAndSetFields({...input, reason: input.reason ?? 'other'});
+    await repositories.userEconomy.addWalletResourcesAndSetFields({...input, reason: input.reason ?? 'other'});
 }
 
 export async function exchangeWalletResources(input: {
@@ -69,7 +69,7 @@ export async function exchangeWalletResources(input: {
     reason?: WalletTransactionReason;
     operation?: string;
 }): Promise<boolean> {
-    return repositories.users.exchangeWalletResources({...input, reason: input.reason ?? 'other'});
+    return repositories.userEconomy.exchangeWalletResources({...input, reason: input.reason ?? 'other'});
 }
 
 export async function transferWalletResource(input: {
@@ -80,7 +80,7 @@ export async function transferWalletResource(input: {
     reason?: WalletTransactionReason;
     operation?: string;
 }): Promise<boolean> {
-    return repositories.users.transferWalletResource({
+    return repositories.userEconomy.transferWalletResource({
         ...input,
         reason: input.reason ?? 'transfer',
         operationId: randomUUID(),
@@ -88,13 +88,13 @@ export async function transferWalletResource(input: {
 }
 
 export function listWalletTransferHistory(userId: string, page: number, pageSize = 10): Promise<WalletTransferHistoryPage> {
-    return repositories.users.listWalletTransferHistory(userId, page, pageSize);
+    return repositories.userEconomy.listWalletTransferHistory(userId, page, pageSize);
 }
 
 export async function robExperience(input: RobExperienceInput): Promise<RobExperienceResult> {
-    return repositories.users.robExperience(input);
+    return repositories.userEconomy.robExperience(input);
 }
 
 export async function setUserLevelRole(userId: string, level: number, role: string): Promise<void> {
-    await repositories.users.setLevelRole(userId, level, role);
+    await repositories.userEconomy.setLevelRole(userId, level, role);
 }

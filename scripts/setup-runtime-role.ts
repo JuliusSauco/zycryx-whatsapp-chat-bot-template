@@ -73,7 +73,6 @@ try {
         }
     }
 
-    await client.query(`REVOKE ALL ON bot_runtime.schema_migrations FROM ${role}`).catch(() => undefined);
     await client.query('COMMIT');
     logInfo(`[DB] Rol runtime ${roleName} aprovisionado sobre ${tables.rowCount ?? 0} tablas.`);
 } catch (error) {

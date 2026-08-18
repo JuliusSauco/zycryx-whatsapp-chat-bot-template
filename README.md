@@ -143,7 +143,7 @@ En Supabase también puedes pegar el contenido completo del script en SQL Editor
 psql -U <user> -d <database> -f database/schema.sql
 ```
 
-Para una base existente ejecuta `npm run db:migrate` durante el despliegue. El arranque PM2 ejecuta `db:check`, que sólo valida versión y estructura; nunca altera la base.
+El despliegue ejecuta `db:check`, que sólo valida versión y estructura; nunca altera la base. Las bases nuevas se provisionan una sola vez con `db:setup`.
 
 Ejecuta en desarrollo:
 
@@ -191,6 +191,8 @@ BOT_GROUP_LINKS=
 BOT_CHANNEL_LINKS=
 BOT_OWNER_NUMBERS=573001112233,51999888777
 BOT_MOD_GROUP_ID=
+BOT_LINK_MODE=auto
+BOT_LINK_PHONE=
 DEFAULT_MENU_IMAGE=./resources/media/menus/Menu2.jpg
 
 LOG_LEVEL=command
@@ -288,9 +290,8 @@ BOT_OWNER_NUMBERS=573001112233,51999888777
 | `npm run ops:backup:db` | Backup solo de PostgreSQL con `pg_dump`. |
 | `npm run ops:backup:sessions` | Backup solo de sesiones y audios custom. |
 | `npm run db:setup` | Provisiona una base nueva desde `database/schema.sql`. |
-| `npm run db:migrate` | Aplica migraciones incrementales con checksum y advisory lock. |
 | `npm run db:setup-runtime-role` | Crea/actualiza un rol DML sin DDL y sus políticas RLS. |
-| `npm run db:check` | Valida PostgreSQL 18+ y los nueve schemas sin modificar datos. |
+| `npm run db:check` | Valida PostgreSQL 18+, schemas, relaciones e índices críticos sin modificar datos. |
 | `npm run db:studio` | Abre Drizzle Studio. |
 | `npm run secrets:set -- <nombre> <valor>` | Guarda o rota un secreto cifrado. |
 | `npm run secrets:migrate-legacy` | Migra y verifica `api_tokens` base64 antes de eliminarla. |
@@ -769,7 +770,6 @@ En Supabase puedes ejecutar el archivo completo desde SQL Editor. Para `db:setup
 Para evolucionar una instalación existente y luego comprobarla:
 
 ```bash
-npm run db:migrate
 npm run db:check
 npm run db:studio
 ```
@@ -906,7 +906,7 @@ Para ejecutar local desde build:
 npm run start:local
 ```
 
-En una instalación nueva ejecuta `npm run db:setup` una sola vez; en instalaciones existentes ejecuta `npm run db:migrate` y después `npm run db:check`.
+En una instalación nueva ejecuta `npm run db:setup` una sola vez. En instalaciones existentes usa `npm run db:check`; esta rama no ofrece upgrades incrementales sobre esquemas legacy.
 
 O si ya compilaste:
 
@@ -1036,7 +1036,7 @@ Resumen actual:
 - Registry de plugins validado y hot reload con rollback, debounce y desactivado en produccion.
 - Pipeline compatible con interceptores tipados, perfiles de timeout, `AbortSignal` y locks por namespace.
 - Build, typecheck y suite de pruebas pasan.
-- Base estrictamente normalizada en nueve schemas, con `schema.ts`, bootstrap y migraciones alineados para PostgreSQL 18/Supabase.
+- Base estrictamente normalizada en nueve schemas, con `schema.ts` y bootstrap alineados para PostgreSQL 18/Supabase.
 
 ## 🧭 Mejoras Pendientes Registradas
 

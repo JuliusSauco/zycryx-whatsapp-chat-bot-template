@@ -1,7 +1,8 @@
 import {logDebug, logError, logWarn} from './logger.js';
 import {ENV} from '../core/env.js';
+import {getApplicationShutdownSignal} from '../core/application-lifecycle.js';
 
-type BackgroundTask = () => Promise<void> | void;
+type BackgroundTask = (signal: AbortSignal) => Promise<void> | void;
 
 interface QueuedTask {
     label: string;
@@ -34,8 +35,14 @@ let lastWarnAt = 0;
 let droppedTasks = 0;
 let retriedTasks = 0;
 let failedTasks = 0;
+let acceptingTasks = true;
 
 export function enqueueBackgroundTask(label: string, task: BackgroundTask, options: BackgroundTaskOptions = {}): void {
+    if (!acceptingTasks) {
+        droppedTasks++;
+        logWarn(`⚠️ Tarea background rechazada durante cierre: ${label}`);
+        return;
+    }
     if (options.key) {
         const existing = queue.find(item => item.key === options.key);
         if (existing) {
@@ -86,6 +93,10 @@ export function getBackgroundTaskQueueStats(): {
     };
 }
 
+export function stopBackgroundTaskIntake(): void {
+    acceptingTasks = false;
+}
+
 function scheduleDrain(delayMs = 0): void {
     if (drainScheduled) return;
     drainScheduled = setTimeout(drainQueue, delayMs);
@@ -109,7 +120,7 @@ function drainQueue(): void {
         activeTasks++;
         let succeeded = false;
         Promise.resolve()
-            .then(item.task)
+            .then(() => item.task(getApplicationShutdownSignal()))
             .then(() => { succeeded = true; })
             .catch((err: unknown) => {
                 if (item.retries < item.maxRetries) {

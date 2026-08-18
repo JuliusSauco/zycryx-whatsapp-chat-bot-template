@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {canLevelUp} from '../../lib/levelling.js'
 import {getWallet, setUserLevelRole} from '../../services/wallet.service.js'
 import type {BeforePluginContext} from '../../types/context.js'
@@ -64,7 +65,7 @@ export async function applyAutoLevelUp(
                     title: branding.watermark,
                     body: content.message('hooks.autoLevelUp.adBody'),
                     thumbnail: m.pp,
-                    sourceUrl: info.md
+                    sourceUrl: botInfo.md
                 }
             }
         })

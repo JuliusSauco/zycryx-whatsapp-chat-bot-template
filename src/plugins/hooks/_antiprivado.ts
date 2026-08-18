@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {getPrivateWarn, setPrivateWarn} from '../../services/user.service.js'
 import type {BeforePluginContext} from '../../types/context.js'
 import type {BotMessage} from '../../types/message.js'
@@ -18,7 +19,7 @@ export function isPrivateCommandAllowed(command: string): boolean {
 }
 
 function pickOfficialGroupLink(): string {
-    return pickRandom([info.nn, info.nn2, info.nn3, info.nn4, info.nn5, info.nn6])
+    return pickRandom([botInfo.nn, botInfo.nn2, botInfo.nn3, botInfo.nn4, botInfo.nn5, botInfo.nn6])
 }
 
 function privateBlockedMessage(): string {

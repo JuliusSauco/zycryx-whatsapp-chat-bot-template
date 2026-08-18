@@ -1,7 +1,7 @@
 import './env.js';
 import cfonts from 'cfonts';
 import {ENV} from './env.js';
-import {logInfo} from '../lib/logger.js';
+import {logError, logInfo} from '../lib/logger.js';
 
 logInfo('Iniciando 🚀🚀🚀')
 
@@ -19,4 +19,10 @@ cfonts.say(ENV.BOT_BANNER_AUTHOR, {
     transition: false
 });
 
-import('./main.js');
+try {
+    const {startApplication} = await import('./main.js');
+    await startApplication();
+} catch (error) {
+    logError('[STARTUP] El bootstrap de la aplicación falló:', error);
+    process.exitCode = 1;
+}

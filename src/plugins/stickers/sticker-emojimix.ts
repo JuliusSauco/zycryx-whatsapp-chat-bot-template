@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {logInfo} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js';
@@ -29,7 +30,7 @@ export default defineSdkPlugin({
                         title: sdk.branding.watermark,
                         body: ``,
                         mediaType: 2,
-                        sourceUrl: info.md,
+                        sourceUrl: botInfo.md,
                         thumbnail: m.pp
                     }
                 }

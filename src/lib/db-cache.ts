@@ -25,6 +25,17 @@ const subbotConfigCache = new Map<string, CacheEntry<unknown>>();
 const groupContextSettingsCache = new Map<string, CacheEntry<unknown>>();
 const groupFullSettingsCache = new Map<string, CacheEntry<unknown>>();
 const groupCensoredUsersCache = new Map<string, CacheEntry<unknown>>();
+const MAX_CACHE_ENTRIES = 5_000;
+
+function setBounded<T>(cache: Map<string, CacheEntry<T>>, key: string, data: T): void {
+    cache.delete(key);
+    while (cache.size >= MAX_CACHE_ENTRIES) {
+        const oldest = cache.keys().next().value as string | undefined;
+        if (!oldest) break;
+        cache.delete(oldest);
+    }
+    cache.set(key, {data, expiresAt: Date.now() + TTL_MS});
+}
 
 export function getCachedSubbotConfig<T>(botId: string): T | null {
     const entry = subbotConfigCache.get(botId);
@@ -37,7 +48,7 @@ export function getCachedSubbotConfig<T>(botId: string): T | null {
 }
 
 export function setCachedSubbotConfig<T>(botId: string, data: T): void {
-    subbotConfigCache.set(botId, {data, expiresAt: Date.now() + TTL_MS});
+    setBounded(subbotConfigCache, botId, data);
 }
 
 export function invalidateSubbotConfig(botId: string): void {
@@ -55,7 +66,7 @@ export function getCachedGroupSettings<T>(chatId: string): T | null {
 }
 
 export function setCachedGroupSettings<T>(chatId: string, data: T): void {
-    groupContextSettingsCache.set(chatId, {data, expiresAt: Date.now() + TTL_MS});
+    setBounded(groupContextSettingsCache, chatId, data);
 }
 
 export function getCachedFullGroupSettings<T>(chatId: string): T | null {
@@ -69,7 +80,7 @@ export function getCachedFullGroupSettings<T>(chatId: string): T | null {
 }
 
 export function setCachedFullGroupSettings<T>(chatId: string, data: T): void {
-    groupFullSettingsCache.set(chatId, {data, expiresAt: Date.now() + TTL_MS});
+    setBounded(groupFullSettingsCache, chatId, data);
 }
 
 export function invalidateGroupSettings(chatId: string): void {
@@ -88,11 +99,18 @@ export function getCachedGroupCensoredUsers<T>(chatId: string): T | null {
 }
 
 export function setCachedGroupCensoredUsers<T>(chatId: string, data: T): void {
-    groupCensoredUsersCache.set(chatId, {data, expiresAt: Date.now() + TTL_MS});
+    setBounded(groupCensoredUsersCache, chatId, data);
 }
 
 export function invalidateGroupCensoredUsers(chatId: string): void {
     groupCensoredUsersCache.delete(chatId);
+}
+
+export function invalidateAllDatabaseCaches(): void {
+    subbotConfigCache.clear();
+    groupContextSettingsCache.clear();
+    groupFullSettingsCache.clear();
+    groupCensoredUsersCache.clear();
 }
 
 // Limpieza periódica de entradas expiradas (evita memory leak si miles de chats únicos).

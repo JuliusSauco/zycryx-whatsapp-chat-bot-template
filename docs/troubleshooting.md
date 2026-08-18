@@ -48,7 +48,7 @@ No hay un reinicio periódico forzado. Revisa el código de desconexión, pérdi
 
 ### `relation "..." does not exist`
 
-Ejecuta `npm run db:migrate` y luego `npm run db:check`. En una base realmente vacía, provisiona una sola vez con `npm run db:setup`; no lo ejecutes sobre una base que ya tenga tablas parciales. Los schemas del bot son fijos y no usan `DB_SCHEMA`.
+Ejecuta `npm run db:check`. En una base realmente vacía, provisiona una sola vez con `npm run db:setup`; no lo ejecutes sobre una base que ya tenga tablas parciales. Esta rama no actualiza esquemas legacy y los schemas del bot son fijos.
 
 ### PostgreSQL anterior a 18
 

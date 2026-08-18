@@ -3,10 +3,6 @@ export interface BotInfo {
     vs: string;
     packname: string;
     author: string;
-    apis: string;
-    apikey: string;
-    fgmods: { url: string; key: string };
-    neoxr: { url: string; key: string };
     img2: string | Buffer;
     img4: Buffer;
     yt: string;

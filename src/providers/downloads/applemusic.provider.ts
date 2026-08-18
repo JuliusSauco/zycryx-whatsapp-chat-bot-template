@@ -1,3 +1,4 @@
+import {externalApis} from '../external-api-config.js';
 import * as cheerio from 'cheerio';
 import {httpJson, httpText} from '../../lib/http-client.js';
 import {DEFAULT_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
@@ -47,7 +48,7 @@ export function buildAppleMusicDownloadProviders(trackUrl: string): ProviderCand
         {
             name: 'main-applemusic',
             run: async () => {
-                const apiUrl = `${info.apis}/applemusicdl?url=${encodeURIComponent(trackUrl)}`;
+                const apiUrl = `${externalApis.main.url}/applemusicdl?url=${encodeURIComponent(trackUrl)}`;
                 const delius = await httpJson<DeliriusAppleMusicResponse>(apiUrl);
                 if (!delius.data?.name || !delius.data.download || !delius.data.image) return null;
                 return {

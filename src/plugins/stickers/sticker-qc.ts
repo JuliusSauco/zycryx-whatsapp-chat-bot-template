@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {sticker} from '../../lib/sticker.js';
 import {getStickerExif} from '../../services/sticker-settings.service.js';
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
@@ -30,7 +31,6 @@ export default defineSdkPlugin({
         text: mishi,
     });
     let stiker = await sticker(buffer, false, f, g)
-//sticker(buffer, false, global.packname, global.author);
     if (stiker) return sdk.sendFile(stiker, 'sticker.webp', '', m, true, {
         contextInfo: {
             'forwardingScore': 200,
@@ -38,9 +38,9 @@ export default defineSdkPlugin({
             externalAdReply: {
                 showAdAttribution: false,
                 title: sdk.branding.watermark,
-                body: info.vs,
+                body: botInfo.vs,
                 mediaType: 2,
-                sourceUrl: info.md,
+                sourceUrl: botInfo.md,
                 thumbnail: m.pp
             }
         }

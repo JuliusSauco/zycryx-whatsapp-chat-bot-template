@@ -1,3 +1,4 @@
+import {externalApis} from '../external-api-config.js';
 import cheerio from 'cheerio';
 import {httpJson, httpText} from '../../lib/http-client.js';
 import {DEFAULT_PROVIDER_TIMEOUT_MS, LONG_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
@@ -81,7 +82,7 @@ export async function downloadTikTokVideo(videoUrl: string): Promise<ProviderRes
 }
 
 export async function searchTikTokVideos(query: string, limit = 5): Promise<TikTokProviderMedia[]> {
-    const response = await httpJson<TikTokSearchResponse>(`${info.apis}/search/tiktoksearch?query=${encodeURIComponent(query)}`);
+    const response = await httpJson<TikTokSearchResponse>(`${externalApis.main.url}/search/tiktoksearch?query=${encodeURIComponent(query)}`);
     const results = response.meta?.filter(item => item.hd).slice(0, limit) || [];
 
     return results.map((item, index) => ({

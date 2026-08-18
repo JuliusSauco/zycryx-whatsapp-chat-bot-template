@@ -12,8 +12,10 @@ const queue = new MessageTaskQueue({
     globalLimit: ENV.MESSAGE_QUEUE_GLOBAL_LIMIT,
     onError: logError,
 });
+let acceptingMessages = true;
 
 export function enqueueBotMessage(sock: WASocket, msg: WAMessage): boolean {
+    if (!acceptingMessages) return false;
     const botId = sock.user?.id || 'unregistered';
     const chatId = msg.key?.remoteJid || msg.key?.participant || 'unknown';
     const accepted = queue.enqueue(`${botId}\u0000${chatId}`, async () => {
@@ -28,3 +30,6 @@ export function enqueueBotMessage(sock: WASocket, msg: WAMessage): boolean {
 
 export const getMessageQueueStats = () => queue.getStats();
 export const drainMessageQueue = (timeoutMs?: number) => queue.idle(timeoutMs);
+export function stopMessageIntake(): void {
+    acceptingMessages = false;
+}

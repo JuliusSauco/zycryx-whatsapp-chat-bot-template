@@ -1,0 +1,17 @@
+.git
+.github
+.env
+.env.*
+node_modules
+dist
+coverage
+tests
+backups
+tmp
+temp
+BotSession
+jadibot
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db

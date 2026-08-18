@@ -16,9 +16,21 @@ export const subbotsRepository: SubbotRepository = {
         return row ? mapSubbotConfig(row, prefixes.map(item => item.value), owners.map(item => item.value)) : null;
     },
 
-    async listConfigs(tipo) {
-        const rows = tipo
-            ? await orm.select().from(subbots).where(eq(subbots.tipo, tipo))
+    async findInstanceIdByJid(botJid) {
+        const [row] = await orm.select({id: subbots.id}).from(subbots)
+            .where(eq(subbots.botJid, botJid)).limit(1);
+        return row?.id ?? null;
+    },
+
+    async findBotJidByInstanceId(botId) {
+        const [row] = await orm.select({botJid: subbots.botJid}).from(subbots)
+            .where(eq(subbots.id, botId)).limit(1);
+        return row?.botJid ?? null;
+    },
+
+    async listConfigs(instanceType) {
+        const rows = instanceType
+            ? await orm.select().from(subbots).where(eq(subbots.instanceType, instanceType))
             : await orm.select().from(subbots);
         if (!rows.length) return [];
         const botIds = rows.map(row => row.id);
@@ -38,21 +50,15 @@ export const subbotsRepository: SubbotRepository = {
     async countByType() {
         const [row] = await orm.select({
             total: sql<number>`COUNT(*)::int`,
-            oficiales: sql<number>`COUNT(*) FILTER (WHERE ${subbots.tipo} = 'oficial')::int`,
-            subbots: sql<number>`COUNT(*) FILTER (WHERE ${subbots.tipo} = 'subbot')::int`,
+            main: sql<number>`COUNT(*) FILTER (WHERE ${subbots.instanceType} = 'main')::int`,
+            subbots: sql<number>`COUNT(*) FILTER (WHERE ${subbots.instanceType} = 'subbot')::int`,
         }).from(subbots);
 
         return {
             total: row?.total ?? 0,
-            oficiales: row?.oficiales ?? 0,
+            main: row?.main ?? 0,
             subbots: row?.subbots ?? 0,
         };
-    },
-
-    async updateTipo(botId, tipo) {
-        await orm.update(subbots)
-            .set({tipo})
-            .where(eq(subbots.id, botId));
     },
 
     async setBooleanFlag(botId, flag, value) {

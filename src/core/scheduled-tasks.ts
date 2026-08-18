@@ -13,12 +13,26 @@ import {logDebug, logError, logInfo} from '../lib/logger.js';
 import {pickRandom} from '../utils/random.js';
 import {getMainConnection} from './runtime-state.js';
 import {hostname} from 'node:os';
+import {getApplicationShutdownSignal} from './application-lifecycle.js';
 
 let started = false;
 const timers = new Set<NodeJS.Timeout>();
+const activeRuns = new Set<Promise<void>>();
 const reportWorkerId = `${hostname()}:${process.pid}:reports`;
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number, signal: AbortSignal) => new Promise<void>((resolve, reject) => {
+    if (signal.aborted) return reject(signal.reason);
+    const timer = setTimeout(() => {
+        signal.removeEventListener('abort', abort);
+        resolve();
+    }, ms);
+    const abort = () => {
+        clearTimeout(timer);
+        signal.removeEventListener('abort', abort);
+        reject(signal.reason);
+    };
+    signal.addEventListener('abort', abort, {once: true});
+});
 
 export function startScheduledTasks(): void {
     if (started) return;
@@ -37,6 +51,18 @@ export function stopScheduledTasks(): void {
     started = false;
 }
 
+export async function drainScheduledTasks(timeoutMs = 10_000): Promise<boolean> {
+    const snapshot = [...activeRuns];
+    if (!snapshot.length) return true;
+    let timeout: NodeJS.Timeout | undefined;
+    const completed = await Promise.race([
+        Promise.allSettled(snapshot).then(() => true),
+        new Promise<boolean>(resolve => { timeout = setTimeout(() => resolve(false), timeoutMs); }),
+    ]);
+    if (timeout) clearTimeout(timeout);
+    return completed;
+}
+
 function scheduleNonOverlapping(name: string, intervalMs: number, task: () => Promise<void>): void {
     let running = false;
     const timer = setInterval(() => {
@@ -45,9 +71,11 @@ function scheduleNonOverlapping(name: string, intervalMs: number, task: () => Pr
             return;
         }
         running = true;
-        void task().catch(error => logError(`[SCHEDULER] Error en ${name}:`, error)).finally(() => {
+        const run = task().catch(error => logError(`[SCHEDULER] Error en ${name}:`, error)).finally(() => {
             running = false;
+            activeRuns.delete(run);
         });
+        activeRuns.add(run);
     }, intervalMs);
     timer.unref?.();
     timers.add(timer);
@@ -73,12 +101,14 @@ async function cleanExpiredResourceReservations(): Promise<void> {
 
 async function handleExpiredGroups(): Promise<void> {
     try {
+        const signal = getApplicationShutdownSignal();
         const conn = getMainConnection();
         if (!conn || typeof conn.groupLeave !== 'function') return;
 
         const rows = await listExpiredGroups(Date.now());
 
         for (const {group_id} of rows) {
+            if (signal.aborted) return;
             try {
                 await conn.sendMessage(group_id, {
                     text: pickRandom([
@@ -87,7 +117,7 @@ async function handleExpiredGroups(): Promise<void> {
                         `*${conn.user?.name}*, saliendo automaticamente por expiracion del grupo.`
                     ])
                 });
-                await delay(3000);
+                await delay(3000, signal);
                 await conn.groupLeave(group_id);
                 await clearGroupExpiration(group_id);
                 logInfo(`[AUTO-LEAVE] Bot salio automaticamente del grupo: ${group_id}`);
@@ -118,6 +148,7 @@ async function forwardPendingReports(): Promise<void> {
         if (!rows.length) return;
 
         for (const row of rows) {
+            if (getApplicationShutdownSignal().aborted) return;
             try {
                 const header = row.tipo === 'sugerencia' ? '*SUGERENCIA*' : '*REPORTE*';
                 const label = row.tipo === 'sugerencia' ? '*Sugerencia:*' : '*Mensaje:*';

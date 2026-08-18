@@ -4,6 +4,7 @@ import {
     baileysAuthCredentials,
     baileysAuthSessions,
     baileysSignalKeys,
+    botInstances,
     encryptionKeyVersions,
 } from '../../db/schema.js';
 import type {
@@ -17,23 +18,21 @@ export const baileysAuthRepository: BaileysAuthRepository = {
         await orm.insert(encryptionKeyVersions).values({version, kdf})
             .onConflictDoUpdate({
                 target: encryptionKeyVersions.version,
-                set: {active: true, kdf},
+                set: {active: true, retiredAt: null, kdf},
             });
     },
 
-    async ensureSession({id, type, ownerId}) {
-        await orm.insert(baileysAuthSessions).values({
-            id,
-            sessionType: type,
-            ownerId: ownerId ?? null,
-        }).onConflictDoUpdate({
-            target: baileysAuthSessions.id,
-            set: {
-                sessionType: type,
-                ownerId: ownerId ?? null,
-                status: 'active',
-                updatedAt: new Date(),
-            },
+    async ensureSession({sessionId, botInstanceId, type, ownerId}) {
+        await orm.transaction(async tx => {
+            await tx.insert(botInstances).values({id: botInstanceId, instanceType: type})
+                .onConflictDoUpdate({
+                    target: botInstances.id,
+                    set: {instanceType: type, updatedAt: new Date()},
+                });
+            await tx.insert(baileysAuthSessions).values({sessionId, botInstanceId, ownerId}).onConflictDoUpdate({
+                target: baileysAuthSessions.sessionId,
+                set: {botInstanceId, ...(ownerId ? {ownerId} : {}), updatedAt: new Date()},
+            });
         });
     },
 
@@ -43,9 +42,9 @@ export const baileysAuthRepository: BaileysAuthRepository = {
              SET lease_owner = $2,
                  lease_expires_at = statement_timestamp() + make_interval(secs => $3),
                  updated_at = statement_timestamp()
-             WHERE id = $1
+             WHERE session_id = $1
                AND (lease_owner = $2 OR lease_expires_at IS NULL OR lease_expires_at < statement_timestamp())
-             RETURNING id`,
+             RETURNING session_id`,
             [sessionId, leaseOwner, leaseSeconds],
         );
         return result.rowCount === 1;
@@ -56,8 +55,8 @@ export const baileysAuthRepository: BaileysAuthRepository = {
             `UPDATE bot_sessions.auth_sessions
              SET lease_expires_at = statement_timestamp() + make_interval(secs => $3),
                  updated_at = statement_timestamp()
-             WHERE id = $1 AND lease_owner = $2 AND lease_expires_at >= statement_timestamp()
-             RETURNING id`,
+             WHERE session_id = $1 AND lease_owner = $2 AND lease_expires_at >= statement_timestamp()
+             RETURNING session_id`,
             [sessionId, leaseOwner, leaseSeconds],
         );
         return result.rowCount === 1;
@@ -67,7 +66,7 @@ export const baileysAuthRepository: BaileysAuthRepository = {
         await db.query(
             `UPDATE bot_sessions.auth_sessions
              SET lease_owner = NULL, lease_expires_at = NULL, updated_at = statement_timestamp()
-             WHERE id = $1 AND lease_owner = $2`,
+             WHERE session_id = $1 AND lease_owner = $2`,
             [sessionId, leaseOwner],
         );
     },
@@ -146,30 +145,47 @@ export const baileysAuthRepository: BaileysAuthRepository = {
     },
 
     async listActiveSessionIds(type) {
-        const rows = await orm.select({id: baileysAuthSessions.id})
+        const rows = await orm.select({id: baileysAuthSessions.sessionId})
             .from(baileysAuthSessions)
+            .innerJoin(botInstances, eq(baileysAuthSessions.botInstanceId, botInstances.id))
             .where(and(
-                eq(baileysAuthSessions.sessionType, type),
-                eq(baileysAuthSessions.status, 'active'),
+                eq(botInstances.instanceType, type),
+                eq(botInstances.status, 'active'),
             ));
         return rows.map(row => row.id);
     },
 
     async markConnected(sessionId, botJid) {
-        await orm.update(baileysAuthSessions).set({
+        await orm.update(botInstances).set({
             botJid,
             status: 'active',
             lastConnectedAt: new Date(),
             updatedAt: new Date(),
-        }).where(eq(baileysAuthSessions.id, sessionId));
+        }).where(eq(botInstances.id, sql`(
+            SELECT ${baileysAuthSessions.botInstanceId}
+            FROM ${baileysAuthSessions}
+            WHERE ${baileysAuthSessions.sessionId} = ${sessionId}
+        )`));
     },
 
-    async setStatus(sessionId, status) {
-        await orm.update(baileysAuthSessions).set({status, updatedAt: new Date()})
-            .where(eq(baileysAuthSessions.id, sessionId));
+    async markError(sessionId) {
+        await orm.update(botInstances).set({status: 'error', updatedAt: new Date()})
+            .where(eq(botInstances.id, sql`(
+                SELECT ${baileysAuthSessions.botInstanceId}
+                FROM ${baileysAuthSessions}
+                WHERE ${baileysAuthSessions.sessionId} = ${sessionId}
+            )`));
     },
 
     async deleteSession(sessionId) {
-        await orm.delete(baileysAuthSessions).where(eq(baileysAuthSessions.id, sessionId));
+        await orm.transaction(async tx => {
+            await tx.update(botInstances).set({status: 'revoked', updatedAt: new Date()})
+                .where(eq(botInstances.id, sql`(
+                    SELECT ${baileysAuthSessions.botInstanceId}
+                    FROM ${baileysAuthSessions}
+                    WHERE ${baileysAuthSessions.sessionId} = ${sessionId}
+                )`));
+            await tx.delete(baileysAuthSessions).where(eq(baileysAuthSessions.sessionId, sessionId));
+        });
     },
 };

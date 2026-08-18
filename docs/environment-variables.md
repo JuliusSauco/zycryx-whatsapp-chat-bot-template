@@ -62,6 +62,8 @@ NODE_ENV=prod npm run ops:check
 | `MESSAGE_QUEUE_CONCURRENCY` | `32` | Máximo global de mensajes procesados simultáneamente. |
 | `MESSAGE_QUEUE_PER_CHAT_LIMIT` | `50` | Backpressure por bot/chat antes de rechazar trabajo nuevo. |
 | `MESSAGE_QUEUE_GLOBAL_LIMIT` | `2000` | Límite total de mensajes pendientes. |
+| `BOT_LINK_MODE` | `auto` | `auto`, `qr`, `code` o `disabled`. En procesos sin TTY se debe seleccionar un modo explícito. |
+| `BOT_LINK_PHONE` | vacío | Número internacional usado por `BOT_LINK_MODE=code` cuando no hay terminal interactiva. |
 
 ## Sesiones y cifrado
 
@@ -92,6 +94,9 @@ No configures simultáneamente clave maestra y passphrase. El modo base de datos
 | `DB_IDLE_TIMEOUT_MS` | `30000` | Tiempo para cerrar conexiones ociosas. |
 | `DB_CONNECTION_TIMEOUT_MS` | `10000` | Timeout al adquirir conexión. |
 | `DB_STATEMENT_TIMEOUT_MS` | `30000` | Timeout PostgreSQL por sentencia del bot. |
+| `HEALTH_HOST` | `127.0.0.1` | Interfaz donde escucha health/readiness/metrics. Usa una red privada o proxy autenticado al exponerla. |
+| `HEALTH_PORT` | `3000` | Puerto HTTP para `/health/live`, `/health/ready` y `/metrics`. |
+| `HEALTH_METRICS_TOKEN` | vacío | Si está definido, `/metrics` exige `Authorization: Bearer <token>`. |
 | `DB_ADMIN_URL` | vacío | Conexión administrativa usada sólo por `db:setup-runtime-role`. |
 | `DB_RUNTIME_ROLE` | `zycryx_bot_app` | Rol DML sin DDL que se aprovisiona para el proceso. |
 | `DB_RUNTIME_PASSWORD` | vacío | Password de al menos 20 caracteres para ese rol; no la versionar. |

@@ -15,7 +15,7 @@ const RESERVATION_TTL_MS = 30 * 60_000;
 export async function checkCommandResources(sender: string, plugin: Plugin): Promise<string | null> {
     const policy = normalizeCommandResourcePolicy(plugin);
     if (!requiresCommandResources(policy)) return null;
-    const resources = await repositories.users.getResources(sender);
+    const resources = await repositories.userEconomy.getResources(sender);
     if (resources.level < policy.level) return insufficientLevel(policy.level, resources.level);
     if (selectCommandPayment(policy, resources)) return null;
     if (policy.alternativeCoins) return insufficientAlternatives(policy.limit, policy.alternativeCoins);

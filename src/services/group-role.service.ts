@@ -49,7 +49,7 @@ function isGeneratedAdminName(name: string | null | undefined): boolean {
 }
 
 async function getParticipantAlias(groupId: string, userId: string, participant: GroupParticipantWithAliases): Promise<string> {
-    const existing = await repositories.users.findById(userId);
+    const existing = await repositories.userIdentity.findById(userId);
     if (!isGeneratedAdminName(existing?.nombre)) return existing!.nombre!;
 
     return participant.notify
@@ -68,10 +68,7 @@ export async function registerGroupAdmins(groupId: string, metadata: GroupMetada
         if (!userId) continue;
         const {role, roleDescription} = getAdminRole(groupId, metadata, admin);
         const lid = getParticipantLid(admin);
-        if (lid) {
-            await repositories.users.clearLidFromOtherUsers(lid, userId);
-        }
-        await repositories.users.upsertRegisteredAdmin({
+        await repositories.userRegistration.upsertRegisteredAdmin({
             id: userId,
             nombre: await getParticipantAlias(groupId, userId, admin),
             num: getParticipantPhone(admin, userId),

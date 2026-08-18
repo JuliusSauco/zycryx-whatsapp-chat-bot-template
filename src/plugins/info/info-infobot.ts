@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {getSubbotConfig} from '../../services/subbot.service.js'
 import {countChats, countChatsByBot} from '../../services/chat.service.js'
 import {countUsers} from '../../services/user.service.js'
@@ -95,11 +96,11 @@ export default defineSdkPlugin({
             forwardingScore: 1,
             isForwarded: true,
             externalAdReply: {
-                mediaUrl: pickRandom([info.nna, info.nna2, info.md]),
+                mediaUrl: pickRandom([botInfo.nna, botInfo.nna2, botInfo.md]),
                 mediaType: 2,
-                title: sdk.content.message('info.botInfo.adTitle'),
+                title: sdk.content.message('botInfo.botInfo.adTitle'),
                 thumbnailUrl: "https://telegra.ph/file/39fb047cdf23c790e0146.jpg",
-                sourceUrl: info.yt
+                sourceUrl: botInfo.yt
             }
         }
     })

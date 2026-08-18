@@ -13,10 +13,10 @@ import {
     type SignalDataTypeMap,
 } from '@whiskeysockets/baileys';
 import {ENV} from '../core/env.js';
-import {baileysAuthRepository} from '../adapters/drizzle/baileys-auth.repository.js';
 import {decryptJson, encryptJson, getConfiguredKdf} from '../lib/secret-crypto.js';
 import {logError, logInfo, logWarn} from '../lib/logger.js';
-import type {BaileysSessionType, SignalKeyChange} from '../ports/baileys-auth.repository.js';
+import type {BaileysAuthRepository, BaileysSessionType, SignalKeyChange} from '../ports/baileys-auth.repository.js';
+import {cleanJid} from '../utils/jid.js';
 
 const SIGNAL_KEY_TYPES = [
     'app-state-sync-version',
@@ -44,8 +44,19 @@ export interface ManagedAuthState {
     leaseLost: AbortSignal;
 }
 
-const activeStates = new Set<ManagedAuthState>();
-const leaseOwner = `${hostname()}:${process.pid}:${randomUUID()}`;
+const activeStates = new Map<string, ManagedAuthState>();
+let configuredRepository: BaileysAuthRepository | null = null;
+
+export function configureBaileysAuthRepository(repository: BaileysAuthRepository): void {
+    configuredRepository = repository;
+}
+
+function authRepository(): BaileysAuthRepository {
+    if (!configuredRepository) throw new Error('BaileysAuthRepository no fue inyectado por el composition root.');
+    return configuredRepository;
+}
+const openingSessions = new Set<string>();
+const processLeasePrefix = `${hostname()}:${process.pid}`;
 
 function normalizeKeyId(id: string): string {
     return id.replace(/\//g, '__').replace(/:/g, '-');
@@ -124,9 +135,9 @@ class AuthWriteBehind {
                 await Promise.all([
                     credentialsSnapshot
                         ? encryptJson(credentialsSnapshot, credentialsAad(this.sessionId))
-                            .then(payload => baileysAuthRepository.saveCredentials(this.sessionId, payload))
+                            .then(payload => authRepository().saveCredentials(this.sessionId, payload))
                         : Promise.resolve(),
-                    baileysAuthRepository.applySignalKeyChanges(this.sessionId, encryptedChanges),
+                    authRepository().applySignalKeyChanges(this.sessionId, encryptedChanges),
                 ]);
                 this.retryDelayMs = 250;
             } catch (error) {
@@ -147,18 +158,24 @@ class AuthWriteBehind {
 
 async function importLegacyFolderIfNeeded(
     sessionId: string,
+    botInstanceId: string,
     sessionType: BaileysSessionType,
     legacyFolder: string | undefined,
 ): Promise<void> {
-    if (!legacyFolder || await baileysAuthRepository.hasCredentials(sessionId)) return;
+    if (!legacyFolder || await authRepository().hasCredentials(sessionId)) return;
     const folderInfo = await stat(legacyFolder).catch(() => null);
     if (!folderInfo?.isDirectory()) return;
     const files = await readdir(legacyFolder);
     if (!files.includes('creds.json')) return;
 
     const credentials = JSON.parse(await readFile(path.join(legacyFolder, 'creds.json'), 'utf8'), BufferJSON.reviver) as AuthenticationCreds;
-    await baileysAuthRepository.ensureSession({id: sessionId, type: sessionType, ownerId: sessionType === 'subbot' ? sessionId : null});
-    await baileysAuthRepository.saveCredentials(sessionId, await encryptJson(credentials, credentialsAad(sessionId)));
+    await authRepository().ensureSession({
+        sessionId,
+        botInstanceId,
+        type: sessionType,
+        ownerId: sessionType === 'subbot' ? sessionId : null,
+    });
+    await authRepository().saveCredentials(sessionId, await encryptJson(credentials, credentialsAad(sessionId)));
 
     const changes: SignalKeyChange[] = [];
     for (const file of files) {
@@ -174,52 +191,79 @@ async function importLegacyFolderIfNeeded(
             payload: await encryptJson(value, signalKeyAad(sessionId, type, id)),
         });
     }
-    await baileysAuthRepository.applySignalKeyChanges(sessionId, changes);
+    await authRepository().applySignalKeyChanges(sessionId, changes);
     logInfo(`[AUTH] Sesión ${sessionId} importada a PostgreSQL (${changes.length} Signal keys). La carpeta legacy se conservó como respaldo.`);
 }
 
 async function createDatabaseAuthState(input: {
     sessionId: string;
+    botInstanceId: string;
     sessionType: BaileysSessionType;
     ownerId?: string | null;
     legacyFolder?: string;
 }): Promise<ManagedAuthState> {
-    await baileysAuthRepository.ensureEncryptionKeyVersion(ENV.BOT_SECRETS_KEY_VERSION, getConfiguredKdf());
-    await baileysAuthRepository.ensureSession({id: input.sessionId, type: input.sessionType, ownerId: input.ownerId});
-    await importLegacyFolderIfNeeded(input.sessionId, input.sessionType, input.legacyFolder);
-    if (!await baileysAuthRepository.acquireLease(input.sessionId, leaseOwner, ENV.BAILEYS_AUTH_LEASE_SECONDS)) {
+    const leaseOwner = `${processLeasePrefix}:${input.sessionId}:${randomUUID()}`;
+    await authRepository().ensureEncryptionKeyVersion(ENV.BOT_SECRETS_KEY_VERSION, getConfiguredKdf());
+    await authRepository().ensureSession({
+        sessionId: input.sessionId,
+        botInstanceId: input.botInstanceId,
+        type: input.sessionType,
+        ownerId: input.ownerId,
+    });
+    await importLegacyFolderIfNeeded(input.sessionId, input.botInstanceId, input.sessionType, input.legacyFolder);
+    if (!await authRepository().acquireLease(input.sessionId, leaseOwner, ENV.BAILEYS_AUTH_LEASE_SECONDS)) {
         throw new Error(`La sesión Baileys '${input.sessionId}' ya está activa en otra instancia.`);
     }
+    let initialized = false;
+    try {
+        const [storedCredentials, storedKeys] = await Promise.all([
+            authRepository().loadCredentials(input.sessionId),
+            authRepository().listSignalKeys(input.sessionId),
+        ]);
+        const credentials = storedCredentials
+            ? await decryptJson<AuthenticationCreds>(storedCredentials, credentialsAad(input.sessionId))
+            : initAuthCreds();
+        const keyCache = new Map<string, StoredValue>();
+        await Promise.all(storedKeys.map(async row => {
+            const value = await decryptJson<StoredValue>(row, signalKeyAad(input.sessionId, row.keyType, row.keyId));
+            keyCache.set(recordKey(row.keyType, row.keyId), value);
+        }));
 
-    const [storedCredentials, storedKeys] = await Promise.all([
-        baileysAuthRepository.loadCredentials(input.sessionId),
-        baileysAuthRepository.listSignalKeys(input.sessionId),
-    ]);
-    const credentials = storedCredentials
-        ? await decryptJson<AuthenticationCreds>(storedCredentials, credentialsAad(input.sessionId))
-        : initAuthCreds();
-    const keyCache = new Map<string, StoredValue>();
-    await Promise.all(storedKeys.map(async row => {
-        const value = await decryptJson<StoredValue>(row, signalKeyAad(input.sessionId, row.keyType, row.keyId));
-        keyCache.set(recordKey(row.keyType, row.keyId), value);
-    }));
-
-    const writer = new AuthWriteBehind(input.sessionId, () => credentials);
-    const leaseController = new AbortController();
-    const leaseTimer = setInterval(() => {
-        void baileysAuthRepository.renewLease(input.sessionId, leaseOwner, ENV.BAILEYS_AUTH_LEASE_SECONDS)
-            .then(renewed => {
-                if (!renewed && !leaseController.signal.aborted) {
-                    leaseController.abort(new Error(`Se perdió el lease de la sesión '${input.sessionId}'.`));
-                    logError(`[AUTH] Lease perdido para ${input.sessionId}; el socket debe cerrarse.`);
-                }
-            })
-            .catch(error => logError(`[AUTH] No se pudo renovar lease de ${input.sessionId}:`, error));
-    }, Math.max(10_000, Math.floor(ENV.BAILEYS_AUTH_LEASE_SECONDS * 1000 / 3)));
-    leaseTimer.unref?.();
-    const state: AuthenticationState = {
-        creds: credentials,
-        keys: {
+        const writer = new AuthWriteBehind(input.sessionId, () => credentials);
+        const leaseController = new AbortController();
+        let leaseDeadlineTimer: NodeJS.Timeout | undefined;
+        const abortLostLease = (reason: string): void => {
+            if (leaseController.signal.aborted) return;
+            leaseController.abort(new Error(reason));
+            logError(`[AUTH] Lease perdido para ${input.sessionId}; el socket debe cerrarse.`);
+        };
+        const armLeaseDeadline = (): void => {
+            if (leaseDeadlineTimer) clearTimeout(leaseDeadlineTimer);
+            leaseDeadlineTimer = setTimeout(() => {
+                abortLostLease(`El lease de la sesión '${input.sessionId}' venció sin confirmación de PostgreSQL.`);
+            }, ENV.BAILEYS_AUTH_LEASE_SECONDS * 1_000);
+            leaseDeadlineTimer.unref?.();
+        };
+        armLeaseDeadline();
+        const leaseTimer = setInterval(() => {
+            void authRepository().renewLease(input.sessionId, leaseOwner, ENV.BAILEYS_AUTH_LEASE_SECONDS)
+                .then(renewed => {
+                    if (!renewed) {
+                        abortLostLease(`Se perdió el lease de la sesión '${input.sessionId}'.`);
+                        return;
+                    }
+                    armLeaseDeadline();
+                })
+                .catch(error => {
+                    logError(`[AUTH] No se pudo renovar lease de ${input.sessionId}:`, error);
+                    // El watchdog conserva el último deadline confirmado y cerrará
+                    // el socket si PostgreSQL no vuelve antes de su vencimiento.
+                });
+        }, Math.max(10_000, Math.floor(ENV.BAILEYS_AUTH_LEASE_SECONDS * 1_000 / 3)));
+        leaseTimer.unref?.();
+        const state: AuthenticationState = {
+            creds: credentials,
+            keys: {
             async get<T extends SignalKeyType>(type: T, ids: string[]) {
                 const result: {[id: string]: SignalDataTypeMap[T]} = {};
                 for (const id of ids) {
@@ -251,40 +295,89 @@ async function createDatabaseAuthState(input: {
                 }
                 keyCache.clear();
             },
-        },
-    };
+            },
+        };
 
-    const managed: ManagedAuthState = {
-        state,
-        saveCreds: async () => writer.enqueueCredentials(),
-        flush: () => writer.flush(),
-        async dispose() {
-            clearInterval(leaseTimer);
+        let closePromise: Promise<void> | null = null;
+        const close = (deleteSession: boolean): Promise<void> => {
+            if (closePromise) return closePromise;
+            closePromise = (async () => {
+                clearInterval(leaseTimer);
+                if (leaseDeadlineTimer) clearTimeout(leaseDeadlineTimer);
+                try {
+                    if (deleteSession) {
+                        await authRepository().deleteSession(input.sessionId);
+                        return;
+                    }
+                    await flushAuthWriterWithRetry(writer, input.sessionId);
+                    await authRepository().releaseLease(input.sessionId, leaseOwner);
+                } catch (error) {
+                    await authRepository().markError(input.sessionId).catch(markError =>
+                        logError(`[AUTH] No se pudo marcar ${input.sessionId} en error:`, markError));
+                    await authRepository().releaseLease(input.sessionId, leaseOwner).catch(releaseError =>
+                        logError(`[AUTH] No se pudo liberar lease de ${input.sessionId} tras error:`, releaseError));
+                    throw error;
+                } finally {
+                    if (activeStates.get(input.sessionId) === managed) activeStates.delete(input.sessionId);
+                }
+            })();
+            return closePromise;
+        };
+        const managed: ManagedAuthState = {
+            state,
+            saveCreds: async () => writer.enqueueCredentials(),
+            flush: () => writer.flush(),
+            dispose: () => close(false),
+            markConnected: botJid => authRepository().markConnected(input.sessionId, botJid ? cleanJid(botJid) : null),
+            deleteSession: () => close(true),
+            leaseLost: leaseController.signal,
+        };
+        activeStates.set(input.sessionId, managed);
+        initialized = true;
+        logInfo(`[AUTH] Sesión ${input.sessionId} cargada desde PostgreSQL en memoria (${storedKeys.length} Signal keys).`);
+        return managed;
+    } finally {
+        if (!initialized) {
+            await authRepository().releaseLease(input.sessionId, leaseOwner).catch(error => {
+                logError(`[AUTH] No se pudo liberar el lease tras fallar la apertura de ${input.sessionId}:`, error);
+            });
+        }
+    }
+}
+
+async function flushAuthWriterWithRetry(writer: AuthWriteBehind, sessionId: string): Promise<void> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+        try {
             await writer.flush();
-            await baileysAuthRepository.releaseLease(input.sessionId, leaseOwner);
-            activeStates.delete(managed);
-        },
-        markConnected: botJid => baileysAuthRepository.markConnected(input.sessionId, botJid ?? null),
-        async deleteSession() {
-            clearInterval(leaseTimer);
-            await writer.flush();
-            await baileysAuthRepository.deleteSession(input.sessionId);
-            activeStates.delete(managed);
-        },
-        leaseLost: leaseController.signal,
-    };
-    activeStates.add(managed);
-    logInfo(`[AUTH] Sesión ${input.sessionId} cargada desde PostgreSQL en memoria (${storedKeys.length} Signal keys).`);
-    return managed;
+            return;
+        } catch (error) {
+            lastError = error;
+            logError(`[AUTH] Flush final ${attempt}/5 falló para ${sessionId}:`, error);
+            if (attempt < 5) await new Promise(resolve => setTimeout(resolve, Math.min(4_000, 250 * (2 ** (attempt - 1)))));
+        }
+    }
+    throw lastError instanceof Error ? lastError : new Error(`No se pudo persistir el auth state de ${sessionId}.`);
 }
 
 export async function useConfiguredAuthState(input: {
     sessionId: string;
+    botInstanceId: string;
     sessionType: BaileysSessionType;
     ownerId?: string | null;
     legacyFolder?: string;
 }): Promise<ManagedAuthState> {
-    if (ENV.BAILEYS_AUTH_STATE_SOURCE === 'database') return createDatabaseAuthState(input);
+    if (ENV.BAILEYS_AUTH_STATE_SOURCE === 'database') {
+        if (activeStates.has(input.sessionId) || openingSessions.has(input.sessionId)) {
+            throw new Error(`La sesión Baileys '${input.sessionId}' ya está abierta en este proceso.`);
+        }
+        openingSessions.add(input.sessionId);
+        try {
+            return await createDatabaseAuthState(input);
+        } finally {
+            openingSessions.delete(input.sessionId);
+        }
+    }
 
     if (!input.legacyFolder) throw new Error('legacyFolder es obligatorio con BAILEYS_AUTH_STATE_SOURCE=files.');
     const fileState = await useMultiFileAuthState(input.legacyFolder);
@@ -300,19 +393,29 @@ export async function useConfiguredAuthState(input: {
 }
 
 export function listStoredSubbotSessionIds(): Promise<string[]> {
-    return baileysAuthRepository.listActiveSessionIds('subbot');
+    return authRepository().listActiveSessionIds('subbot');
 }
 
 export function hasStoredAuthCredentials(sessionId: string): Promise<boolean> {
-    return baileysAuthRepository.hasCredentials(sessionId);
+    return authRepository().hasCredentials(sessionId);
 }
 
 export async function deleteStoredAuthSession(sessionId: string): Promise<void> {
-    await baileysAuthRepository.deleteSession(sessionId);
+    await authRepository().deleteSession(sessionId);
 }
 
 export async function flushAllDatabaseAuthStates(): Promise<void> {
-    const results = await Promise.allSettled([...activeStates].map(state => state.flush()));
+    const results = await Promise.allSettled([...activeStates.values()].map(state => state.flush()));
     const failures = results.filter(result => result.status === 'rejected');
     if (failures.length) throw new Error(`No se pudieron vaciar ${failures.length} sesiones Baileys a PostgreSQL.`);
+}
+
+export async function disposeAllDatabaseAuthStates(): Promise<void> {
+    const results = await Promise.allSettled([...activeStates.values()].map(state => state.dispose()));
+    const failures = results.filter(result => result.status === 'rejected');
+    if (failures.length) throw new Error(`No se pudieron cerrar ${failures.length} sesiones Baileys.`);
+}
+
+export function getAuthStateStats(): {active: number; opening: number} {
+    return {active: activeStates.size, opening: openingSessions.size};
 }

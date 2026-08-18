@@ -7,11 +7,11 @@ export type SubbotRow = typeof subbots.$inferSelect;
 export function mapSubbotConfig(row: SubbotRow, prefix: string[] = [], owners: string[] = []): SubbotConfig {
     return {
         id: row.id,
-        tipo: row.tipo,
+        instanceType: row.instanceType === 'main' ? 'main' : 'subbot',
         name: row.name,
         logo_url: row.logoUrl,
         prefix: prefix.length ? prefix : DEFAULT_SUBBOT_CONFIG.prefix,
-        mode: row.mode ?? DEFAULT_SUBBOT_CONFIG.mode,
+        mode: row.mode === 'private' ? 'private' : DEFAULT_SUBBOT_CONFIG.mode,
         owners,
         anti_private: row.antiPrivate ?? DEFAULT_SUBBOT_CONFIG.anti_private,
         anti_call: row.antiCall ?? DEFAULT_SUBBOT_CONFIG.anti_call,

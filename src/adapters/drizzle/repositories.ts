@@ -19,7 +19,12 @@ import {bankRepository} from './bank.repository.js';
 
 export function createDrizzleRepositories(): AppRepositories {
     return {
-        users: userRepository,
+        userIdentity: userRepository,
+        userRegistration: userRepository,
+        userModeration: userRepository,
+        userRelationships: userRepository,
+        userEconomy: userRepository,
+        userPreferences: userRepository,
         banks: bankRepository,
         commandResources: commandResourceRepository,
         userGroupRoles: userGroupRoleRepository,

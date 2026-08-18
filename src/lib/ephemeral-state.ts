@@ -1,5 +1,6 @@
 export interface ExpiringStoreOptions<T = unknown> {
     ttlMs: number;
+    maxEntries?: number;
     onExpire?: (key: string, value: T) => void | Promise<void>;
 }
 
@@ -50,6 +51,12 @@ export function createExpiringMap<T>(options: ExpiringStoreOptions<T>): Expiring
 
     function set(key: string, value: T, ttlMs = options.ttlMs): void {
         remove(key, false);
+        const maxEntries = Math.max(1, options.maxEntries ?? 1_000);
+        while (entries.size >= maxEntries) {
+            const oldestKey = entries.keys().next().value as string | undefined;
+            if (!oldestKey) break;
+            remove(oldestKey, false);
+        }
         const safeTtl = Math.max(0, ttlMs);
         const timer = setTimeout(() => {
             remove(key, true);

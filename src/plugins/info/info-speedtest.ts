@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import os from 'os';
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {limitOutput, runSensitiveFileCommand, sanitizeCommandError} from '../../lib/sensitive-command.js';
@@ -23,7 +24,7 @@ export default defineSdkPlugin({
                     externalAdReply: {
                         title: "< ＩＮＦＯ - ＳＰＥＥＤＴＥＳＴ />", body: `${toTime(os.uptime() * 1000)}`, mediaType: 1,
                         renderLargerThumbnail: true,
-                        thumbnailUrl: urlImagen, sourceUrl: info.nna
+                        thumbnailUrl: urlImagen, sourceUrl: botInfo.nna
                     }
                 }
             })
@@ -38,7 +39,7 @@ export default defineSdkPlugin({
                         title: "< ＩＮＦＯ - ＳＰＥＥＤＴＥＳＴ />", body: `${toTime(os.uptime() * 1000)}`, mediaType: 1,
                         renderLargerThumbnail: true,
                         thumbnailUrl: urlImagen2,
-                        sourceUrl: info.nna
+                        sourceUrl: botInfo.nna
                     }
                 }
             })

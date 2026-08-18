@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {getCachedBuffer} from '../../lib/static-resource-cache.js';
 
@@ -21,10 +22,10 @@ export default defineSdkPlugin({
     const txt = sdk.content.renderMessage('info.donate.response', {
         name: m.pushName || sdk.sender.split('@')[0],
         watermark: sdk.branding.watermark,
-        youtube: info.yt,
-        repositoryUrl: info.md,
-        facebook: info.fb,
-        instagram: info.ig,
+        youtube: botInfo.yt,
+        repositoryUrl: botInfo.md,
+        facebook: botInfo.fb,
+        instagram: botInfo.ig,
     });
     await sdk.conn.sendFile(sdk.chatId, pp, 'error.jpg', txt, fkontak, undefined, {
         contextInfo: {
@@ -38,8 +39,8 @@ export default defineSdkPlugin({
                 body: sdk.branding.watermark,
                 mediaType: 2,
                 thumbnailUrl: m.pp,
-                mediaUrl: info.md,
-                sourceUrl: info.md,
+                mediaUrl: botInfo.md,
+                sourceUrl: botInfo.md,
             }
         }
     });

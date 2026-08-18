@@ -1,3 +1,4 @@
+import {externalApis} from '../external-api-config.js';
 import {httpJson} from '../../lib/http-client.js';
 import {DEFAULT_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
@@ -30,7 +31,7 @@ export interface SpotifyProviderMedia {
 }
 
 export async function searchSpotify(query: string): Promise<SpotifyTrack[]> {
-    const response = await httpJson<SpotifySearchResponse>(`${info.apis}/search/spotify?q=${encodeURIComponent(query)}`);
+    const response = await httpJson<SpotifySearchResponse>(`${externalApis.main.url}/search/spotify?q=${encodeURIComponent(query)}`);
     return response.data || [];
 }
 
@@ -46,7 +47,7 @@ export function buildSpotifyDownloadProviders(trackUrl: string): ProviderCandida
         {
             name: 'main-spotify',
             run: async () => {
-                const data = await httpJson<SpotifyDownloadResponse>(`${info.apis}/download/spotifydl?url=${encodeURIComponent(trackUrl)}`);
+                const data = await httpJson<SpotifyDownloadResponse>(`${externalApis.main.url}/download/spotifydl?url=${encodeURIComponent(trackUrl)}`);
                 return data.data?.url;
             },
         },

@@ -1,5 +1,5 @@
 import {logError} from './logger.js';
-import {convert} from "./ezgif-convert.js"
+import {convert} from "../providers/media-conversion/ezgif-conversion.provider.js"
 import {Blob} from 'formdata-node'
 import {fileTypeFromBuffer} from "file-type"
 import crypto from "crypto"

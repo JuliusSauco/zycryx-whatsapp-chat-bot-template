@@ -1,10 +1,12 @@
 import {logError} from '../lib/logger.js';
 import {repositories} from './data-source.js';
+import {BoundedTtlCache} from '../lib/bounded-ttl-cache.js';
 
-const tokenCache = new Map<string, string | null>();
+const tokenCache = new BoundedTtlCache<string, string | null>({ttlMs: 60_000, maxEntries: 500});
 
 export async function getDecodedApiToken(name: string): Promise<string | null> {
-    if (tokenCache.has(name)) return tokenCache.get(name)!;
+    const cached = tokenCache.get(name);
+    if (cached !== undefined) return cached;
 
     let token: string | null = null;
     try {

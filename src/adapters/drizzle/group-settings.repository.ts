@@ -295,6 +295,17 @@ export const groupSettingsRepository: GroupSettingsRepository = {
         });
     },
 
+    async setGreetingConfig(groupId, type, enabled, mode) {
+        await orm.transaction(async tx => {
+            await ensureGroup(tx, groupId);
+            await tx.insert(groupGreetings).values({groupId, eventType: type, enabled, hidetagMode: mode || 'off'})
+                .onConflictDoUpdate({
+                    target: [groupGreetings.groupId, groupGreetings.eventType],
+                    set: {enabled, hidetagMode: mode || 'off', updatedAt: new Date()},
+                });
+        });
+    },
+
     async setTextMessage({groupId, type, text, photoMode, registeredBy, groupPhoto}) {
         const values = {
             messageTemplate: text,

@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {logInfo} from '../../lib/logger.js';
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 import type {QuotedMessage} from '../../types/context.js';
@@ -38,7 +39,7 @@ export default defineSdkPlugin({
                     body: sdk.content.message('downloads.gitclone.adBody'),
                     previewType: 0,
                     thumbnail: m.pp,
-                    sourceUrl: info.nna
+                    sourceUrl: botInfo.nna
                 }
             }
         });

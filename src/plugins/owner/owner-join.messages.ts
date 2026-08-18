@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {pickRandom} from '../../utils/random.js';
 
 export function buildJoinUsageMessage(): string {
@@ -9,10 +10,10 @@ Usa: #join <enlace> [tiempo]
 - Puedes especificar el tiempo con: minuto, hora, día o mes.
 
 📌 *Ejemplos:*
-- #join ${info.nn} (por defecto)
-- #join ${info.nn2} 60 minuto (1 hora)
-- #join ${info.nn} 2 día (2 días)
-- #join ${info.nn} 1 mes (30 días)`;
+- #join ${botInfo.nn} (por defecto)
+- #join ${botInfo.nn2} 60 minuto (1 hora)
+- #join ${botInfo.nn} 2 día (2 días)
+- #join ${botInfo.nn} 1 mes (30 días)`;
 }
 
 export function buildJoinRequestQueuedMessage(): string {
@@ -31,7 +32,7 @@ export function buildJoinRequestQueuedMessage(): string {
 💌 *𝙇𝙖𝙨 𝙨𝙤𝙡𝙞𝙘𝙞𝙩𝙪𝙙 𝙥𝙪𝙚𝙙𝙚 𝙩𝙖𝙧𝙙𝙖 𝙝𝙤𝙧𝙖𝙨 𝙚𝙣 𝙨𝙚𝙧 𝙧𝙚𝙨𝙥𝙤𝙣𝙙𝙞𝙙𝙖𝙨. 𝙋𝙤𝙧 𝙛𝙖𝙫𝙤𝙧 𝙩𝙚𝙣𝙚𝙧 𝙥𝙖𝙘𝙞𝙚𝙣𝙘𝙞𝙖 𝙜𝙧𝙖𝙘𝙞𝙖𝙨*
 ┈┈┈┈┈┈┈┈┈┈┈┈
 *ᴾᵘᵉᵈᵉ ᵃᵖᵒʸᵃʳ ᵉˡ ᵇᵒᵗ ᶜᵒⁿ ᵘⁿᵃ ᴱˢᵗʳᵉˡˡᶦᵗᵃ ᵉˡ ⁿᵘᵉˢᵗʳᵒ ʳᵉᵖᵒˢᶦᵗᵒʳᶦᵒ ᵒᶠᶦᶜᶦᵃˡ ʸ ˢᵘˢᶜʳᶦʳᵗᵉ ᵃ ⁿᵘᵉˢᵗʳᵒ ᶜᵃⁿᵃˡ ᵈᵉˡ ʸᵒᵘᵀᵘᵇᵉ ᵐᵃⁿᵈᵃ ᶜᵃʳᵗᵘʳᵃ ᵃ ᵐᶦ ᶜʳᵉᵃᵈᵒʳ ᵖᵃʳᵃ ᵠᵘ𝙚 𝙥𝙪𝙚𝙙𝙖 𝙖𝙜𝙧𝙚𝙜𝙖 𝙚𝙡 𝙗𝙤𝙩 𝙖 𝙩𝙪 𝙜𝙧𝙪𝙥𝙤 💫*
-${pickRandom([info.yt, info.md])}`;
+${pickRandom([botInfo.yt, botInfo.md])}`;
 }
 
 export function buildOwnerJoinRequestMessage(sender: string, link: string, time: number, unit: string): string {

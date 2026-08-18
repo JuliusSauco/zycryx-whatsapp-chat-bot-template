@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {logError} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import uploadFile from '../../lib/uploadFile.js'
@@ -53,7 +54,7 @@ export default defineSdkPlugin({
                     title: sdk.branding.watermark,
                     body: ``,
                     mediaType: 2,
-                    sourceUrl: pickRandom([info.nna, info.nna2, info.md, info.yt]),
+                    sourceUrl: pickRandom([botInfo.nna, botInfo.nna2, botInfo.md, botInfo.yt]),
                     thumbnail: m.pp
                 }
             }

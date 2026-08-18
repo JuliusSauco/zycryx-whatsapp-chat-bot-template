@@ -9,7 +9,7 @@ import {
 } from '../lib/db-cache.js';
 import {repositories} from './data-source.js';
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode} from '../types/config.js';
-import type {CommandAccessRule, ConfigurableFeatureKey, ContextGroupSettings, FamilyAccessRule, GroupSettingsRecord} from '../domain/groups.js';
+import type {CommandAccessRule, ConfigurableFeatureKey, ContextGroupSettings, FamilyAccessRule, GroupBooleanFlag, GroupSettingsRecord} from '../domain/groups.js';
 import {createDefaultFamilyAccessMap, defaultFamilyAccess, mergeFamilyAccessRules} from '../utils/family-access.js';
 
 const EMPTY_CONTEXT_SETTINGS: ContextGroupSettings = {
@@ -91,7 +91,7 @@ export async function getGroupSettings(chatId: string): Promise<GroupSettingsRec
     return settings;
 }
 
-export async function setGroupBooleanFlag(chatId: string, flag: string, value: boolean): Promise<void> {
+export async function setGroupBooleanFlag(chatId: string, flag: GroupBooleanFlag, value: boolean): Promise<void> {
     await repositories.groupSettings.setBooleanFlag(chatId, flag, value);
     invalidateGroupSettings(chatId);
 }
@@ -148,6 +148,16 @@ export async function setGroupCommandAccessRule(chatId: string, command: string,
 
 export async function setGroupGreetingHidetagMode(chatId: string, type: 'welcome' | 'bye', mode: GreetingHidetagMode): Promise<void> {
     await repositories.groupSettings.setGreetingHidetagMode(chatId, type, mode || 'off');
+    invalidateGroupSettings(chatId);
+}
+
+export async function setGroupGreetingConfig(
+    chatId: string,
+    type: 'welcome' | 'bye',
+    enabled: boolean,
+    mode: GreetingHidetagMode,
+): Promise<void> {
+    await repositories.groupSettings.setGreetingConfig(chatId, type, enabled, mode);
     invalidateGroupSettings(chatId);
 }
 

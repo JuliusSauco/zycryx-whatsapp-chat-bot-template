@@ -54,7 +54,6 @@
     "ops:backup:sessions": "tsx scripts/ops-backup.ts --sessions-only",
     "db:check": "tsx src/db/ensure-schema.ts",
     "db:setup": "tsx scripts/setup-database.ts",
-    "db:migrate": "tsx scripts/migrate-database.ts",
     "db:setup-runtime-role": "tsx scripts/setup-runtime-role.ts",
     "db:studio": "drizzle-kit studio",
     "secrets:set": "tsx scripts/set-encrypted-secret.ts",

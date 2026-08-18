@@ -30,7 +30,7 @@ NODE_ENV=prod npm run db:setup   # una sola vez sobre una base vacia
 NODE_ENV=prod npm run db:setup-runtime-role # con DB_ADMIN_URL sólo durante este paso
 ```
 
-Después, configura `DATABASE_URL` con el rol runtime creado y retira `DB_ADMIN_URL` del entorno del proceso. Vuelve a ejecutar `db:setup-runtime-role` tras migraciones que agreguen tablas para aplicar grants y políticas RLS a los objetos nuevos.
+Después, configura `DATABASE_URL` con el rol runtime creado y retira `DB_ADMIN_URL` del entorno del proceso. Vuelve a ejecutar `db:setup-runtime-role` si provisionas nuevamente el modelo para aplicar grants y políticas RLS.
 
 `npm ci` usa exactamente `package-lock.json`. El typecheck/build es un paso explícito para que una instalación de producción con devDependencies omitidas no dependa de `tsc`. `engine-strict=true` rechaza Node fuera de la rama 24.x o npm fuera de la rama 11.x.
 
@@ -81,13 +81,12 @@ Equivalente con systemd: unit con `Restart=always`, `Environment=NODE_ENV=prod` 
 git pull
 npm ci
 npm run build
-NODE_ENV=prod npm run db:migrate
 NODE_ENV=prod npm run db:setup-runtime-role
 NODE_ENV=prod npm run ops:check
 pm2 restart zycryx-bot
 ```
 
-Con `ecosystem.config.cjs`, `pm2 restart` valida el modelo antes de levantar el bot. Las migraciones son un paso explícito previo: no se ejecutan en cada arranque.
+Con `ecosystem.config.cjs`, `pm2 restart` valida el modelo antes de levantar el bot. El arranque no modifica la estructura de la base.
 
 ## Preflight operativo
 

@@ -1,3 +1,4 @@
+import {botInfo} from "./config.js";
 import {pickRandom} from './group-event-resources.js';
 import type {GroupMetadata} from '@whiskeysockets/baileys';
 import type {GroupSettings} from '../types/config.js';
@@ -52,7 +53,7 @@ export async function sendAdminChangeMessage(input: AdminChangeInput): Promise<v
         contextInfo: {
             mentionedJid: [userJid, authorJid].filter((jid): jid is string => !!jid),
             externalAdReply: {
-                mediaUrl: pickRandom([info.nna, info.nna2, info.md]),
+                mediaUrl: pickRandom([botInfo.nna, botInfo.nna2, botInfo.md]),
                 mediaType: 2,
                 showAdAttribution: false,
                 renderLargerThumbnail: false,

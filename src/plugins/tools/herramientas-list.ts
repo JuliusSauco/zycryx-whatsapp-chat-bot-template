@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {listBannedGroups} from '../../services/group-settings.service.js';
 import {listBannedUsers, listMarriedUsers, listWarnedUsers} from '../../services/user.service.js';
@@ -14,7 +15,7 @@ export default defineSdkPlugin({
             const blocklist = await sdk.conn.fetchBlocklist() || [];
             txt += sdk.content.renderMessage('tools.list.block.header', {
                 total: String(blocklist.length),
-                version: info.vs,
+                version: botInfo.vs,
             });
             if (blocklist.length) {
                 for (let jid of blocklist) {

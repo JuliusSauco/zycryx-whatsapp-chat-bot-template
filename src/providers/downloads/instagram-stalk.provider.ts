@@ -1,3 +1,4 @@
+import {externalApis} from '../external-api-config.js';
 import {httpJson} from '../../lib/http-client.js';
 import {DEFAULT_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
@@ -35,7 +36,7 @@ export function buildInstagramStalkProviders(username: string): ProviderCandidat
         {
             name: 'main-instagram-stalk',
             run: async () => {
-                const data = await httpJson<InstagramStalkResponse>(`${info.apis}/tools/igstalk?username=${encodeURIComponent(username)}`);
+                const data = await httpJson<InstagramStalkResponse>(`${externalApis.main.url}/tools/igstalk?username=${encodeURIComponent(username)}`);
                 const profile = data.data;
                 if (!profile?.username || !profile.profile_picture) return null;
                 return {

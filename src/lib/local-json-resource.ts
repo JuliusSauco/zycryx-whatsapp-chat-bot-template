@@ -3,6 +3,7 @@ import path from 'path';
 import {getCachedJson} from './static-resource-cache.js';
 
 const stringArrayCache = new Map<string, string[]>();
+const MAX_RESOURCE_FILES = 250;
 
 export async function loadJsonResource<T>(relativePath: string): Promise<T> {
     const fullPath = path.resolve(process.cwd(), relativePath);
@@ -24,6 +25,11 @@ export async function loadStringArrayResource(relativePath: string): Promise<str
         throw new Error(`JSON resource must be a string array: ${relativePath}`);
     }
 
+    while (stringArrayCache.size >= MAX_RESOURCE_FILES) {
+        const oldest = stringArrayCache.keys().next().value as string | undefined;
+        if (!oldest) break;
+        stringArrayCache.delete(oldest);
+    }
     stringArrayCache.set(fullPath, value);
     return value;
 }

@@ -1,4 +1,4 @@
-import {eq} from 'drizzle-orm';
+import {and, eq} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {encryptedSecrets, encryptionKeyVersions} from '../../db/schema.js';
 import type {ApiTokenRepository} from '../../ports/repositories.js';
@@ -16,7 +16,7 @@ export const apiTokenRepository: ApiTokenRepository = {
                 authTag: encryptedSecrets.authTag,
             })
             .from(encryptedSecrets)
-            .where(eq(encryptedSecrets.name, name))
+            .where(and(eq(encryptedSecrets.purpose, 'api-token'), eq(encryptedSecrets.name, name)))
             .limit(1);
         if (!row) return null;
         return (await decryptBuffer(row, tokenAad(name))).toString('utf8').trim();
@@ -25,11 +25,14 @@ export const apiTokenRepository: ApiTokenRepository = {
     async upsertToken(name, token) {
         const payload = await encryptBuffer(Buffer.from(token.trim(), 'utf8'), tokenAad(name));
         await orm.insert(encryptionKeyVersions).values({version: payload.keyVersion, kdf: getConfiguredKdf()})
-            .onConflictDoNothing();
+            .onConflictDoUpdate({
+                target: encryptionKeyVersions.version,
+                set: {active: true, retiredAt: null, kdf: getConfiguredKdf()},
+            });
         await orm.insert(encryptedSecrets).values({name, purpose: 'api-token', ...payload})
             .onConflictDoUpdate({
-                target: encryptedSecrets.name,
-                set: {...payload, purpose: 'api-token', updatedAt: new Date()},
+                target: [encryptedSecrets.purpose, encryptedSecrets.name],
+                set: {...payload, updatedAt: new Date()},
             });
     },
 };

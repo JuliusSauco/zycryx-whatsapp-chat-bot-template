@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {sticker} from '../../lib/sticker.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js';
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
@@ -33,7 +34,7 @@ export default defineSdkPlugin({
                         title: sdk.branding.watermark,
                         body: sdk.content.message('stickers.telegram.packBody'),
                     mediaType: 2,
-                    sourceUrl: info.nna,
+                    sourceUrl: botInfo.nna,
                     thumbnail: m.pp
                 }
             }

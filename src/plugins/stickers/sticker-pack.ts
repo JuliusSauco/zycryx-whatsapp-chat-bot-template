@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {logError, logInfo} from '../../lib/logger.js';
 import {sticker} from '../../lib/sticker.js'
 import {getStickerExif} from '../../services/sticker-settings.service.js'
@@ -40,7 +41,7 @@ export default defineSdkPlugin({
                                 title: sdk.branding.watermark,
                                 body: pack.name,
                                 mediaType: 2,
-                                sourceUrl: pickRandom([info.nna, info.nna2, info.md, info.yt]),
+                                sourceUrl: pickRandom([botInfo.nna, botInfo.nna2, botInfo.md, botInfo.yt]),
                                 thumbnail: m.pp
                             }
                         }

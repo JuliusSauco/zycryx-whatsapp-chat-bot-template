@@ -1,5 +1,5 @@
 import {logError} from '../lib/logger.js';
-import type {SubbotBooleanFlag, SubbotConfig, SubbotTypeCounts} from '../domain/subbots.js';
+import type {BotInstanceType, SubbotBooleanFlag, SubbotConfig, SubbotTypeCounts} from '../domain/subbots.js';
 import {cleanSubbotId, DEFAULT_SUBBOT_CONFIG} from '../domain/subbots.js';
 import {getCachedSubbotConfig, invalidateSubbotConfig, setCachedSubbotConfig} from '../lib/db-cache.js';
 import {repositories} from './data-source.js';
@@ -20,19 +20,20 @@ export async function getSubbotConfig(botId: string): Promise<SubbotConfig> {
     }
 }
 
-export async function listSubbotConfigs(tipo?: string | null): Promise<SubbotConfig[]> {
-    return repositories.subbots.listConfigs(tipo);
+export function findBotInstanceIdByJid(botJid: string): Promise<string | null> {
+    return repositories.subbots.findInstanceIdByJid(cleanSubbotId(botJid));
+}
+
+export function findBotJidByInstanceId(botId: string): Promise<string | null> {
+    return repositories.subbots.findBotJidByInstanceId(cleanSubbotId(botId));
+}
+
+export async function listSubbotConfigs(instanceType?: BotInstanceType | null): Promise<SubbotConfig[]> {
+    return repositories.subbots.listConfigs(instanceType);
 }
 
 export async function countSubbotsByType(): Promise<SubbotTypeCounts> {
     return repositories.subbots.countByType();
-}
-
-export function updateSubbotTipo(botId: string, tipo: string): void {
-    const cleanId = cleanSubbotId(botId);
-    repositories.subbots.updateTipo(cleanId, tipo)
-        .then(() => invalidateSubbotConfig(cleanId))
-        .catch(logError);
 }
 
 export async function setSubbotBooleanFlag(botId: string, flag: SubbotBooleanFlag, value: boolean): Promise<void> {

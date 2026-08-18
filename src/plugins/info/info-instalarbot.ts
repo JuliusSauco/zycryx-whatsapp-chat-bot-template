@@ -1,3 +1,4 @@
+import {botInfo} from "../../core/config.js";
 import {defineSdkPlugin} from '../../core/sdk-plugin.js'
 
 export default defineSdkPlugin({
@@ -7,9 +8,9 @@ export default defineSdkPlugin({
     register: true,
     async execute(m, {sdk}) {
     const texto = sdk.content.renderMessage('info.installBot.response', {
-        channel: info.nna,
-        facebook: info.fb,
-        repositoryUrl: info.md,
+        channel: botInfo.nna,
+        facebook: botInfo.fb,
+        repositoryUrl: botInfo.md,
     });
     return sdk.sendMessage({
         text: texto,

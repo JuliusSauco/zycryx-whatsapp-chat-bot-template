@@ -1,3 +1,4 @@
+import {externalApis} from '../external-api-config.js';
 import {ENV} from '../../core/env.js';
 import {httpBuffer, httpJson} from '../../lib/http-client.js';
 import {pickRandom} from '../../utils/random.js';
@@ -158,10 +159,10 @@ export async function getEmojiMixUrls(emoji1: string, emoji2: string): Promise<s
 export async function getTextStickerUrl(kind: TextStickerKind, text: string): Promise<string | null> {
     const encodedText = encodeURI(text);
     const endpoint = kind === 'attp'
-        ? `https://api.neoxr.eu/api/attp?text=${encodedText}%21&color=%5B%22%23FF0000%22%2C+%22%2300FF00%22%2C+%22%230000FF%22%5D&apikey=${info.neoxr.key}`
+        ? `${externalApis.neoxr.url}/attp?text=${encodedText}%21&color=%5B%22%23FF0000%22%2C+%22%2300FF00%22%2C+%22%230000FF%22%5D&apikey=${externalApis.neoxr.key}`
         : kind === 'brat'
-            ? `https://api.neoxr.eu/api/brat?text=${encodedText}&apikey=${info.neoxr.key}`
-            : `https://api.neoxr.eu/api/bratvid?text=${encodedText}&apikey=${info.neoxr.key}`;
+            ? `${externalApis.neoxr.url}/brat?text=${encodedText}&apikey=${externalApis.neoxr.key}`
+            : `${externalApis.neoxr.url}/bratvid?text=${encodedText}&apikey=${externalApis.neoxr.key}`;
     const json = await httpJson<NeoxrStickerResponse>(endpoint);
     return json.status && json.data?.url ? json.data.url : null;
 }

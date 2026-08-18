@@ -10,6 +10,11 @@ function positiveInteger(value: string | undefined, fallback: number): number {
     return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function integerAtLeast(value: string | undefined, fallback: number, minimum: number): number {
+    const parsed = positiveInteger(value, fallback);
+    return parsed >= minimum ? parsed : fallback;
+}
+
 function authStateSource(value: string | undefined): 'database' | 'files' {
     return value?.toLowerCase() === 'files' ? 'files' : 'database';
 }
@@ -38,6 +43,8 @@ export const ENV = {
     BOT_GROUP_LINKS: process.env.BOT_GROUP_LINKS || '',
     BOT_CHANNEL_LINKS: process.env.BOT_CHANNEL_LINKS || '',
     BOT_MOD_GROUP_ID: process.env.BOT_MOD_GROUP_ID || '',
+    BOT_LINK_MODE: process.env.BOT_LINK_MODE || 'auto',
+    BOT_LINK_PHONE: process.env.BOT_LINK_PHONE || '',
     BOT_OWNER_NUMBERS: process.env.BOT_OWNER_NUMBERS || '',
     BOT_FIXED_OWNER_JIDS: process.env.BOT_FIXED_OWNER_JIDS || '',
     API_BASE_URL: process.env.API_BASE_URL || 'https://api.delirius.store',
@@ -79,6 +86,9 @@ export const ENV = {
     DB_STATEMENT_TIMEOUT_MS: positiveInteger(process.env.DB_STATEMENT_TIMEOUT_MS, 30_000),
     LOG_LEVEL: process.env.LOG_LEVEL || 'command',
     PERF_LOG_THRESHOLD_MS: positiveInteger(process.env.PERF_LOG_THRESHOLD_MS, 750),
+    HEALTH_PORT: positiveInteger(process.env.HEALTH_PORT, 3000),
+    HEALTH_HOST: process.env.HEALTH_HOST || '127.0.0.1',
+    HEALTH_METRICS_TOKEN: process.env.HEALTH_METRICS_TOKEN || '',
     HTTP_TIMEOUT_MS: positiveInteger(process.env.HTTP_TIMEOUT_MS, 15_000),
     DB_CACHE_TTL_MS: positiveInteger(process.env.DB_CACHE_TTL_MS, 300_000),
     AUDIO_CACHE_TTL_MS: positiveInteger(process.env.AUDIO_CACHE_TTL_MS, 300_000),
@@ -90,7 +100,7 @@ export const ENV = {
     MESSAGE_QUEUE_GLOBAL_LIMIT: positiveInteger(process.env.MESSAGE_QUEUE_GLOBAL_LIMIT, 2_000),
     BAILEYS_AUTH_STATE_SOURCE: authStateSource(process.env.BAILEYS_AUTH_STATE_SOURCE),
     BAILEYS_AUTH_WRITE_DELAY_MS: positiveInteger(process.env.BAILEYS_AUTH_WRITE_DELAY_MS, 25),
-    BAILEYS_AUTH_LEASE_SECONDS: positiveInteger(process.env.BAILEYS_AUTH_LEASE_SECONDS, 120),
+    BAILEYS_AUTH_LEASE_SECONDS: integerAtLeast(process.env.BAILEYS_AUTH_LEASE_SECONDS, 120, 30),
     BOT_SECRETS_KEY_VERSION: positiveInteger(process.env.BOT_SECRETS_KEY_VERSION, 1),
     BOT_SECRETS_MASTER_KEY_B64: process.env.BOT_SECRETS_MASTER_KEY_B64 || '',
     BOT_SECRETS_KEYRING_JSON: process.env.BOT_SECRETS_KEYRING_JSON || '',

@@ -20,7 +20,7 @@ const fallbackSubbotConfig: SubbotConfig = {
     prestar: null,
     name: null,
     logo_url: null,
-    tipo: null,
+    instanceType: 'subbot',
 }
 
 export default defineSdkPlugin({

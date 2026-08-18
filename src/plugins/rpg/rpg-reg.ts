@@ -1,3 +1,5 @@
+import {botInfo} from "../../core/config.js";
+import {lookupCountry} from '../../providers/main-api.provider.js';
 import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import {createHash} from 'crypto';
 import moment from 'moment-timezone'
@@ -121,7 +123,7 @@ export default defineSdkPlugin({
                     forwardingScore: 9999999,
                     isForwarded: true,
                     externalAdReply: {
-                        mediaUrl: info.md,
+                        mediaUrl: botInfo.md,
                         mediaType: 2,
                         showAdAttribution: false,
                         renderLargerThumbnail: false,
@@ -129,7 +131,7 @@ export default defineSdkPlugin({
                         body: content.message('rpg.registration.completedBody'),
                         previewType: 'PHOTO',
                         thumbnailUrl: "https://telegra.ph/file/33bed21a0eaa789852c30.jpg",
-                        sourceUrl: info.md
+                        sourceUrl: botInfo.md
                     }
                 }
             }, {quoted: fkontak, ephemeralExpiration: 24 * 60 * 1000, disappearingMessagesInChat: 24 * 60 * 1000} as SendMessageOptions);
@@ -151,8 +153,8 @@ export default defineSdkPlugin({
     try {
         const phone = formatPhoneNumber(who);
         if (phone) {
-            const data = await sdk.http.json<CountryApiResponse>(`${info.apis}/tools/country?text=${phone}`);
-            userNationality = data.result ? `${data.result.name} ${data.result.emoji}` : null;
+            const country = await lookupCountry(phone);
+            userNationality = country ? `${country.name} ${country.emoji}` : null;
         }
     } catch (err: unknown) {
         userNationality = null;

@@ -56,15 +56,15 @@ try {
     await client.query(
         `INSERT INTO bot_security.encryption_key_versions (version, kdf, active)
          VALUES ($1, $2, true)
-         ON CONFLICT (version) DO UPDATE SET kdf = excluded.kdf, active = true`,
+         ON CONFLICT (version) DO UPDATE SET kdf = excluded.kdf, active = true, retired_at = NULL`,
         [ENV.BOT_SECRETS_KEY_VERSION, getConfiguredKdf()],
     );
     for (const row of secrets) {
         await client.query(
             `UPDATE bot_security.encrypted_secrets
-             SET key_version = $2, ciphertext = $3, iv = $4, auth_tag = $5, updated_at = statement_timestamp()
-             WHERE name = $1 AND key_version = $6`,
-            [row.name, row.rotated.keyVersion, row.rotated.ciphertext, row.rotated.iv, row.rotated.authTag, row.keyVersion],
+             SET key_version = $3, ciphertext = $4, iv = $5, auth_tag = $6, updated_at = statement_timestamp()
+             WHERE name = $1 AND purpose = $2 AND key_version = $7`,
+            [row.name, row.purpose, row.rotated.keyVersion, row.rotated.ciphertext, row.rotated.iv, row.rotated.authTag, row.keyVersion],
         );
     }
     for (const row of credentials) {
@@ -84,6 +84,15 @@ try {
                 row.rotated.iv, row.rotated.authTag, row.keyVersion],
         );
     }
+    await client.query(
+        `UPDATE bot_security.encryption_key_versions key
+         SET active = false, retired_at = statement_timestamp()
+         WHERE key.version <> $1 AND key.active
+           AND NOT EXISTS (SELECT 1 FROM bot_security.encrypted_secrets item WHERE item.key_version = key.version)
+           AND NOT EXISTS (SELECT 1 FROM bot_sessions.auth_credentials item WHERE item.key_version = key.version)
+           AND NOT EXISTS (SELECT 1 FROM bot_sessions.signal_keys item WHERE item.key_version = key.version)`,
+        [ENV.BOT_SECRETS_KEY_VERSION],
+    );
     await client.query('COMMIT');
     logInfo(`[SECRETS] Rotación a versión ${ENV.BOT_SECRETS_KEY_VERSION}: ${secrets.length} secretos, ${credentials.length} credenciales y ${signalKeys.length} Signal keys.`);
 } catch (error) {

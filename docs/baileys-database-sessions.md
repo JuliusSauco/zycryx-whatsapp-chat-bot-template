@@ -32,7 +32,7 @@ npm run benchmark:auth-crypto
 ## Migración desde archivos y base anterior
 
 1. Genera y respalda la clave maestra fuera de PostgreSQL.
-2. Despliega el código y ejecuta `NODE_ENV=prod npm run db:migrate`.
+2. Provisiona una base nueva con `NODE_ENV=prod npm run db:setup` o valida una ya provisionada con `NODE_ENV=prod npm run db:check`.
 3. Configura `BAILEYS_AUTH_STATE_SOURCE=database` y la clave.
 4. Arranca una sola instancia. Si la sesión no existe en DB, `BotSession/` o la carpeta de `jadibot/` correspondiente se importa automáticamente.
 5. Verifica conexión y ejecuta un backup de DB. Las carpetas originales no se borran automáticamente.

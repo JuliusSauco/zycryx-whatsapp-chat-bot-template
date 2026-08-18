@@ -1,3 +1,4 @@
+import {externalApis} from '../external-api-config.js';
 import {httpJson} from '../../lib/http-client.js';
 import {DEFAULT_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
@@ -39,7 +40,7 @@ export function buildTikTokStalkProviders(username: string): ProviderCandidate<T
         {
             name: 'main-tiktok-stalk',
             run: async () => {
-                const data = await httpJson<TikTokStalkResponse>(`${info.apis}/tools/tiktokstalk?q=${encodeURIComponent(username)}`);
+                const data = await httpJson<TikTokStalkResponse>(`${externalApis.main.url}/tools/tiktokstalk?q=${encodeURIComponent(username)}`);
                 const profile = data.result?.users;
                 if (!profile?.username || !profile.avatarLarger) return null;
                 const stats = data.result?.stats || {};

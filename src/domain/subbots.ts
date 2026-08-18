@@ -1,10 +1,10 @@
-export type SubbotType = 'oficial' | 'subbot' | 'null' | string;
-export type SubbotMode = 'public' | 'private' | string;
+export type BotInstanceType = 'main' | 'subbot';
+export type SubbotMode = 'public' | 'private';
 export type SubbotBooleanFlag = 'anti_private' | 'anti_call' | 'privacy' | 'prestar';
 
 export interface SubbotConfig {
     id?: string;
-    tipo?: SubbotType | null;
+    instanceType?: BotInstanceType;
     name?: string | null;
     logo_url?: string | null;
     prefix: string[];
@@ -18,7 +18,7 @@ export interface SubbotConfig {
 
 export interface SubbotTypeCounts {
     total: number;
-    oficiales: number;
+    main: number;
     subbots: number;
 }
 
@@ -32,7 +32,6 @@ export const DEFAULT_SUBBOT_CONFIG: SubbotConfig = {
     logo_url: null,
     privacy: null,
     prestar: null,
-    tipo: null,
 };
 
 export function cleanSubbotId(botId: string): string {

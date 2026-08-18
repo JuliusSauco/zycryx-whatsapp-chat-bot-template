@@ -1,7 +1,6 @@
 import type {EncryptedPayload} from '../lib/secret-crypto.js';
 
 export type BaileysSessionType = 'main' | 'subbot';
-export type BaileysSessionStatus = 'active' | 'logged_out' | 'revoked' | 'error';
 
 export interface StoredSignalKey extends EncryptedPayload {
     keyType: string;
@@ -16,7 +15,7 @@ export interface SignalKeyChange {
 
 export interface BaileysAuthRepository {
     ensureEncryptionKeyVersion(version: number, kdf: 'raw-key' | 'argon2id'): Promise<void>;
-    ensureSession(input: {id: string; type: BaileysSessionType; ownerId?: string | null}): Promise<void>;
+    ensureSession(input: {sessionId: string; botInstanceId: string; type: BaileysSessionType; ownerId?: string | null}): Promise<void>;
     acquireLease(sessionId: string, leaseOwner: string, leaseSeconds: number): Promise<boolean>;
     renewLease(sessionId: string, leaseOwner: string, leaseSeconds: number): Promise<boolean>;
     releaseLease(sessionId: string, leaseOwner: string): Promise<void>;
@@ -27,6 +26,6 @@ export interface BaileysAuthRepository {
     applySignalKeyChanges(sessionId: string, changes: SignalKeyChange[]): Promise<void>;
     listActiveSessionIds(type: BaileysSessionType): Promise<string[]>;
     markConnected(sessionId: string, botJid: string | null): Promise<void>;
-    setStatus(sessionId: string, status: BaileysSessionStatus): Promise<void>;
+    markError(sessionId: string): Promise<void>;
     deleteSession(sessionId: string): Promise<void>;
 }

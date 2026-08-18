@@ -1,5 +1,6 @@
+import {externalApis} from '../external-api-config.js';
 import {httpJson} from '../../lib/http-client.js';
-import {pinterest} from '../../lib/scraper.js';
+import {pinterest} from '../legacy-scrapers/download.scraper.js';
 import {DEFAULT_PROVIDER_TIMEOUT_MS, LONG_PROVIDER_TIMEOUT_MS, runProviderCandidates, type ProviderCandidate, type ProviderResult, withProviderPolicy} from '../provider.types.js';
 
 export interface PinterestProviderPin {
@@ -74,7 +75,7 @@ export function buildPinterestSearchProviders(query: string): ProviderCandidate<
         {
             name: 'main-pinterest',
             run: async () => {
-                const res = await httpJson<{data?: MainPinterestItem[]}>(`${info.apis}/search/pinterestv2?text=${encodeURIComponent(query)}`);
+                const res = await httpJson<{data?: MainPinterestItem[]}>(`${externalApis.main.url}/search/pinterestv2?text=${encodeURIComponent(query)}`);
                 const data = (res.data || []).slice(0, 5);
                 const results = data.map(result => ({
                     title: result.description || query,

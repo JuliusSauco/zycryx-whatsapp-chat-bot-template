@@ -8,7 +8,6 @@ export async function upsertActiveChat(input: {
     botId: string;
 }): Promise<void> {
     await repositories.chats.upsertActiveChat(input);
-    await repositories.chats.insertIfMissing(input.chatId);
 }
 
 export async function markBotLeftGroup(groupId: string, botId: string): Promise<void> {

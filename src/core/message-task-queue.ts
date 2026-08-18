@@ -10,6 +10,7 @@ export interface MessageTaskQueueStats {
     activeKeys: number;
     queuedKeys: number;
     rejected: number;
+    capacity: number;
 }
 
 type Task = () => Promise<void>;
@@ -44,6 +45,7 @@ export class MessageTaskQueue {
             activeKeys: this.activeKeys.size,
             queuedKeys: this.queues.size,
             rejected: this.rejected,
+            capacity: this.options.globalLimit,
         };
     }
 

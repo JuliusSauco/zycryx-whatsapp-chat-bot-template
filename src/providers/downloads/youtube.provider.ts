@@ -1,9 +1,10 @@
+import {externalApis} from '../external-api-config.js';
 import ytdl from 'ytdl-core';
 import {ENV} from '../../core/env.js';
-import {httpJson, httpRequest, httpText} from '../../lib/http-client.js';
+import {httpJson} from '../../lib/http-client.js';
 import {savetube} from '../../lib/yt-savetube.js';
 import {ogmp3} from '../../lib/youtubedl.js';
-import {amdl, ytdown} from '../../lib/scraper.js';
+import {amdl, ytdown} from '../legacy-scrapers/download.scraper.js';
 import {
     classifyProviderFailure,
     LONG_PROVIDER_TIMEOUT_MS,
@@ -16,6 +17,8 @@ import {
     withProviderPolicy,
 } from '../provider.types.js';
 import {searchYouTubeVideos} from '../youtube-search.provider.js';
+import {AUDIO_QUALITIES, getFileSize, VIDEO_QUALITIES, ytMp4} from './youtube-utilities.provider.js';
+export * from './youtube-utilities.provider.js';
 
 export interface DownloadResult {
     result?: {
@@ -60,81 +63,6 @@ export interface YouTubeProviderMedia {
     thumbnail?: string;
     mimetype: 'audio/mpeg' | 'audio/mp4' | 'video/mp4';
     fileName?: string;
-}
-
-export const AUDIO_QUALITIES = ['64', '96', '128', '192', '256', '320'];
-export const VIDEO_QUALITIES = ['240', '360', '480', '720', '1080'];
-
-export const youtubeRegexID = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/;
-
-export async function searchYouTube(query: string) {
-    const search = await searchYouTubeVideos(query);
-    return search.videos;
-}
-
-export function resolveIndexedYoutubeLink(input: string, sender: string): string {
-    if (input.includes('you')) return input;
-
-    const index = parseInt(input, 10) - 1;
-    if (index < 0 || !Array.isArray(global.videoList) || !global.videoList.length) return '';
-
-    const matchingItem = global.videoList.find(item => item.from === sender);
-    return matchingItem?.urls[index] || '';
-}
-
-export function bytesToSize(bytes: string | number | undefined): string {
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const numericBytes = Number(bytes || 0);
-    if (!numericBytes) return 'n/a';
-
-    const i = Math.floor(Math.log(numericBytes) / Math.log(1024));
-    if (i === 0) return `${numericBytes} ${sizes[i]}`;
-    return `${(numericBytes / (1024 ** i)).toFixed(1)} ${sizes[i]}`;
-}
-
-export async function ytMp4(url: string): Promise<{title: string; result: string; rersult2: string; thumb: string}> {
-    const getUrl = await ytdl.getInfo(url);
-    const result = [];
-
-    for (const item of getUrl.formats) {
-        if (item.container === 'mp4' && item.hasVideo === true && item.hasAudio === true) {
-            result.push({
-                video: item.url,
-                quality: item.qualityLabel,
-                size: bytesToSize(item.contentLength),
-            });
-        }
-    }
-
-    const resultFix = result.filter(x => x.video && x.size && x.quality);
-    if (!resultFix[0]) throw new Error('No se encontró formato mp4 válido');
-
-    const tinyUrl = await httpText(`https://tinyurl.com/api-create.php?url=${resultFix[0].video}`);
-    const title = getUrl.videoDetails.title;
-    const thumb = getUrl.player_response.microformat.playerMicroformatRenderer.thumbnail.thumbnails[0].url;
-    return {title, result: tinyUrl, rersult2: resultFix[0].video, thumb};
-}
-
-export function secondString(seconds: number | undefined) {
-    seconds = Number(seconds);
-    const d = Math.floor(seconds / (3600 * 24));
-    const h = Math.floor((seconds % (3600 * 24)) / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    const dDisplay = d > 0 ? d + (d == 1 ? ' día, ' : ' días, ') : '';
-    const hDisplay = h > 0 ? h + (h == 1 ? ' hora, ' : ' horas, ') : '';
-    const mDisplay = m > 0 ? m + (m == 1 ? ' minuto, ' : ' minutos, ') : '';
-    const sDisplay = s > 0 ? s + (s == 1 ? ' segundo' : ' segundos') : '';
-    return dDisplay + hDisplay + mDisplay + sDisplay;
-}
-
-export async function getFileSize(url: string) {
-    try {
-        const response = await httpRequest(url, {method: 'HEAD'});
-        return parseInt(response.headers.get('content-length') || '0');
-    } catch {
-        return 0;
-    }
 }
 
 export async function runDownloadProviders(apis: DownloadApi[]): Promise<DownloadMedia> {
@@ -205,12 +133,12 @@ export function buildAudioApis(videoUrl: string, title: string, format: string, 
         },
         {
             name: 'neoxr-youtube-audio',
-            url: () => httpJson<DownloadResult>(`${info.neoxr.url}/youtube?url=${videoUrl}&type=audio&quality=128kbps&apikey=${info.neoxr.key}`),
+            url: () => httpJson<DownloadResult>(`${externalApis.neoxr.url}/youtube?url=${videoUrl}&type=audio&quality=128kbps&apikey=${externalApis.neoxr.key}`),
             extract: data => ({data: data.data?.url, isDirect: false}),
         },
         {
             name: 'fgmods-youtube-audio',
-            url: () => httpJson<DownloadResult>(`${info.fgmods.url}/downloader/ytmp4?url=${videoUrl}&apikey=${info.fgmods.key}`),
+            url: () => httpJson<DownloadResult>(`${externalApis.fgmods.url}/downloader/ytmp4?url=${videoUrl}&apikey=${externalApis.fgmods.key}`),
             extract: data => ({data: data.result?.dl_url, isDirect: false}),
         },
         {
@@ -220,7 +148,7 @@ export function buildAudioApis(videoUrl: string, title: string, format: string, 
         },
         {
             name: 'main-youtube-audio',
-            url: () => httpJson<DownloadResult>(`${info.apis}/download/ytmp3?url=${videoUrl}`),
+            url: () => httpJson<DownloadResult>(`${externalApis.main.url}/download/ytmp3?url=${videoUrl}`),
             extract: data => ({data: data.status ? data.data?.download?.url : null, isDirect: false}),
         },
         {
@@ -255,17 +183,17 @@ export function buildVideoApis(videoUrl: string, title: string, selectedQuality:
         },
         {
             name: 'neoxr-youtube-video',
-            url: () => httpJson<DownloadResult>(`${info.neoxr.url}/youtube?url=${videoUrl}&type=video&quality=720p&apikey=${info.neoxr.key}`),
+            url: () => httpJson<DownloadResult>(`${externalApis.neoxr.url}/youtube?url=${videoUrl}&type=video&quality=720p&apikey=${externalApis.neoxr.key}`),
             extract: data => ({data: data.data?.url, isDirect: false}),
         },
         {
             name: 'fgmods-youtube-video',
-            url: () => httpJson<DownloadResult>(`${info.fgmods.url}/downloader/ytmp4?url=${videoUrl}&apikey=${info.fgmods.key}`),
+            url: () => httpJson<DownloadResult>(`${externalApis.fgmods.url}/downloader/ytmp4?url=${videoUrl}&apikey=${externalApis.fgmods.key}`),
             extract: data => ({data: data.result?.dl_url, isDirect: false}),
         },
         {
             name: 'main-youtube-video',
-            url: () => httpJson<DownloadResult>(`${info.apis}/download/ytmp4?url=${encodeURIComponent(videoUrl)}`),
+            url: () => httpJson<DownloadResult>(`${externalApis.main.url}/download/ytmp4?url=${encodeURIComponent(videoUrl)}`),
             extract: data => ({data: data.status ? data.data?.download?.url : null, isDirect: false}),
         },
         {
@@ -334,7 +262,7 @@ export async function downloadYouTubeAudio(
         {
             name: 'main-youtube-audio',
             run: async () => {
-                const delius = await httpJson<{status?: boolean; data?: {download?: {url?: string}}}>(`${info.apis}/download/ytmp3?url=${videoUrl}`);
+                const delius = await httpJson<{status?: boolean; data?: {download?: {url?: string}}}>(`${externalApis.main.url}/download/ytmp3?url=${videoUrl}`);
                 const url = delius.status ? delius.data?.download?.url : null;
                 return url ? {url, mimetype: 'audio/mpeg'} : null;
             },
