@@ -107,7 +107,9 @@ export default defineSdkPlugin({
         userTag,
         nationality: nacionalidad,
         ageLine: edad ? sdk.content.renderMessage('rpg.profile.ageLine', {age: edad}) : '',
-        genderLine: gender ? sdk.content.renderMessage('rpg.profile.genderLine', {gender}) : '',
+        genderLine: sdk.content.renderMessage('rpg.profile.genderLine', {
+            gender: gender || sdk.content.message('rpg.profile.genderUnknown'),
+        }),
         birthdayLine: birthday ? sdk.content.renderMessage('rpg.profile.birthdayLine', {birthday: moment(birthday).format('DD/MM/YYYY')}) : '',
         registrationDateLine: regTime ? sdk.content.renderMessage('rpg.profile.registrationDateLine', {date: moment(regTime).format('DD/MM/YYYY')}) : '',
         limit: formatNumber(limite ?? 0),

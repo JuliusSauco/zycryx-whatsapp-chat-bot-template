@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
 import type {UserRecord} from '../src/domain/users.js';
 import {configureServiceRepositories, repositories} from '../src/services/data-source.js';
@@ -7,6 +8,13 @@ import {createDrizzleRepositories} from '../src/adapters/drizzle/repositories.js
 configureServiceRepositories(createDrizzleRepositories());
 import {resolveProfileUser, resolveStoredUserMention} from '../src/services/profile-user.service.js';
 import {DEFAULT_PROFILE_AVATAR, loadProfileMedia} from '../src/plugins/rpg/rpg-profile.helpers.js';
+
+const profileSource = readFileSync('src/plugins/rpg/rpg-perfil.ts', 'utf8');
+assert.match(profileSource, /gender \|\| sdk\.content\.message\('rpg\.profile\.genderUnknown'\)/);
+const messages = JSON.parse(readFileSync('resources/data/messages.json', 'utf8')) as {
+    pluginMessages: {rpg: {profile: Record<string, string>}};
+};
+assert.equal(messages.pluginMessages.rpg.profile.genderUnknown, 'No definido');
 
 const originalUsers = repositories.users;
 
@@ -64,6 +72,18 @@ try {
         });
     }
     {
+        const named = user('424242424242424@lid');
+        named.username = '@My Queen ❤️';
+        installStore([named]);
+        const profile = await resolveProfileUser({rawJid: named.id});
+        assert.equal(profile?.tag, '@My Queen ❤️');
+        assert.equal(profile?.mentionJid, named.id);
+        assert.deepEqual(await resolveStoredUserMention(named.id), {
+            tag: '@My Queen ❤️',
+            mentionJid: named.id,
+        });
+    }
+    {
         const store = installStore();
         const resolved = await resolveProfileUser({
             rawJid: '12345@lid',
@@ -105,6 +125,12 @@ try {
     }), DEFAULT_PROFILE_AVATAR);
 } finally {
     repositories.users = originalUsers;
+}
+
+for (const sourcePath of ['src/plugins/rpg/rpg-pareja.ts', 'src/plugins/rpg/rpg-pareja-divorce.ts']) {
+    const source = readFileSync(sourcePath, 'utf8');
+    assert.match(source, /resolveStoredUserMention/);
+    assert.doesNotMatch(source, /\.split\('@'\)\[0\]/);
 }
 
 console.log('profile-user.test.ts OK');

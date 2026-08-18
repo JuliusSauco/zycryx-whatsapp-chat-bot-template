@@ -1,4 +1,7 @@
 import moment from 'moment-timezone';
+import type {ProfileGender} from '../../domain/users.js';
+
+export type {ProfileGender} from '../../domain/users.js';
 
 export const REGISTRATION_COMMANDS = new Set([
     'reg', 'register', 'registrar', 'registro', 'registrarse', 'signup', 'verify', 'verificar',
@@ -12,8 +15,6 @@ export const PROFILE_EDIT_COMMANDS = new Set([
 ]);
 
 export const PROFILE_COMMAND_PATTERN = /^(setbirthday|setcumple(?:anos|años)?|setgenero|setgender|setnacionalidad|setnationality|setnombre|setname|nserie|unreg|sn|myns|verify|verificar|registrar(?:se)?|registro|signup|reg(?:ister)?)$/i;
-
-export type ProfileGender = 'hombre' | 'mujer' | 'otro';
 
 export type RegistrationIdentity =
     | {ok: true; name: string; age: number}
@@ -50,10 +51,11 @@ export function normalizeProfileName(input: string): string | null {
 }
 
 export function normalizeGender(input: string): ProfileGender | null {
-    const value = input.trim().toLocaleLowerCase('es');
-    if (value === '1' || value === 'hombre' || value === 'male' || value === 'masculino') return 'hombre';
-    if (value === '2' || value === 'mujer' || value === 'female' || value === 'femenino') return 'mujer';
-    if (value === '3' || value === 'otro' || value === 'other') return 'otro';
+    const value = input.trim().toLocaleLowerCase('es').replace(/[-_]+/gu, ' ').replace(/\s+/gu, ' ');
+    if (value === '1' || value === 'hombre' || value === 'male' || value === 'masculino') return 'Masculino';
+    if (value === '2' || value === 'mujer' || value === 'female' || value === 'femenino') return 'Femenino';
+    if (value === '3' || value === 'no binario' || value === 'non binary' || value === 'nonbinary') return 'No Binario';
+    if (value === '4' || value === 'otro' || value === 'other') return 'Otro';
     return null;
 }
 

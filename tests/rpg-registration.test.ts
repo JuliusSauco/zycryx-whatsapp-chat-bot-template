@@ -38,9 +38,12 @@ assert.deepEqual(parseRegistrationIdentity('sin edad'), {ok: false, reason: 'for
 
 assert.equal(normalizeProfileName('  María   José✓  '), 'María José');
 assert.equal(normalizeProfileName('x'), null);
-assert.equal(normalizeGender('male'), 'hombre');
-assert.equal(normalizeGender('FEMENINO'), 'mujer');
-assert.equal(normalizeGender('3'), 'otro');
+assert.equal(normalizeGender('male'), 'Masculino');
+assert.equal(normalizeGender('FEMENINO'), 'Femenino');
+assert.equal(normalizeGender('3'), 'No Binario');
+assert.equal(normalizeGender('no-binario'), 'No Binario');
+assert.equal(normalizeGender('4'), 'Otro');
+assert.equal(normalizeGender('otro'), 'Otro');
 assert.equal(normalizeGender('desconocido'), null);
 assert.equal(normalizeNationality('  República   Dominicana '), 'República Dominicana');
 assert.equal(normalizeNationality('C0lombia'), null);

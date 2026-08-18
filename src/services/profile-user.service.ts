@@ -3,6 +3,7 @@ import type {UserRecord} from '../domain/users.js';
 import {getParticipantIdentityJids} from '../utils/group-creator.js';
 import {cleanJid, isUserJid, jidToPhone} from '../utils/jid.js';
 import {resolveMention, type ResolvedMention} from '../utils/mention.js';
+import {resolveUserMention} from '../utils/user-mention.js';
 import {getUserById, upsertUser} from './user.service.js';
 
 export interface ResolveProfileUserInput {
@@ -61,14 +62,6 @@ export async function resolveStoredUserMention(
     const profile = await resolveProfileUser({rawJid, participants, createIfMissing: false});
     if (!profile) return resolveMention(rawJid, participants);
 
-    const storedPhone = (profile.user.num || '').replace(/\D/g, '');
-    if (/^\d{8,15}$/.test(storedPhone)) {
-        return {
-            tag: `@${storedPhone}`,
-            mentionJid: `${storedPhone}@s.whatsapp.net`,
-        };
-    }
-
     return {tag: profile.tag, mentionJid: profile.mentionJid};
 }
 
@@ -79,10 +72,15 @@ function buildResult(
     user: UserRecord,
     created: boolean,
 ): ResolvedProfileUser {
-    const mentionJid = isUserJid(resolvedMentionJid)
-        ? cleanJid(resolvedMentionJid)
-        : isUserJid(userId) ? cleanJid(userId) : cleanJid(resolvedMentionJid || userId);
-    const tag = isUserJid(mentionJid) ? `@${jidToPhone(mentionJid)}` : '@usuario';
+    const mention = resolveUserMention({
+        id: userId,
+        username: user.username,
+        num: user.num,
+        lid: user.lid,
+        aliases: [resolvedMentionJid],
+    }, participant ? [participant] : []);
+    const mentionJid = mention.mentionJid ?? cleanJid(resolvedMentionJid || userId);
+    const tag = mention.tag;
     return {userId, mentionJid, tag, participant, user, created};
 }
 

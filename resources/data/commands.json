@@ -310,7 +310,7 @@
     "reg": {"emoji": "🪪", "usage": "reg <nombre.edad>", "description": "Registra tu perfil para usar funciones del bot.", "aliases": ["registrar", "register", "verify", "verificar"], "examples": ["reg Ana.18"]},
     "nserie": {"emoji": "🔐", "usage": "nserie", "description": "Muestra tu serial de registro.", "aliases": ["sn", "myns"]},
     "unreg": {"emoji": "🗑️", "usage": "unreg <serial>", "description": "Elimina tu registro usando tu serial.", "examples": ["unreg abc123"]},
-    "setgenero": {"emoji": "🪪", "usage": "setgenero <hombre|mujer|otro>", "description": "Actualiza el genero de tu perfil.", "examples": ["setgenero otro"]},
+    "setgenero": {"emoji": "🪪", "usage": "setgenero <Masculino|Femenino|No Binario|Otro>", "description": "Actualiza el género de tu perfil usando uno de los cuatro valores permitidos.", "aliases": ["setgender"], "examples": ["setgenero No Binario"]},
     "setbirthday": {"emoji": "🎂", "usage": "setbirthday <dd/mm/aaaa>", "description": "Actualiza o borra tu fecha de cumpleaños.", "examples": ["setbirthday 10/05/2000"]},
     "perfil": {"emoji": "👤", "usage": "perfil", "description": "Muestra tu perfil, nivel y datos de usuario.", "aliases": ["profile"], "examples": ["perfil", "perfil @usuario"]},
     "wallet": {"emoji": "👛", "usage": "wallet [--info]", "description": "Muestra tu E - WALLET o abre la guía general de economía.", "aliases": ["ewallet", "balance", "bal", "diamantes", "diamond"], "examples": ["wallet", "wallet --info"]},

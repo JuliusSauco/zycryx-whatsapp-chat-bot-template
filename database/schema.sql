@@ -33,6 +33,8 @@ CREATE SCHEMA "bot_security";
 
 CREATE SCHEMA "bot_sessions";
 
+CREATE TYPE "bot_identity"."profile_gender" AS ENUM('Masculino', 'Femenino', 'No Binario', 'Otro');
+
 CREATE TABLE "bot_economy"."account_balances" (
 	"account_id" uuid NOT NULL,
 	"resource_code" text NOT NULL,
@@ -670,11 +672,10 @@ CREATE TABLE "bot_identity"."user_private_chat_states" (
 
 CREATE TABLE "bot_identity"."user_profiles" (
 	"user_id" text PRIMARY KEY NOT NULL,
-	"gender" text,
+	"gender" "bot_identity"."profile_gender",
 	"nationality" text,
 	"birthday" date,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "user_profiles_gender_check" CHECK ("gender" IS NULL OR "gender" in ('hombre', 'mujer', 'otro')),
 	CONSTRAINT "user_profiles_nationality_check" CHECK ("nationality" IS NULL OR char_length(btrim("nationality")) BETWEEN 2 AND 64),
 	CONSTRAINT "user_profiles_birthday_check" CHECK ("birthday" IS NULL OR ("birthday" <= current_date AND "birthday" >= DATE '1900-01-01'))
 );

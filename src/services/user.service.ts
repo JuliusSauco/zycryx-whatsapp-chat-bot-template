@@ -3,6 +3,7 @@ import type {
     BannedUserInfo,
     CompleteRegistrationInput,
     MarriedUserInfo,
+    ProfileGender,
     UpsertUserInput,
     UserBanInfo,
     UserResources,
@@ -122,7 +123,7 @@ export async function setUserProfileName(userId: string, name: string): Promise<
     return repositories.userRegistration.setProfileName(userId, name);
 }
 
-export async function setUserGender(userId: string, gender: string): Promise<boolean> {
+export async function setUserGender(userId: string, gender: ProfileGender): Promise<boolean> {
     return repositories.userRegistration.setGender(userId, gender);
 }
 

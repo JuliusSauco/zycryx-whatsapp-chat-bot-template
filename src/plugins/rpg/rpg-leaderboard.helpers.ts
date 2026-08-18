@@ -1,6 +1,7 @@
 import type {UserWallet} from '../../domain/users.js';
-import {cleanJid, isLidJid, isUserJid, normalizeWhatsAppUsername} from '../../utils/jid.js';
-import {resolveMention, type ParticipantLike} from '../../utils/mention.js';
+import {cleanJid, isLidJid} from '../../utils/jid.js';
+import type {ParticipantLike} from '../../utils/mention.js';
+import {resolveUserMention} from '../../utils/user-mention.js';
 
 export interface LeaderboardIdentity {
     label: string;
@@ -11,19 +12,8 @@ export function resolveLeaderboardIdentity(
     user: Pick<UserWallet, 'id' | 'username' | 'num' | 'lid'>,
     participants: ParticipantLike[] = [],
 ): LeaderboardIdentity {
-    const id = cleanJid(user.id);
-    const storedPhone = toPhoneJid(user.num);
-    const canonicalPhone = isUserJid(id) ? id : null;
-    const rawLid = [id, cleanJid(user.lid || '')].find(isLidJid) || null;
-    const resolvedLid = rawLid ? resolveMention(rawLid, participants) : null;
-    const mentionJid = storedPhone || canonicalPhone
-        || (resolvedLid?.mentionJid && isMentionableJid(resolvedLid.mentionJid) ? resolvedLid.mentionJid : null)
-        || rawLid;
-    const username = normalizeWhatsAppUsername(user.username);
-    const fallback = mentionJid && isLidJid(mentionJid)
-        ? `usuario-${mentionJid.split('@')[0].slice(-4)}`
-        : mentionJid?.split('@')[0] || 'usuario';
-    return {label: username || fallback, mentionJid};
+    const {label, mentionJid} = resolveUserMention(user, participants);
+    return {label, mentionJid};
 }
 
 export function findLeaderboardPosition(
@@ -46,11 +36,7 @@ function identityAliases(value: string | null | undefined): string[] {
 
 function toPhoneJid(value: string | null | undefined): string | null {
     const cleaned = cleanJid(value || '');
-    if (isUserJid(cleaned)) return cleaned;
+    if (cleaned.endsWith('@s.whatsapp.net')) return cleaned;
     const phone = cleaned.replace(/\D/g, '');
     return /^\d{8,15}$/.test(phone) ? `${phone}@s.whatsapp.net` : null;
-}
-
-function isMentionableJid(value: string): boolean {
-    return isUserJid(value) || isLidJid(value);
 }

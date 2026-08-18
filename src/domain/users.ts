@@ -12,6 +12,8 @@ export interface UserResources {
 
 export type WalletResource = 'limite' | 'exp' | 'coins' | 'botcoin' | 'zyxcoin';
 export type TransferableWalletResource = 'limite' | 'exp' | 'coins';
+export const PROFILE_GENDERS = ['Masculino', 'Femenino', 'No Binario', 'Otro'] as const;
+export type ProfileGender = typeof PROFILE_GENDERS[number];
 export interface WalletTransferHistoryItem {
     id: number;
     resource: TransferableWalletResource;
@@ -104,7 +106,7 @@ export interface UserRecord {
     warnAntiporn: number;
     warnEstado: number;
     edad: number | null;
-    gender: string | null;
+    gender: ProfileGender | null;
     nationality: string | null;
     birthday: string | null;
     coins: number;
@@ -173,7 +175,7 @@ export interface CompleteRegistrationInput {
     id: string;
     nombre: string;
     edad: number;
-    gender: string;
+    gender: ProfileGender;
     nationality: string | null;
     birthday: string | null;
     regTime: Date;

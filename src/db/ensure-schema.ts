@@ -38,6 +38,7 @@ const REQUIRED_COLUMNS = [
     'bot_identity.user_profiles.nationality',
     'bot_identity.user_profiles.birthday',
 ] as const;
+const REQUIRED_PROFILE_GENDERS = ['Masculino', 'Femenino', 'No Binario', 'Otro'] as const;
 const client = new Client(ENV.DATABASE_URL
     ? {connectionString: ENV.DATABASE_URL}
     : {
@@ -87,6 +88,20 @@ try {
     const presentColumns = new Set(columnResult.rows.map(row => row.qualifiedColumn));
     const missingColumns = REQUIRED_COLUMNS.filter(column => !presentColumns.has(column));
     if (missingColumns.length) throw new Error(`Faltan columnas críticas: ${missingColumns.join(', ')}.`);
+
+    const genderEnumResult = await client.query<{label: string}>(
+        `SELECT enumlabel AS label
+         FROM pg_enum
+         INNER JOIN pg_type ON pg_type.oid = pg_enum.enumtypid
+         INNER JOIN pg_namespace ON pg_namespace.oid = pg_type.typnamespace
+         WHERE pg_namespace.nspname = 'bot_identity' AND pg_type.typname = 'profile_gender'
+         ORDER BY enumsortorder`,
+    );
+    const genderValues = genderEnumResult.rows.map(row => row.label);
+    if (genderValues.length !== REQUIRED_PROFILE_GENDERS.length
+        || genderValues.some((value, index) => value !== REQUIRED_PROFILE_GENDERS[index])) {
+        throw new Error(`ENUM bot_identity.profile_gender inválido: ${genderValues.join(', ') || 'no existe'}.`);
+    }
 
     const indexResult = await client.query<{schemaName: string; indexName: string}>(
         `SELECT schemaname AS "schemaName", indexname AS "indexName"

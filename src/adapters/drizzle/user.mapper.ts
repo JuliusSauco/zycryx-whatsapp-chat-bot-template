@@ -1,5 +1,5 @@
 import type {usuarios} from '../../db/schema.js';
-import type {UserRecord, UserResources, UserWallet} from '../../domain/users.js';
+import type {ProfileGender, UserRecord, UserResources, UserWallet} from '../../domain/users.js';
 
 export type UserRow = typeof usuarios.$inferSelect;
 export type UserRecordRow = Pick<UserRow, 'id' | 'nombre'> & {
@@ -15,7 +15,7 @@ export type UserRecordRow = Pick<UserRow, 'id' | 'nombre'> & {
     warnAntiporn?: number | null;
     warnEstado?: number | null;
     edad?: number | null;
-    gender?: string | null;
+    gender?: ProfileGender | null;
     nationality?: string | null;
     birthday?: string | null;
     level?: number | null;

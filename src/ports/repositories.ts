@@ -2,6 +2,7 @@ import type {
     BannedUserInfo,
     CompleteRegistrationInput,
     MarriedUserInfo,
+    ProfileGender,
     RewardTimestampField,
     UpsertRegisteredAdminInput,
     UpsertUserInput,
@@ -143,7 +144,7 @@ export interface UserRepository {
     completeRegistration(input: CompleteRegistrationInput): Promise<void>;
     unregister(userId: string): Promise<void>;
     setProfileName(userId: string, name: string): Promise<boolean>;
-    setGender(userId: string, gender: string): Promise<boolean>;
+    setGender(userId: string, gender: ProfileGender): Promise<boolean>;
     setNationality(userId: string, nationality: string | null): Promise<boolean>;
     setBirthday(userId: string, birthday: string | null): Promise<boolean>;
     countUsers(): Promise<{total: number; registered: number}>;
