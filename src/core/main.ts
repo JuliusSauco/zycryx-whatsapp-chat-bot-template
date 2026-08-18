@@ -24,6 +24,7 @@ import {
 } from './runtime-state.js';
 import {application} from './composition-root.js';
 import {
+    BaileysAuthLeaseConflictError,
     disposeAllDatabaseAuthStates,
     configureBaileysAuthRepository,
     deleteStoredAuthSession,
@@ -150,6 +151,11 @@ async function main() {
         try {
             await startBot();
         } catch (err: unknown) {
+            if (err instanceof BaileysAuthLeaseConflictError) {
+                logWarn(chalk.yellow('♻️ La sesión principal sigue en la instancia anterior; reintento con backoff programado.'));
+                mainReconnect.schedule('main', startBot);
+                return;
+            }
             logError(chalk.red("❌ Error al iniciar bot principal:"), err);
             throw err;
         }

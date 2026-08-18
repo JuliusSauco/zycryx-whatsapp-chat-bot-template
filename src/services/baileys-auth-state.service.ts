@@ -44,6 +44,14 @@ export interface ManagedAuthState {
     leaseLost: AbortSignal;
 }
 
+/** Conflicto temporal esperado cuando dos deployments intentan relevar la misma sesión. */
+export class BaileysAuthLeaseConflictError extends Error {
+    constructor(sessionId: string) {
+        super(`La sesión Baileys '${sessionId}' ya está activa en otra instancia.`);
+        this.name = 'BaileysAuthLeaseConflictError';
+    }
+}
+
 const activeStates = new Map<string, ManagedAuthState>();
 let configuredRepository: BaileysAuthRepository | null = null;
 
@@ -212,7 +220,7 @@ async function createDatabaseAuthState(input: {
     });
     await importLegacyFolderIfNeeded(input.sessionId, input.botInstanceId, input.sessionType, input.legacyFolder);
     if (!await authRepository().acquireLease(input.sessionId, leaseOwner, ENV.BAILEYS_AUTH_LEASE_SECONDS)) {
-        throw new Error(`La sesión Baileys '${input.sessionId}' ya está activa en otra instancia.`);
+        throw new BaileysAuthLeaseConflictError(input.sessionId);
     }
     let initialized = false;
     try {
