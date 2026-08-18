@@ -21,6 +21,11 @@ noWait.stop();
 const mainSource = readFileSync('src/core/main.ts', 'utf8');
 assert.match(mainSource, /err instanceof BaileysAuthLeaseConflictError/);
 assert.match(mainSource, /mainReconnect\.schedule\('main', startBot\)/);
+assert.match(
+    mainSource,
+    /if \(!state\.creds\.registered && !linkRequest\) \{\s*await authState\.dispose\(\);[\s\S]*?Sesión principal incompleta conservada/,
+    'an incomplete main session must release its lease without deleting stored credentials',
+);
 const authSource = readFileSync('src/services/baileys-auth-state.service.ts', 'utf8');
 assert.match(authSource, /throw new BaileysAuthLeaseConflictError\(input\.sessionId\)/);
 

@@ -261,9 +261,9 @@ async function startBot(linkRequest: MainLinkRequest | null = activeLinkRequest)
     });
     const {state, saveCreds} = authState;
     if (!state.creds.registered && !linkRequest) {
-        await authState.deleteSession();
-        resetMainLinkState('La sesión anterior incompleta fue eliminada. Elige QR o código para comenzar.');
-        logInfo('[AUTH] Sesión principal incompleta eliminada; esperando selección en la consola web.');
+        await authState.dispose();
+        resetMainLinkState('Hay una vinculación incompleta conservada. Elige QR o código para continuarla o reemplazarla.');
+        logWarn('[AUTH] Sesión principal incompleta conservada; lease liberado sin eliminar credenciales.');
         return;
     }
     const msgRetryCounterCache = new NodeCache({stdTTL: 3600, checkperiod: 300, maxKeys: 10_000});
