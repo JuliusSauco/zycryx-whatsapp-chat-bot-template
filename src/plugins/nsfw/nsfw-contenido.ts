@@ -17,9 +17,11 @@ const aliasMap = buildAliasMap<NsfwContentItem>(nsfwContent)
 
 export default defineSdkPlugin({
     help: Object.keys(aliasMap),
-    tags: ['nsfw'],
+    tags: ['nsfw', 'nsfw-content'],
+    feature: 'nsfw',
     command: buildAliasRegex(aliasMap),
-    limit: 2,
+    limit: 8,
+    alternativeCoins: 80,
     register: true,
     async execute(m, {sdk}) {
     try {

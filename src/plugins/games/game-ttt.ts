@@ -160,8 +160,8 @@ export default defineSdkPlugin({
                     const ganadorId = sala.jugadores[sala.tablero[idx] === symbols[0] ? 0 : 1];
                     const perdedorId = sala.jugadores.find((j) => j !== ganadorId);
                     if (!ganadorId || !perdedorId) return;
-                    await addWalletResource(ganadorId, 'exp', xp);
-                    await addWalletResource(perdedorId, 'exp', -xp);
+                    await addWalletResource(ganadorId, 'exp', xp, 'game_reward', 'tictactoe');
+                    await addWalletResource(perdedorId, 'exp', -xp, 'game_bet', 'tictactoe');
                     texto = content.renderMessage('games.ttt.winner', {
                         winner: ganadorId.split('@')[0],
                         xp

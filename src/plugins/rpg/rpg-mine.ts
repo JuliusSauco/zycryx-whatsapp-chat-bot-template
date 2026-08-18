@@ -6,7 +6,7 @@ import {formatDurationMinuteSecondsParen} from '../../utils/time.js';
 
 export default defineSdkPlugin({
     help: ['minar'],
-    tags: ['econ'],
+    tags: ['rpg'],
     command: ['minar', 'miming', 'mine'],
     register: true,
     async execute(m, {sdk}) {
@@ -27,6 +27,8 @@ export default defineSdkPlugin({
         userId: m.sender,
         resources: {exp: hasil},
         fields: {lastmiming: now},
+        reason: 'game_reward',
+        operation: 'mine',
     });
     await sdk.reply.message('rpg.mine.result', {
         message: minar,

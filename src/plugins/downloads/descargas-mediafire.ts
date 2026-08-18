@@ -14,7 +14,8 @@ export default defineSdkPlugin({
     tags: ['downloader'],
     command: /^(mediafire|mediafiredl|dlmediafire)$/i,
     register: true,
-    limit: 3,
+    limit: 10,
+    alternativeCoins: 100,
     async execute(m, {sdk}) {
         const sticker = 'https://qu.ax/Wdsb.webp';
         if (!sdk.args[0]) return sdk.reply.message('downloads.mediafire.missingUrl', {

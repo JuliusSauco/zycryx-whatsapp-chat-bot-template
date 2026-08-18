@@ -6,7 +6,7 @@ import {createExpiringMap} from '../../lib/ephemeral-state.js'
 import type {proto} from '@whiskeysockets/baileys'
 
 type RankedWallet = UserWallet & {jid: string}
-type RankingProp = 'exp' | 'limite' | 'money' | 'banco'
+type RankingProp = 'exp' | 'limite'
 
 interface CooldownEntry {
     lastUsed: number;
@@ -18,7 +18,7 @@ const cooldowns = createExpiringMap<CooldownEntry>({ttlMs: COOLDOWN_DURATION})
 
 export default defineSdkPlugin({
     help: ['leaderboard'],
-    tags: ['econ'],
+    tags: ['rpg'],
     command: ['leaderboard', 'lb'],
     register: true,
     async execute(m, {conn, args, sdk}) {
@@ -37,8 +37,6 @@ export default defineSdkPlugin({
     const users: RankedWallet[] = (await listWallets()).map(u => ({...u, jid: u.id}))
     const sortedExp = [...users].sort((a, b) => b.exp - a.exp)
     const sortedLim = [...users].sort((a, b) => b.limite - a.limite)
-    const sortedMoney = [...users].sort((a, b) => b.money - a.money)
-    const sortedBanc = [...users].sort((a, b) => b.banco - a.banco)
 
     const len = args[0] ? Math.min(100, Math.max(parseInt(args[0]), 10)) : Math.min(10, sortedExp.length)
 
@@ -59,13 +57,7 @@ export default defineSdkPlugin({
         expRanking: format(sortedExp, 'exp', '⚡'),
         diamondPosition: sortedLim.findIndex(u => u.jid === m.sender) + 1,
         diamondTotal: sortedLim.length,
-        diamondRanking: format(sortedLim, 'limite', '💎'),
-        moneyPosition: sortedMoney.findIndex(u => u.jid === m.sender) + 1,
-        moneyTotal: sortedMoney.length,
-        moneyRanking: format(sortedMoney, 'money', '🪙'),
-        bankPosition: sortedBanc.findIndex(u => u.jid === m.sender) + 1,
-        bankTotal: sortedBanc.length,
-        bankRanking: format(sortedBanc, 'banco', '💵')
+        diamondRanking: format(sortedLim, 'limite', '💎')
     }).trim()
 
     const rankingMessage = await sdk.reply.text(text, null, {mentions: conn.parseMention(text)})

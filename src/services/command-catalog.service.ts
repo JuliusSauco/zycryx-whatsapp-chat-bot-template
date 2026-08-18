@@ -132,7 +132,8 @@ function findAliasMatch(command: string, commands: Record<string, CommandCatalog
         const aliases = entry.aliases || [];
         return aliases.some(alias => {
             const normalizedAlias = normalizeCommandInput(alias);
-            return normalizedAlias.exact === normalized.exact || normalizedAlias.first === normalized.first;
+            if (normalizedAlias.exact === normalized.exact) return true;
+            return !normalizedAlias.second && normalizedAlias.first === normalized.first;
         });
     });
     return match ? {key: match[0], entry: match[1], source: 'alias'} : undefined;

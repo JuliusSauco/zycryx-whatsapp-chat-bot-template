@@ -1,7 +1,6 @@
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
 import {getNsfwSettings} from '../../services/group-settings.service.js';
-import {accessModeLabel} from '../../utils/access-mode.js';
-import {canUseNsfw} from '../../utils/nsfw-access.js';
+import {canUseNsfwGifs} from '../../utils/nsfw-access.js';
 
 /**
  * Menú de los comandos `msg-gif-*` agrupados por categoría.
@@ -20,6 +19,7 @@ const CARINIO: GifEntry[] = [
 
 const AGRESIVO: GifEntry[] = [
     {emoji: '🔪', cmd: 'kill', desc: 'Asesina a alguien'},
+    {emoji: '🪢', cmd: 'ahorcar', desc: 'Ahorca a alguien'},
     {emoji: '🦷', cmd: 'bt', desc: 'Muerde a alguien'},
     {emoji: '👋', cmd: 'slap', desc: 'Cachetada / golpear'},
     {emoji: '😱', cmd: 'ap', desc: 'Agarra los cachetes'},
@@ -28,11 +28,21 @@ const AGRESIVO: GifEntry[] = [
 ];
 
 const ADULTO: GifEntry[] = [
+    {emoji: '🍆', cmd: 'fap', desc: 'Elige a alguien o usa una persona al azar (versión explícita con NSFW)'},
+    {emoji: '🫳', cmd: 'manosear', desc: 'Elige a alguien o usa una persona al azar (versión explícita con NSFW)'},
+    {emoji: '🤠', cmd: 'cowgirl', desc: 'Elige, responde o usa una persona al azar (versión explícita con NSFW)'},
+    {emoji: '6️⃣9️⃣', cmd: '69', desc: 'Posición 69 (requiere NSFW para la versión explícita)'},
     {emoji: '🔥', cmd: 'coger', desc: 'Sexo común'},
     {emoji: '🐶', cmd: 'doggystyle', desc: 'Sexo de a perrito'},
     {emoji: '🍑', cmd: 'cogeranal', desc: 'Sexo anal'},
     {emoji: '🤤', cmd: 'oral', desc: 'Sexo oral'},
+    {emoji: '🫴', cmd: 'dedeo', desc: 'Dedea a alguien (versión explícita con NSFW)'},
+    {emoji: '👄', cmd: 'deepthroat', desc: 'Deepthroat (versión explícita con NSFW)'},
+    {emoji: '⚔️', cmd: 'espadasos', desc: 'Duelo de espadas (exclusivamente NSFW)'},
+    {emoji: '🍒', cmd: 'titfuck', desc: 'Juego entre pechos (también: pajarusa, larusa, rusa)'},
+    {emoji: '💦', cmd: 'venirse', desc: 'Venirse sobre alguien (versión explícita con NSFW)'},
     {emoji: '👯', cmd: 'trio', desc: 'Trío'},
+    {emoji: '🥂', cmd: 'orgia', desc: 'Remitente + 3 personas (versión explícita con NSFW)'},
     {emoji: '👩‍❤️‍👩', cmd: 'lesbian', desc: 'Sexo lésbico'},
 ];
 
@@ -49,14 +59,12 @@ export default defineSdkPlugin({
     async execute(m, {conn, usedPrefix, isAdmin, isOwner, isGroupCreator}) {
     const taguser = '@' + m.sender.split('@')[0];
     const pref = usedPrefix || '#';
-    const nsfwSettings = m.isGroup ? await getNsfwSettings(m.chat) : {modohorny: false, nsfwAccessMode: 'all' as const, nsfw_horario: null};
-    const nsfwEnabled = canUseNsfw(nsfwSettings, {isAdmin, isOwner, isGroupCreator});
+    const nsfwSettings = m.isGroup ? await getNsfwSettings(m.chat) : {modohorny: false, nsfwAccessMode: 'owner' as const, nsfwGifEnabled: false, nsfwGifAccessMode: 'owner' as const, nsfw_horario: null};
+    const nsfwEnabled = canUseNsfwGifs(nsfwSettings, {isAdmin, isOwner, isGroupCreator});
     const adultTitle = nsfwEnabled ? 'ADULTO 🔞 ACTIVO' : 'ADULTO 🔞';
     const adultHint = nsfwEnabled
         ? '> Modo horny activo para ti: estos comandos usan los GIFs explícitos de `nsfw`.'
-        : nsfwSettings.modohorny
-            ? `> Modo horny activo para: ${accessModeLabel(nsfwSettings.nsfwAccessMode)}. Para ti usa los GIFs normales.`
-            : '> Modo horny apagado: estos comandos usan los GIFs normales.';
+        : '> GIFs NSFW desactivados o restringidos para tu nivel; las reacciones compatibles usan su versión normal.';
 
     const str = `\`Hola ${taguser} 💖彡\`
 

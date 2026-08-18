@@ -1,4 +1,6 @@
 import {repositories} from './data-source.js';
+import {releaseExpiredCommandResources} from './resource.service.js';
+import {refreshBankLoanStatuses} from './bank.service.js';
 
 export async function listExpiredGroups(now: number) {
     return repositories.groupSettings.listExpiredGroups(now);
@@ -40,4 +42,12 @@ export async function cleanExpiredChatMemories(now: number = Date.now()): Promis
     }
 
     return deleted;
+}
+
+export async function cleanExpiredCommandResourceReservations(now = new Date()): Promise<number> {
+    return releaseExpiredCommandResources(now);
+}
+
+export async function updateBankLoanStatuses(now = new Date()): Promise<number> {
+    return refreshBankLoanStatuses(now);
 }

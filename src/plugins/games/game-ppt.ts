@@ -65,11 +65,11 @@ export default defineSdkPlugin({
         let text = '';
         let result = "";
         if (resultado === 'gana') {
-            await addWalletResource(userId, 'exp', xp);
+            await addWalletResource(userId, 'exp', xp, 'game_reward', 'ppt');
             text += sdk.content.renderMessage('games.ppt.winText', {xp: formatThousandsDot(xp)});
             result = sdk.content.message('games.ppt.winStatus');
         } else if (resultado === 'pierde') {
-            await addWalletResource(userId, 'exp', -xp);
+            await addWalletResource(userId, 'exp', -xp, 'game_bet', 'ppt');
             text += sdk.content.renderMessage('games.ppt.loseText', {xp: formatThousandsDot(xp)});
             result = sdk.content.message('games.ppt.loseStatus');
         } else {
@@ -173,8 +173,8 @@ export default defineSdkPlugin({
         } else {
             const ganador = resultado === 'gana' ? j1 : j2;
             const perdedor = ganador === j1 ? j2 : j1;
-            await addWalletResource(ganador, 'exp', xp * 2);
-            await addWalletResource(perdedor, 'exp', -xp);
+            await addWalletResource(ganador, 'exp', xp * 2, 'game_reward', 'ppt');
+            await addWalletResource(perdedor, 'exp', -xp, 'game_bet', 'ppt');
             mensaje += content.renderMessage('games.ppt.duelWin', {
                 winner: ganador.split('@')[0],
                 winnerXp: formatThousandsDot(xp * 2),

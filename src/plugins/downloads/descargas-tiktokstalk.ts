@@ -7,7 +7,8 @@ export default defineSdkPlugin({
     tags: ['downloader'],
     command: /^t(tstalk|iktokstalk)$/i,
     register: true,
-    limit: 1,
+    limit: 4,
+    alternativeCoins: 40,
     async execute(m, {sdk}) {
     if (!sdk.text) return sdk.reply.message('downloads.tiktokStalk.missingUsername')
     await sdk.reply.react("⌛");

@@ -6,44 +6,13 @@
  * por algún motivo viene vacía, cae al cache local y al cache de Baileys
  * antes de rendirse — pero nunca dispara un conn.groupMetadata() nuevo.
  */
-import {cleanJid} from './jid.js';
 import {groupMetaCache} from '../core/context-builder.js';
 import type {ExtendedConn} from '../types/context.js';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
+import type {ParticipantLike} from './mention-identity.js';
 
-export type ResolvedMention = {tag: string; mentionJid: string};
-export type ParticipantLike = GroupParticipant & {
-    participantAlt?: string;
-    phoneNumber?: string | number;
-};
-
-const JID_PHONE_REGEX = /^\d+@s\.whatsapp\.net$/;
-
-export function resolveMention(rawJid: string, participants: ParticipantLike[] = []): ResolvedMention {
-    const jid = cleanJid(rawJid || '');
-
-    if (JID_PHONE_REGEX.test(jid)) {
-        return {tag: `@${jid.split('@')[0]}`, mentionJid: jid};
-    }
-
-    if (jid.endsWith('@lid')) {
-        const participant = participants.find(p => cleanJid(p.id || '') === jid);
-        if (participant) {
-            const participantAlt = cleanJid(participant.participantAlt || '');
-            const participantPhone = (participant.phoneNumber || '').toString().replace(/[^\d]/g, '');
-
-            if (JID_PHONE_REGEX.test(participantAlt)) {
-                return {tag: `@${participantAlt.split('@')[0]}`, mentionJid: participantAlt};
-            }
-            if (participantPhone) {
-                return {tag: `@${participantPhone}`, mentionJid: `${participantPhone}@s.whatsapp.net`};
-            }
-        }
-    }
-
-    const fallback = jid.split('@')[0].replace(/[^\d]/g, '');
-    return {tag: fallback ? `@${fallback}` : '@usuario', mentionJid: jid || rawJid};
-}
+export {resolveMention} from './mention-identity.js';
+export type {ParticipantLike, ResolvedMention} from './mention-identity.js';
 
 /**
  * Devuelve participants sin tocar la red:

@@ -1,4 +1,7 @@
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode, GroupSettings, SubbotConfig} from '../../types/config.js';
+import type {CommandAccessMap, ConfigurableFeatureKey, FamilyAccessMap} from '../../domain/groups.js';
+import {defaultFamilyAccess} from '../../utils/family-access.js';
+import {CENSORED_COMMAND_ACCESS_KEY, defaultCommandAccess} from '../../utils/command-access.js';
 
 export type ToggleSectionKey = 'saludos' | 'moderacion' | 'acceso' | 'familias' | 'ia' | 'adulto' | 'subbot';
 
@@ -10,6 +13,8 @@ export interface ToggleMenuState {
     disabledIcon: string;
     notGroupIcon: string;
     group: Partial<GroupSettings>;
+    familyAccess: FamilyAccessMap;
+    commandAccess: CommandAccessMap;
     subbot: Partial<SubbotConfig> | null;
     isSubbot: boolean;
     isAdmin: boolean;
@@ -45,6 +50,7 @@ const DEFAULT_ENABLED_FLAGS: Partial<Record<keyof GroupSettings, boolean>> = {
     bye: true,
     detect: true,
     autoresponder: true,
+    autolevelup: true,
 };
 
 export function getToggleSectionKey(rawType?: string): ToggleSectionKey | null {
@@ -89,6 +95,83 @@ export function renderToggleMenu(state: ToggleMenuState, sectionKey?: ToggleSect
     return section ? renderSection(state, section) : renderSummary(state);
 }
 
+export function renderConfigOnboarding(prefix: string): string {
+    return [
+        '╭━━━〔 ⚙️ `PERMISOS DEL BOT` 〕━━━╮',
+        '',
+        '👋 *¿Qué puedes configurar?*',
+        'Los comandos se organizan por *familias*. Puedes activarlas, apagarlas o decidir qué rol puede utilizarlas en este grupo.',
+        '',
+        '🧭 *Niveles de acceso*',
+        '👥 `--all` Todos los participantes.',
+        '🛡️ `--admin` Administradores del grupo, creador y owners.',
+        '👑 `--superadmin` Creador del grupo y owners.',
+        '🤖 `--owner` Solo owners del bot.',
+        '',
+        '🧩 *Cómo configurar una familia*',
+        `✅ Activar para todos: *${prefix}enable juegos --all*`,
+        `🛡️ Limitar a admins: *${prefix}enable juegos --admin*`,
+        `🔒 Apagar por completo: *${prefix}disable juegos*`,
+        '',
+        '🎞️ *GIFs y contenido adulto*',
+        `• *${prefix}enable gifs --all* habilita las reacciones normales.`,
+        `• *${prefix}enable nsfwgif --owner* habilita sus variantes explícitas solo para owners.`,
+        `• *${prefix}enable nsfwmenu --owner* habilita el menú y los comandos NSFW separados.`,
+        'Si una reacción solo tiene GIF NSFW y no tienes permiso, el bot no enviará nada.',
+        '',
+        '📚 *Explora la configuración*',
+        `🗂️ *${prefix}config comandos* — familias y estado actual.`,
+        `🔞 *${prefix}config adulto* — GIFs NSFW y menú NSFW.`,
+        `🔐 *${prefix}config acceso* — acceso general al bot.`,
+        `🛡️ *${prefix}config seguridad* — moderación y protección.`,
+        `⚙️ *${prefix}config* — resumen completo.`,
+        '',
+        '💡 *Consejo:* empieza con `--all` y restringe únicamente las familias sensibles.',
+        '',
+        '╰━━━━━━━━━━━━━━━━━━━━╯',
+    ].join('\n');
+}
+
+export function renderConfigView(state: ToggleMenuState): string {
+    const scope = state.isGroup ? 'GRUPO ACTUAL' : 'CONFIGURACIÓN OWNER';
+    const sectionLines = sections
+        .filter(section => state.isGroup || section.key === 'subbot')
+        .map(section => {
+            const items = getVisibleItems(section, state)
+                .filter(item => item.status && item.status !== state.notGroupIcon)
+                .map(item => renderViewItem(item, state))
+                .join('\n');
+            return items ? `${sectionIcon(section.key)} *${section.title}*\n${items}` : '';
+        })
+        .filter(Boolean);
+
+    return [
+        `╭━━━〔 ⚙️ \`${scope}\` 〕━━━╮`,
+        '',
+        'Aquí tienes el estado real de lo que puedes administrar.',
+        `${state.enabledIcon} habilitado  |  ${state.disabledIcon} deshabilitado`,
+        '',
+        sectionLines.length ? sectionLines.join('\n\n') : 'No hay configuraciones disponibles en este contexto.',
+        '',
+        '🧭 *¿Necesitas todos los comandos?*',
+        `• Menú por secciones: *${state.prefix}config*`,
+        `• Guía de permisos: *${state.prefix}config --info*`,
+        '',
+        '╰━━━━━━━━━━━━━━━━━━━━╯',
+    ].join('\n').trim();
+}
+
+function renderViewItem(item: ToggleItem, state: ToggleMenuState): string {
+    const isDisabled = item.status.includes(state.disabledIcon) || /desactivad|apagado/i.test(item.status);
+    const command = item.commands
+        .map(value => typeof value === 'string' ? value : value.text)
+        .find(value => isDisabled ? /enable\s/i.test(value) : /disable\s/i.test(value));
+    const action = command
+        ? `\n   ↳ ${isDisabled ? 'Habilitar' : 'Deshabilitar'}: *${command}*`
+        : '';
+    return `• *${item.label}:* ${item.status}${action}`;
+}
+
 function renderSummary(state: ToggleMenuState): string {
     const sectionLines = sections
         .filter(section => getVisibleItems(section, state).length > 0)
@@ -102,6 +185,7 @@ function renderSummary(state: ToggleMenuState): string {
         sectionLines.length ? sectionLines.join('\n\n') : 'No tienes configuraciones disponibles.',
         '',
         `Ver detalle: ${state.prefix}config seguridad`,
+        `Guía de permisos: ${state.prefix}config --info`,
         `Cambiar algo: ${state.prefix}enable antilink`,
     ].join('\n').trim();
 }
@@ -268,6 +352,7 @@ const sections: ToggleSection[] = [
             switchItem(state, 'Antilink2', 'antilink2', getStatus(state, 'antilink2')),
             switchItem(state, 'Antifake', 'antifake', getStatus(state, 'antifake')),
             switchItem(state, 'VirusTotal', 'virustotal', getStatus(state, 'virusTotal')),
+            commandAccessItem(state, 'Censura de usuarios', CENSORED_COMMAND_ACCESS_KEY),
             switchItem(state, 'Registro mensajes', 'registromsg', getStatus(state, 'messageLogging')),
             {
                 label: 'Autoaceptar',
@@ -345,36 +430,29 @@ const sections: ToggleSection[] = [
         navKey: 'comandos',
         title: 'Comandos',
         description: 'Permisos por familia: juegos, descargas, RPG y mas.',
-        summary: state => `juegos ${accessModeLabel(state.group.gamesAccessMode)} | descargas ${accessModeLabel(state.group.downloadsAccessMode)} | rpg ${accessModeLabel(state.group.rpgAccessMode)}`,
+        summary: state => `juegos ${familyStatus(state, 'games')} | descargas ${familyStatus(state, 'downloads')} | rpg ${familyStatus(state, 'rpg')}`,
         items: state => [
-            featureItem(state, 'Juegos', 'juegos', state.group.gamesAccessMode),
-            featureItem(state, 'Herramientas', 'herramientas', state.group.toolsAccessMode),
-            featureItem(state, 'RPG', 'rpg', state.group.rpgAccessMode),
-            featureItem(state, 'Descargas', 'descargas', state.group.downloadsAccessMode),
-            featureItem(state, 'Buscadores', 'buscadores', state.group.searchAccessMode),
-            featureItem(state, 'Stickers', 'stickers', state.group.stickersAccessMode),
-            featureItem(state, 'Convertidores', 'convertidores', state.group.convertersAccessMode),
-            featureItem(state, 'Diversion/random', 'diversion', state.group.funAccessMode),
+            featureItem(state, 'Juegos', 'juegos', 'games'),
+            featureItem(state, 'Herramientas', 'herramientas', 'tools'),
+            featureItem(state, 'RPG', 'rpg', 'rpg'),
+            switchItem(state, 'Autonivel RPG', 'autolevelup', getStatus(state, 'autolevelup')),
+            featureItem(state, 'Descargas', 'descargas', 'downloads'),
+            featureItem(state, 'Buscadores', 'buscadores', 'search'),
+            featureItem(state, 'Stickers', 'stickers', 'stickers'),
+            featureItem(state, 'Convertidores', 'convertidores', 'converters'),
+            featureItem(state, 'Diversion/random', 'diversion', 'fun'),
+            featureItem(state, 'Audios automáticos', 'audios', 'audio'),
+            featureItem(state, 'GIFs y reacciones', 'gifs', 'gifs'),
         ],
     },
     {
         key: 'adulto',
         title: 'Adulto',
-        description: 'NSFW, permisos adultos y horario.',
-        summary: state => `NSFW ${getStatus(state, 'modohorny')} | ${accessModeLabel(state.group.nsfwAccessMode)}`,
+        description: 'Menú/contenido y GIFs NSFW con activación y permisos independientes.',
+        summary: state => `menú ${familyStatus(state, 'nsfw')} | GIFs ${familyStatus(state, 'nsfw-gifs')}`,
         items: state => [
-            {
-                label: 'Modo horny / NSFW',
-                status: `${getStatus(state, 'modohorny')} (${accessModeLabel(state.group.nsfwAccessMode)})`,
-                minimumRole: 'superadmin',
-                commands: [
-                    `${state.prefix}enable nsfw --all`,
-                    `${state.prefix}enable nsfw --admin`,
-                    `${state.prefix}enable nsfw --superadmin`,
-                    {text: `${state.prefix}enable nsfw --owner`, minimumRole: 'owner'},
-                    `${state.prefix}disable nsfw`,
-                ],
-            },
+            featureItem(state, 'Menú y contenido NSFW', 'nsfwmenu', 'nsfw'),
+            featureItem(state, 'GIFs NSFW de menu3', 'nsfwgif', 'nsfw-gifs'),
             {label: 'Horario NSFW', status: '', minimumRole: 'superadmin', commands: [`${state.prefix}sethorario 23:00-06:00`]},
         ],
     },
@@ -402,16 +480,48 @@ function switchItem(state: ToggleMenuState, label: string, command: string, stat
     };
 }
 
-function featureItem(state: ToggleMenuState, label: string, command: string, mode?: AccessMode | null): ToggleItem {
+function familyStatus(state: ToggleMenuState, feature: ConfigurableFeatureKey): string {
+    const rule = state.familyAccess[feature] || defaultFamilyAccess(feature);
+    return rule.enabled ? accessModeLabel(rule.accessMode) : 'desactivada';
+}
+
+function featureItem(state: ToggleMenuState, label: string, command: string, feature: ConfigurableFeatureKey): ToggleItem {
+    const rule = state.familyAccess[feature] || defaultFamilyAccess(feature);
+    const currentRole: TogglePermission = !rule.enabled ? 'owner' : permissionForMode(rule.accessMode);
     return {
         label,
-        status: accessModeLabel(mode),
+        status: familyStatus(state, feature),
         commands: [
-            {text: `${state.prefix}enable ${command} --all`, minimumRole: 'admin'},
-            {text: `${state.prefix}enable ${command} --admin`, minimumRole: 'admin'},
-            {text: `${state.prefix}enable ${command} --superadmin`, minimumRole: 'superadmin'},
+            {text: `${state.prefix}enable ${command} --all`, minimumRole: maxPermission(currentRole, 'admin')},
+            {text: `${state.prefix}enable ${command} --admin`, minimumRole: maxPermission(currentRole, 'admin')},
+            {text: `${state.prefix}enable ${command} --superadmin`, minimumRole: maxPermission(currentRole, 'superadmin')},
             {text: `${state.prefix}enable ${command} --owner`, minimumRole: 'owner'},
-            {text: `${state.prefix}disable ${command}`, minimumRole: 'admin'},
+            {text: `${state.prefix}disable ${command}`, minimumRole: 'owner'},
         ],
     };
+}
+
+function commandAccessItem(state: ToggleMenuState, label: string, command: string): ToggleItem {
+    const rule = state.commandAccess?.[command] || defaultCommandAccess(command);
+    const currentRole: TogglePermission = !rule.enabled ? 'owner' : permissionForMode(rule.accessMode);
+    return {
+        label,
+        status: rule.enabled ? accessModeLabel(rule.accessMode) : 'desactivada',
+        commands: [
+            {text: `${state.prefix}enable ${command} --all`, minimumRole: maxPermission(currentRole, 'admin')},
+            {text: `${state.prefix}enable ${command} --admin`, minimumRole: maxPermission(currentRole, 'admin')},
+            {text: `${state.prefix}enable ${command} --superadmin`, minimumRole: maxPermission(currentRole, 'superadmin')},
+            {text: `${state.prefix}enable ${command} --owner`, minimumRole: 'owner'},
+            {text: `${state.prefix}disable ${command}`, minimumRole: 'owner'},
+        ],
+    };
+}
+
+function permissionForMode(mode: AccessMode): TogglePermission {
+    return mode === 'owner' ? 'owner' : mode === 'superadmin' ? 'superadmin' : 'admin';
+}
+
+function maxPermission(left: TogglePermission, right: TogglePermission): TogglePermission {
+    const ranks: Record<TogglePermission, number> = {member: 0, admin: 1, superadmin: 2, owner: 3};
+    return ranks[left] >= ranks[right] ? left : right;
 }

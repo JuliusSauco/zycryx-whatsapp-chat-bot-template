@@ -1,9 +1,7 @@
 import assert from 'node:assert/strict';
 import {
-    getExecOutput,
     limitOutput,
     sanitizeCommandError,
-    withTimeout,
 } from '../src/lib/sensitive-command.js';
 
 function testLimitOutput(): void {
@@ -19,23 +17,7 @@ function testSanitizeCommandError(): void {
     assert.equal(sanitizeCommandError('raw error'), 'raw error');
 }
 
-function testExecOutputExtraction(): void {
-    const output = getExecOutput({stdout: 'out', stderr: 'err'});
-    assert.deepEqual(output, {stdout: 'out', stderr: 'err'});
-    assert.deepEqual(getExecOutput(new Error('x')), {stdout: '', stderr: ''});
-}
-
-async function testWithTimeout(): Promise<void> {
-    assert.equal(await withTimeout(Promise.resolve('ok'), 100), 'ok');
-    await assert.rejects(
-        () => withTimeout(new Promise(resolve => setTimeout(resolve, 50)), 1, 'demo'),
-        /demo excedió/,
-    );
-}
-
 testLimitOutput();
 testSanitizeCommandError();
-testExecOutputExtraction();
-await testWithTimeout();
 
 console.log('sensitive-command.test.ts OK');

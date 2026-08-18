@@ -6,12 +6,18 @@ Esta guia separa herramientas del sistema por funcionalidad afectada. Complement
 
 | Herramienta | Prioridad | Afecta | Instalacion tipica |
 |---|---|---|---|
-| Node.js 20 LTS+ | Requerida | Runtime del bot, scripts, build. | `nvm install 20` o paquete oficial. |
+| Node.js 24 LTS | Requerida | Runtime del bot, scripts, build. | `nvm install 24` o paquete oficial; mantener el ultimo parche 24.x. |
 | PostgreSQL client | Requerida para operacion DB | `pg_dump`, `pg_restore`, `createdb`, backups/restores. | `postgresql-client` / instalador PostgreSQL. |
 | FFmpeg | Requerida para multimedia | Stickers, audio, `tomp3`, GIF/reacciones, conversiones. | `apt install ffmpeg` / Chocolatey/Scoop. |
-| git | Requerida para deploy por repo | `git pull`, comando owner `update`. | `apt install git`. |
+| git | Requerida para deploy por repo | Actualizaciones administrativas con `git pull`. | `apt install git`. |
 | ImageMagick | Opcional recomendada | Conversiones PNG/WebP en stickers. | `apt install imagemagick`. |
 | Python 3 | Opcional | Solo `speedtest`. | `apt install python3`. |
+
+## Auditoria npm
+
+La migracion a Node.js 24 LTS fue validada el 2026-07-29 con `npm audit`: quedaron 23 hallazgos (2 criticos, 11 altos y 10 moderados). Las ramas pendientes proceden principalmente de dependencias legacy de voz, stickers, busqueda, scraping y SDKs no migrados, entre ellas `node-gtts`, `wa-sticker-formatter`, `yt-search`, `link-preview-js` y `openai`.
+
+No ejecutar `npm audit fix --force`: npm propone downgrades o majors incompatibles para algunos de estos paquetes. Sus reemplazos y migraciones deben abordarse por separado, con pruebas funcionales de WhatsApp y multimedia.
 
 ## Por funcionalidad
 
@@ -37,7 +43,7 @@ Para restaurar:
 
 ### Deploy y mantenimiento
 
-`git` es necesario si el servidor actualiza con `git pull` o si se usa el comando owner `update`.
+`git` es necesario si el servidor se actualiza administrativamente con `git pull`.
 
 ### Speedtest
 

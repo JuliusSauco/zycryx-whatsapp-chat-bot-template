@@ -67,6 +67,26 @@ CREATE TABLE IF NOT EXISTS usuarios (
     marry_request text
 );
 
+-- Atomic reservations for commands that consume wallet resources
+CREATE TABLE IF NOT EXISTS command_resource_reservations (
+    id text PRIMARY KEY,
+    user_id text NOT NULL,
+    plugin_id text NOT NULL,
+    message_id text NOT NULL,
+    limit_amount integer NOT NULL DEFAULT 0,
+    money_amount integer NOT NULL DEFAULT 0,
+    required_level integer NOT NULL DEFAULT 0,
+    status text NOT NULL DEFAULT 'pending',
+    release_reason text,
+    created_at timestamp NOT NULL DEFAULT now(),
+    updated_at timestamp NOT NULL DEFAULT now(),
+    expires_at timestamp NOT NULL
+);
+CREATE INDEX IF NOT EXISTS command_resource_reservations_pending_expiry_idx
+    ON command_resource_reservations (status, expires_at);
+CREATE INDEX IF NOT EXISTS command_resource_reservations_user_idx
+    ON command_resource_reservations (user_id);
+
 -- ------------------------------------------------------------
 -- Group settings
 -- ------------------------------------------------------------

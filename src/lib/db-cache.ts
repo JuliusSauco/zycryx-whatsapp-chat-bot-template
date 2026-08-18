@@ -24,6 +24,7 @@ interface CacheEntry<T> {
 const subbotConfigCache = new Map<string, CacheEntry<unknown>>();
 const groupContextSettingsCache = new Map<string, CacheEntry<unknown>>();
 const groupFullSettingsCache = new Map<string, CacheEntry<unknown>>();
+const groupCensoredUsersCache = new Map<string, CacheEntry<unknown>>();
 
 export function getCachedSubbotConfig<T>(botId: string): T | null {
     const entry = subbotConfigCache.get(botId);
@@ -76,6 +77,24 @@ export function invalidateGroupSettings(chatId: string): void {
     groupFullSettingsCache.delete(chatId);
 }
 
+export function getCachedGroupCensoredUsers<T>(chatId: string): T | null {
+    const entry = groupCensoredUsersCache.get(chatId);
+    if (!entry) return null;
+    if (Date.now() > entry.expiresAt) {
+        groupCensoredUsersCache.delete(chatId);
+        return null;
+    }
+    return entry.data as T;
+}
+
+export function setCachedGroupCensoredUsers<T>(chatId: string, data: T): void {
+    groupCensoredUsersCache.set(chatId, {data, expiresAt: Date.now() + TTL_MS});
+}
+
+export function invalidateGroupCensoredUsers(chatId: string): void {
+    groupCensoredUsersCache.delete(chatId);
+}
+
 // Limpieza periódica de entradas expiradas (evita memory leak si miles de chats únicos).
 setInterval(() => {
     const now = Date.now();
@@ -87,5 +106,8 @@ setInterval(() => {
     }
     for (const [k, v] of groupFullSettingsCache.entries()) {
         if (now > v.expiresAt) groupFullSettingsCache.delete(k);
+    }
+    for (const [k, v] of groupCensoredUsersCache.entries()) {
+        if (now > v.expiresAt) groupCensoredUsersCache.delete(k);
     }
 }, 5 * 60_000).unref?.();

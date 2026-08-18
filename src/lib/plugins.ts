@@ -1,6 +1,6 @@
 import {dirname, join, relative, sep} from 'path'
 import {fileURLToPath, pathToFileURL} from 'url'
-import {existsSync, readdirSync, readFileSync, statSync, watch} from 'fs'
+import {existsSync, readdirSync, readFileSync, statSync, watch, type FSWatcher} from 'fs'
 import chalk from "chalk"
 import syntaxerror from 'syntax-error'
 import {format} from 'util'
@@ -18,6 +18,8 @@ const __libDir = dirname(fileURLToPath(import.meta.url))
 const pluginFolder = join(__libDir, '..', 'plugins')
 const pluginFilter = (filename: string): boolean => /\.(js|ts)$/.test(filename) && !filename.endsWith('.d.ts')
 const watchedDirs = new Set<string>()
+const watchers = new Set<FSWatcher>()
+const reloadTimers = new Map<string, ReturnType<typeof setTimeout>>()
 clearLoadedPlugins()
 
 type PluginModule = {
@@ -99,6 +101,7 @@ const reload = async (filename: string): Promise<void> => {
             return
         }
 
+        const previousPlugin = getLoadedPlugins()[filename];
         try {
             const pathFile = pathToFileURL(fullPath).href
             const module = asPluginModule(await import(`${pathFile}?update=${Date.now()}`))
@@ -108,6 +111,9 @@ const reload = async (filename: string): Promise<void> => {
             router.registerAll(getLoadedPlugins())
             logInfo(chalk.green(`UPDATE : ${filename}`))
         } catch (e) {
+            if (previousPlugin) setLoadedPlugin(filename, previousPlugin);
+            else removeLoadedPlugin(filename);
+            router.registerAll(getLoadedPlugins());
             logError(chalk.red(`❌ ERROR RECARGANDO ${filename}:\n${format(e)}`))
         }
     } else {
@@ -121,7 +127,7 @@ function watchPluginDirectory(dir: string): void {
     if (watchedDirs.has(dir)) return;
     watchedDirs.add(dir);
 
-    watch(dir, async (_eventType, filename) => {
+    const watcher = watch(dir, async (_eventType, filename) => {
         if (typeof filename !== 'string') return;
 
         const fullPath = join(dir, filename);
@@ -134,12 +140,28 @@ function watchPluginDirectory(dir: string): void {
             }
         }
 
-        await reload(normalizePluginPath(fullPath));
+        const pluginPath = normalizePluginPath(fullPath);
+        const previous = reloadTimers.get(pluginPath);
+        if (previous) clearTimeout(previous);
+        const timer = setTimeout(() => {
+            reloadTimers.delete(pluginPath);
+            void reload(pluginPath);
+        }, 100);
+        reloadTimers.set(pluginPath, timer);
     });
+    watchers.add(watcher);
 
     for (const entry of readdirSync(dir, {withFileTypes: true})) {
         if (entry.isDirectory()) watchPluginDirectory(join(dir, entry.name));
     }
 }
 
-watchPluginDirectory(pluginFolder)
+export function stopPluginWatchers(): void {
+    for (const timer of reloadTimers.values()) clearTimeout(timer);
+    reloadTimers.clear();
+    for (const watcher of watchers) watcher.close();
+    watchers.clear();
+    watchedDirs.clear();
+}
+
+if (process.env.NODE_ENV !== 'prod') watchPluginDirectory(pluginFolder)

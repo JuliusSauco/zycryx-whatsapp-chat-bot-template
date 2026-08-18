@@ -319,7 +319,7 @@
       },
       "slot": {
         "cooldown": "🕓 Calma crack, espera *{time}* antes de volver a jugar.",
-        "usage": "⚠️ Usa correctamente: /slot <xp|money|limite> <cantidad>\nEjemplo: /slot xp 500",
+        "usage": "⚠️ Usa correctamente: /slot <exp|coins|limite> <cantidad>\nEjemplo: /slot coins 500",
         "minBet": "❌ Mínimo 10 para apostar.",
         "notEnough": "❌ No tienes suficiente {resource} para apostar. Tienes *{balance}*",
         "triple": "🎉 ¡Triple! Ganaste *{amount} {resource}*",
@@ -376,6 +376,101 @@
         "winner": "🎉 @{winner} *ganarte* y recibe *{xp} XP!"
       }
     },
+    "economy": {
+      "wallet": {
+        "public": "*╭━━〔 👛 E - WALLET PÚBLICA 〕━━╮*\n\n👤 @{user}\n├ ⚙️ *Nivel:* {level}\n├ ✨ *EXP:* {exp}\n╰ 💎 *Límite:* {diamonds}\n\n_Para consultar tus Coins y monedas privadas, usa *.wallet* en el chat privado del bot._",
+        "private": "*╭━━〔 👛 E - WALLET 〕━━╮*\n\n👤 @{user}\n\n╭─「 📊 *RECURSOS PÚBLICOS* 」\n├ ⚙️ *Nivel:* {level}\n├ ✨ *EXP:* {exp}\n╰ 💎 *Límite:* {diamonds}\n\n╭─「 🔐 *MONEDAS PRIVADAS* 」\n├ 🪙 *Coins:* {coins}\n├ 🤖 *Botcoin:* {botcoin}\n╰ 🔷 *Zyxcoin:* {zyxcoin}\n\n╭─「 🏦 *BANCO CUSTODIAL* 」\n├ 💎 *Límite:* {bankLimit}\n├ 🪙 *Coins:* {bankCoins}\n├ 🤖 *Botcoin:* {bankBotcoin}\n╰ 🔷 *Zyxcoin:* {bankZyxcoin}\n{loanBlock}\n\n> *NOTA:* Puedes comprar 💎 usando:\n> *• {prefix}buy <cantidad>*\n> *• {prefix}buyall*\n> Consulta todas las tasas con *{prefix}exchange info*.",
+        "guide": "*╭━━〔 👛 GUÍA DE E - WALLET 〕━━╮*\n\n├ 👛 *{prefix}wallet*\n│  Consulta tus saldos.\n├ 🏦 *{prefix}bank*\n│  Consulta tus depósitos.\n├ 📥 *{prefix}deposit*\n│  Guarda recursos en el banco.\n├ 📤 *{prefix}withdraw*\n│  Retira recursos custodiados.\n├ 📄 *{prefix}loan*\n│  Solicita o paga préstamos.\n├ 💱 *{prefix}exchange*\n│  Convierte recursos.\n├ 🛒 *{prefix}buy*\n│  Compra Límites con EXP.\n╰ 🤝 *{prefix}transfer*\n   Envía recursos a otro usuario.\n\n_Usa cualquiera con *--info* para abrir su guía._"
+      },
+      "bank": {
+        "status": "*╭━━〔 🏦 BANCO CUSTODIAL 〕━━╮*\n\n╭─「 *DEPÓSITOS* 」\n├ 💎 *Límite:* {limite}\n├ 🪙 *Coins:* {coins}\n├ 🤖 *Botcoin:* {botcoin}\n╰ 🔷 *Zyxcoin:* {zyxcoin}\n\n{loanSummary}\n\n_Usa *{prefix}deposit* o *{prefix}withdraw* para mover recursos._",
+        "loanSummary": "📄 *Deuda:* {debt} Coins\n📌 *Estado:* {status}\n📅 *Vence:* {dueAt}",
+        "noLoan": "✅ No tienes préstamos pendientes.",
+        "usage": "⚠️ Uso: *{prefix}{command} [limite|coins|botcoin|zyxcoin] <cantidad|all>*",
+        "notEnoughWallet": "⚠️ No tienes saldo suficiente en tu E - WALLET.",
+        "notEnoughBank": "⚠️ No tienes saldo suficiente depositado en el banco.",
+        "operationFailed": "⚠️ No fue posible completar la operación bancaria.",
+        "deposit": "✅ Depositaste *{amount} {resource}*.\n👛 E - WALLET: {walletBalance}\n🏦 Banco: {bankBalance}",
+        "withdraw": "✅ Retiraste *{amount} {resource}*.\n👛 E - WALLET: {walletBalance}\n🏦 Banco: {bankBalance}",
+        "guide": "*🏦 GUÍA DEL BANCO*\n\n├ 👛 *E - WALLET*\n│  Recursos disponibles para usar.\n├ 🏦 *DEPÓSITOS*\n│  Recursos tuyos custodiados por el banco.\n╰ 🏛️ *RESERVAS*\n   Capital institucional; no pertenece a usuarios.\n\n*Admite:* Límites, Coins, Botcoins y Zyxcoins.\n_EXP no puede depositarse._\n\n• *{prefix}bank* — consulta depósitos y deuda\n• *{prefix}deposit --info* — aprende a depositar\n• *{prefix}withdraw --info* — aprende a retirar\n• *{prefix}loan --info* — consulta la guía de préstamos"
+      },
+      "deposit": {
+        "guide": "*📥 GUÍA DE DEPÓSITOS*\n\nMueve recursos desde tu E - WALLET hacia tu cuenta bancaria.\n\n├ *{prefix}deposit coins 500*\n├ *{prefix}deposit limite 10*\n├ *{prefix}deposit botcoin all*\n╰ *{prefix}dep 10* — deposita 10 Límites\n\n*Recursos:* limite, coins, botcoin y zyxcoin.\n_EXP no se puede depositar._"
+      },
+      "withdraw": {
+        "guide": "*📤 GUÍA DE RETIROS*\n\nDevuelve recursos custodiados a tu E - WALLET.\n\n├ *{prefix}withdraw coins 100*\n├ *{prefix}withdraw limite all*\n├ *{prefix}withdraw zyxcoin 1*\n╰ *{prefix}retirar all* — retira todos tus Límites\n\n_No puedes retirar más de lo que tienes depositado._"
+      },
+      "loan": {
+        "none": "✅ No tienes préstamos pendientes.\n💳 *Cupo actual:* {creditLimit} Coins\n⚙️ *Nivel mínimo:* {minimumLevel}\n\n_Para solicitar: *{prefix}loan request <cantidad>*_",
+        "info": "*╭━━〔 📄 PRÉSTAMO 〕━━╮*\n\n📌 *Estado:* {status}\n🪙 *Principal inicial:* {principal}\n📈 *Interés fijo:* {interest}\n💰 *Principal pendiente:* {principalOutstanding}\n💸 *Interés pendiente:* {interestOutstanding}\n🧾 *Total pendiente:* {total}\n📅 *Vence:* {dueAt}\n⚠️ *Incumplimiento:* {defaultAt}\n\n_Para pagar: *{prefix}loan pay <cantidad|all>*_",
+        "approved": "✅ *Préstamo aprobado*\n🪙 Recibiste: {principal} Coins\n📈 Interés fijo: {interest} Coins\n🧾 Total a pagar: {total} Coins\n📅 Vence: {dueAt}",
+        "notRegistered": "⚠️ Debes estar registrado para solicitar un préstamo.",
+        "existing": "⚠️ Ya tienes un préstamo pendiente. Debes liquidarlo antes de solicitar otro.",
+        "noReserve": "🏦 El banco no tiene suficientes Coins disponibles en sus reservas.",
+        "lowLevel": "⚠️ Necesitas al menos nivel 5 para solicitar un préstamo. Tu nivel: {level}.",
+        "invalidAmount": "⚠️ El préstamo mínimo es de {minimum} Coins enteras.",
+        "overLimit": "⚠️ La cantidad supera tu cupo máximo de {creditLimit} Coins.",
+        "usage": "⚠️ Usa *{prefix}loan*, *{prefix}loan request <cantidad>* o *{prefix}loan pay <cantidad|all>*.",
+        "noDebt": "✅ No tienes un préstamo pendiente por pagar.",
+        "notEnoughCoins": "⚠️ No tienes suficientes Coins en tu E - WALLET para realizar ese pago.",
+        "paid": "✅ Pago aplicado por *{amount} Coins*.\n📈 A interés: {interestPaid}\n🪙 A principal: {principalPaid}\n🧾 Pendiente: {remaining}\n📌 Estado: {status}",
+        "guide": "*📄 GUÍA DE PRÉSTAMOS*\n\n├ 🪙 Moneda: Coins\n├ ⚙️ Nivel mínimo: 5\n├ 💰 Mínimo: 100 Coins\n├ 📊 Cupo: nivel × 1.000\n├ 🔒 Cupo máximo: 50.000 Coins\n├ 📈 Interés fijo: 5 %\n├ 📅 Vencimiento: 7 días\n╰ 📌 Un préstamo pendiente por usuario\n\n• *{prefix}loan* — consulta tu deuda\n• *{prefix}loan request 1000* — solicita Coins\n• *{prefix}loan pay 250* — pago parcial\n• *{prefix}loan pay all* — liquida la deuda\n\n_Los pagos cubren primero interés y después principal._\n*Estados:* active, overdue, defaulted y paid."
+      },
+      "buy": {
+        "usage": "⚠️ Usa *{prefix}buy <cantidad>* o *{prefix}buyall*.",
+        "notEnoughExp": "⚠️ No tienes suficiente EXP para completar esta compra.",
+        "receipt": "╔═❖ *ＮＯＴＡ ＤＥ ＰＡＧＯ*\n║‣ *Has comprado:* {count} 💎\n║‣ *Gastado:* {cost} EXP\n║‣ *EXP restante:* {expBalance}\n║‣ *Límite disponible:* {limitBalance}\n╚═══════════════",
+        "guide": "*🛒 COMPRA DE LÍMITES*\n\n*Precio actual:* {sourceAmount} EXP → {targetAmount} Límite\n\n├ *{prefix}buy* — compra 1 Límite\n├ *{prefix}buy 5* — compra 5 Límites\n╰ *{prefix}buyall* — usa toda la EXP posible\n\n_La EXP sobrante que no complete una unidad se conserva._"
+      },
+      "exchange": {
+        "info": "*╭━━〔 💱 TIPOS DE CAMBIO 〕━━╮*\n\n{rates}\n\n_La cantidad del comando indica las unidades que deseas recibir._\n_Ejemplo: *{prefix}exchange coins limite 5*._",
+        "rate": "• {sourceAmount} {source} → {targetAmount} {target}",
+        "usage": "⚠️ Usa *{prefix}exchange info* o *{prefix}exchange <origen> <destino> <cantidad|all>*.",
+        "invalidAmount": "⚠️ La cantidad debe ser un entero positivo o *all*.",
+        "unavailablePair": "⚠️ Ese tipo de cambio no está disponible. Consulta *exchange info*.",
+        "insufficientWallet": "⚠️ No tienes saldo suficiente en tu E - WALLET.",
+        "insufficientReserve": "🏦 El banco no tiene reservas suficientes para completar el cambio.",
+        "failed": "⚠️ No fue posible completar el cambio.",
+        "receipt": "*╭━━〔 💱 CAMBIO COMPLETADO 〕━━╮*\n\n📤 Entregaste: *{sourceSpent} {source}*\n📥 Recibiste: *{targetReceived} {target}*\n\n👛 Saldo de origen: {sourceBalance}\n👛 Saldo de destino: {targetBalance}",
+        "guide": "*💱 GUÍA DE TIPOS DE CAMBIO*\n\n*Tasas activas:*\n{rates}\n\n├ *{prefix}exchange info* — consulta tasas\n├ *{prefix}exchange coins limite 5*\n├ *{prefix}exchange limite botcoin 2*\n╰ *{prefix}exchange limite zyxcoin all*\n\n_La cantidad indica cuánto deseas recibir._\n_Los cambios solo funcionan en las direcciones publicadas._"
+      },
+      "transfer": {
+        "invalidUsers": "❌ Usuarios no válidos.",
+        "cancelled": "*CANCELADO*",
+        "invalidResource": "❌ Recurso inválido.",
+        "notEnough": "⚠️ *𝙉𝙊 𝙏𝙄𝙀𝙉𝙀 𝙎𝙐𝙁𝙄𝘾𝙄𝙀𝙉𝙏𝙀 {resource}*",
+        "success": "✅ *TRANSFERENCIA HECHA:*\n\n*{amount} {resource} para* @{user}",
+        "alreadyPending": "𝙀𝙨𝙩𝙖𝙨 𝙝𝙖𝙘𝙞𝙚𝙣𝙙𝙤 𝙪𝙣𝙖 𝙩𝙧𝙖𝙣𝙨𝙛𝙚𝙧𝙚𝙣𝙘𝙞𝙖",
+        "usage": "`⧼⧼⧼ 💱 𝙏𝙍𝘼𝙉𝙎𝙁𝙀𝙍𝙀𝙉𝘾𝙄𝘼 💱 ⧽⧽⧽`\n\n> *{command} tipo cantidad @tag*\n\n`❏ 𝙀𝙅𝙀𝙈𝙋𝙇𝙊 :`\n* *{command} exp 30 @0*\n\n┏•「 *✅ 𝙍𝙀𝘾𝙐𝙍𝙎𝙊𝙎 𝘿𝙄𝙎𝙋𝙊𝙉𝙄𝘽𝙇𝙀𝙎* 」\n┃\n┃ 💎 𝘿𝙞𝙖𝙢𝙖𝙣𝙩𝙚𝙨 = limite\n┃ 🪙 𝘾𝙤𝙞𝙣𝙨 = coins\n┃ ⚡ 𝙀𝙭𝙥𝙚𝙧𝙞𝙚𝙣𝙘𝙞𝙖 = exp\n┗•",
+        "missingTarget": "⚠️ *𝙀𝙏𝙄𝙌𝙐𝙀𝙏𝙀 𝘼𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊*",
+        "targetNotFound": "⚠️ *𝙀𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊 {user} 𝙉𝙊 𝙎𝙀 𝙀𝙉𝘾𝙐𝙀𝙉𝙏𝙍𝘼 𝙀𝙉 𝙈𝙄 db*",
+        "confirm": "`ESTÁS A PUNTO DE HACER ESTA TRANSFERENCIA`\n\n> 💹 *{amount} {resource} para* *@{user}*\n\n`¿DESEAS CONTINUAR?`\n> Tienes 60 segundos.\n\n> Escribe: (si) para aceptar\n> Escribe: (no) para cancelar",
+        "timeout": "*SU TIEMPO SE HA TERMINADO*",
+        "guide": "*🤝 GUÍA DE TRANSFERENCIAS*\n\nEnvía recursos directamente de una E - WALLET a otra.\n\n├ *{prefix}transfer coins 100 @usuario*\n├ *{prefix}transfer limite 5 @usuario*\n╰ *{prefix}transfer exp 1000 @usuario*\n\n*Transferibles:* limite, coins y exp.\n_Botcoin y Zyxcoin no se pueden transferir._\n\nResponde *si* para confirmar o *no* para cancelar.\n📜 Historial privado: *{prefix}transfer history*",
+        "historyPrivate": "🔐 Tu historial es privado. Usa *{prefix}transfer history* en el chat privado del bot.",
+        "historyInvalidPage": "⚠️ Página inválida. Usa *{prefix}transfer history* o indica una página positiva.",
+        "historyEmpty": "📭 Todavía no tienes transferencias enviadas ni recibidas.",
+        "history": "*╭━━〔 📜 HISTORIAL DE TRANSFERENCIAS 〕━━╮*\n\n{rows}\n\n📄 Página *{page}/{totalPages}* · {totalItems} movimientos",
+        "historyItem": "{direction} · *{amount} {resource}*\n👤 @{counterparty}\n💰 Saldo resultante: {balance}\n🕒 {date}"
+      },
+      "adminAdd": {
+        "missingTarget": "⚠️ Etiqueta a una persona con el @tag",
+        "lidNotFound": "❌ No se encontró al usuario con ese LID en la base de datos.",
+        "invalidAmount": "⚠️ Ingresa una cantidad válida",
+        "userNotFound": "❌ Ese usuario no está registrado en la base de datos.",
+        "diamondsAdded": "*≡ 💎 DIAMANTES AGREGADOS:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲᥣ:* {amount}\n┗━━━━━━━━━━━━",
+        "diamondsRemoved": "*≡ 💎 DIAMANTES QUITADOS:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* {amount}\n┗━━━━━━━━━━━━",
+        "expAdded": "*≡ ✨ EXP AGREGADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲᥣ:* {amount}\n┗━━━━━━━━━━━━",
+        "expRemoved": "*≡ ✨ EXP QUITADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* {amount}\n┗━━━━━━━━━━━━",
+        "error": "❌ Error al modificar datos."
+      },
+      "bankReserve": {
+        "status": "*╭━━〔 🏛️ RESERVAS DEL BANCO 〕━━╮*\n\n├ 💎 *Límite:* {limite}\n├ 🪙 *Coins:* {coins}\n├ 🤖 *Botcoin:* {botcoin}\n╰ 🔷 *Zyxcoin:* {zyxcoin}",
+        "usage": "⚠️ Usa *{prefix}bankreserve status*, *add <recurso> <cantidad>* o *remove <recurso> <cantidad>*.",
+        "insufficient": "⚠️ Ajuste rechazado: revisa la cantidad y la reserva líquida disponible.",
+        "updated": "✅ Reserva actualizada.\n🏷️ Recurso: {resource}\n🔄 Variación: {amount}\n🏛️ Saldo institucional: {balance}"
+      }
+    },
     "rpg": {
       "shared": {
         "missingUser": "✳️ El usuario no se encuentra en la base de datos.",
@@ -384,12 +479,9 @@
         "unknownFemale": "Desconocida",
         "unnamed": "sin nombre"
       },
-      "balance": {
-        "response": "*•───⧼⧼⧼ 𝙱𝙰𝙻𝙰𝙽𝙲𝙴 ⧽⧽⧽───•*\n\n@{user} Tiene:\n\n*• 𝐃𝐢𝐚𝐦𝐚𝐧𝐭𝐞:* _{diamonds} 💎_\n*• 𝐄𝐱𝐩:* _{exp} ⬆️_\n*• 𝐋𝐨𝐥𝐢𝐂𝐨𝐢𝐧𝐬:* _{money} 🪙_\n> Afuera del Banco \n\n*•───⧼⧼⧼ 𝙱𝙰𝙽𝙲𝙾 ⧽⧽⧽───•*\n\n*🏦 𝐃𝐢𝐧𝐞𝐫𝐨 :* _{bank} 💎_\n> Adentro del Banco 🏦 \n\n•───────────────•\n\n> *𝐍𝐎𝐓𝐀 :* \n> 𝐩𝐮𝐞𝐝𝐞𝐬 𝐜𝐨𝐦𝐩𝐫𝐚𝐫 💎 𝐝𝐢𝐚𝐦𝐚𝐧𝐭𝐞 𝐮𝐬𝐚𝐧𝐝𝐨 𝐥𝐨𝐬 𝐜𝐨𝐦𝐚𝐧𝐝𝐨𝐬\n> *• {prefix}buy <cantidad>*\n> *• {prefix}buyall*"
-      },
       "daily": {
         "alreadyClaimed": "⚠️ Ya reclamaste tu recompensa diaria, vuelve en *{time}* para reclamar de nuevo 🎁.",
-        "bonus": "\n\n🎉 *¡BONUS por 7 días de racha!* 🎉\n> +{bonusExp} XP extra\n> +{bonusLimit} Diamantes 💎\n> +{bonusMoney} LoliCoins 🪙\n\n",
+        "bonus": "\n\n🎉 *¡BONUS por 7 días de racha!* 🎉\n> +{bonusExp} XP extra\n> +{bonusLimit} Diamantes 💎\n> +{bonusCoins} Coins 🪙\n\n",
         "reward": "*🔸 𝐇𝐀𝐒 𝐑𝐄𝐂𝐈𝐁𝐈𝐃𝐎:* Tu recompensa diaria de: *{currentExp} XP* (Día  {streak})\n{bonusText}> _*Mañana no te olviden de seguir reclamado tu recompensa ganaras: {nextExpShort} ({nextExp}) XP*_\n",
         "quoted": "🎁 Obtener un regalo 🎁"
       },
@@ -421,32 +513,13 @@
         "caption": "[ 🛒 𝐎𝐁𝐓𝐈𝐄𝐍𝐄𝐒 𝐔𝐍 𝐂𝐎𝐅𝐑𝐄 🎉 ]\n\n* {diamonds} 𝐃𝐢𝐚𝐦𝐚𝐧𝐭𝐞𝐬 💎\n* {coins} 𝐂𝐨𝐢𝐧𝐬 🪙\n* {xp} 𝐄𝐱𝐩 ⚡",
         "quoted": "🎉 Obtiene un regalo 🎁"
       },
-      "shop": {
-        "notEnoughExp": "⚠️ Lo siento, no tienes suficientes *XP* para comprar *{count}* Diamantes 💎",
-        "receipt": "╔═❖ *ＮＯＴＡ ＤＥ ＰＡＧＯ*\n║‣ *Has comprado:* {count} 💎\n║‣ *Gastado:* {cost} XP\n╚═══════════════"
-      },
-      "bank": {
-        "missingDepositAmount": "[ ⚠️ ] *Ingresa la cantidad para agregar a tu cuenta bancaria*",
-        "emptyWallet": "*Estás pobre, no tienes diamantes*",
-        "depositAll": "*[ 🏦 ] Has agregado {amount} diamantes al Banco.*",
-        "invalidDepositAmount": "[ ⚠️ ] *Falta un número válido de diamantes 💎*",
-        "minimumAmount": "❌ El mínimo es 1 diamante.",
-        "notEnoughWallet": "*Che, no sabes cuánto tienes en tu cartera? Usa el comando:* #bal",
-        "deposit": "*[ 🏦 ] Has ingresado {amount} diamantes al Banco*",
-        "missingWithdrawAmount": "[ ⚠️ ] *Ingresa la cantidad a retirar*",
-        "emptyBank": "Hey fantasma 👻, no tienes nada en el banco 🥲",
-        "withdrawAll": "*[ 🏦 ] Retiraste {amount} diamantes 💎 del Banco.*",
-        "invalidWithdrawAmount": "La cantidad debe ser un número válido.",
-        "notEnoughBank": "*Che, no sabes cuánto tienes en tu cuenta? Usa el comando:* #bal",
-        "withdraw": "*[ 🏦 ] Has retirado {amount} diamantes del Banco*"
-      },
       "crime": {
         "missingUser": "❌ En usuarios no aparece en mi base de datos",
         "cooldown": "『🚓︎』𝙇𝘼 𝙋𝙊𝙇𝙄𝘾𝙄𝘼 𝙀𝙎𝙏𝘼 𝙑𝙄𝙂𝙄𝙇𝘼𝙉𝘿𝙊, 𝙑𝙐𝙀𝙇𝙑𝙀 𝙀𝙉 : {time}",
         "successXp": "《💰》{message} {xp} XP",
         "failureXp": "《🚓》{message} {xp} XP",
-        "successResources": "《💰》{message}\n\n{diamonds} 💎 DIAMANTE\n{money} 🪙 LOLICOINS",
-        "failureResources": "《🚓》{message}\n\n{diamonds} 💎 DIAMANTE\n{money} 🪙 LOLICOINS",
+        "successResources": "《💰》{message}\n\n{diamonds} 💎 DIAMANTE\n{coins} 🪙 COINS",
+        "failureResources": "《🚓》{message}\n\n{diamonds} 💎 DIAMANTE\n{coins} 🪙 COINS",
         "stoleFromUser": "《💰》Le has robado a @{user} una cantidad de {xp} XP",
         "successMessages": [
           "Robaste un Banco 🏦 y Obtuviste",
@@ -482,14 +555,17 @@
         ]
       },
       "rob": {
+        "info": "💰 *ROBO DE EXPERIENCIA*\n\nPon a prueba tu suerte robando XP a otro usuario. Tu nivel define cuánto puedes intentar robar.\n\n🎲 *ROBO ALEATORIO*\nUsa *.rob @usuario* o responde a su mensaje con *.rob*.\nEl bot elegirá una cantidad al azar entre *1 XP* y tu límite.\n\n🎯 *ROBO EXACTO*\nUsa *.rob cantidad @usuario*.\nEjemplo: *.rob 2567 @usuario*\nSolo funcionará si tu nivel permite robar esa cantidad.\n\n📈 *LÍMITE POR NIVEL*\nCada nivel permite robar hasta *1000 XP*.\nEjemplo: nivel 26 → máximo de *26000 XP*.\n\n🛡️ *CONDICIONES*\n• La víctima debe tener toda la XP que resulte o solicites.\n• No puedes robarte a ti mismo.\n• Solo los robos exitosos consumen un intento.\n• Puedes completar hasta *4 robos exitosos por día*.\n• Las esperas progresivas son de *1, 2, 3 y 4 horas*.\n• El contador se reinicia a las *00:00, hora de Colombia*, sin cancelar una espera activa.\n\n✨ *EJEMPLOS*\n*.rob @usuario* — robo aleatorio\n*.rob 2500 @usuario* — robo exacto\n*.rob* respondiendo — robo aleatorio\n*.rob 2500* respondiendo — robo exacto",
         "missingUser": "❌ En usuarios no aparece en mi base de datos",
         "cooldown": "🚓 La policía está vigilando, vuelve en: *{time}*",
-        "missingTarget": "⚠️ *Etiqueta a un usuario para robarle XP*",
+        "dailyLimit": "🔒 Alcanzaste el límite de *4 robos exitosos* de hoy. Podrás volver a robar en: *{time}*",
+        "missingTarget": "⚠️ *Etiqueta a un usuario o responde a su mensaje para robarle XP.*\nEjemplos: *.rob @usuario* o *.rob 2500 @usuario*",
+        "invalidAmount": "❌ La cantidad debe ser un número entero positivo.\nEjemplo: *.rob 2500 @usuario*",
         "selfTarget": "❌ No puedes robarte a ti mismo.",
-        "missingVictim": "❌ El usuarios no se encuentra en mi base de datos.",
-        "poorVictim": "@{user} tiene menos de {minimum} XP.\n> No robes a un pobre v:",
-        "transferFailed": "❌ No se pudo completar el robo.",
-        "success": "*Robaste {amount} XP a @{user}*"
+        "missingVictim": "❌ El usuario no se encuentra en mi base de datos.",
+        "insufficientLevel": "❌ Tu nivel actual es {level}. Para robar esa cantidad necesitas nivel {requiredLevel}.\nTu máximo actual es *{maximum} XP*.",
+        "poorVictim": "@{user} tiene {available} XP y el robo requiere {required} XP.\n> No robes a un pobre v:",
+        "success": "🚨 *¡ROBO EXITOSO!*\n\n💰 Robaste *{amount} XP* a *@{user}*.\n\n📊 *ESTADO DEL LADRÓN*\n🎚️ Nivel actual: *{level}*\n💎 Máximo por tu nivel: *{maximum} XP*\n🎟️ Robos disponibles hoy: *{remaining}/4*\n⏳ Próximo robo: *{nextAvailable}*\n🔒 Bloqueo máximo: *{maxBlockStatus}*\n\n> _Solo los robos exitosos consumen un intento._\n> _Los intentos diarios se reinician a las 00:00._"
       },
       "work": {
         "cooldown": "*⏳ Debes descansar {time} antes de volver a trabajar*",
@@ -560,7 +636,7 @@
           "Tu cliente era un furry y te pagó el doble",
           "Te disfrazaste de maid y funcionó",
           "El viejo verde del grupo te dio propina",
-          "Ofreciste abrazos por monedas, pero te malinterpretaron",
+          "Ofreciste abrazos por Coins, pero te malinterpretaron",
           "Trabajaste en una esquina pixelada de San Andreas",
           "Te pagaron por quedarte calladito... y lo hiciste muy bien",
           "Fuiste a la zona roja del grupo y volviste con billete",
@@ -595,30 +671,6 @@
           "Le bailaste a un bot de economía y te soltó todo su saldo"
         ]
       },
-      "transfer": {
-        "invalidUsers": "❌ Usuarios no válidos.",
-        "cancelled": "*CANCELADO*",
-        "invalidResource": "❌ Recurso inválido.",
-        "notEnough": "⚠️ *𝙉𝙊 𝙏𝙄𝙀𝙉𝙀 𝙎𝙐𝙁𝙄𝘾𝙄𝙀𝙉𝙏𝙀 {resource}*",
-        "success": "✅ *TRANSFERENCIA HECHA:*\n\n*{amount} {resource} para* @{user}",
-        "alreadyPending": "𝙀𝙨𝙩𝙖𝙨 𝙝𝙖𝙘𝙞𝙚𝙣𝙙𝙤 𝙪𝙣𝙖 𝙩𝙧𝙖𝙣𝙨𝙛𝙚𝙧𝙚𝙣𝙘𝙞𝙖",
-        "usage": "`⧼⧼⧼ 💱 𝙏𝙍𝘼𝙉𝙎𝙁𝙀𝙍𝙀𝙉𝘾𝙄𝘼 💱 ⧽⧽⧽`\n\n> *{command} tipo cantidad @tag*\n\n`❏ 𝙀𝙅𝙀𝙈𝙋𝙇𝙊 :`\n* *{command} exp 30 @0*\n\n┏•「 *✅ 𝙍𝙀𝘾𝙐𝙍𝙎𝙊𝙎 𝘿𝙄𝙎𝙋𝙊𝙉𝙄𝘽𝙇𝙀𝙎* 」\n┃\n┃ 💎 𝘿𝙞𝙖𝙢𝙖𝙣𝙩𝙚𝙨 = limite\n┃ 🪙 𝙇𝙤𝙡𝙞𝘾𝙤𝙞𝙣𝙨 = money \n┃ ⚡ 𝙀𝙭𝙥𝙚𝙧𝙞𝙚𝙣𝙘𝙞𝙖 = exp \n┗•",
-        "missingTarget": "⚠️ *𝙀𝙏𝙄𝙌𝙐𝙀𝙏𝙀 𝘼𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊*",
-        "targetNotFound": "⚠️ *𝙀𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊 {user} 𝙉𝙊 𝙎𝙀 𝙀𝙉𝘾𝙐𝙀𝙉𝙏𝙍𝘼 𝙀𝙉 𝙈𝙄 db*",
-        "confirm": "`ESTÁS A PUNTO DE HACER ESTA TRANSFERENCIA`\n\n> 💹 *{amount} {resource} para* *@{user}*\n\n`¿DESEAS CONTINUAR?`\n> Tienes 60 segundos.\n\n> Escribe: (si) para aceptar\n> Escribe: (no) para cancelar",
-        "timeout": "*SU TIEMPO SE HA TERMINADO*"
-      },
-      "adminAdd": {
-        "missingTarget": "⚠️ Etiqueta a una persona con el @tag",
-        "lidNotFound": "❌ No se encontró al usuario con ese LID en la base de datos.",
-        "invalidAmount": "⚠️ Ingresa una cantidad válida",
-        "userNotFound": "❌ Ese usuario no está registrado en la base de datos.",
-        "diamondsAdded": "*≡ 💎 DIAMANTES AGREGADOS:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲᥣ:* {amount}\n┗━━━━━━━━━━━━",
-        "diamondsRemoved": "*≡ 💎 DIAMANTES QUITADOS:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* {amount}\n┗━━━━━━━━━━━━",
-        "expAdded": "*≡ ✨ EXP AGREGADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲᥣ:* {amount}\n┗━━━━━━━━━━━━",
-        "expRemoved": "*≡ ✨ EXP QUITADO:*\n┏━━━━━━━━━━━━\n┃• *𝗍᥆𝗍ᥲ᥹:* {amount}\n┗━━━━━━━━━━━━",
-        "error": "❌ Error al modificar datos."
-      },
       "registration": {
         "invalidGenderSelection": "⚠️ Responde con 1, 2, 3, hombre, mujer u otro para seleccionar tu género",
         "birthdayStep": "🎂 *Registro Paso 3: Fecha de cumpleaños (Opcional)*\n\nPuedes enviar tu fecha de cumpleaños en formato DD/MM/YYYY (ejemplo: 30/10/2000)\n\n> O escribe \"omitir\" si no quieres decirlo",
@@ -643,6 +695,7 @@
         "unregQuoted": "ᴿᵉᵍᶦˢᵗʳᵒ ᵉˡᶦᵐᶦⁿᵃᵈᵒ",
         "setGenderUsage": "✳️ *Usa:*\n{prefix}setgenero <hombre|mujer|otro>\n📌 Ej: *{prefix}setgenero hombre*",
         "setGenderSuccess": "✅ *Género guardado:* {gender}",
+        "profileUpdateFailed": "⚠️ No pude guardar los datos del perfil. Inténtalo nuevamente.",
         "setBirthdayUsage": "✳️ *Usa:*\n{prefix}setbirthday <fecha>\n📌 Ej: *{prefix}setbirthday 30/10/2000*",
         "setBirthdayDeleted": "✅ *Cumpleaños eliminado correctamente.*",
         "setBirthdaySuccess": "✅ *Cumpleaños guardado:* {birthday}",
@@ -651,21 +704,23 @@
         "countryLine": "\n◉ *País:* {country}"
       },
       "profile": {
-        "noRelationship": "❌ *No estás en ninguna relación, solter@ 🤑.*",
-        "relationship": "💍 *Está en una relación con:* {spouseName}",
-        "caption": "*「 PERFIL 」*\n\n👤 *Nombre:* {name}\n🏷️ *Usuario:* {userTag}\n🌍 *Nacionalidad:* {nationality}{ageLine}{genderLine}{birthdayLine}\n💎 *Límite:* {limit}\n⚙️ *Nivel:* {level}\n◯ *Registrado:* {registered}{roleBlock}\n\n{relationship}\n\n*•━━━━⪻ 𝙿𝙴𝚁𝙵𝙸𝙻 ⪼━━━━•*",
-        "registeredYes": "Sí",
-        "registeredNo": "No",
-        "ageLine": "\n🎈 *Edad:* {age}",
-        "genderLine": "\n⚧️ *Género:* {gender}",
-        "birthdayLine": "\n🎂 *Cumpleaños:* {birthday}",
-        "roleBlock": "\n\n* Rol: {role}{descriptionLine}",
-        "roleDescriptionLine": "\n* {description}"
+        "noRelationship": "💔 *Estado:* Sin relación registrada",
+        "relationship": "💍 *Pareja:* {spouseTag}",
+        "caption": "*╭━━━〔 👤 PERFIL 〕━━━╮*\n\n╭─「 🪪 *IDENTIDAD* 」\n├ 👤 *Nombre:* {name}\n├ 🏷️ *Usuario:* {userTag}\n├ 🌎 *Nacionalidad:* {nationality}{ageLine}{genderLine}{birthdayLine}\n├ ✅ *Registrado:* {registered}{registrationDateLine}\n╰──────────────{groupBlock}\n\n╭─「 📊 *PROGRESO* 」\n├ ⚙️ *Nivel:* {level}\n├ ✨ *Experiencia:* {experience} XP\n├ 🎖️ *Rango:* {levelRole}\n╰ 💎 *Límite:* {limit}\n\n╭─「 🤝 *INFORMACIÓN SOCIAL* 」\n├ {relationship}\n╰ 🔥 *Racha diaria:* {streak} días\n\n_Para consultar tus Coins y demás información económica, usa el comando *.wallet* en el chat privado del bot._\n\n_Para ver los detalles de tu nivel y progreso, usa el comando *.nivel* en el grupo._\n\n*╰━━━━━━━━━━━━╯*",
+        "registeredYes": "Sí ✅",
+        "registeredNo": "No ❌",
+        "ageLine": "\n├ 🎂 *Edad:* {age} años",
+        "genderLine": "\n├ ⚧️ *Género:* {gender}",
+        "birthdayLine": "\n├ 🎉 *Cumpleaños:* {birthday}",
+        "registrationDateLine": "\n├ 📅 *Desde:* {date}",
+        "groupBlock": "\n\n╭─「 🏛️ *ROL EN {group}* 」\n├ 🛡️ *Jerarquía:* {hierarchy}{assignedRoleBlock}\n╰──────────────",
+        "assignedRoleBlock": "\n├ 🪪 *Cargo:* {role}{descriptionLine}",
+        "roleDescriptionLine": "\n╰ 📝 *Función:* _{description}_"
       },
       "leaderboard": {
         "cooldown": "⚠️ Hey @{user} Hay ya se mostró el ranking pendejo 🙄, Solo se muestra cada 3 minutos para evitar spam, Desplázate hacia arriba para verlo completo.👆",
         "line": "{position}. @{user} *{compactValue}* ({value}) {icon}",
-        "caption": "`🏆 𝚃𝙰𝙱𝙻𝙰 𝙳𝙴 𝙲𝙻𝙰𝚂𝙸𝙲𝙰𝙲𝙸𝙾𝙽`\n\n💠 *𝐓𝐎𝐏 {len} 𝐗𝐏 🎯* \n𝐓𝐮: *{expPosition}* 𝐝𝐞 *{expTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{expRanking}\n\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n\n💠 *𝐓𝐎𝐏 {len} 𝐃𝐈𝐀𝐌𝐀𝐍𝐓𝐄 💎* \n𝐓𝐮: *{diamondPosition}* 𝐝𝐞 *{diamondTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{diamondRanking}\n\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n\n💠 *𝐓𝐎𝐏 {len} 𝐋𝐎𝐋𝐈𝐂𝐎𝐈𝐍𝐒 🪙*\n𝐓𝐮: *{moneyPosition}* 𝐝𝐞 *{moneyTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{moneyRanking}\n\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n\n💠 *𝐓𝐎𝐏 {len} 𝐌𝐈𝐋𝐋𝐎𝐍𝐀𝐑𝐈𝐎𝐒 💵* _(Usuarios con mas dinero en el banco)_\n𝐓𝐮: *{bankPosition}* 𝐝𝐞 *{bankTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{bankRanking}"
+        "caption": "`🏆 𝚃𝙰𝙱𝙻𝙰 𝙳𝙴 𝙲𝙻𝙰𝚂𝙸𝙲𝙰𝙲𝙸𝙾𝙽`\n\n💠 *𝐓𝐎𝐏 {len} 𝐗𝐏 🎯*\n𝐓𝐮: *{expPosition}* 𝐝𝐞 *{expTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{expRanking}\n\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\n\n💠 *𝐓𝐎𝐏 {len} 𝐃𝐈𝐀𝐌𝐀𝐍𝐓𝐄 💎*\n𝐓𝐮: *{diamondPosition}* 𝐝𝐞 *{diamondTotal} 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬*\n{diamondRanking}"
       },
       "level": {
         "stats": "『 *TUS ESTADISTICAS 🆙* 』\n\nTus estadisticas en tiempo real 🕐\n\n├─ ❏ *NOMBRE:*  {name}\n├─ ❏ *XP 🆙:* {xpProgress}/{xpRequired}\n├─ ❏ *NIVEL:* {level}\n└─ ❏ *RANGO:* {role}\n\n> Te falta *{missingXp}* De *XP* para subir de nivel",
@@ -716,6 +771,7 @@
         "sellerNotice": "🎉 ¡Tu personaje {name} ha sido comprado por @{buyer}!\n💰 {exp} exp han sido transferidos a tu cuenta (después de la comisión).",
         "claimedFree": "🎁 ¡Reclamaste a {name} totalmente GRATIS!",
         "processBuyError": "⚠️ Error al procesar la compra. Intenta de nuevo.",
+        "loadError": "⚠️ No pude obtener un personaje de AniList. Intenta usar `.rw` nuevamente en unos momentos.",
         "cooldown": "🤚 Pa, espera {time} para volver a usar este comando",
         "statusForSale": "💸 Estado: @{owner} está vendiendo este personaje.",
         "statusBought": "🔒 Estado: Comprado por @{owner}",
@@ -723,7 +779,7 @@
         "priceFree": "🎁 ¡Puedes reclamarlo totalmente GRATIS!",
         "priceWithPrevious": "~💰 Precio Anterior: {previousPrice} exp~\n💰 Precio Actual: {price} exp",
         "price": "💰 Precio: {price} exp",
-        "caption": "💥 Nombre: {name}\n📺 Anime: {anime}\n⚧️ Tipo: {type}\n⭐ Rareza: {rarity}\n{status}\n{priceMessage}\n\n> Responde con \"c\" a este mensaje para {action}",
+        "caption": "💥 Nombre: {name}\n📺 Anime: {anime}\n⚧️ Tipo: {type}\n⭐ Rareza: {rarity}\n{status}\n{priceMessage}\n\n> Responde a este mensaje con `c` o `.c` para {action}",
         "actionClaimFree": "reclamarlo gratis",
         "actionBuy": "comprarlo",
         "adTitle": "✨️ Character Details ✨️",
@@ -775,6 +831,21 @@
       }
     },
     "group": {
+      "censored": {
+        "missingTarget": "⚠️ Etiqueta a un usuario o responde a uno de sus mensajes.",
+        "multipleTargets": "⚠️ Solo puedes gestionar un usuario por ejecución.",
+        "selfTarget": "⚠️ No puedes censurarte a ti mismo.",
+        "botTarget": "⚠️ No puedes censurar al bot.",
+        "ownerTarget": "⚠️ Los owners del bot están protegidos contra la censura.",
+        "rankTarget": "⚠️ No puedes censurar a un participante con un rango igual o superior al tuyo.",
+        "added": "🔇 @{user} fue censurado. Sus próximos mensajes serán eliminados.",
+        "alreadyAdded": "ℹ️ @{user} ya estaba censurado en este grupo.",
+        "removed": "🔊 Se retiró la censura de @{user}.",
+        "alreadyRemoved": "ℹ️ @{user} no estaba censurado en este grupo.",
+        "listEmpty": "✅ No hay usuarios censurados en este grupo.",
+        "listHeader": "*🔇 Usuarios censurados ({total})*\n\n",
+        "listItem": "{position}. @{user} — desde {date}"
+      },
       "link": {
         "failure": "No se pudo obtener el enlace del grupo."
       },
@@ -880,7 +951,8 @@
         "missingUser": "⚠️ Etiqueta o responde al admin al que quieres asignar rol.",
         "targetNotAdmin": "⚠️ Ese usuario no es admin del grupo. Solo se pueden asignar roles de grupo a admins.",
         "missingRole": "⚠️ Escribe el rol. Ejemplo: .setrole @usuario Moderador|Modera el grupo",
-        "saved": "✅ Rol registrado para @{user}: *{role}*.",
+        "tooLong": "⚠️ El rol admite hasta {roleMax} caracteres y la descripción hasta {descriptionMax}.",
+        "saved": "✅ Rol registrado para @{user}: *{role}*.\n📝 {description}",
         "savedWithoutDescription": "✅ Rol registrado para @{user}: *{role}*.\n⚠️ No se registró descripción porque no usaste el separador |."
       },
       "roles": {
@@ -988,18 +1060,6 @@
         "publicStatus": "🌐 *Público*",
         "success": "✅ Modo cambiado a: {status}"
       },
-      "restart": {
-        "loading": "*Reiniciando...*",
-        "steps": [
-          "10%",
-          "30%",
-          "50%",
-          "80%",
-          "100%"
-        ],
-        "final": "🚀 Reiniciando Bot...\nPor favor espere un momento",
-        "missingConnection": "eh"
-      },
       "leave": {
         "notice": "*𝐄𝐥 𝐁𝐨𝐭 𝐚𝐛𝐚𝐧𝐝𝐨𝐧𝐚 𝐞𝐥 𝐠𝐫𝐮𝐩𝐨, 𝐜𝐡𝐚𝐮 👋*"
       },
@@ -1017,13 +1077,6 @@
       "unbanChat": {
         "success": "✅ Este grupo ha sido *desbaneado*. El bot volverá a responder aquí."
       },
-      "owners": {
-        "missingTarget": "❌ Debes etiquetar a alguien o escribir un número válido.\nEjemplo: {command} +522257888 o {command} @{sender}",
-        "alreadyOwner": "⚠️ @{user} ya es owner.",
-        "added": "✅ Agregado como owner: @{user}",
-        "notOwner": "⚠️ @{user} no es owner.",
-        "removed": "✅ Removido como owner: @{user}"
-      },
       "banUser": {
         "missingTarget": "🤓 Etiqueta al usuario boludito",
         "unknownUser": "❌ Ese usuario no está registrado en la base de datos.",
@@ -1034,13 +1087,6 @@
         "reason": "\n\n📌 *Razón:* {reason}",
         "unbanned": "✅ El usuario @{user} ha sido *desbaneado* y puede volver a usar el bot.",
         "error": "❌ Ocurrió un error al ejecutar el comando."
-      },
-      "update": {
-        "alreadyUpdated": "⚠️ 𝙔𝘼 𝙀𝙎𝙏𝘼 𝘼𝘾𝙏𝙐𝘼𝙇𝙄𝙕𝘼𝘿𝙊 𝘼 𝙇𝘼 𝙑𝙀𝙍𝙎𝙄𝙊́𝙉 𝙍𝙀𝘾𝙄𝙀𝙉𝙏𝙀.",
-        "updateHeader": "*[ UPDATE ]*\n\n{output}",
-        "conflict": "⚠️ Error\n> *Se han encontrado cambios locales en los archivos del bot que entran en conficto con las nuevas actualizaciones del repositorio. para actualizar, reinstalar el bot o realizar las actualizaciones manualmente.*\n\n*`ARCHIVO EN CONFLICTO :`*\n\n{files}.*",
-        "conflictItem": "*→ {file}*",
-        "unknownError": "⚠️ ERROR NOSE QUE PASO?, Editarte desde puto servidor idiota 🙄"
       },
       "testSubbots": {
         "missingBotId": "❌ No se pudo identificar este bot.",
@@ -1078,14 +1124,6 @@
         "joinFailed": "❌ No pude unirme al grupo. Verifica el enlace e inténtalo de nuevo.",
         "joined": "*El Bot se ha unido al grupo ✅* por *{time} {unit}{plural}*"
       },
-      "getPlugin": {
-        "missingQuery": "*¿Qué buscar?*\nEjemplo:\n{command} sticker",
-        "notFoundSuggestions": "'{query}' no encontrado.\n\nSugerencias:\n{suggestions}",
-        "notFound": "'{query}' no encontrado."
-      },
-      "fetch": {
-        "usage": "Ejemplo:\n{command} https://skyultraplus.com"
-      },
       "db": {
         "infoHeader": "📊 *`ESTADÍSTICAS DE BASE DE DATOS`*",
         "users": "> 👤 Usuarios: *{count}*",
@@ -1096,14 +1134,7 @@
         "tableRow": "• *{table}*: {rows} filas — {size}",
         "zeroBytes": "0 bytes",
         "queryError": "❌ Error al consultar la base de datos.",
-        "optimized": "✅ *Optimización completada.*\n📉 Se ejecutó *VACUUM FULL*\n⏱️ Duración: *{seconds} segundos*",
-        "optimizeError": "❌ No se pudo optimizar.",
-        "usage": "❓ Usa uno de estos subcomandos:\n\n• /db info — ver estadísticas\n• /db optimizar — VACUUM FULL"
-      },
-      "backup": {
-        "missingCreds": "❌ No se encontró el archivo *creds.json* en:\n{path}",
-        "heading": "_📂 *Respaldo de sesión de {id}* ({date})_",
-        "error": "❌ Error al generar el respaldo de la sesión."
+        "usage": "❓ Usa: /db info — ver estadísticas"
       },
       "autoAdmin": {
         "alreadyAdmin": "Ya eres admin del grupo mi creador 🫡"
@@ -1183,12 +1214,6 @@
       }
     },
     "subbots": {
-      "stop": {
-        "onlySubbot": "⚠️ Este comando solo puede ser usado desde una instancia de *SubBot*.",
-        "goodbye": "Adios te voy a extrañar :(",
-        "success": "✅ *Sesión del SubBot finalizada correctamente.*\nPuedes volver a conectarte usando `/jadibot` o `/serbot`.",
-        "error": "❌ Ocurrió un error al cerrar la sesión del SubBot."
-      },
       "primary": {
         "cleared": "✅ El bot primario ha sido eliminado de este grupo. Ahora cualquier subbot puede responder.",
         "selected": "✅ El bot @{bot} ha sido establecido como *BOT PRINCIPAL* de este grupo.",
@@ -1235,6 +1260,7 @@
         "autoresponderConfigured": "🤖 Autoresponder quedó *{status}* para: *{access}*",
         "autoresponderTriggerConfigured": "🤖 Autoresponder ahora responde por: *{trigger}*",
         "nsfwConfigured": "🔞 NSFW quedó *{status}* para: *{access}*",
+        "nsfwGifConfigured": "🎞️ GIFs NSFW quedaron *{status}* para: *{access}*",
         "featureAccessConfigured": "🧩 *{feature}* quedó configurado para: *{access}*",
         "targetAll": "todo el bot",
         "targetUser": "este usuario",
@@ -1362,7 +1388,12 @@
           {
             "emoji": "💎",
             "command": "menurpg",
-            "description": "Economía, registro, niveles y gacha."
+            "description": "Registro, niveles, actividades y gacha."
+          },
+          {
+            "emoji": "🏦",
+            "command": "menueconomia",
+            "description": "Wallet, banco, préstamos, transferencias y cambios."
           },
           {
             "emoji": "🚀",
@@ -1429,13 +1460,17 @@
     "messages": {
       "gifReactions": {
         "missingReaction": "❌ Reacción no configurada.",
-        "ffmpegHint": "⚠️ Para enviarlo como “mensaje” (inline), convierte los GIFs a MP4 y guárdalos en `{folder}`.\n\nEjemplo ffmpeg:\nffmpeg -i input.gif -vf \"fps=15,scale=320:-2:flags=lanczos\" -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart -crf 30 -preset veryfast output.mp4"
+        "groupOnly": "⚠️ Este comando necesita un grupo para elegir a otro integrante al azar.",
+        "noRandomTarget": "⚠️ No encontré a otro integrante disponible para esta reacción."
       },
-      "gifDp": {
+      "gifTr": {
         "needOneMore": "🙋 *{sender}*, para formar el trío necesitas *1 persona más*.\nYa tienes a *{target}* — etiqueta a alguien más para completar.",
-        "ffmpegHint": "⚠️ Para enviarlo como “mensaje” (inline), convierte los GIFs a MP4 y guárdalos en `resources/media/reaction-gifs/dp`.\n\nEjemplo ffmpeg:\nffmpeg -i input.gif -vf \"fps=15,scale=320:-2:flags=lanczos\" -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart -crf 30 -preset veryfast output.mp4",
         "alone": "🥲 *{sender}* quiso hacer un trío... pero está solito 😏",
         "trio": "🔥💦 *{sender}* está teniendo un trío con *{targets}* 🍑🔥"
+      },
+      "gifOgi": {
+        "notEnoughPeople": "🥀🍷 *Muy poca gente para la orgía, llamen a sus hermanas* 😏📣",
+        "caption": "🥂🔥 *{sender}* reunió a *{targets}* para una noche de orgía inolvidable, salvaje, todos contra todos y sin reglas, solo disfrutar de nuestros instintos mas bajos y agresivos, metele el pene y tu liquido de vida a las mujeres que siempre quisiste coger. Dejate coger por los hombres que te pone la punta de las tetas duras, al mismo tiempo todos dentro de ti, entregale tu hueco bien mojado 😈🍷💋"
       }
     },
     "random": {

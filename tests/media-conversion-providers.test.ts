@@ -31,8 +31,26 @@ function testStickerHelpers(): void {
     assert.equal(getSlapGifUrl().startsWith('https://'), true);
 }
 
+async function testStickerNativeRuntime(): Promise<void> {
+    const {Sticker} = await import('wa-sticker-formatter');
+    const sharp = (await import('sharp')).default;
+    const image = await sharp({
+        create: {
+            width: 2,
+            height: 2,
+            channels: 4,
+            background: {r: 37, g: 211, b: 102, alpha: 1},
+        },
+    }).png().toBuffer();
+    const sticker = await new Sticker(image, {pack: 'runtime-test', author: 'runtime-test'}).toBuffer();
+
+    assert.equal(sharp.versions.sharp, '0.35.0');
+    assert.equal(sticker.subarray(8, 12).toString('ascii'), 'WEBP');
+}
+
 testVoiceEffects();
 testUploadHelpers();
 testStickerHelpers();
+await testStickerNativeRuntime();
 
 console.log('media-conversion-providers.test.ts OK');

@@ -7,7 +7,7 @@ import type {SubbotConfig} from '../src/types/config.js';
 import type {ExtendedConn} from '../src/types/context.js';
 import type {BotMessage} from '../src/types/message.js';
 
-type Participant = {id: string; admin?: 'admin' | 'superadmin' | null};
+type Participant = {id: string; participantAlt?: string; admin?: 'admin' | 'superadmin' | null};
 
 type Calls = {
     groupMetadata: string[];
@@ -204,6 +204,24 @@ async function testCreatorFromGlobalOwnerAndFromMeSender(): Promise<void> {
     });
 }
 
+async function testPersistedSubbotOwnerResolution(): Promise<void> {
+    await withMocks({
+        subbotConfig: createSubbotConfig({owners: ['2222@s.whatsapp.net'], tipo: 'subbot'}),
+    }, async (calls) => {
+        const conn = createConn(calls, {botId: '5555:1@s.whatsapp.net'});
+        const msg = createMessage({
+            key: {remoteJid: '2222@s.whatsapp.net', remoteJidAlt: '2222@s.whatsapp.net'},
+            chat: '2222@s.whatsapp.net',
+        });
+
+        const ctx = await buildContext(conn, msg);
+
+        assert.equal(ctx.senderJid, '2222@s.whatsapp.net');
+        assert.equal(ctx.isCreator, false);
+        assert.equal(ctx.isOwner, true);
+    });
+}
+
 async function testGroupMetadataAdminsAndCachedMetadata(): Promise<void> {
     await withMocks({
         subbotConfig: createSubbotConfig(),
@@ -237,6 +255,25 @@ async function testGroupMetadataAdminsAndCachedMetadata(): Promise<void> {
         assert.equal(msg.isAdmin, true);
         assert.equal(msg.isGroup, true);
         assert.deepEqual(calls.groupMetadata, []);
+    });
+}
+
+async function testNormalizesLidMentionsFromCachedParticipants(): Promise<void> {
+    await withMocks({subbotConfig: createSubbotConfig()}, async () => {
+        const conn = createConn({groupMetadata: [], updateTipo: [], clearPrimaryBot: []}, {
+            cachedParticipants: [
+                {id: '987654321@lid', participantAlt: '573001112233@s.whatsapp.net'},
+            ],
+        });
+        const msg = createMessage({
+            mentionedJid: ['987654321@lid'],
+            who: '987654321@lid',
+        });
+
+        await buildContext(conn, msg);
+
+        assert.deepEqual(msg.mentionedJid, ['573001112233@s.whatsapp.net']);
+        assert.equal(msg.who, '573001112233@s.whatsapp.net');
     });
 }
 
@@ -311,7 +348,9 @@ async function testGroupRestrictions(): Promise<void> {
 setupGlobals();
 await testPrivateChatSenderAndOwnerResolution();
 await testCreatorFromGlobalOwnerAndFromMeSender();
+await testPersistedSubbotOwnerResolution();
 await testGroupMetadataAdminsAndCachedMetadata();
+await testNormalizesLidMentionsFromCachedParticipants();
 await testFetchesMetadataWhenCacheMisses();
 await testGroupRestrictions();
 

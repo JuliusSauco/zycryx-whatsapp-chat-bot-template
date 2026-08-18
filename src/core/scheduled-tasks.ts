@@ -1,10 +1,12 @@
 import {ENV} from './env.js';
 import {
     cleanExpiredChatMemories,
+    cleanExpiredCommandResourceReservations,
     clearGroupExpiration,
     deleteReport,
     listExpiredGroups,
     listPendingReports,
+    updateBankLoanStatuses,
 } from '../services/runtime-tasks.service.js';
 import {logDebug, logError, logInfo} from '../lib/logger.js';
 import {pickRandom} from '../utils/random.js';
@@ -21,6 +23,26 @@ export function startScheduledTasks(): void {
     setInterval(handleExpiredGroups, 60_000).unref?.();
     setInterval(forwardPendingReports, 120_000).unref?.();
     setInterval(cleanExpiredChatMemory, 300_000).unref?.();
+    setInterval(cleanExpiredResourceReservations, 300_000).unref?.();
+    setInterval(refreshLoans, 300_000).unref?.();
+}
+
+async function refreshLoans(): Promise<void> {
+    try {
+        const updated = await updateBankLoanStatuses();
+        if (updated) logInfo(`[BANK] Préstamos actualizados por vencimiento: ${updated}`);
+    } catch (err) {
+        logError('[BANK] Error actualizando préstamos:', err);
+    }
+}
+
+async function cleanExpiredResourceReservations(): Promise<void> {
+    try {
+        const released = await cleanExpiredCommandResourceReservations();
+        if (released) logInfo(`[RESOURCES] Reservas vencidas liberadas: ${released}`);
+    } catch (err) {
+        logError('[RESOURCES] Error liberando reservas vencidas:', err);
+    }
 }
 
 async function handleExpiredGroups(): Promise<void> {

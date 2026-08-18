@@ -165,8 +165,14 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
         const originalSendMessage = conn.sendMessage.bind(conn);
         conn.sendMessage = async function (jid: string, content: MessageContent, options: SendMessageOptions = {}) {
             const messageContent = content as MessageRecord;
+            const explicitMentions = Array.isArray(messageContent.mentions)
+                ? messageContent.mentions.filter((value): value is string => typeof value === 'string')
+                : [];
             const contextInfoDefault = {
-                mentionedJid: await conn.parseMention(String(messageContent.text || messageContent.caption || '')),
+                mentionedJid: [...new Set([
+                    ...await conn.parseMention(String(messageContent.text || messageContent.caption || '')),
+                    ...explicitMentions,
+                ])],
                 isForwarded: true,
                 forwardingScore: 1
             };
@@ -191,13 +197,28 @@ export async function smsg(conn: ExtendedConn, m: BotMessage): Promise<BotMessag
         }
     };
 
-    conn.reply = async (chatId: string, text: string, quoted: QuotedMessage = null, options: SendMessageOptions = {}) => {
+    conn.reply = async (chatId: string, text: string, quotedOrOptions: QuotedMessage | SendMessageOptions = null, options: SendMessageOptions = {}) => {
+        const thirdArgumentIsOptions = Boolean(
+            quotedOrOptions
+            && typeof quotedOrOptions === 'object'
+            && !('key' in quotedOrOptions)
+            && !('message' in quotedOrOptions)
+        );
+        const quoted = thirdArgumentIsOptions ? null : quotedOrOptions as QuotedMessage;
+        const mergedOptions = thirdArgumentIsOptions
+            ? {...quotedOrOptions as SendMessageOptions, ...options}
+            : options;
+        const explicitMentions = Array.isArray(mergedOptions.mentions)
+            ? mergedOptions.mentions.filter((jid): jid is string => typeof jid === 'string')
+            : [];
         const contextInfo = {
-            mentionedJid: await conn.parseMention(text),
+            ...(mergedOptions.contextInfo && typeof mergedOptions.contextInfo === 'object' ? mergedOptions.contextInfo : {}),
+            mentionedJid: [...new Set([...await conn.parseMention(text), ...explicitMentions])],
             isForwarded: true,
             forwardingScore: 1
         };
-        return await conn.sendMessage(chatId, {text, contextInfo}, {quoted, ...options});
+        const {mentions: _mentions, contextInfo: _contextInfo, quoted: optionQuoted, ...sendOptions} = mergedOptions;
+        return await conn.sendMessage(chatId, {text, contextInfo}, {quoted: optionQuoted || quoted, ...sendOptions});
     };
 
     const defaultContextInfo = async (caption: string, conn: ExtendedConn): Promise<ContextInfoLike> => ({

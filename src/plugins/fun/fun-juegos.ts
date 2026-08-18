@@ -28,7 +28,7 @@ export default defineSdkPlugin({
             }
 
             if (command === 'follar' || command === 'violar') {
-                await replyActionTarget(conn, m, command, text);
+                await replyActionTarget(conn, m, command, text, metadata.participants);
             }
 
             if (command === 'formarpareja' || command === 'formarparejas') {

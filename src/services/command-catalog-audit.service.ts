@@ -191,7 +191,7 @@ function isConcreteToken(token: string): boolean {
 }
 
 function inferRequiredRole(plugin: Plugin): Exclude<CommandCatalogEntry['requiredRole'], undefined> {
-    if (plugin.owner || plugin.rowner) return 'owner';
+    if (plugin.owner) return 'owner';
     if (plugin.admin || plugin.botAdmin) return 'admin';
     return 'member';
 }

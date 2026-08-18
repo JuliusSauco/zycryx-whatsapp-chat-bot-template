@@ -46,7 +46,6 @@ NODE_ENV=prod npm run ops:check
 | Variable | Uso |
 |---|---|
 | `BOT_OWNER_NUMBERS` | Numeros internacionales sin `+`, separados por coma. Pueden usar comandos `owner`. |
-| `BOT_FIXED_OWNER_JIDS` | Numeros o JIDs completos, separados por coma. Pueden usar comandos `rowner` (eval, shell, etc.). Mantener esta lista minima: estos usuarios pueden ejecutar codigo arbitrario en el proceso. |
 
 ## Comportamiento del runtime
 

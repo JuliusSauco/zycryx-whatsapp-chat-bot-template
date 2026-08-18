@@ -3,7 +3,7 @@
 ![Tecnologias principales](https://skillicons.dev/icons?i=typescript,nodejs,npm,postgres,git&theme=dark)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-24%20LTS-339933?logo=node.js&logoColor=white)
 ![Baileys](https://img.shields.io/badge/Baileys-7.x-25D366?logo=whatsapp&logoColor=white)
 ![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?logo=drizzle&logoColor=111)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1?logo=postgresql&logoColor=white)
@@ -54,11 +54,15 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 - Persistencia con Drizzle ORM sobre PostgreSQL.
 - Repositorios Drizzle separados por agregado.
 - Puertos de repositorio para desacoplar servicios de la implementacion Drizzle.
+- Modelos y reglas de dominio independientes de Drizzle en `src/domain` para usuarios, grupos, subbots, audios, personajes y estado operativo.
+- Reservas transaccionales e idempotentes para comandos que consumen diamantes o LoliCoins.
+- Registro validado de plugins con deteccion de aliases y regex duplicadas.
+- Interceptores tipados, timeouts por perfil, cancelacion cooperativa y locks con namespace por plugin.
 - Conexion directa a PostgreSQL como decision arquitectonica; no hay adapter backend REST/GraphQL.
 - Migraciones versionadas y script `db:ensure-schema`.
 - Soporte para `DB_SCHEMA` usando `search_path`.
 - Subbots con sesiones independientes.
-- Modos de acceso por familia de comandos (`all`/`admins`/`off`) configurables por grupo: juegos, herramientas, RPG, descargas, busquedas, stickers, convertidores, fun y NSFW.
+- Reglas persistentes por familia con activación independiente y modos `all`, `admin`, `superadmin` y `owner`: juegos, herramientas, RPG, descargas, búsquedas, stickers, convertidores, diversión, audios, GIFs y NSFW.
 - Roles de admins por grupo persistidos en `user_group_roles`, sincronizados al iniciar y en eventos promote/demote.
 - Autoresponder configurable por grupo (trigger por mencion o texto) y registro opcional de mensajes (`message_logs`).
 - Tareas programadas para reportes, expiracion de grupos y limpieza de memoria.
@@ -91,7 +95,7 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 <a id="requisitos"></a>
 ## 📋 Requisitos
 
-- Node.js 20 LTS o superior.
+- Node.js 24 LTS (usar siempre el parche 24.x mas reciente).
 - npm.
 - PostgreSQL 14 o superior.
 - FFmpeg instalado y disponible en PATH.
@@ -107,8 +111,13 @@ El proyecto esta orientado a capas: los plugins no deberian consultar la base di
 ```bash
 git clone <url-del-repositorio>
 cd zycryx-whatsapp-chat-bot-template
-npm install
+nvm install 24
+nvm use 24
+node --version # debe mostrar v24.x
+npm ci
 ```
+
+El archivo `.nvmrc` mantiene la seleccion en la rama 24 LTS. Actualiza periodicamente al parche 24.x mas reciente y no uses Node 25/26 sin una nueva validacion del proyecto.
 
 Copia el entorno base:
 
@@ -128,7 +137,7 @@ Prepara la base de datos:
 npm run db:migrate
 ```
 
-Las migraciones no se ejecutan automaticamente al iniciar el bot. En deploys y ambientes compartidos ejecuta `npm run db:migrate` como paso previo controlado.
+Las migraciones se aplican automáticamente al iniciar mediante la plantilla PM2 (`npm run serve:migrate`). Si arrancas el proceso directamente, ejecuta `npm run db:migrate` como paso previo o usa `npm run start:migrate`.
 
 Si necesitas crear manualmente una base desde cero sin reproducir migraciones historicas, usa el script limpio:
 
@@ -189,7 +198,6 @@ BOT_INSTAGRAM_URL=
 BOT_GROUP_LINKS=
 BOT_CHANNEL_LINKS=
 BOT_OWNER_NUMBERS=573001112233,51999888777
-BOT_FIXED_OWNER_JIDS=573001112233,51999888777
 BOT_MOD_GROUP_ID=
 DEFAULT_MENU_IMAGE=./resources/media/menus/Menu2.jpg
 
@@ -252,12 +260,6 @@ DB_SCHEMA=bot_dev
 BOT_OWNER_NUMBERS=573001112233,51999888777
 ```
 
-`BOT_FIXED_OWNER_JIDS` recibe numeros internacionales sin `+` o JIDs completos. Estos owners pueden usar comandos marcados como `rowner`:
-
-```env
-BOT_FIXED_OWNER_JIDS=573001112233,51999888777
-```
-
 <a id="scripts"></a>
 ## 📜 Scripts
 
@@ -268,6 +270,9 @@ BOT_FIXED_OWNER_JIDS=573001112233,51999888777
 | `npm run typecheck` | Valida tipos sin emitir archivos. |
 | `npm test` | Ejecuta helpers, dominios de usuarios/grupos/subbots/audios/operacion/personajes, estado efimero, router, guards, context builder, servicios, seguridad, providers, catalogo, ayuda y P0. |
 | `npm run test:helpers` | Pruebas de helpers compartidos. |
+| `npm run test:plugin-pipeline` | Pruebas de interceptores, timeouts y locks del pipeline de plugins. |
+| `npm run test:command-resources` | Pruebas de validacion, reservas idempotentes y mensajes de cobro. |
+| `npm run test:profile-user` | Pruebas de resolucion JID/LID, alta basica y fallback de foto de perfil. |
 | `npm run test:user-domain` | Pruebas de mappers y defaults del dominio de usuarios. |
 | `npm run test:group-domain` | Pruebas de mappers y defaults del dominio de grupos. |
 | `npm run test:subbot-domain` | Pruebas de mappers y defaults del dominio de subbots. |
@@ -328,7 +333,7 @@ Puntos clave:
 
 - Un process manager (PM2, systemd o restart policy de Docker) es **obligatorio**: el bot se reinicia solo cada 3 horas (`process.exit(0)`) como higiene de memoria y espera que el supervisor lo levante.
 - La vinculacion inicial es interactiva (pide QR o codigo por consola); hazla fuera del supervisor y luego arranca bajo PM2.
-- Las migraciones nunca corren automaticamente al arrancar; ejecutalas como paso explicito en cada deploy.
+- Con la plantilla PM2 las migraciones pendientes corren antes del bot; en arranques directos usa `db:migrate`, `serve:migrate` o `start:migrate`.
 - Una sola instancia por numero de WhatsApp: el estado de juegos/cooldowns vive en memoria y la sesion es por dispositivo.
 - Respalda `BotSession/` (con el bot detenido) y la base de datos con `NODE_ENV=prod npm run ops:backup`; ver politica de backups en `docs/deployment.md`.
 - Flujo de conexion, sesiones y reconexion documentado en `docs/baileys-connection.md`. Problemas comunes en `docs/troubleshooting.md`.
@@ -358,6 +363,7 @@ zycryx-whatsapp-chat-bot-template/
 │   ├── core/
 │   ├── db/
 │   │   └── migrations/
+│   ├── domain/
 │   ├── guards/
 │   ├── lib/
 │   ├── plugins/
@@ -402,6 +408,7 @@ zycryx-whatsapp-chat-bot-template/
 | `src/adapters/drizzle/` | Implementacion local de repositorios con Drizzle. |
 | `src/core/` | Arranque, entorno, router, parser, handler, contexto y tareas. |
 | `src/db/` | Cliente, schema y migraciones Drizzle. |
+| `src/domain/` | Modelos, defaults, mappers puros y reglas de negocio independientes de la persistencia. |
 | `src/guards/` | Validaciones previas a ejecutar comandos. |
 | `src/lib/` | Integraciones, loader de plugins, subbots, multimedia, logs y scraping. |
 | `src/plugins/` | Comandos y hooks agrupados por familia. |
@@ -427,7 +434,9 @@ flowchart TD
     I --> J["guards"]
     J --> K["plugins por familia"]
     K --> L["services"]
+    L --> Q["domain"]
     L --> M["ports/repositories.ts"]
+    M --> Q
     M --> N["adapters/drizzle"]
     N --> P["PostgreSQL"]
     K --> R["lib/utils/apis"]
@@ -460,9 +469,10 @@ Componentes principales:
 | `lib/simple.ts` | Normalizacion de mensajes y helpers custom de `conn`. |
 | `services/` | Capa de aplicacion usada por core/plugins. |
 | `services/content.service.ts` | API oficial de mensajes, listas y templates. |
+| `domain/` | Entidades, defaults y reglas puras compartidas por servicios, puertos y mappers. |
 | `ports/repositories.ts` | Contratos de persistencia. |
 | `adapters/drizzle/` | Repositorios PostgreSQL con Drizzle. |
-| `providers/downloads/youtube.provider.ts` | Provider inicial de YouTube: busqueda, descarga, calidad y fallbacks. |
+| `providers/` | Integraciones por dominio para descargas, IA y conversion multimedia, con errores tipados y fallbacks. |
 
 <a id="patrones"></a>
 ## 🧩 Patrones
@@ -470,6 +480,19 @@ Componentes principales:
 ### 🔌 Plugin Architecture
 
 Los comandos viven como modulos independientes dentro de `src/plugins/<familia>`. Esto permite copiar la plantilla a otros bots y cambiar solo las familias necesarias.
+
+`defineSdkPlugin` conserva la API compatible y genera metadata para el registro validado. Cada plugin obtiene un ID estable derivado de su ruta, una `feature` tipada y una politica de ejecucion. El registro candidato se valida completo antes de sustituir al activo; un hot reload invalido conserva la version anterior.
+
+Perfiles de ejecucion disponibles:
+
+| Perfil | Timeout base | Uso |
+|---|---:|---|
+| `fast` | 15 s | Comandos locales y respuestas simples. |
+| `network` | 60 s | Consultas HTTP y APIs. |
+| `owner-operation` | 2 min | Operaciones administrativas controladas. |
+| `media` | 5 min | Descargas y conversion multimedia. |
+
+El contexto incluye `pluginId`, `correlationId` y `signal`. La cancelacion es cooperativa: providers, HTTP o procesos largos deben observar el `AbortSignal` para detener trabajo subyacente.
 
 ### 🎯 Command Pattern
 
@@ -483,7 +506,7 @@ Cada plugin representa una accion ejecutable. El router traduce un mensaje en un
 
 Los guards validan antes del plugin:
 
-- owner o rowner;
+- owner global o persistido del subbot;
 - admin de grupo;
 - bot admin;
 - grupo o privado;
@@ -492,6 +515,14 @@ Los guards validan antes del plugin:
 - NSFW y horario;
 - limites, dinero y nivel;
 - modo admin del grupo.
+
+Los guards de acceso se ejecutan antes del guard de recursos. Este ultimo solo valida; no descuenta saldos. Tras aprobar todas las restricciones, el handler crea una reserva atomica en PostgreSQL, ejecuta el plugin y confirma el cobro al completar. Los fallos y timeouts liberan la reserva, y una tarea programada recupera reservas vencidas tras reinicios abruptos.
+
+### 🔗 Interceptor Pipeline
+
+Los hooks legacy `before` siguen soportados mediante un adaptador. El contrato nuevo usa interceptores con fase (`security`, `conversation`, `post`), prioridad, aplicabilidad y politica de error (`fail-open`, `fail-closed`, `report-only`). Los resultados son tipados: `continue`, `handled`, `reject` o `error`.
+
+El orden general es: normalizacion, seguridad/conversacion, routing, autorizacion, reserva de recursos, ejecucion, confirmacion y telemetria.
 
 ### 🔄 Ports & Adapters
 
@@ -505,6 +536,7 @@ Actualmente:
 
 - Drizzle + PostgreSQL es la unica implementacion soportada.
 - Los puertos siguen existiendo para mantener servicios testeables y evitar SQL directo en plugins.
+- Los tipos persistidos se convierten mediante mappers de adapter hacia modelos de `src/domain`; las reglas de negocio no dependen del schema Drizzle.
 
 ### 🧬 Repository Pattern
 
@@ -519,14 +551,18 @@ src/adapters/drizzle/
 ├── chat.repository.ts
 ├── database.repository.ts
 ├── group-settings.repository.ts
+├── message-log.repository.ts
 ├── message.repository.ts
 ├── report.repository.ts
 ├── stats.repository.ts
 ├── subbot.repository.ts
+├── user-group-role.repository.ts
 ├── user-wallet.repository.ts
 ├── user.repository.ts
 └── repositories.ts
 ```
+
+Los agregados que necesitan transformar filas de Drizzle usan archivos `*.mapper.ts` junto a su repositorio. Los contratos de entrada y salida se concentran en `src/ports/repositories.ts` y reutilizan los modelos de `src/domain`.
 
 ### 🧱 Context Builder
 
@@ -655,7 +691,6 @@ Metadata soportada:
 | `help` | Texto usado por menus. |
 | `tags` | Categoria del comando. |
 | `owner` | Requiere owner del bot/subbot. |
-| `rowner` | Requiere owner fijo. |
 | `admin` | Requiere admin de grupo. |
 | `botAdmin` | Requiere que el bot sea admin. |
 | `group` | Solo grupos. |
@@ -782,7 +817,9 @@ audio-response.service.ts -> merge de seed + DB
 
 Los comandos `addaudios` y `delaudios` persisten cambios en PostgreSQL mediante `audio_responses`.
 
-Los comandos de reacciones multimedia se describen en `resources/data/reactions.json`. El plugin generico `msg-gif-reactions.ts` resuelve aliases, carpeta y caption desde ese manifiesto; `msg-gif-dp.ts` se conserva aparte porque el comando `trio` necesita reglas especiales de dos objetivos.
+Los comandos de reacciones multimedia se describen en `resources/data/reactions.json`. El plugin genérico `msg-gif-reactions.ts` resuelve aliases, carpetas, captions y variantes públicas/NSFW. Solo `msg-gif-tr.ts` (tríos) y `msg-gif-ogi.ts` (orgías) se conservan aparte por sus reglas especiales de múltiples objetivos.
+
+Cada reacción puede tener una carpeta pública y otra `nsfw/`. Los GIFs públicos están activos por defecto; la variante explícita solo se usa cuando `nsfw-gifs` está habilitado para el nivel del participante. Si una reacción no tiene versión pública y el acceso NSFW está desactivado, el comando no responde para evitar confundir a los participantes.
 
 <a id="observabilidad"></a>
 ## 📊 Observabilidad
@@ -828,7 +865,7 @@ Usa `.env.example` como contrato publico y `.env.local` para valores reales. Si 
 Recomendaciones operativas:
 
 - Trata `BotSession/` y `jadibot/` como credenciales: quien tenga esos archivos controla la cuenta de WhatsApp.
-- Manten `BOT_FIXED_OWNER_JIDS` al minimo: esos numeros pueden ejecutar codigo y shell en el servidor (`>`/`=>` y `$`). Los limites aplicados (timeouts, truncado, auditoria `[SENSITIVE]`) estan en `docs/owner-security.md`.
+- Manten `BOT_OWNER_NUMBERS` limitado a operadores de confianza. Los comandos de ejecucion remota, mantenimiento del proceso y respaldo de credenciales no se exponen por WhatsApp; consulta `docs/owner-security.md`.
 - Corre el bot con un usuario de sistema dedicado y sin privilegios; PostgreSQL sin exposicion publica.
 - Los guards de permisos (`owner`, `admin`, `group`, access modes por familia) deben declararse en la metadata del plugin, no re-implementarse a mano.
 - Checklist completo de produccion en `docs/deployment.md`.
@@ -959,6 +996,7 @@ Resumen actual:
 
 - Persistencia migrada a Drizzle ORM.
 - Repositorios Drizzle separados por agregado.
+- Capa `src/domain` separada para modelos y reglas de usuarios, grupos, subbots, audios, personajes y operaciones.
 - Plugins y core consumen servicios/puertos, no SQL directo.
 - `api_tokens` migrado a Drizzle.
 - `audio_responses` almacena audios dinamicos.
@@ -967,7 +1005,7 @@ Resumen actual:
 - Plugins organizados en 19 familias.
 - SDK interno disponible para plugins nuevos y migrados.
 - Todos los plugins usan `defineSdkPlugin`; `definePlugin`, `message-template` y HTTP directo quedaron fuera de `src/plugins`.
-- Modos de acceso por familia (`all`/`admins`/`off`) aplicados por `feature-access.guard.ts` y configurables con el menu de toggles.
+- Reglas normalizadas por familia (`enabled` y `all`/`admin`/`superadmin`/`owner`) aplicadas por `feature-access.guard.ts` y configurables con `enable`/`disable`.
 - Roles de admins por grupo en `user_group_roles`, sincronizados al arrancar (`startup-admin-sync.ts`) y en eventos de grupo.
 - `test:p0` evita que plugins migrados al SDK vuelvan a importar helpers legacy de mensajes o HTTP.
 - `content.service` centraliza mensajes, listas y templates desde `resources/data/messages.json`.
@@ -987,6 +1025,9 @@ Resumen actual:
 - Observabilidad configurable con `LOG_LEVEL`.
 - VirusTotal integrado como hook configurable.
 - `src/**/*.ts` sin `any` ni `@ts-ignore`.
+- Recursos de comandos protegidos por reservas atomicas, confirmacion en exito y recuperacion de pendientes vencidas.
+- Registry de plugins validado y hot reload con rollback, debounce y desactivado en produccion.
+- Pipeline compatible con interceptores tipados, perfiles de timeout, `AbortSignal` y locks por namespace.
 - Build, typecheck y suite de pruebas pasan.
 - Scripts de base de datos alineados: migraciones registradas, `schema.ts` actualizado y `database/schema.sql` listo para bootstrap manual limpio desde cero.
 

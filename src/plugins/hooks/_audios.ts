@@ -4,14 +4,17 @@ import {findMatchingAudioInScopes} from '../../services/audio-response.service.j
 import type {BeforePluginContext} from '../../types/context.js';
 import type {BotMessage} from '../../types/message.js';
 import {pickRandom} from '../../utils/random.js';
+import {canUseAccessMode} from '../../utils/access-mode.js';
+import {defaultFamilyAccess} from '../../utils/family-access.js';
 
-export async function before(m: BotMessage, {conn, botConfig, groupSettings}: BeforePluginContext) {
+export async function before(m: BotMessage, {conn, botConfig, groupSettings, isOwner, isAdmin, isGroupCreator}: BeforePluginContext) {
     if (!m || m.fromMe || !m.originalText || m.originalText.length > 500) return;
     const prefixes = Array.isArray(botConfig?.prefix) ? botConfig.prefix : ['.', '/', '#'];
     const texto = m.originalText.trim();
 
     if (prefixes.some((p) => texto.startsWith(p))) return;
-    if (!groupSettings?.audios) return;
+    const audioRule = groupSettings?.familyAccess?.audio || defaultFamilyAccess('audio');
+    if (!audioRule.enabled || !canUseAccessMode(audioRule.accessMode, {isOwner, isAdmin, isGroupCreator})) return;
 
     const lowerTexto = texto.toLowerCase();
     const chatId = m.chat.trim();

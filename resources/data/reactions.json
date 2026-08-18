@@ -1,9 +1,27 @@
 {
+  "69": {
+    "help": "msg-gif-69",
+    "commands": ["69"],
+    "adult": true,
+    "folder": "resources/media/reaction-gifs/69",
+    "nsfwFolder": "resources/media/reaction-gifs/69/nsfw",
+    "caption": "6️⃣9️⃣🔥 {sender} quiere intentar una posición atrevida con {targets} 😈",
+    "nsfwCaption": "6️⃣9️⃣💦 {sender} está disfrutando un intenso 69 con {targets} 😈🔥"
+  },
   "ab": {
     "help": "msg-gif-ab",
     "commands": ["ab", "abrazo", "hug", "embrace", "abrazar"],
     "folder": "resources/media/reaction-gifs/ab",
     "caption": "🫣🫣 {sender} le abrazo fuertemente a {targets} 😄😄"
+  },
+  "ah": {
+    "help": "msg-gif-ah",
+    "commands": ["ahorcar"],
+    "adult": true,
+    "folder": "resources/media/reaction-gifs/ah",
+    "nsfwFolder": "resources/media/reaction-gifs/ah/nsfw",
+    "caption": "🪢😵 *¡Escena dramática!* {sender} atrapó a {targets} con una cuerda y montó un ahorcamiento de película 🎭💥",
+    "nsfwCaption": "🖤⛓️ *¡El juego se puso intenso!* {sender} tomó el control y sometió a {targets} en una atrevida escena de rol consensuado 😈🔥🪢"
   },
   "an": {
     "help": "msg-gif-cog",
@@ -33,6 +51,16 @@
     "nsfwFolder": "resources/media/reaction-gifs/cog/nsfw",
     "caption": "😋🔥💗👙 {sender} se esta cogiendo bien duro a {targets}"
   },
+  "cowgirl": {
+    "help": "msg-gif-cowgirl",
+    "commands": ["cowgirl"],
+    "adult": true,
+    "targetMode": "explicit-or-random-group-member",
+    "folder": "resources/media/reaction-gifs/cwl",
+    "nsfwFolder": "resources/media/reaction-gifs/cwl/nsfw",
+    "caption": "🤠🐄 {sender} invitó a {targets} a montar como vaqueritos 🌵✨",
+    "nsfwCaption": "🤠🔥 {sender} está cabalgando bien rico, penetrando y rompiedo a {targets} en posición de vaqueritos 😈💦🥵💋"
+  },
   "dogst": {
     "help": "msg-gif-dogst",
     "commands": ["doggystyle", "encuatro", "en4", "deaperrito", "cogeren4", "coger4", "follar4"],
@@ -41,11 +69,48 @@
     "nsfwFolder": "resources/media/reaction-gifs/dogst/nsfw",
     "caption": "🍆💦 {sender} se esta cogiendo de a perrito a {targets}"
   },
+  "dedeo": {
+    "help": "msg-gif-dedeo",
+    "commands": ["dedeo"],
+    "adult": true,
+    "folder": "resources/media/reaction-gifs/dd",
+    "nsfwFolder": "resources/media/reaction-gifs/dd/nsfw",
+    "caption": "🫴💦🔥 {sender} está dedeando con pasión, lujuria y mucha fuerza a {targets} 😈🥵💋",
+    "nsfwCaption": "🫴💦🔥 {sender} está dedeando con pasión, lujuria y mucha fuerza a {targets} 😈🥵💋"
+  },
+  "deepthroat": {
+    "help": "msg-gif-deepthroat",
+    "commands": ["deepthroat"],
+    "adult": true,
+    "folder": "resources/media/reaction-gifs/dt",
+    "nsfwFolder": "resources/media/reaction-gifs/dt/nsfw",
+    "caption": "👄🔥 {sender} quiere llevar el juego oral al límite con {targets} 😈💦",
+    "nsfwCaption": "👄🔥 {sender} está practicando deepthroat intensamente con {targets} 😈💦"
+  },
+  "espadasos": {
+    "help": "msg-gif-espadasos",
+    "commands": ["espadasos"],
+    "adult": true,
+    "folder": "resources/media/reaction-gifs/espn",
+    "nsfwFolder": "resources/media/reaction-gifs/espn/nsfw",
+    "caption": "⚔️🔥 {sender} quiere cruzar espadas con {targets} 😈",
+    "nsfwCaption": "⚔️💦 {sender} está teniendo un intenso duelo de espadas con {targets} 😈🔥"
+  },
   "fg": {
     "help": "msg-gif-fg",
     "commands": ["slap", "pegar", "cachetada", "golpear"],
     "folder": "resources/media/reaction-gifs/fg",
     "caption": "🤜 {sender} molio a golpes por pendejo/a a {targets} 👊😵"
+  },
+  "fap": {
+    "help": "msg-gif-fap",
+    "commands": ["fap"],
+    "adult": true,
+    "targetMode": "explicit-or-random-group-member",
+    "folder": "resources/media/reaction-gifs/fap",
+    "nsfwFolder": "resources/media/reaction-gifs/fap/nsfw",
+    "caption": "🍆😳 {sender} se está dando amor a sí mismo y sorprendió a {targets} con el resultado 🤭",
+    "nsfwCaption": "🍆💦 {sender} se está masturbando y le lanzó toda la lechita y su venida rica calientita a {targets} 😳"
   },
   "kc": {
     "help": "msg-gif-kc",
@@ -70,6 +135,16 @@
     "commands": ["lick", "lamer", "lamida", "babear"],
     "folder": "resources/media/reaction-gifs/lam",
     "caption": "😝👅 {sender} relamio bien rico a {targets} 😋😜"
+  },
+  "manosear": {
+    "help": "msg-gif-manosear",
+    "commands": ["manosear"],
+    "adult": true,
+    "targetMode": "explicit-or-random-group-member",
+    "folder": "resources/media/reaction-gifs/msr",
+    "nsfwFolder": "resources/media/reaction-gifs/msr/nsfw",
+    "caption": "🫳💞 {sender} está manoseando juguetonamente a {targets} 😳",
+    "nsfwCaption": "🫳🔥 {sender} está manoseando bien rico, frotandole descaradamente, todo lo que quiere manosear a {targets} 😈"
   },
   "les": {
     "help": "msg-gif-les",
@@ -104,5 +179,23 @@
     "commands": ["spank", "nalgear", "nalguear", "palmaso", "nalgaso"],
     "folder": "resources/media/reaction-gifs/spank",
     "caption": "🫱🍑 {sender} ha nalgeado bien duro a {targets} 🫣"
+  },
+  "titfuck": {
+    "help": "msg-gif-titfuck",
+    "commands": ["titfuck", "pajarusa", "larusa", "rusa"],
+    "adult": true,
+    "folder": "resources/media/reaction-gifs/rs",
+    "nsfwFolder": "resources/media/reaction-gifs/rs/nsfw",
+    "caption": "😏🔥 {sender} se acerca de forma muy atrevida a {targets} 💞",
+    "nsfwCaption": "🍆🔥 {sender} está disfrutando un intenso titfuck con {targets} 😈💦"
+  },
+  "venirse": {
+    "help": "msg-gif-venirse",
+    "commands": ["venirse"],
+    "adult": true,
+    "folder": "resources/media/reaction-gifs/vn",
+    "nsfwFolder": "resources/media/reaction-gifs/vn/nsfw",
+    "caption": "💦🔥 {sender} ¡NO SE AGUANTA MÁS! Se está viniendo con mucha intensidad en {targets} 😈🥵💥",
+    "nsfwCaption": "💦🔥 {sender} ¡NO SE AGUANTA MÁS! Se está viniendo con mucha intensidad en {targets} 😈🥵💥"
   }
 }

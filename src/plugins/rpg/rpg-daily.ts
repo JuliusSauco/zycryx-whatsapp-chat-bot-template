@@ -7,12 +7,12 @@ const free = 5000;
 const expIncrease = 1000;
 const bonusExp = 10000;
 const bonusLimit = 10;
-const bonusMoney = 5000;
+const bonusCoins = 5000;
 
 export default defineSdkPlugin({
     command: ['daily', 'claim'],
     help: ['daily', 'claim'],
-    tags: ['econ'],
+    tags: ['rpg'],
     register: true,
     async execute(m, {conn, sdk}) {
         const now = Date.now();
@@ -35,20 +35,24 @@ export default defineSdkPlugin({
         if (newStreak % 7 === 0) {
             await addWalletResourcesAndSetFields({
                 userId: m.sender,
-                resources: {exp: currentExp + bonusExp, limite: bonusLimit, money: bonusMoney},
+                resources: {exp: currentExp + bonusExp, limite: bonusLimit, coins: bonusCoins},
                 fields: {lastclaim: now, dailystreak: newStreak},
+                reason: 'daily_reward',
+                operation: 'daily',
             });
 
             bonusText = sdk.content.renderMessage('rpg.daily.bonus', {
                 bonusExp: formatThousandsDot(bonusExp),
                 bonusLimit,
-                bonusMoney: formatThousandsDot(bonusMoney)
+                bonusCoins: formatThousandsDot(bonusCoins)
             });
         } else {
             await addWalletResourcesAndSetFields({
                 userId: m.sender,
                 resources: {exp: currentExp},
                 fields: {lastclaim: now, dailystreak: newStreak},
+                reason: 'daily_reward',
+                operation: 'daily',
             });
         }
 

@@ -7,7 +7,8 @@ export default defineSdkPlugin({
     tags: ['downloader'],
     command: ['igstalk', 'igsearch', 'instagramsearch'],
     register: true,
-    limit: 1,
+    limit: 4,
+    alternativeCoins: 40,
     async execute(m, {sdk}) {
     if (!sdk.args[0]) return sdk.reply.message('downloads.instagramStalk.missingUsername', {
         command: sdk.usedPrefix + sdk.command

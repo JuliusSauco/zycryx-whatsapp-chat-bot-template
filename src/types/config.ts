@@ -48,6 +48,8 @@ export interface GroupSettings {
     funAccessMode?: AccessMode | null;
     modohorny: boolean;
     nsfwAccessMode?: AccessMode | null;
+    nsfwGifEnabled?: boolean | null;
+    nsfwGifAccessMode?: AccessMode | null;
     audios: boolean;
     nsfw_horario?: string | null;
     antiStatus: boolean;
@@ -77,6 +79,8 @@ export interface GroupSettings {
     autoAcceptMode?: AutoAcceptMode | null;
     botAccessMode?: AccessMode | null;
     messageLogging: boolean;
+    familyAccess?: import('../domain/groups.js').FamilyAccessMap;
+    commandAccess?: import('../domain/groups.js').CommandAccessMap;
     // allow custom welcome/bye texts
     swelcome?: string | null;
     sbye?: string | null;
@@ -98,6 +102,7 @@ export type AutoresponderTrigger = 'mention' | 'all';
 export interface Usuario {
     id: string;
     nombre?: string | null;
+    username?: string | null;
     registered: boolean;
     num?: string | null;
     lid?: string | null;
@@ -107,10 +112,11 @@ export interface Usuario {
     warn_antiporn: number;
     warn_estado: number;
     edad?: number | null;
-    money: number;
+    coins: number;
     limite: number;
     exp: number;
-    banco: number;
+    botcoin: number;
+    zyxcoin: number;
     level: number;
     role: string;
     roleDescription?: string | null;

@@ -14,7 +14,8 @@ export default defineSdkPlugin({
     tags: ['downloader'],
     command: /^(drive|drivedl|dldrive|gdrive)$/i,
     register: true,
-    limit: 3,
+    limit: 10,
+    alternativeCoins: 100,
     async execute(m, {sdk}) {
         if (!sdk.args[0]) return sdk.reply.message('downloads.drive.missingUrl', {
             command: sdk.usedPrefix + sdk.command,

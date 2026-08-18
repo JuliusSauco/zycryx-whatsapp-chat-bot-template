@@ -4,6 +4,15 @@ Este roadmap prioriza cambios estructurales que reducen acoplamiento y preparan 
 
 ## Snapshot 2026-06-30
 
+Actualizacion 2026-07-21: se implemento el siguiente bloque arquitectonico sobre P0/P2/P5:
+
+- reservas transaccionales e idempotentes para costos de comandos;
+- guards sin descuentos y ordenados antes de reservar;
+- registro validado con rollback de hot reload;
+- manifiesto compatible, features tipadas e interceptores;
+- perfiles de timeout, `AbortSignal` y locks compartidos por plugin;
+- cola background acotada/coalescida y watchers solo fuera de produccion.
+
 - Avance general estimado del roadmap arquitectonico: 82%.
 - P0 esta cerrado como contrato arquitectonico: los plugins nuevos y migrados deben usar `defineSdkPlugin`, `sdk.content`, `sdk.http`, `sdk.reply` y helpers del SDK.
 - La compuerta `tests/p0-architecture.test.ts` protege a los plugins migrados para que no vuelvan a importar `message-template` ni `http-client` directamente.
@@ -110,7 +119,7 @@ Estado: cancelado. El proyecto no usara backend administrativo ni adapter REST/G
 
 Objetivo: reducir riesgo en comandos con ejecucion, red, procesos o salida grande.
 
-- [x] Auditar `owner-exec.ts`, `owner-exec2.ts`, `owner-update.ts`, `info-speedtest.ts`.
+- [x] Retirar la ejecucion remota y conservar `info-speedtest.ts` con limites estrictos.
 - [x] Agregar timeouts, limites de salida y sanitizacion de errores.
 - [x] Registrar auditoria de comandos sensibles.
 - [x] Documentar permisos y variables necesarias.

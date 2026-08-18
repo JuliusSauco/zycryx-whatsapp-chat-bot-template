@@ -3,7 +3,7 @@ import {divorceUsers, getUserById} from '../../services/user.service.js'
 
 export default defineSdkPlugin({
     help: ['divorce <@tag>'],
-    tags: ['econ'],
+    tags: ['rpg'],
     command: ['divorce'],
     register: true,
     async execute(m, {conn, args, sdk}) {

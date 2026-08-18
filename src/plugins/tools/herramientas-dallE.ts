@@ -7,7 +7,8 @@ export default defineSdkPlugin({
     tags: ["buscadores"],
     command: ['dall-e', 'dalle', 'ia2', 'cimg', 'openai3', 'a-img', 'aimg', 'imagine'],
     register: true,
-    limit: 1,
+    limit: 5,
+    alternativeCoins: 50,
     async execute(_m, {sdk}) {
     if (!sdk.text) return sdk.reply.message('tools.imageAi.usage', {command: sdk.usedPrefix + sdk.command})
     await sdk.reply.react('⌛')

@@ -4,6 +4,8 @@
  * Usa un Map para exact match O(1) y arrays para regex/customPrefix como fallback.
  */
 import type {Plugin} from '../types/plugin.js';
+import {buildPluginRegistry} from './plugin-registry.js';
+import {logWarn} from '../lib/logger.js';
 
 type CustomPrefixMatcher = RegExp | ((input: string) => boolean);
 
@@ -19,17 +21,21 @@ export class CommandRouter {
      * Limpia el estado anterior antes de registrar.
      */
     registerAll(plugins: Record<string, Plugin>): void {
+        const registry = buildPluginRegistry(plugins);
+        for (const warning of registry.warnings) logWarn(`[PLUGIN REGISTRY] ${warning}`);
         this.exact.clear();
         this.regex = [];
         this.customPrefixPlugins = [];
         this.beforePlugins = [];
         this.commandBeforePlugins = [];
 
-        for (const plugin of Object.values(plugins)) {
+        for (const plugin of Object.values(registry.plugins)) {
             // Registrar before hooks
-            if (typeof plugin.before === 'function') {
+            if (typeof plugin.before === 'function' || plugin.interceptors?.length) {
                 this.beforePlugins.push(plugin);
-                if (plugin.runBeforeOnCommand) this.commandBeforePlugins.push(plugin);
+                if (plugin.runBeforeOnCommand || plugin.interceptors?.some(item => item.appliesTo !== 'messages')) {
+                    this.commandBeforePlugins.push(plugin);
+                }
             }
 
             const cmd = plugin.command;
@@ -51,6 +57,7 @@ export class CommandRouter {
                 this.customPrefixPlugins.push([plugin.customPrefix, plugin]);
             }
         }
+        this.customPrefixPlugins.sort(([, a], [, b]) => (b.customPrefixPriority ?? 0) - (a.customPrefixPriority ?? 0));
     }
 
     /**

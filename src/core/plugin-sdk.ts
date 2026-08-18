@@ -17,6 +17,7 @@ import {
     userError,
 } from '../lib/reply-helpers.js';
 import {createUserRequestLocks, type UserRequestLocks} from '../lib/user-request-locks.js';
+import {createPluginLocks, type PluginLocks} from '../lib/plugin-locks.js';
 import {
     content,
     getMessage,
@@ -84,6 +85,8 @@ export interface PluginSdk {
     readonly reply: PluginReplySdk;
     readonly providers: PluginProviderSdk;
     readonly http: PluginHttpSdk;
+    readonly locks: PluginLocks;
+    /** @deprecated Usa sdk.locks.runExclusive. */
     createUserLocks<TPayload = true>(): UserRequestLocks<TPayload>;
     sendMessage(content: Parameters<PluginContext['conn']['sendMessage']>[1], options?: SendMessageOptions): Promise<proto.WebMessageInfo>;
     sendFile(path: Parameters<PluginContext['conn']['sendFile']>[1], filename?: string, caption?: string, quoted?: QuotedMessage, ptt?: boolean, options?: SendMessageOptions): Promise<proto.WebMessageInfo>;
@@ -134,6 +137,7 @@ export function createPluginSdk(m: BotMessage, ctx: PluginContext): PluginSdk {
             text: httpText,
             buffer: httpBuffer,
         },
+        locks: createPluginLocks(ctx.pluginId),
         createUserLocks: createUserRequestLocks,
         sendMessage(messageContent, options) {
             return ctx.conn.sendMessage(chatId, messageContent, {quoted: m, ...options});
@@ -174,3 +178,4 @@ function createReplySdk(m: BotMessage): PluginReplySdk {
 }
 
 export {errorMessage};
+export type {PluginLocks};

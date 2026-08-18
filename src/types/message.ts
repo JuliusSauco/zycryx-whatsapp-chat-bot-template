@@ -11,7 +11,10 @@ export interface MediaMessageLike {
 }
 
 export interface BotMessage extends proto.IWebMessageInfo {
-    key: proto.IMessageKey;
+    key: proto.IMessageKey & {
+        participantUsername?: string;
+        remoteJidUsername?: string;
+    };
     sender: string;
     chat: string;
     isGroup: boolean;

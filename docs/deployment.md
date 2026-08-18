@@ -1,14 +1,14 @@
 # Despliegue en servidor
 
-Guia operativa para correr el bot en produccion (VPS Linux o Windows). Fecha de referencia: 2026-06-10.
+Guia operativa para correr el bot en produccion (VPS Linux o Windows). Fecha de referencia: 2026-07-29.
 
 ## Requisitos del servidor
 
-- Node.js 18+ (recomendado 20 LTS o superior).
+- Node.js 24 LTS (usar siempre el parche 24.x mas reciente).
 - PostgreSQL 14+ accesible desde el servidor.
 - Cliente PostgreSQL en PATH (`pg_dump`, `pg_restore`, `createdb`) para backups y recuperacion.
 - FFmpeg en el PATH (stickers, conversiones, audios).
-- git (lo usa el comando owner `update` / `git pull`).
+- git (para despliegues y actualizaciones administrativas con `git pull`).
 - Python 3 con el alias `python3` (opcional, solo para el comando `speedtest`).
 - Un process manager: **obligatorio**, no opcional. El bot se reinicia solo cada 3 horas con `process.exit(0)` y tambien sale con codigo 1 si detecta loops de sesion; sin supervisor, el proceso queda muerto.
 - ~512 MB de RAM para el proceso Node (`serve` ya usa `--max-old-space-size=512`).
@@ -18,14 +18,17 @@ Guia operativa para correr el bot en produccion (VPS Linux o Windows). Fecha de 
 ```bash
 git clone <url-del-repositorio>
 cd zycryx-whatsapp-chat-bot-template
-npm install
+nvm install 24
+nvm use 24
+node --version # debe mostrar v24.x
+npm ci
 cp .env.example .env.prod        # completar valores reales
 npm run build
 npm run ops:check
 npm run db:migrate               # con NODE_ENV=prod si la DB depende del env
 ```
 
-Nota: `npm install` ejecuta `postinstall: tsc`, por lo que el build inicial ocurre durante la instalacion. Si solo quieres instalar dependencias usa `npm install --ignore-scripts` y compila despues con `npm run build`.
+`npm ci` usa exactamente `package-lock.json` y ejecuta `postinstall: tsc`, por lo que el build inicial ocurre durante la instalacion. `engine-strict=true` rechaza Node fuera de la rama 24.x o npm fuera de la rama 11.x.
 
 ### Vinculacion inicial
 
@@ -60,6 +63,7 @@ pm2 startup   # arranque automatico del sistema
 
 Claves:
 
+- La plantilla PM2 ejecuta `npm run serve:migrate`: antes de cada arranque consulta el historial de Drizzle, aplica solo migraciones pendientes y luego inicia el bot. Si una migracion falla, el bot no arranca con un schema incompatible.
 - `autorestart` (default de PM2) cubre el `process.exit(0)` periodico del bot.
 - Logs: `pm2 logs zycryx-bot`. Considera `pm2 install pm2-logrotate` porque el bot loguea bastante en niveles altos.
 - Variables: PM2 no lee `.env.prod` por si mismo; el bot la carga solo segun `NODE_ENV`. Basta con exportar `NODE_ENV=prod`.
@@ -73,12 +77,11 @@ Equivalente con systemd: unit con `Restart=always`, `Environment=NODE_ENV=prod` 
 git pull
 npm install
 npm run build
-npm run db:migrate    # solo si hay migraciones nuevas
 NODE_ENV=prod npm run ops:check
 pm2 restart zycryx-bot
 ```
 
-Las migraciones nunca corren automaticamente al arrancar; ejecutalas siempre como paso explicito y controlado.
+Con `ecosystem.config.cjs`, `pm2 restart` ejecuta automaticamente las migraciones pendientes antes de levantar el bot. Haz un backup antes de desplegar migraciones destructivas. Si arrancas sin PM2, usa `npm run start:migrate` o `npm run serve:migrate`.
 
 ## Preflight operativo
 
@@ -176,7 +179,7 @@ Si WhatsApp invalido la sesion (401/403/500), restaurar archivos antiguos no ayu
 ## Checklist de seguridad en produccion
 
 - `.env.prod` con permisos restrictivos (`chmod 600`) y fuera del repo.
-- `BOT_FIXED_OWNER_JIDS` minimo: esos numeros pueden ejecutar codigo y shell en el servidor (`owner-exec`, `owner-exec2`).
+- `BOT_OWNER_NUMBERS` limitado a operadores de confianza y revisado en cada despliegue.
 - Usuario de sistema dedicado sin sudo para correr el bot.
 - PostgreSQL sin exposicion publica (bind local o firewall) y usuario con permisos solo sobre la base del bot.
 - Revisar logs `[SENSITIVE]` periodicamente: registran cada uso de eval/shell/update con sender y comando.

@@ -16,14 +16,17 @@ import {
 import {invalidateGroupSettings, invalidateSubbotConfig} from '../src/lib/db-cache.js';
 import {
     getContextGroupSettings,
+    getGroupFamilyAccessRule,
     getGroupSettings,
     getNsfwSettings,
     setGroupAutoAcceptMode,
     setGroupBooleanFlag,
+    setGroupFamilyAccessRule,
     setGroupTextMessage,
     setMemoryTtl,
     setPrimaryBot,
 } from '../src/services/group-settings.service.js';
+import {createDefaultFamilyAccessMap} from '../src/utils/family-access.js';
 import {
     cleanExpiredChatMemories,
     createReport,
@@ -47,6 +50,7 @@ import {
     exchangeWalletResources,
     getWallet,
     isWalletResource,
+    robExperience,
     setUserLevelRole,
     transferWalletResource,
 } from '../src/services/wallet.service.js';
@@ -202,12 +206,15 @@ async function testGroupSettingsService(): Promise<void> {
                 virusTotal: false,
                 audios: true,
                 autolevelup: true,
+                familyAccess: createDefaultFamilyAccessMap(),
             };
         },
         findNsfwSettings: async groupId => {
             calls.push(['findNsfwSettings', groupId]);
             return null;
         },
+        listFamilyAccessRules: async () => [],
+        upsertFamilyAccessRule: async (groupId, feature, rule) => calls.push(['upsertFamilyAccessRule', groupId, feature, rule]),
         findByGroupId: async groupId => {
             fullReads++;
             calls.push(['findByGroupId', groupId]);
@@ -225,20 +232,23 @@ async function testGroupSettingsService(): Promise<void> {
         assert.equal((await getContextGroupSettings('group-1@g.us')).modoadmin, true);
         assert.equal((await getContextGroupSettings('group-1@g.us')).audios, true);
         assert.equal(contextReads, 1);
+        assert.deepEqual(await getGroupFamilyAccessRule('group-1@g.us', 'games'), {enabled: true, accessMode: 'all'});
 
-        assert.deepEqual(await getNsfwSettings('group-1@g.us'), {modohorny: false, nsfwAccessMode: 'all', nsfw_horario: null});
+        assert.deepEqual(await getNsfwSettings('group-1@g.us'), {modohorny: false, nsfwAccessMode: 'owner', nsfwGifEnabled: false, nsfwGifAccessMode: 'owner', nsfw_horario: null});
 
         assert.deepEqual(await getGroupSettings('group-1@g.us'), {welcome: true, banned: false});
         assert.deepEqual(await getGroupSettings('group-1@g.us'), {welcome: true, banned: false});
         assert.equal(fullReads, 1);
 
         await setGroupBooleanFlag('group-1@g.us', 'antilink', true);
+        await setGroupFamilyAccessRule('group-1@g.us', 'games', {enabled: false, accessMode: 'admin'});
         await setGroupAutoAcceptMode('group-1@g.us', '' as never);
         await setGroupTextMessage('group-1@g.us', 'welcome', 'hola', true, {hidetag: true});
         await setMemoryTtl('group-1@g.us', 3600);
         await setPrimaryBot('group-1@g.us', 'bot@s.whatsapp.net');
 
         assert.equal(calls.some(call => Array.isArray(call) && call[0] === 'setBooleanFlag'), true);
+        assert.equal(calls.some(call => Array.isArray(call) && call[0] === 'upsertFamilyAccessRule'), true);
         assert.deepEqual(calls.find(call => Array.isArray(call) && call[0] === 'setAutoAcceptMode'), ['setAutoAcceptMode', 'group-1@g.us', 'off']);
         assert.equal(calls.some(call => Array.isArray(call) && call[0] === 'setTextMessage'), true);
     } finally {
@@ -340,8 +350,9 @@ async function testWalletAndApiTokenServices(): Promise<void> {
         nombre: null,
         limite: 1,
         exp: 2,
-        money: 3,
-        banco: 4,
+        coins: 3,
+        botcoin: 0,
+        zyxcoin: 0,
         level: 5,
         role: null,
         wait: 0,
@@ -380,6 +391,18 @@ async function testWalletAndApiTokenServices(): Promise<void> {
             calls.push(['transferWalletResource', input]);
             return false;
         },
+        robExperience: async input => {
+            calls.push(['robExperience', input]);
+            return {
+                kind: 'success',
+                amount: input.amount ?? 500,
+                availableLevel: 1,
+                maxAmount: 1000,
+                remainingRobberies: 3,
+                nextAvailableAt: input.attemptedAt + 3_600_000,
+                dailyLimitReached: false,
+            };
+        },
         setLevelRole: async (userId, level, role) => calls.push(['setLevelRole', userId, level, role]),
     };
     repositories.apiTokens = {
@@ -391,14 +414,24 @@ async function testWalletAndApiTokenServices(): Promise<void> {
     };
 
     try {
-        assert.equal(isWalletResource('money'), true);
+        assert.equal(isWalletResource('coins'), true);
+        assert.equal(isWalletResource('money'), false);
         assert.equal(isWalletResource('diamonds'), false);
         assert.equal(await getWallet('u1'), wallet);
-        assert.equal(await addWalletResource('u1', 'money', 3), 10);
+        assert.equal(await addWalletResource('u1', 'coins', 3), 10);
         assert.equal(await addWalletResourceAndSetWait('u1', 'exp', 4, 123), 11);
-        await addWalletResourcesAndSetFields({userId: 'u1', resources: {money: 1}, fields: {lastclaim: 2}});
-        assert.equal(await exchangeWalletResources({userId: 'u1', from: 'money', to: 'banco', fromAmount: 1, toAmount: 2}), true);
-        assert.equal(await transferWalletResource({from: 'u1', to: 'u2', resource: 'money', amount: 1}), false);
+        await addWalletResourcesAndSetFields({userId: 'u1', resources: {coins: 1}, fields: {lastclaim: 2}});
+        assert.equal(await exchangeWalletResources({userId: 'u1', from: 'coins', to: 'exp', fromAmount: 1, toAmount: 2}), true);
+        assert.equal(await transferWalletResource({from: 'u1', to: 'u2', resource: 'coins', amount: 1}), false);
+        assert.deepEqual(await robExperience({robberId: 'u1', victimId: 'u2', attemptedAt: 123}), {
+            kind: 'success',
+            amount: 500,
+            availableLevel: 1,
+            maxAmount: 1000,
+            remainingRobberies: 3,
+            nextAvailableAt: 3_600_123,
+            dailyLimitReached: false,
+        });
         await setUserLevelRole('u1', 9, 'Pro');
 
         invalidateApiTokenCache('service');

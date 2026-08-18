@@ -54,8 +54,4 @@ export const databaseRepository: DatabaseRepository = {
             totalSize: totalRows[0]?.total ?? null,
         };
     },
-
-    async vacuumFull() {
-        await orm.execute(sql`VACUUM FULL`);
-    },
 };

@@ -81,7 +81,7 @@ export default defineSdkPlugin({
 
     if (correcta) {
         mathGames.delete(m.sender);
-        await addWalletResource(m.sender, 'exp', exp);
+        await addWalletResource(m.sender, 'exp', exp, 'game_reward', 'math');
         return m.reply(content.renderMessage('games.math.correct', {exp}));
     } else {
         data.intentos--;

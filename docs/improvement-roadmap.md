@@ -93,7 +93,7 @@ Estado: cerrado. Se mantiene solo como registro historico.
 
 Estado: cerrado. La parte de backend fue cancelada; la persistencia oficial es PostgreSQL directo con Drizzle.
 
-- [x] 100% - Endurecer permisos de comandos owner con red arbitraria: `owner-fetch.ts`.
+- [x] 100% - Retirar los comandos owner con acceso de red arbitrario.
 - [x] 100% - Eliminar uso directo de `Math.random()` en plugins y pasar por `src/utils/random.ts`.
 - [x] 100% - Ampliar pruebas unitarias para router, guards y context builder.
 - [x] 100% - Agregar pruebas de servicios con repositorios mockeados.
@@ -147,6 +147,18 @@ Estado: cerrado como mantenimiento actual.
 - [x] 100% - Documentar en README la diferencia entre `npm run db:migrate` y `database/schema.sql`.
 
 ## Notas tecnicas
+
+### Bloque de robustecimiento de plugins - 2026-07-21
+
+- [x] Separar validacion y consumo de recursos.
+- [x] Agregar reservas atomicas, confirmacion, liberacion e idempotencia.
+- [x] Recuperar reservas pendientes vencidas mediante tarea programada.
+- [x] Validar colisiones exactas/regex antes de publicar el registro.
+- [x] Incorporar manifiesto compatible, feature tipada e interceptores.
+- [x] Agregar timeouts por perfil, `AbortSignal` y locks compartidos.
+- [x] Acotar/coalescer la cola background y limitar hot reload a desarrollo.
+- [ ] Migrar gradualmente imports legacy de locks y hooks al contrato nuevo.
+- [ ] Extraer casos de uso de los plugins grandes de configuracion, RPG, grupos y VirusTotal.
 
 - Los plugins ya no usan `fetch`, `node-fetch`, `axios` ni `src/lib/http-client.ts` directamente; usan `sdk.http`, providers o servicios.
 - Los plugins nuevos deben usar `defineSdkPlugin` desde `src/core/sdk-plugin.ts` para acceder a `sdk.reply`, `sdk.content`, `sdk.http`, `sdk.providers` y locks por usuario sin importar helpers sueltos.

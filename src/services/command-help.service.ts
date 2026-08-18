@@ -119,7 +119,7 @@ function cleanHelpQuery(query: string): string {
 }
 
 function inferRequiredRole(plugin?: Plugin): 'member' | 'admin' | 'superadmin' | 'owner' {
-    if (plugin?.owner || plugin?.rowner) return 'owner';
+    if (plugin?.owner) return 'owner';
     if (plugin?.admin || plugin?.botAdmin) return 'admin';
     return 'member';
 }

@@ -1,32 +1,44 @@
-import type {usuarios} from '../../db/schema.js';
+import type {userWallets, usuarios} from '../../db/schema.js';
 import type {UserRecord, UserResources, UserWallet} from '../../domain/users.js';
 
 export type UserRow = typeof usuarios.$inferSelect;
+export type WalletRow = typeof userWallets.$inferSelect;
+export type UserRecordRow = UserRow & {
+    limite?: number | null;
+    exp?: number | null;
+    coins?: number | null;
+    botcoin?: number | null;
+    zyxcoin?: number | null;
+};
 
-export type UserWalletRow = Pick<
-    UserRow,
-    | 'id'
-    | 'nombre'
-    | 'limite'
-    | 'exp'
-    | 'money'
-    | 'banco'
-    | 'level'
-    | 'role'
-    | 'wait'
-    | 'lastclaim'
-    | 'dailystreak'
-    | 'lastcofre'
-    | 'lastmiming'
-    | 'lastwork'
-    | 'crime'
-    | 'lastrob'
-    | 'lastslut'
-    | 'timevot'
-    | 'ryTime'
->;
+export interface UserWalletRow {
+    id: string;
+    nombre: string | null;
+    limite: number | null;
+    exp: number | null;
+    coins: number | null;
+    botcoin: number | null;
+    zyxcoin: number | null;
+    level: number | null;
+    role: string | null;
+    wait: number | null;
+    lastclaim: number | null;
+    dailystreak: number | null;
+    lastcofre: number | null;
+    lastmiming: number | null;
+    lastwork: number | null;
+    crime: number | null;
+    lastrob: number | null;
+    lastslut: number | null;
+    timevot: number | null;
+    ryTime: number | null;
+}
 
-export type UserResourcesRow = Pick<UserRow, 'limite' | 'money' | 'level'> | undefined;
+export interface UserResourcesRow {
+    limite: number | null;
+    coins: number | null;
+    level: number | null;
+}
 
 function numberOrZero(value: number | null | undefined): number {
     return value ?? 0;
@@ -36,10 +48,11 @@ function booleanOrFalse(value: boolean | null | undefined): boolean {
     return value ?? false;
 }
 
-export function mapUserRecord(row: UserRow): UserRecord {
+export function mapUserRecord(row: UserRecordRow): UserRecord {
     return {
         id: row.id,
         nombre: row.nombre,
+        username: row.username,
         registered: booleanOrFalse(row.registered),
         num: row.num,
         lid: row.lid,
@@ -53,10 +66,11 @@ export function mapUserRecord(row: UserRow): UserRecord {
         edad: row.edad,
         gender: row.gender,
         birthday: row.birthday,
-        money: numberOrZero(row.money),
+        coins: numberOrZero(row.coins),
         limite: numberOrZero(row.limite),
         exp: numberOrZero(row.exp),
-        banco: numberOrZero(row.banco),
+        botcoin: numberOrZero(row.botcoin),
+        zyxcoin: numberOrZero(row.zyxcoin),
         level: numberOrZero(row.level),
         role: row.role ?? 'novato',
         roleDescription: row.roleDescription,
@@ -87,8 +101,9 @@ export function mapUserWallet(row: UserWalletRow): UserWallet {
         nombre: row.nombre,
         limite: numberOrZero(row.limite),
         exp: numberOrZero(row.exp),
-        money: numberOrZero(row.money),
-        banco: numberOrZero(row.banco),
+        coins: numberOrZero(row.coins),
+        botcoin: numberOrZero(row.botcoin),
+        zyxcoin: numberOrZero(row.zyxcoin),
         level: numberOrZero(row.level),
         role: row.role ?? 'novato',
         wait: numberOrZero(row.wait),
@@ -105,10 +120,10 @@ export function mapUserWallet(row: UserWalletRow): UserWallet {
     };
 }
 
-export function mapUserResources(row: UserResourcesRow): UserResources {
+export function mapUserResources(row: UserResourcesRow | undefined): UserResources {
     return {
         limite: numberOrZero(row?.limite),
-        money: numberOrZero(row?.money),
+        coins: numberOrZero(row?.coins),
         level: numberOrZero(row?.level),
     };
 }

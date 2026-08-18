@@ -16,21 +16,20 @@
  */
 import type {BeforePluginContext, PluginContext} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
-import type {Plugin} from '../types/plugin.js';
+import type {ExecutionPolicy, Plugin, PluginCommandAccess, PluginFeature, PluginInterceptor} from '../types/plugin.js';
 
 export interface PluginDefinition {
     /** Comando(s) que activan el plugin. */
     command?: string | string[] | RegExp;
     /** Prefijo custom (para comandos como `=> code`). */
     customPrefix?: RegExp | ((input: string) => boolean);
+    customPrefixPriority?: number;
     /** Textos de ayuda mostrados en el menú. */
     help?: string[];
     /** Categorías/tags para el menú. */
     tags?: string[];
     /** Requiere ser owner del bot. */
     owner?: boolean;
-    /** Requiere ser owner real (fixed owners). */
-    rowner?: boolean;
     /** Requiere ser admin del grupo. */
     admin?: boolean;
     /** Requiere que el bot sea admin del grupo. */
@@ -43,10 +42,16 @@ export interface PluginDefinition {
     register?: boolean;
     /** Costo en diamantes (limit). */
     limit?: number;
-    /** Costo en lolicoins. */
-    money?: number;
+    /** Costo en Coins. */
+    coins?: number;
+    /** Precio alternativo completo en Coins cuando no alcanza el costo principal. */
+    alternativeCoins?: number;
     /** Nivel mínimo requerido. */
     level?: number;
+    feature?: PluginFeature;
+    commandAccess?: PluginCommandAccess;
+    executionPolicy?: ExecutionPolicy;
+    interceptors?: PluginInterceptor[];
     /** Permite que `before` corra también cuando el mensaje es un comando con prefijo. */
     runBeforeOnCommand?: boolean;
     /** Solicita `groupSettings` completas en execute. Usar solo si el comando consume campos fuera del contexto mínimo. */
@@ -69,21 +74,35 @@ export function definePlugin(def: PluginDefinition): Plugin {
     // Copiar todas las propiedades de metadata al objeto función
     if (def.command !== undefined) fn.command = def.command;
     if (def.customPrefix !== undefined) fn.customPrefix = def.customPrefix;
+    if (def.customPrefixPriority !== undefined) fn.customPrefixPriority = def.customPrefixPriority;
     if (def.help !== undefined) fn.help = def.help;
     if (def.tags !== undefined) fn.tags = def.tags;
     if (def.owner !== undefined) fn.owner = def.owner;
-    if (def.rowner !== undefined) fn.rowner = def.rowner;
     if (def.admin !== undefined) fn.admin = def.admin;
     if (def.botAdmin !== undefined) fn.botAdmin = def.botAdmin;
     if (def.group !== undefined) fn.group = def.group;
     if (def.private !== undefined) fn.private = def.private;
     if (def.register !== undefined) fn.register = def.register;
     if (def.limit !== undefined) fn.limit = def.limit;
-    if (def.money !== undefined) fn.money = def.money;
+    if (def.coins !== undefined) fn.coins = def.coins;
+    if (def.alternativeCoins !== undefined) fn.alternativeCoins = def.alternativeCoins;
     if (def.level !== undefined) fn.level = def.level;
+    fn.feature = def.feature ?? inferLegacyFeature(def.tags);
+    fn.commandAccess = def.commandAccess ? {...def.commandAccess, defaultRule: {...def.commandAccess.defaultRule}} : undefined;
+    fn.executionPolicy = {...def.executionPolicy};
+    fn.interceptors = [...(def.interceptors ?? [])];
     if (def.runBeforeOnCommand !== undefined) fn.runBeforeOnCommand = def.runBeforeOnCommand;
     if (def.needsFullGroupSettings !== undefined) fn.needsFullGroupSettings = def.needsFullGroupSettings;
     if (def.before) fn.before = def.before;
 
     return fn;
+}
+
+function inferLegacyFeature(tags?: string[]): PluginFeature | undefined {
+    const mappings: Array<[PluginFeature, string[]]> = [
+        ['games', ['game']], ['tools', ['tools']], ['rpg', ['econ', 'gacha', 'rg', 'rpg', 'hot']],
+        ['downloads', ['downloader']], ['search', ['buscadores']], ['stickers', ['sticker']],
+        ['converters', ['convertidor']], ['fun', ['fun', 'randow']], ['nsfw', ['nsfw']],
+    ];
+    return mappings.find(([, values]) => tags?.some(tag => values.includes(tag)))?.[0];
 }

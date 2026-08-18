@@ -16,12 +16,15 @@ import {getSubbotConfig, updateSubbotTipo} from '../services/subbot.service.js';
 import {clearPrimaryBot, getContextGroupSettings} from '../services/group-settings.service.js';
 import type {SubbotConfig} from '../types/config.js';
 import type {AccessMode, AutoresponderTrigger} from '../types/config.js';
+import type {CommandAccessMap, FamilyAccessMap} from '../domain/groups.js';
 import type {BotBranding, ExtendedConn} from '../types/context.js';
 import type {BotMessage} from '../types/message.js';
 import {cleanJid, isGroupJid, resolveSenderInfo} from '../utils/jid.js';
-import {FIXED_OWNERS, GROUP_META_CACHE_TTL} from '../utils/constants.js';
+import {GROUP_META_CACHE_TTL} from '../utils/constants.js';
 import {isGroupCreator} from '../utils/group-creator.js';
 import {isMainConnection} from './runtime-state.js';
+import {createDefaultFamilyAccessMap} from '../utils/family-access.js';
+import {resolveMention} from '../utils/mention-identity.js';
 
 // --- Cache de metadata de grupos ---
 const groupMetaCache = new Map<string, GroupMetadata>();
@@ -49,8 +52,13 @@ export interface GroupSettings {
     funAccessMode: AccessMode;
     modohorny: boolean;
     nsfwAccessMode: AccessMode;
+    nsfwGifEnabled: boolean;
+    nsfwGifAccessMode: AccessMode;
+    nsfw_horario: string | null;
     audios: boolean;
     autolevelup: boolean;
+    familyAccess: FamilyAccessMap;
+    commandAccess: CommandAccessMap;
 }
 
 export interface HandlerContext {
@@ -61,7 +69,6 @@ export interface HandlerContext {
     isGroup: boolean;
     isCreator: boolean;
     isOwner: boolean;
-    isROwner: boolean;
     isAdmin: boolean;
     isGroupCreator: boolean;
     isBotAdmin: boolean;
@@ -101,9 +108,14 @@ const EMPTY_GROUP_SETTINGS: GroupSettings = {
     convertersAccessMode: 'all',
     funAccessMode: 'all',
     modohorny: false,
-    nsfwAccessMode: 'all',
+    nsfwAccessMode: 'owner',
+    nsfwGifEnabled: false,
+    nsfwGifAccessMode: 'owner',
+    nsfw_horario: null,
     audios: false,
     autolevelup: true,
+    familyAccess: createDefaultFamilyAccessMap(),
+    commandAccess: {},
 };
 
 /**
@@ -142,12 +154,13 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
     }
 
     // --- Ownership ---
-    const isROwner = FIXED_OWNERS.includes(m.sender);
-    const isCreator = isROwner ||
-        global.owner.map(([v]: string[]) => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(m.sender);
+    const isCreator = global.owner
+        .map(([v]: string[]) => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
+        .includes(senderJid);
     const isOwner = isCreator || senderJid === botJid || (botConfig.owners || []).includes(senderJid);
 
     const participants = metadata.participants || [];
+    normalizeMessageMentions(m, participants);
     const adminIds = buildAdminIds(participants);
 
     // --- isAdmin del sender ---
@@ -176,7 +189,6 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
         isGroup,
         isCreator,
         isOwner,
-        isROwner,
         isAdmin,
         isGroupCreator: groupCreator,
         isBotAdmin,
@@ -191,6 +203,23 @@ export async function buildContext(conn: ExtendedConn, m: BotMessage): Promise<H
         groupSettings,
         shouldAbort,
     };
+}
+
+/**
+ * Baileys puede entregar las menciones como LID. Los plugins y la persistencia
+ * trabajan preferentemente con el JID telefónico, así que resolvemos la pareja
+ * LID/participantAlt una sola vez antes de ejecutar hooks y comandos.
+ */
+function normalizeMessageMentions(m: BotMessage, participants: GroupParticipant[]): void {
+    const originalMentions = Array.isArray(m.mentionedJid) ? m.mentionedJid : [];
+    m.mentionedJid = [...new Set(originalMentions
+        .map(jid => resolveMention(jid, participants).mentionJid)
+        .filter(Boolean))];
+
+    if (m.quoted?.sender) {
+        m.quoted.sender = resolveMention(m.quoted.sender, participants).mentionJid;
+    }
+    if (m.mentionedJid[0]) m.who = m.mentionedJid[0];
 }
 
 // ---- Funciones internas ----

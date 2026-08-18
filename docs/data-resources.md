@@ -22,6 +22,8 @@
 
 ## Politica
 
+Los GIFs de reacción normales están disponibles por defecto. Las variantes `nsfw/` solo se seleccionan cuando la familia `nsfw-gifs` está habilitada para el nivel del participante. Si una reacción solo tiene archivos NSFW y ese acceso no está activo, el comando queda en silencio: no envía GIF, fallback ni aviso. Los manejadores genéricos y los casos especiales de múltiples objetivos deben aplicar esta regla mediante el selector compartido de `gif-media.ts`.
+
 - Los plugins pueden leer estos archivos como referencia o semilla.
 - Los manifiestos en `resources/data` deben describir rutas, aliases y metadata; los textos largos y binarios deben seguir en `resources/text` o `resources/media`.
 - El acceso nuevo a textos del bot debe pasar por `src/services/content.service.ts` (`getMessage`, `renderMessage`, `getMessageList`). `src/lib/message-template.ts` queda como fachada de compatibilidad para plugins ya migrados.

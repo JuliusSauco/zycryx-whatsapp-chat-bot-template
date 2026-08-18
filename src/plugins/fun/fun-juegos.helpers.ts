@@ -160,13 +160,26 @@ export async function replyRandomPair(m: BotMessage, participants: GroupParticip
     return m.reply(text, null, {mentions: [a, b]});
 }
 
-export async function replyActionTarget(conn: ExtendedConn, m: BotMessage, command: string, text: string) {
+export async function replyActionTarget(
+    conn: ExtendedConn,
+    m: BotMessage,
+    command: string,
+    text: string,
+    participants: GroupParticipant[],
+) {
     const action = command.replace('how', '');
     if (!text) return m.reply(content.renderMessage('fun.games.actionMissingText', {action}));
     const target = m.mentionedJid[0] || m.quoted?.sender;
     if (!target) return m.reply(content.renderMessage('fun.games.actionMissingTarget', {action}));
 
-    return conn.reply(m.chat, content.renderMessage('fun.games.actionResult', {targetText: text}), undefined, {mentions: [target]});
+    const resolvedTarget = resolveMention(target, participants as ParticipantLike[]);
+    const result = content.renderMessage('fun.games.actionResult', {targetText: resolvedTarget.tag});
+
+    return conn.sendMessage(m.chat, {
+        text: result,
+        mentions: [resolvedTarget.mentionJid],
+        contextInfo: {mentionedJid: [resolvedTarget.mentionJid]},
+    }, {quoted: m});
 }
 
 export async function replyPersonality(conn: ExtendedConn, m: BotMessage, text: string) {

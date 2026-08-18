@@ -11,7 +11,7 @@ import {content} from '../../services/content.service.js';
 
 export default defineSdkPlugin({
     help: ['marry @tag'],
-    tags: ['econ'],
+    tags: ['rpg'],
     command: ['marry', 'pareja'],
     register: true,
     async before(m, {conn}) {
@@ -41,11 +41,11 @@ export default defineSdkPlugin({
         const spouseName = await getUserName(user.marry) || sdk.content.message('rpg.shared.unnamed')
         if (user.marry === (m.mentionedJid[0] || '')) return conn.reply(m.chat, sdk.content.renderMessage('rpg.marriage.alreadyMarriedSame', {
             spouse: user.marry.split('@')[0]
-        }), m, {mentions: [m.sender]})
+        }), m, {mentions: [user.marry]})
         return conn.reply(m.chat, sdk.content.renderMessage('rpg.marriage.alreadyMarried', {
             spouse: user.marry.split('@')[0],
             spouseName
-        }), m, {mentions: [m.sender]})
+        }), m, {mentions: [user.marry]})
     }
 
     const mentionedUser = m.mentionedJid[0]

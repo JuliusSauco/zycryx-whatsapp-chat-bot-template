@@ -43,6 +43,8 @@ interface LogCommandParams {
     chatId: string;
     isGroup: boolean;
     command: string;
+    pluginId?: string;
+    correlationId?: string;
     timestamp?: Date;
 }
 
@@ -64,7 +66,7 @@ function formatBotLabel(conn: LoggerConnection): string {
     return label;
 }
 
-function logCommand({conn, sender, isGroup, command}: LogCommandParams): void {
+function logCommand({conn, sender, isGroup, command, pluginId, correlationId}: LogCommandParams): void {
     if (CURRENT_LOG_LEVEL < LogLevel.COMMAND) return;
     const botLabel = formatBotLabel(conn);
 
@@ -72,7 +74,9 @@ function logCommand({conn, sender, isGroup, command}: LogCommandParams): void {
         chalk.bgBlue.white.bold(" [ CMD ] ") + " " + chalk.gray(botLabel) + "\n" +
         chalk.green("From: ") + sender + "\n" +
         chalk.green("Chat: ") + `${isGroup ? "Grupo" : "Privado"}` + "\n" +
-        chalk.green("Comando: ") + `${chalk.whiteBright(command)}\n`
+        chalk.green("Comando: ") + `${chalk.whiteBright(command)}\n` +
+        (pluginId ? chalk.green("Plugin: ") + `${pluginId}\n` : '') +
+        (correlationId ? chalk.green("Correlation: ") + `${correlationId}\n` : '')
     );
 }
 

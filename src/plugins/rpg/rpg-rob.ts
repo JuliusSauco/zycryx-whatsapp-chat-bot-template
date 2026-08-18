@@ -1,51 +1,90 @@
 import {defineSdkPlugin} from '../../core/plugin-sdk.js';
-import {addWalletResourcesAndSetFields, getWallet, transferWalletResource} from '../../services/wallet.service.js';
-import {randomInt} from '../../utils/random.js';
+import {isValidRobAmount} from '../../domain/robbery.js';
+import {robExperience} from '../../services/wallet.service.js';
 import {formatDurationClockWords} from '../../utils/time.js';
 
-const ro = 3000;
+export type RobAmountSelection =
+    | {kind: 'info'}
+    | {kind: 'automatic'}
+    | {kind: 'explicit'; amount: number}
+    | {kind: 'invalid'};
 
 export default defineSdkPlugin({
-    help: ['rob', 'robar'],
-    tags: ['econ'],
+    help: ['rob [cantidad] @usuario', 'rob --info', 'robar [cantidad] @usuario'],
+    tags: ['rpg'],
     command: /^(robar|rob)$/i,
     register: true,
-    async execute(m, {conn, sdk}) {
-    const now = Date.now();
-    const robber = await getWallet(m.sender);
-    if (!robber) return sdk.reply.message('rpg.rob.missingUser');
-    const cooldown = 3600000;
-    const timeLeft = (robber.lastrob ?? 0) + cooldown - now;
-    if (timeLeft > 0) return sdk.reply.message('rpg.rob.cooldown', {
-        time: formatDurationClockWords(timeLeft)
-    });
+    async execute(m, {args, conn, sdk}) {
+        const selection = parseRobAmount(args);
+        if (selection.kind === 'info') return sdk.reply.message('rpg.rob.info');
+        if (selection.kind === 'invalid') return sdk.reply.message('rpg.rob.invalidAmount');
 
-    let who;
-    if (m.isGroup) {
-        who = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted?.sender;
-    } else {
-        who = m.chat;
-    }
+        const victimId = m.isGroup
+            ? m.mentionedJid?.[0] ?? m.quoted?.sender
+            : m.chat;
+        if (!victimId) return sdk.reply.message('rpg.rob.missingTarget');
+        if (victimId === m.sender) return sdk.reply.message('rpg.rob.selfTarget');
 
-    if (!who) return sdk.reply.message('rpg.rob.missingTarget');
-    if (who === m.sender) return sdk.reply.message('rpg.rob.selfTarget');
-    const victim = await getWallet(who);
-    if (!victim) return sdk.reply.message('rpg.rob.missingVictim');
+        const result = await robExperience({
+            robberId: m.sender,
+            victimId,
+            ...(selection.kind === 'explicit' ? {amount: selection.amount} : {}),
+            attemptedAt: Date.now(),
+        });
 
-    const cantidad = randomInt(ro);
-    if ((victim.exp ?? 0) < cantidad) return conn.reply(m.chat, sdk.content.renderMessage('rpg.rob.poorVictim', {
-        user: who.split('@')[0],
-        minimum: ro
-    }), m, {mentions: [who]});
-    const transferred = await transferWalletResource({from: who, to: m.sender, resource: 'exp', amount: cantidad});
-    if (!transferred) return sdk.reply.message('rpg.rob.transferFailed');
-    await addWalletResourcesAndSetFields({userId: m.sender, resources: {}, fields: {lastrob: now}});
-    return conn.reply(m.chat, sdk.content.renderMessage('rpg.rob.success', {
-        amount: cantidad,
-        user: who.split('@')[0]
-    }), m, {mentions: [who]});
-    }
-});
+        switch (result.kind) {
+        case 'success':
+            return conn.reply(m.chat, sdk.content.renderMessage('rpg.rob.success', {
+                amount: result.amount,
+                user: victimId.split('@')[0],
+                level: result.availableLevel,
+                maximum: result.maxAmount,
+                remaining: result.remainingRobberies,
+                nextAvailable: formatDurationClockWords(Math.max(0, result.nextAvailableAt - Date.now())),
+                maxBlockStatus: result.dailyLimitReached ? 'Sí — límite diario alcanzado' : 'No',
+            }), m, {mentions: [victimId]});
+        case 'cooldown':
+            return sdk.reply.message('rpg.rob.cooldown', {
+                time: formatDurationClockWords(result.remainingMs),
+            });
+        case 'daily_limit':
+            return sdk.reply.message('rpg.rob.dailyLimit', {
+                time: formatDurationClockWords(result.remainingMs),
+            });
+        case 'insufficient_level':
+            return sdk.reply.message('rpg.rob.insufficientLevel', {
+                level: result.availableLevel,
+                requiredLevel: result.requiredLevel,
+                maximum: result.maxAmount,
+            });
+        case 'insufficient_victim_exp':
+            return conn.reply(m.chat, sdk.content.renderMessage('rpg.rob.poorVictim', {
+                user: victimId.split('@')[0],
+                available: result.available,
+                required: result.required,
+            }), m, {mentions: [victimId]});
+        case 'missing_robber':
+            return sdk.reply.message('rpg.rob.missingUser');
+        case 'missing_victim':
+            return sdk.reply.message('rpg.rob.missingVictim');
+        case 'same_user':
+            return sdk.reply.message('rpg.rob.selfTarget');
+        case 'invalid_amount':
+            return sdk.reply.message('rpg.rob.invalidAmount');
+        }
+    },
+});
 
-;
+/** Distingue la cantidad del numero contenido en una mencion de WhatsApp. */
+export function parseRobAmount(args: readonly string[]): RobAmountSelection {
+    if (args.some(arg => arg.toLowerCase() === '--info')) return {kind: 'info'};
 
+    const amountArgs = args.filter(arg => !arg.startsWith('@'));
+    if (amountArgs.length === 0) return {kind: 'automatic'};
+    if (amountArgs.length !== 1 || !/^\d+$/.test(amountArgs[0])) return {kind: 'invalid'};
+
+    const amount = Number(amountArgs[0]);
+    return isValidRobAmount(amount)
+        ? {kind: 'explicit', amount}
+        : {kind: 'invalid'};
+}

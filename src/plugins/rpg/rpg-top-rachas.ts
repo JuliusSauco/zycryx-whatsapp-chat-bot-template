@@ -4,7 +4,7 @@ import type {UserWallet} from '../../domain/users.js';
 
 export default defineSdkPlugin({
     help: ['topstreak [página]'],
-    tags: ['econ'],
+    tags: ['rpg'],
     command: ['topstreak', 'streaktop', 'streak'],
     register: true,
     async execute(m, {args, sdk}) {

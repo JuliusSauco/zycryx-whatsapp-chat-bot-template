@@ -21,6 +21,7 @@ import {
     registerSubbotConnection,
     unregisterSubbotConnection,
 } from '../core/runtime-state.js';
+import {registerContactUserSync} from '../core/contact-user-sync.js';
 
 getSubbotConnections()
 
@@ -79,6 +80,7 @@ export async function startSubBot(
     } as SocketConfig & {maxIdleTimeMs: number}) as BotSocket;
 
     sock.groupCache = groupCache;
+    registerContactUserSync(sock);
     sock.ev.on('creds.update', saveCreds);
     setupGroupEvents(sock);
     sock.isInit = false

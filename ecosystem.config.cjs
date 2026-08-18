@@ -1,11 +1,13 @@
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
 module.exports = {
   apps: [
     {
       name: 'zycryx-bot',
-      script: 'dist/core/index.js',
+      script: npmCommand,
+      args: 'run serve:migrate',
       cwd: __dirname,
-      interpreter: 'node',
-      node_args: '--max-old-space-size=512',
+      interpreter: 'none',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,

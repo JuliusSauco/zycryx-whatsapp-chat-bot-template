@@ -14,6 +14,7 @@ import {scopeGuard} from './scope.guard.js';
 import {resourceGuard} from './resource.guard.js';
 import {adminModeGuard} from './admin-mode.guard.js';
 import {featureAccessGuard} from './feature-access.guard.js';
+import {commandAccessGuard} from './command-access.guard.js';
 
 const guards: Guard[] = [
     modeGuard,
@@ -23,8 +24,9 @@ const guards: Guard[] = [
     adminGuard,
     scopeGuard,
     featureAccessGuard,
-    resourceGuard,
+    commandAccessGuard,
     adminModeGuard,
+    resourceGuard,
 ];
 
 export interface GuardResult {

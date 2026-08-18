@@ -49,8 +49,8 @@ export default defineSdkPlugin({
             }
 
             const sellerExp = Math.round(price * 0.75);
-            await addWalletResource(buyer, 'exp', -price);
-            await addWalletResource(seller, 'exp', sellerExp);
+            await addWalletResource(buyer, 'exp', -price, 'character_market', 'character_purchase');
+            await addWalletResource(seller, 'exp', sellerExp, 'character_market', 'character_sale');
             await completeCharacterSale(character.id, buyer, price);
             pendingSales.cancel(buyerId);
 

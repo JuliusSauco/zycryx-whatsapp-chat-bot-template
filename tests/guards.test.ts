@@ -12,6 +12,7 @@ import {repositories} from '../src/services/data-source.js';
 import {SILENT_REJECT, type GuardContext} from '../src/types/guard.js';
 import type {BotMessage} from '../src/types/message.js';
 import type {Plugin} from '../src/types/plugin.js';
+import {createDefaultFamilyAccessMap} from '../src/utils/family-access.js';
 
 type Calls = {
     replies: string[];
@@ -83,7 +84,6 @@ function createContext(calls: Calls, overrides: Partial<GuardContext['ctx']> = {
             isGroup: true,
             isCreator: false,
             isOwner: false,
-            isROwner: false,
             isAdmin: false,
             isBotAdmin: false,
             metadata: {participants: []},
@@ -117,17 +117,17 @@ function createContext(calls: Calls, overrides: Partial<GuardContext['ctx']> = {
 }
 
 function installRepositoryMocks(calls: Calls, options: {
-    resources?: {limite: number; money: number; level: number};
+    resources?: {limite: number; coins: number; level: number};
     banInfo?: {banned: boolean; razon_ban: string | null; avisos_ban: number} | null;
-    nsfwSettings?: {modohorny: boolean; nsfw_horario: string | null} | null;
+    nsfwSettings?: {modohorny: boolean; nsfwAccessMode?: 'all' | 'admin' | 'superadmin' | 'owner'; nsfwGifEnabled?: boolean; nsfwGifAccessMode?: 'all' | 'admin' | 'superadmin' | 'owner'; nsfw_horario: string | null} | null;
 } = {}): void {
     repositories.users = {
         ...originalUsers,
-        getResources: async () => options.resources ?? {limite: 10, money: 10, level: 10},
+        getResources: async () => options.resources ?? {limite: 10, coins: 10, level: 10},
         decrementLimit: async (userId: string, amount: number) => {
             calls.decrementedLimits.push({userId, amount});
         },
-        decrementMoney: async (userId: string, amount: number) => {
+        decrementCoins: async (userId: string, amount: number) => {
             calls.decrementedMoney.push({userId, amount});
         },
         findBanInfo: async () => options.banInfo ?? null,
@@ -139,6 +139,7 @@ function installRepositoryMocks(calls: Calls, options: {
     repositories.groupSettings = {
         ...originalGroupSettings,
         findNsfwSettings: async () => options.nsfwSettings ?? {modohorny: false, nsfw_horario: null},
+        listFamilyAccessRules: async () => [],
     };
 }
 
@@ -152,9 +153,6 @@ async function testOwnerAdminScopeModeGuards(): Promise<void> {
 
     assert.match(String(await ownerGuard(createContext(calls, {}, {owner: true}))), /propietario/);
     assert.equal(await ownerGuard(createContext(calls, {isOwner: true}, {owner: true})), null);
-    assert.match(String(await ownerGuard(createContext(calls, {}, {rowner: true}))), /propietario/);
-    assert.equal(await ownerGuard(createContext(calls, {isROwner: true}, {rowner: true})), null);
-
     assert.match(String(await adminGuard(createContext(calls, {}, {admin: true}))), /admins/);
     assert.equal(await adminGuard(createContext(calls, {isAdmin: true}, {admin: true})), null);
     assert.match(String(await adminGuard(createContext(calls, {}, {botAdmin: true}))), /haz admin/);
@@ -175,15 +173,15 @@ async function testOwnerAdminScopeModeGuards(): Promise<void> {
 
 async function testResourceGuard(): Promise<void> {
     const calls = createCalls();
-    installRepositoryMocks(calls, {resources: {limite: 5, money: 10, level: 3}});
+    installRepositoryMocks(calls, {resources: {limite: 5, coins: 10, level: 3}});
     try {
-        assert.equal(await resourceGuard(createContext(calls, {}, {limit: 2, money: 4, level: 3})), null);
-        assert.deepEqual(calls.decrementedLimits, [{userId: 'user-1@s.whatsapp.net', amount: 2}]);
-        assert.deepEqual(calls.decrementedMoney, [{userId: 'user-1@s.whatsapp.net', amount: 4}]);
-        assert.equal(calls.replies.length, 2);
+        assert.equal(await resourceGuard(createContext(calls, {}, {limit: 2, coins: 4, level: 3})), null);
+        assert.deepEqual(calls.decrementedLimits, []);
+        assert.deepEqual(calls.decrementedMoney, []);
+        assert.equal(calls.replies.length, 0);
 
         assert.match(String(await resourceGuard(createContext(calls, {}, {limit: 6}))), /#buy/);
-        assert.match(String(await resourceGuard(createContext(calls, {}, {money: 11}))), /LOLICOINS/);
+        assert.match(String(await resourceGuard(createContext(calls, {}, {coins: 11}))), /COINS/);
         assert.match(String(await resourceGuard(createContext(calls, {}, {level: 4}))), /𝐍𝐞𝐜𝐞𝐬𝐢𝐭𝐚/);
     } finally {
         restoreRepositories();
@@ -230,11 +228,29 @@ async function testNsfwGuard(): Promise<void> {
 
     const enabledCalls = createCalls();
     installRepositoryMocks(enabledCalls, {
-        nsfwSettings: {modohorny: true, nsfw_horario: '00:00-23:59'},
+        nsfwSettings: {modohorny: true, nsfwGifEnabled: true, nsfwGifAccessMode: 'all', nsfw_horario: '00:00-23:59'},
     });
     try {
-        assert.equal(await nsfwGuard(createContext(enabledCalls, {isGroup: true}, {tags: ['nsfw']})), null);
+        const familyAccess = createDefaultFamilyAccessMap();
+        familyAccess['nsfw-gifs'] = {enabled: true, accessMode: 'all'};
+        assert.equal(await nsfwGuard(createContext(enabledCalls, {isGroup: true, groupSettings: {familyAccess, nsfw_horario: '00:00-23:59'}}, {tags: ['nsfw']})), null);
         assert.equal(enabledCalls.sendFiles.length, 0);
+    } finally {
+        restoreRepositories();
+    }
+
+    const restrictedCalls = createCalls();
+    installRepositoryMocks(restrictedCalls, {
+        nsfwSettings: {modohorny: true, nsfwAccessMode: 'owner', nsfwGifEnabled: true, nsfwGifAccessMode: 'all', nsfw_horario: '00:00-23:59'},
+    });
+    try {
+        const familyAccess = createDefaultFamilyAccessMap();
+        familyAccess.nsfw = {enabled: true, accessMode: 'owner'};
+        familyAccess['nsfw-gifs'] = {enabled: true, accessMode: 'all'};
+        const groupSettings = {familyAccess, nsfw_horario: '00:00-23:59'};
+        assert.equal(await nsfwGuard(createContext(restrictedCalls, {isGroup: true, groupSettings}, {tags: ['nsfw', 'nsfw-content']})), SILENT_REJECT);
+        assert.equal(await nsfwGuard(createContext(restrictedCalls, {isGroup: true, groupSettings}, {tags: ['nsfw'], feature: 'nsfw'})), null);
+        assert.equal(await nsfwGuard(createContext(restrictedCalls, {isGroup: true, isOwner: true, groupSettings}, {tags: ['nsfw', 'nsfw-content']})), null);
     } finally {
         restoreRepositories();
     }

@@ -26,6 +26,8 @@ export default defineSdkPlugin({
         userId: m.sender,
         resources: {exp: ganancias},
         fields: {lastslut: now},
+        reason: 'game_reward',
+        operation: 'slut',
     });
     await sdk.reply.message('rpg.slut.result', {
         message: textoo,

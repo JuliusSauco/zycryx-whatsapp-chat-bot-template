@@ -2,14 +2,29 @@
   "name": "zycryx-whatsapp-chat-bot-template",
   "version": "2.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11 <12"
+  },
   "scripts": {
     "clean": "node -e \"const fs=require('fs');fs.rmSync('dist',{recursive:true,force:true});fs.rmSync('tsconfig.tsbuildinfo',{force:true});\"",
     "build": "npm run clean && tsc",
     "typecheck": "tsc --noEmit",
-    "test": "npm run test:helpers && npm run test:user-domain && npm run test:group-domain && npm run test:subbot-domain && npm run test:audio-domain && npm run test:operations-domain && npm run test:character-domain && npm run test:ephemeral && npm run test:router && npm run test:guards && npm run test:context && npm run test:services && npm run test:security && npm run test:providers && npm run test:ai-providers && npm run test:media-conversion && npm run test:catalog && npm run test:catalog-audit && npm run test:help && npm run test:p0",
+    "test": "npm run test:helpers && npm run test:contact-user-sync && npm run test:censored && npm run test:rpg-admin-add && npm run test:robbery && npm run test:autolevelup && npm run test:plugin-pipeline && npm run test:command-resources && npm run test:wallet && npm run test:bank && npm run test:profile-user && npm run test:user-domain && npm run test:group-domain && npm run test:family-access && npm run test:subbot-domain && npm run test:audio-domain && npm run test:operations-domain && npm run test:character-domain && npm run test:ephemeral && npm run test:router && npm run test:guards && npm run test:context && npm run test:services && npm run test:security && npm run test:providers && npm run test:ai-providers && npm run test:media-conversion && npm run test:catalog && npm run test:catalog-audit && npm run test:help && npm run test:p0",
     "test:helpers": "tsx tests/helpers.test.ts",
+    "test:contact-user-sync": "tsx tests/contact-user-sync.test.ts",
+    "test:censored": "tsx tests/censored-users.test.ts",
+    "test:rpg-admin-add": "tsx tests/rpg-admin-add.test.ts",
+    "test:robbery": "tsx tests/robbery-domain.test.ts",
+    "test:autolevelup": "tsx tests/autolevelup.test.ts",
+    "test:plugin-pipeline": "tsx tests/plugin-pipeline.test.ts",
+    "test:command-resources": "tsx tests/command-resources.test.ts",
+    "test:wallet": "tsx tests/wallet-ewallet.test.ts",
+    "test:bank": "tsx tests/bank-system.test.ts",
+    "test:profile-user": "tsx tests/profile-user.test.ts",
     "test:user-domain": "tsx tests/user-domain.test.ts",
     "test:group-domain": "tsx tests/group-domain.test.ts",
+    "test:family-access": "tsx tests/family-access.test.ts",
     "test:subbot-domain": "tsx tests/subbot-domain.test.ts",
     "test:audio-domain": "tsx tests/audio-domain.test.ts",
     "test:operations-domain": "tsx tests/operations-domain.test.ts",
@@ -62,10 +77,10 @@
   },
   "dependencies": {
     "@bochilteam/scraper": "^5.0.1",
-    "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "@whiskeysockets/baileys": "7.0.0-rc14",
     "acrcloud": "^1.4.0",
     "api-dylux": "^1.8.3",
-    "axios": "^1.7.9",
+    "axios": "^1.18.1",
     "axios-cookiejar-support": "^5.0.5",
     "cfonts": "^3.3.0",
     "chalk": "^5.3.0",
@@ -74,7 +89,7 @@
     "drizzle-orm": "^0.45.2",
     "file-type": "^18.0.0",
     "fluent-ffmpeg": "^2.1.2",
-    "form-data": "^4.0.0",
+    "form-data": "^4.0.6",
     "formdata-node": "^5.0.0",
     "fuzzysort": "^1.0.0",
     "hispamemes": "^1.0.7",
@@ -92,25 +107,29 @@
     "qrcode": "^1.5.0",
     "qrcode-terminal": "^0.12.0",
     "readline-sync": "^1.4.10",
+    "sharp": "0.35.0",
     "syntax-error": "^1.4.0",
     "url-file-size": "^1.0.5-1",
-    "yargs": "^17.7.2",
+    "yargs": "^17.7.3",
     "yt-search": "^2.12.1",
     "ytdl-core": "^4.11.5"
   },
   "optionalDependencies": {
     "moment-timezone": "^0.5.37",
-    "pg": "^8.11.3",
+    "pg": "^8.22.0",
     "wa-sticker-formatter": "^4.4.4"
+  },
+  "overrides": {
+    "sharp": "0.35.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.24",
-    "@types/node": "^25.3.3",
+    "@types/node": "^24.13.3",
     "@types/pg": "^8.18.0",
     "@types/yargs": "^17.0.35",
     "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.10",
-    "tsx": "^4.21.0",
+    "tsx": "^4.23.1",
     "typescript": "^5.9.3"
   }
 }

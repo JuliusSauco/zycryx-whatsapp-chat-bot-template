@@ -135,7 +135,7 @@ export default defineSdkPlugin({
     const esCorrecta = userInput === correcta || similarity(userInput, correcta) >= threshold;
 
     if (esCorrecta) {
-        await addWalletResource(m.sender, 'exp', juego.puntos);
+        await addWalletResource(m.sender, 'exp', juego.puntos, 'game_reward', 'adivinar');
         m.reply(content.renderMessage('fun.guess.correct', {points: String(juego.puntos)}));
         juegos.delete(id);
     } else {

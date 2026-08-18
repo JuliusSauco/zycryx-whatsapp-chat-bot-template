@@ -53,12 +53,10 @@ function anyCommandExists(commands: string[]): boolean {
 
 function checkNode(): void {
     const major = Number(process.versions.node.split('.')[0]);
-    if (major >= 20) {
+    if (major === 24) {
         add('ok', 'Node.js', `version ${process.version}`);
-    } else if (major >= 18) {
-        add('warn', 'Node.js', `version ${process.version}; recomendado 20 LTS o superior`);
     } else {
-        add('fail', 'Node.js', `version ${process.version}; se requiere 18+`);
+        add('fail', 'Node.js', `version ${process.version}; se requiere Node.js 24 LTS`);
     }
 }
 
@@ -82,10 +80,8 @@ function checkEnv(): void {
         add('ok', 'BOT_OWNER_NUMBERS', 'configurado');
     }
 
-    if (!hasValue('BOT_FIXED_OWNER_JIDS')) {
-        add('warn', 'BOT_FIXED_OWNER_JIDS', 'sin rowners; comandos shell/eval no tendran operador fijo');
-    } else {
-        add('ok', 'BOT_FIXED_OWNER_JIDS', 'configurado; mantener esta lista minima');
+    if (hasValue('BOT_FIXED_OWNER_JIDS')) {
+        add('warn', 'BOT_FIXED_OWNER_JIDS', 'obsoleto; mueve sus valores a BOT_OWNER_NUMBERS');
     }
 }
 
@@ -109,7 +105,7 @@ function checkDatabase(): void {
 
 function checkTools(): void {
     const gitAvailable = commandExists('git');
-    add(gitAvailable ? 'ok' : 'warn', 'git', gitAvailable ? 'disponible; requerido por owner update y mantenimiento con git pull' : 'no encontrado; afecta owner update y despliegues con git pull');
+    add(gitAvailable ? 'ok' : 'warn', 'git', gitAvailable ? 'disponible para despliegues y mantenimiento del repositorio' : 'no encontrado; afecta despliegues basados en git');
 
     const ffmpegAvailable = commandExists('ffmpeg');
     add(ffmpegAvailable ? 'ok' : 'warn', 'ffmpeg', ffmpegAvailable ? 'disponible; requerido por stickers, audios, convertidores y reacciones GIF' : 'no encontrado; afecta stickers, audios, convertidores y reacciones GIF');

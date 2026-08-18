@@ -1,12 +1,12 @@
 import {logError} from '../../lib/logger.js';
 import {defineSdkPlugin} from '../../core/sdk-plugin.js';
-import {getDatabaseInfo, vacuumDatabase} from '../../services/database.service.js';
+import {getDatabaseInfo} from '../../services/database.service.js';
 
 export default defineSdkPlugin({
-    help: ['db info', 'db optimizar', 'db borrar', 'db crear'],
+    help: ['db info'],
     tags: ['owner'],
     command: /^(db)$/i,
-    rowner: true,
+    owner: true,
     async execute(_m, {args, sdk}) {
         const subcmd = args[0]?.toLowerCase();
 
@@ -33,19 +33,6 @@ export default defineSdkPlugin({
                 } catch (e: unknown) {
                     logError('[❌] /db info error:', e);
                     await sdk.reply.message('owner.db.queryError');
-                }
-                break;
-            }
-
-            case 'optimizar': {
-                try {
-                    const inicio = Date.now();
-                    await vacuumDatabase();
-                    const tiempo = ((Date.now() - inicio) / 1000).toFixed(2);
-                    await sdk.reply.message('owner.db.optimized', {seconds: tiempo});
-                } catch (e: unknown) {
-                    logError('[❌] Error en optimizar:', e);
-                    await sdk.reply.message('owner.db.optimizeError');
                 }
                 break;
             }
