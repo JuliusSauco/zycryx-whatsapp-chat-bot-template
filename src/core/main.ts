@@ -299,7 +299,13 @@ async function startBot() {
             messageCache.clear();
             if (isApplicationStopping()) return;
             if (SESSION_TERMINAL_CODES.includes(code)) {
+                const wasRegistered = state.creds.registered;
                 await authState.deleteSession().catch(error => logError('[AUTH] No se pudo revocar la sesión principal:', error));
+                if (!wasRegistered) {
+                    logWarn(chalk.yellow(`♻️ La vinculación expiró (código ${code}). Se generará una nueva con backoff.`));
+                    mainReconnect.schedule('main', startBot);
+                    return;
+                }
                 logError(chalk.red(`❌ Sesión inválida (código ${code}). Se eliminó del almacén activo; vuelve a vincular el bot.`));
                 return;
             }

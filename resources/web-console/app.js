@@ -12,7 +12,8 @@
         'authPanel', 'authForm', 'tokenInput', 'authError', 'dashboard', 'logoutButton',
         'connectionBadge', 'mainStatus', 'mainStatusHint', 'lifecycleStatus', 'messageQueue',
         'messageQueueHint', 'uptime', 'databaseStatus', 'cacheStatus', 'subbotCount',
-        'linkingHelp', 'consoleOutput', 'streamStatus', 'clearButton',
+        'linkingHelp', 'pairingCodeBox', 'pairingCode', 'copyCodeButton',
+        'consoleOutput', 'streamStatus', 'clearButton',
     ].map(id => [id, document.getElementById(id)]));
 
     function authHeaders() {
@@ -55,7 +56,8 @@
         elements.subbotCount.textContent = String(metrics.sessions.subbotsConnected);
         elements.linkingHelp.textContent = connected
             ? 'La sesión principal está vinculada y persistida en PostgreSQL.'
-            : 'Usa el código de emparejamiento visible en la consola. Se renueva al reiniciar el deployment.';
+            : 'Usa el código de emparejamiento visible en la consola. Se renueva automáticamente si expira.';
+        if (connected) elements.pairingCodeBox.classList.add('d-none');
         setBadge(connected ? 'online' : payload.ready ? 'warning' : 'warning', connected ? 'WhatsApp conectado' : 'Esperando vinculación');
     }
 
@@ -78,6 +80,12 @@
             const message = document.createElement('span');
             message.className = 'log-message';
             message.textContent = entry.message;
+
+            const pairingMatch = entry.message.match(/Código de emparejamiento:\s*([A-Z0-9-]{6,})/i);
+            if (pairingMatch) {
+                elements.pairingCode.textContent = pairingMatch[1];
+                elements.pairingCodeBox.classList.remove('d-none');
+            }
 
             row.append(time, level, message);
             fragment.appendChild(row);
@@ -151,6 +159,17 @@
     elements.logoutButton.addEventListener('click', () => logout());
     elements.clearButton.addEventListener('click', () => {
         elements.consoleOutput.replaceChildren();
+    });
+    elements.copyCodeButton.addEventListener('click', async () => {
+        const code = elements.pairingCode.textContent.trim();
+        if (!code || code === '—') return;
+        try {
+            await navigator.clipboard.writeText(code);
+            elements.copyCodeButton.textContent = 'Copiado';
+        } catch {
+            elements.copyCodeButton.textContent = 'Selecciona el código';
+        }
+        setTimeout(() => { elements.copyCodeButton.textContent = 'Copiar'; }, 1500);
     });
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden && state.token) void refresh();

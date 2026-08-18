@@ -134,6 +134,18 @@ body {
 .service-row { display: flex; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-bottom: 1px solid var(--surface-border); color: var(--muted); }
 .service-row:last-child { border-bottom: 0; }
 .service-row strong { color: var(--text); text-align: right; }
+.pairing-code-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .85rem;
+    border: 1px solid rgba(50, 230, 161, .28);
+    border-radius: 13px;
+    background: var(--accent-soft);
+}
+.pairing-label { display: block; margin-bottom: .15rem; color: var(--muted); font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; }
+.pairing-code-box strong { color: var(--accent); font-family: "Cascadia Code", Consolas, monospace; font-size: 1.2rem; letter-spacing: .1em; }
 code { color: #79e9bd; }
 
 @media (max-width: 575.98px) {
@@ -143,4 +155,3 @@ code { color: #79e9bd; }
     .log-entry { grid-template-columns: 4.2rem 2.8rem 1fr; gap: .35rem; }
     .status-pill { max-width: 100%; }
 }
-
