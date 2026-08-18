@@ -20,7 +20,7 @@ import {
     ledgerEntries,
     usuarios,
 } from '../src/db/schema.js';
-import bankPlugin from '../src/plugins/economy/economy-bank.js';
+import bankPlugin, {BANK_COMMANDS} from '../src/plugins/economy/economy-bank.js';
 import depositPlugin, {DEPOSIT_COMMANDS} from '../src/plugins/economy/economy-deposit.js';
 import withdrawPlugin, {WITHDRAW_COMMANDS} from '../src/plugins/economy/economy-withdraw.js';
 import {parseCustodyArguments} from '../src/plugins/economy/economy-custody.helpers.js';
@@ -72,7 +72,7 @@ assert.deepEqual(parseCustodyArguments(['coins', '500']), {resource: 'coins', am
 assert.deepEqual(parseCustodyArguments(['botcoin', 'all']), {resource: 'botcoin', amount: 'all'});
 assert.equal(parseCustodyArguments(['exp', '20']), null);
 
-assert.equal(bankPlugin.private, true);
+assert.equal(bankPlugin.private, undefined);
 assert.equal(depositPlugin.private, undefined);
 assert.equal(withdrawPlugin.private, undefined);
 assert.equal(loanPlugin.private, undefined);
@@ -89,10 +89,11 @@ assert.equal(addExpPlugin.owner, true);
 assert.ok(economyMenu.command instanceof RegExp && economyMenu.command.test('menueconomia'));
 assert.ok(rpgMenu.command instanceof RegExp && rpgMenu.command.test('menurpg'));
 assert.equal(rpgMenu.command instanceof RegExp && rpgMenu.command.test('menueconomia'), false);
-assert.deepEqual(bankPlugin.command, ['bank']);
+assert.deepEqual(BANK_COMMANDS, ['bank', 'banco']);
+assert.deepEqual(bankPlugin.command, [...BANK_COMMANDS]);
 assert.deepEqual(depositPlugin.command, [...DEPOSIT_COMMANDS]);
 assert.deepEqual(withdrawPlugin.command, [...WITHDRAW_COMMANDS]);
-for (const command of ['bank', ...DEPOSIT_COMMANDS, ...WITHDRAW_COMMANDS, 'loan', 'bankreserve', 'buy', 'buyall', 'exchange']) {
+for (const command of [...BANK_COMMANDS, ...DEPOSIT_COMMANDS, ...WITHDRAW_COMMANDS, 'loan', 'bankreserve', 'buy', 'buyall', 'exchange']) {
     assert.equal(isPrivateCommandAllowed(command), true, `${command} must bypass anti_private`);
 }
 
@@ -133,6 +134,9 @@ assert.doesNotMatch(custodyMethod, /getReserveAccountId/);
 
 const walletPluginSource = readFileSync('src/plugins/economy/economy-wallet.ts', 'utf8');
 assert.match(walletPluginSource, /isGroup \? undefined : await getBankOverview/);
+const bankPluginSource = readFileSync('src/plugins/economy/economy-bank.ts', 'utf8');
+assert.match(bankPluginSource, /if \(m\.isGroup\)/);
+assert.match(bankPluginSource, /sendMessage\(m\.sender, \{text: guide\}\)/);
 
 const messageManifest = JSON.parse(readFileSync('resources/data/messages.json', 'utf8')) as {
     pluginMessages: {economy: Record<string, unknown>; rpg: Record<string, unknown>; owner: Record<string, unknown>};
@@ -143,6 +147,11 @@ for (const namespace of ['wallet', 'bank', 'loan', 'buy', 'exchange', 'transfer'
 for (const namespace of ['wallet', 'bank', 'loan', 'exchange', 'shop', 'transfer', 'adminAdd']) {
     assert.equal(namespace in messageManifest.pluginMessages.rpg, false, `legacy rpg.${namespace} remains`);
 }
+const bankMessages = messageManifest.pluginMessages.economy.bank as Record<string, string>;
+for (const fragment of ['deposit coins 500', 'withdraw coins 100', 'loan request 1000', 'loan pay all', 'exchange exp limite all']) {
+    assert.match(bankMessages.guide, new RegExp(fragment));
+}
+assert.match(bankMessages.guide, /siempre por privado/);
 assert.equal('bankReserve' in messageManifest.pluginMessages.owner, false);
 
 console.log('bank-system.test.ts OK');

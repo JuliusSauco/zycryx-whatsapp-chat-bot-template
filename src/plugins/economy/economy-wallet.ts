@@ -8,7 +8,7 @@ import {isEconomyInfoRequest} from './economy-info.helpers.js';
 export const WALLET_COMMANDS = ['wallet', 'ewallet', 'balance', 'bal', 'diamantes', 'diamond'] as const;
 
 export function buildWalletMessage(user: UserWallet, sender: string, prefix: string, isGroup: boolean, bank?: BankOverview) {
-    const publicValues = {user: sender.split('@')[0], level: user.level, exp: user.exp, diamonds: user.limite};
+    const publicValues = {user: sender.split('@')[0], level: user.level, exp: user.exp, coins: user.coins, prefix};
     if (isGroup) return {key: 'economy.wallet.public', values: publicValues} as const;
 
     const bankBalances = bank?.balances ?? {limite: 0, coins: 0, botcoin: 0, zyxcoin: 0};
@@ -20,7 +20,7 @@ export function buildWalletMessage(user: UserWallet, sender: string, prefix: str
         key: 'economy.wallet.private',
         values: {
             ...publicValues,
-            coins: user.coins,
+            diamonds: user.limite,
             botcoin: user.botcoin,
             zyxcoin: user.zyxcoin,
             bankLimit: bankBalances.limite,
@@ -39,7 +39,6 @@ export default defineSdkPlugin({
     feature: 'rpg',
     command: [...WALLET_COMMANDS],
     register: true,
-    private: true,
     async execute(m, {args, isGroup, usedPrefix, sdk}) {
         if (isEconomyInfoRequest(args)) return sdk.reply.message('economy.wallet.guide', {prefix: usedPrefix});
         const user = await getWallet(m.sender);

@@ -2,14 +2,29 @@ import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import {getBankOverview} from '../../services/bank.service.js';
 import {isEconomyInfoRequest} from './economy-info.helpers.js';
 
+export const BANK_COMMANDS = ['bank', 'banco'] as const;
+
 export default defineSdkPlugin({
-    help: ['bank', 'bank --info'],
+    help: ['bank', 'banco', 'bank --info'],
     tags: ['economy'],
     feature: 'rpg',
-    command: ['bank'],
+    command: [...BANK_COMMANDS],
     register: true,
-    private: true,
-    async execute(m, {args, usedPrefix, sdk}) {
+    async execute(m, {args, usedPrefix, sdk, conn}) {
+        if (m.isGroup) {
+            const guide = sdk.content.renderMessage('economy.bank.guide', {prefix: usedPrefix});
+            const user = m.sender.split('@')[0];
+            try {
+                await conn.sendMessage(m.sender, {text: guide});
+                return conn.reply(m.chat, sdk.content.renderMessage('economy.bank.groupGuideSent', {user}), m, {
+                    mentions: [m.sender],
+                });
+            } catch {
+                return conn.reply(m.chat, sdk.content.renderMessage('economy.bank.groupGuideFailed', {user}), m, {
+                    mentions: [m.sender],
+                });
+            }
+        }
         if (isEconomyInfoRequest(args)) return sdk.reply.message('economy.bank.guide', {prefix: usedPrefix});
         const overview = await getBankOverview(m.sender);
         const loan = overview.loan;

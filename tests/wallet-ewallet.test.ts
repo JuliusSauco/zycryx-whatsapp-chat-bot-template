@@ -56,7 +56,7 @@ assert.ok(balanceColumns.resourceCode);
 assert.ok(balanceColumns.balance);
 assert.ok(operationColumns.reason);
 assert.ok(ledgerColumns.balanceAfter);
-assert.equal(balancePlugin.private, true, 'wallet balances must only be visible in private chats');
+assert.equal(balancePlugin.private, undefined, 'wallet must be available in groups with a public-only balance view');
 assert.deepEqual(WALLET_COMMANDS, ['wallet', 'ewallet', 'balance', 'bal', 'diamantes', 'diamond']);
 assert.deepEqual(balancePlugin.command, [...WALLET_COMMANDS]);
 
@@ -68,8 +68,8 @@ const wallet: UserWallet = {
 };
 const publicMessage = buildWalletMessage(wallet, wallet.id, '.', true);
 assert.equal(publicMessage.key, 'economy.wallet.public');
-assert.deepEqual(publicMessage.values, {user: 'user', level: 7, exp: 345, diamonds: 12});
-for (const privateKey of ['coins', 'botcoin', 'zyxcoin', 'bank']) {
+assert.deepEqual(publicMessage.values, {user: 'user', level: 7, exp: 345, coins: 678, prefix: '.'});
+for (const privateKey of ['diamonds', 'botcoin', 'zyxcoin', 'bankLimit', 'bankCoins', 'bankBotcoin', 'bankZyxcoin', 'loanBlock']) {
     assert.equal(privateKey in publicMessage.values, false, `${privateKey} leaked into public values`);
 }
 const privateMessage = buildWalletMessage(wallet, wallet.id, '.', false, {
@@ -77,10 +77,10 @@ const privateMessage = buildWalletMessage(wallet, wallet.id, '.', false, {
 });
 assert.equal(privateMessage.key, 'economy.wallet.private');
 assert.deepEqual(privateMessage.values, {
-    user: 'user', level: 7, exp: 345, diamonds: 12,
-    coins: 678, botcoin: 9, zyxcoin: 2,
+    user: 'user', level: 7, exp: 345, coins: 678, prefix: '.',
+    diamonds: 12, botcoin: 9, zyxcoin: 2,
     bankLimit: 4, bankCoins: 30, bankBotcoin: 2, bankZyxcoin: 1,
-    loanBlock: '\n\n✅ _Sin préstamos pendientes._', prefix: '.',
+    loanBlock: '\n\n✅ _Sin préstamos pendientes._',
 });
 
 for (const alias of WALLET_COMMANDS) {
@@ -116,12 +116,22 @@ assert.doesNotMatch(messages, /EWALLET/);
 assert.doesNotMatch(messages, /\*\.balance\*/);
 assert.match(messages, /E - WALLET PÚBLICA/);
 assert.match(messages, /E - WALLET/);
-assert.match(messages, /comando \*\.wallet\*/);
+assert.match(messages, /En grupos.*solo muestra EXP y Coins/);
+assert.match(messages, /exchange exp limite all/);
+assert.match(messages, /deposit limite all/);
 const messageManifest = JSON.parse(messages) as {pluginMessages: {economy: Record<string, Record<string, unknown>>}};
 for (const namespace of ['wallet', 'bank', 'deposit', 'withdraw', 'loan', 'buy', 'exchange', 'transfer']) {
     assert.ok(messageManifest.pluginMessages.economy[namespace]?.guide, `missing guide economy.${namespace}.guide`);
 }
 assert.ok(messageManifest.pluginMessages.economy.transfer?.history);
+const walletMessages = messageManifest.pluginMessages.economy.wallet as Record<string, string>;
+assert.match(walletMessages.public, /\{exp\}/);
+assert.match(walletMessages.public, /\{coins\}/);
+for (const privatePlaceholder of ['{diamonds}', '{botcoin}', '{zyxcoin}', '{bankLimit}', '{bankCoins}', '{loanBlock}']) {
+    assert.equal(walletMessages.public.includes(privatePlaceholder), false, `${privatePlaceholder} leaked into public template`);
+}
+assert.match(walletMessages.private, /exchange exp limite all/);
+assert.match(walletMessages.guide, /banco/);
 
 const commandCatalog = JSON.parse(readFileSync('resources/data/commands.json', 'utf8')) as {
     commands: Record<string, {aliases?: string[]}>;

@@ -2,7 +2,7 @@ import {and, asc, count, desc, eq, inArray, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {
     accountBalances, economyResources, financialAccounts, financialOperations, ledgerEntries, userCooldowns,
-    userDailyRewards, userProductSubscriptions, userProgress, userRobberyStates, usuarios,
+    userDailyRewards, userIdentities, userProductSubscriptions, userProgress, userRobberyStates, usuarios,
 } from '../../db/schema.js';
 import type {RewardTimestampField, TransferableWalletResource, WalletResource} from '../../domain/users.js';
 import type {UserRepository} from '../../ports/repositories.js';
@@ -22,10 +22,18 @@ const cooldownMillis = (action: RewardTimestampField | 'wait') => sql<number>`CO
     WHERE user_id = ${usuarios.id} AND action = ${action}
 ), 0)::bigint`.mapWith(Number);
 
+const identityValue = (type: 'phone' | 'lid' | 'username') => sql<string | null>`(
+    SELECT identity_value FROM ${userIdentities}
+    WHERE user_id = ${usuarios.id} AND identity_type = ${type} LIMIT 1
+)`;
+
 async function loadWallet(userId: string): Promise<UserWalletRow | null> {
     const [user] = await orm.select({
         id: usuarios.id,
         nombre: usuarios.nombre,
+        username: identityValue('username'),
+        num: identityValue('phone'),
+        lid: identityValue('lid'),
         level: userProgress.level,
         role: userProgress.role,
         wait: cooldownMillis('wait'),
@@ -65,6 +73,9 @@ export const walletUserRepositoryMethods: Pick<UserRepository,
         const users = await orm.select({
             id: usuarios.id,
             nombre: usuarios.nombre,
+            username: identityValue('username'),
+            num: identityValue('phone'),
+            lid: identityValue('lid'),
             level: userProgress.level,
             role: userProgress.role,
             wait: cooldownMillis('wait'), lastclaim: cooldownMillis('lastclaim'),

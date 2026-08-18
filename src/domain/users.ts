@@ -65,6 +65,10 @@ export type RewardTimestampField =
 export interface UserWallet {
     id: string;
     nombre: string | null;
+    /** Identidades disponibles para renderizar y mencionar al usuario sin confundir LID con teléfono. */
+    username?: string | null;
+    num?: string | null;
+    lid?: string | null;
     limite: number;
     exp: number;
     coins: number;

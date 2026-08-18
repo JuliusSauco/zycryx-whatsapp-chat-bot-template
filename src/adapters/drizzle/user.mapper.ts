@@ -48,6 +48,9 @@ export type UserRecordRow = Pick<UserRow, 'id' | 'nombre'> & {
 export interface UserWalletRow {
     id: string;
     nombre: string | null;
+    username?: string | null;
+    num?: string | null;
+    lid?: string | null;
     limite: number | null;
     exp: number | null;
     coins: number | null;
@@ -134,6 +137,9 @@ export function mapUserWallet(row: UserWalletRow): UserWallet {
     return {
         id: row.id,
         nombre: row.nombre,
+        username: row.username ?? null,
+        num: row.num ?? null,
+        lid: row.lid ?? null,
         limite: numberOrZero(row.limite),
         exp: numberOrZero(row.exp),
         coins: numberOrZero(row.coins),

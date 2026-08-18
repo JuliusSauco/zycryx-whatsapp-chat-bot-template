@@ -10,7 +10,7 @@ import {pickRandom} from '../../utils/random.js'
 export const PRIVATE_ALLOWED_COMMANDS = [
     'code', 'serbot', 'jadibot', 'bots', 'piedra', 'tijera', 'papel',
     'wallet', 'ewallet', 'balance', 'bal', 'diamantes', 'diamond',
-    'bank', 'deposit', 'dep', 'depositar', 'withdraw', 'retirar', 'toremove', 'loan', 'bankreserve',
+    'bank', 'banco', 'deposit', 'dep', 'depositar', 'withdraw', 'retirar', 'toremove', 'loan', 'bankreserve',
     'buy', 'buyall', 'exchange',
 ] as const
 
