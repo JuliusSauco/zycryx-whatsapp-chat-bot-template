@@ -1,4 +1,7 @@
-import {createServer, type Server} from 'node:http';
+import {timingSafeEqual} from 'node:crypto';
+import {readFile} from 'node:fs/promises';
+import {createServer, type IncomingMessage, type Server, type ServerResponse} from 'node:http';
+import {fileURLToPath} from 'node:url';
 import {ENV} from './env.js';
 import {db} from '../lib/postgres.js';
 import {getBackgroundTaskQueueStats} from '../lib/background-task-queue.js';
@@ -9,16 +12,21 @@ import {logInfo} from '../lib/logger.js';
 import {getApplicationPhase} from './application-lifecycle.js';
 import {getCacheInvalidationListenerStatus} from '../lib/cache-invalidation-listener.js';
 import {getBotInstanceIdentity} from './bot-instance-identity.js';
+import {getRuntimeConsoleEntries} from '../lib/runtime-console.js';
 
 let server: Server | null = null;
+const consoleAssets = {
+    html: fileURLToPath(new URL('../../resources/web-console/index.html', import.meta.url)),
+    css: fileURLToPath(new URL('../../resources/web-console/styles.css', import.meta.url)),
+    js: fileURLToPath(new URL('../../resources/web-console/app.js', import.meta.url)),
+} as const;
 
 export async function startHealthServer(): Promise<void> {
     if (server) return;
     server = createServer((request, response) => {
-        response.setHeader('content-type', 'application/json; charset=utf-8');
-        response.setHeader('cache-control', 'no-store');
+        setSecurityHeaders(response);
         void handleRequest(request, response).catch(error =>
-            send(response, 500, {status: 'error', error: error instanceof Error ? error.message : String(error)}));
+            sendJson(response, 500, {status: 'error', error: error instanceof Error ? error.message : String(error)}));
     });
     await new Promise<void>((resolve, reject) => {
         server!.once('error', reject);
@@ -28,30 +36,42 @@ export async function startHealthServer(): Promise<void> {
 }
 
 async function handleRequest(
-    request: import('node:http').IncomingMessage,
-    response: import('node:http').ServerResponse,
+    request: IncomingMessage,
+    response: ServerResponse,
 ): Promise<void> {
-        if (request.method !== 'GET') return send(response, 405, {error: 'method-not-allowed'});
-        if (request.url === '/health/live') return send(response, 200, {status: 'live', uptimeSeconds: process.uptime()});
-        if (request.url === '/health/ready') {
+        if (request.method !== 'GET') return sendJson(response, 405, {error: 'method-not-allowed'});
+        const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
+
+        if (url.pathname === '/') {
+            response.statusCode = 302;
+            response.setHeader('location', '/console');
+            response.end();
+            return;
+        }
+        if (url.pathname === '/console') return sendAsset(response, consoleAssets.html, 'text/html; charset=utf-8');
+        if (url.pathname === '/console/styles.css') return sendAsset(response, consoleAssets.css, 'text/css; charset=utf-8');
+        if (url.pathname === '/console/app.js') return sendAsset(response, consoleAssets.js, 'text/javascript; charset=utf-8');
+
+        if (url.pathname === '/health/live') return sendJson(response, 200, {status: 'live', uptimeSeconds: process.uptime()});
+        if (url.pathname === '/health/ready') {
             try {
                 await db.query('SELECT 1');
                 const readiness = readinessStatus();
-                if (!readiness.ready) return send(response, 503, {status: 'not-ready', reasons: readiness.reasons, ...runtimeMetrics()});
-                return send(response, 200, {status: 'ready', ...runtimeMetrics()});
+                if (!readiness.ready) return sendJson(response, 503, {status: 'not-ready', reasons: readiness.reasons, ...runtimeMetrics()});
+                return sendJson(response, 200, {status: 'ready', ...runtimeMetrics()});
             } catch (error) {
-                return send(response, 503, {status: 'not-ready', error: error instanceof Error ? error.message : String(error)});
+                return sendJson(response, 503, {status: 'not-ready', error: error instanceof Error ? error.message : String(error)});
             }
         }
-        if (request.url === '/metrics') {
+        if (url.pathname === '/metrics') {
             if (ENV.HEALTH_METRICS_TOKEN && request.headers.authorization !== `Bearer ${ENV.HEALTH_METRICS_TOKEN}`) {
-                return send(response, 401, {error: 'unauthorized'});
+                return sendJson(response, 401, {error: 'unauthorized'});
             }
             const [leases, outbox] = await Promise.all([
                 db.query<{count: string}>(`SELECT count(*)::text AS count FROM bot_sessions.auth_sessions WHERE lease_expires_at >= statement_timestamp()`),
                 db.query<{count: string}>(`SELECT count(*)::text AS count FROM bot_runtime.report_deliveries WHERE status IN ('pending', 'processing')`),
             ]).catch(() => [{rows: [{count: '-1'}]}, {rows: [{count: '-1'}]}] as const);
-            return send(response, 200, {
+            return sendJson(response, 200, {
                 ...runtimeMetrics(),
                 database: {
                     poolTotal: db.totalCount,
@@ -62,7 +82,34 @@ async function handleRequest(
                 },
             });
         }
-        return send(response, 404, {error: 'not-found'});
+
+        if (url.pathname.startsWith('/api/console/')) {
+            if (!ENV.CONSOLE_VIEW_TOKEN) return sendJson(response, 503, {error: 'console-disabled'});
+            if (!isAuthorized(request, ENV.CONSOLE_VIEW_TOKEN)) return sendJson(response, 401, {error: 'unauthorized'});
+            if (url.pathname === '/api/console/status') {
+                let database: 'ok' | 'unavailable' = 'ok';
+                try {
+                    await db.query('SELECT 1');
+                } catch {
+                    database = 'unavailable';
+                }
+                const readiness = readinessStatus();
+                return sendJson(response, 200, {
+                    botName: ENV.BOT_DISPLAY_NAME,
+                    ready: readiness.ready && database === 'ok',
+                    reasons: readiness.reasons,
+                    database,
+                    uptimeSeconds: process.uptime(),
+                    metrics: runtimeMetrics(),
+                });
+            }
+            if (url.pathname === '/api/console/logs') {
+                const rawAfter = Number.parseInt(url.searchParams.get('after') || '0', 10);
+                const after = Number.isSafeInteger(rawAfter) && rawAfter >= 0 ? rawAfter : 0;
+                return sendJson(response, 200, {entries: getRuntimeConsoleEntries(after)});
+            }
+        }
+        return sendJson(response, 404, {error: 'not-found'});
 }
 
 export async function stopHealthServer(): Promise<void> {
@@ -100,7 +147,31 @@ function readinessStatus(): {ready: boolean; reasons: string[]} {
     return {ready: reasons.length === 0, reasons};
 }
 
-function send(response: import('node:http').ServerResponse, status: number, body: unknown): void {
+function setSecurityHeaders(response: ServerResponse): void {
+    response.setHeader('cache-control', 'no-store');
+    response.setHeader('content-security-policy', "default-src 'self'; style-src 'self' https://cdn.jsdelivr.net; script-src 'self'; connect-src 'self'; img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+    response.setHeader('referrer-policy', 'no-referrer');
+    response.setHeader('x-content-type-options', 'nosniff');
+    response.setHeader('x-frame-options', 'DENY');
+}
+
+function isAuthorized(request: IncomingMessage, expectedToken: string): boolean {
+    const header = request.headers.authorization || '';
+    if (!header.startsWith('Bearer ')) return false;
+    const provided = Buffer.from(header.slice(7));
+    const expected = Buffer.from(expectedToken);
+    return provided.length === expected.length && timingSafeEqual(provided, expected);
+}
+
+async function sendAsset(response: ServerResponse, path: string, contentType: string): Promise<void> {
+    const content = await readFile(path);
+    response.statusCode = 200;
+    response.setHeader('content-type', contentType);
+    response.end(content);
+}
+
+function sendJson(response: ServerResponse, status: number, body: unknown): void {
     response.statusCode = status;
+    response.setHeader('content-type', 'application/json; charset=utf-8');
     response.end(JSON.stringify(body));
 }

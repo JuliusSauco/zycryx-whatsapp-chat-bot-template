@@ -94,6 +94,12 @@ El comando `npm run ops:check` revisa prerequisitos locales sin iniciar el bot: 
 
 Usalo antes de dejar un servidor en produccion y despues de cambios en `.env.prod`, estructura de base o actualizaciones del sistema. Ver tambien `docs/operations-runbook.md` y `docs/operational-dependencies.md`.
 
+## Consola web
+
+La consola operativa se sirve en `/console` desde `HEALTH_PORT`. Para habilitar sus APIs configura `CONSOLE_VIEW_TOKEN` con un valor aleatorio largo y publica únicamente ese puerto mediante el proxy de la plataforma. La autenticación se valida con comparación constante y los mensajes se redactan antes de entrar al buffer en memoria.
+
+No reutilices claves de APIs, contraseñas de base de datos ni la clave maestra de sesiones como token de consola.
+
 ## Backups
 
 El camino recomendado es usar el script operativo:

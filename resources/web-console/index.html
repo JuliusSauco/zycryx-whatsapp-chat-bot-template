@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#07111f">
+    <title>CFS Bot · Consola</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/console/styles.css" rel="stylesheet">
+</head>
+<body>
+<div class="ambient ambient-one"></div>
+<div class="ambient ambient-two"></div>
+
+<main class="container-fluid dashboard-shell px-3 px-lg-4 py-3 py-lg-4">
+    <header class="topbar d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <div class="brand-mark" aria-hidden="true">C</div>
+            <div>
+                <p class="eyebrow mb-1">OPERATIONS CONSOLE</p>
+                <h1 class="h3 mb-0">CFS WhatsApp Bot</h1>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span id="connectionBadge" class="status-pill status-neutral"><span class="status-dot"></span>Autenticación requerida</span>
+            <button id="logoutButton" class="btn btn-outline-light btn-sm d-none" type="button">Cerrar sesión</button>
+        </div>
+    </header>
+
+    <section id="authPanel" class="auth-panel card-surface mx-auto">
+        <div class="auth-icon mb-3">⌁</div>
+        <p class="eyebrow mb-2">ACCESO PROTEGIDO</p>
+        <h2 class="h4 mb-2">Abre la consola de producción</h2>
+        <p class="text-secondary mb-4">Introduce el token de consola configurado en Railway. Se conservará únicamente durante esta pestaña.</p>
+        <form id="authForm" class="row g-2">
+            <div class="col-12 col-sm">
+                <label for="tokenInput" class="visually-hidden">Token de consola</label>
+                <input id="tokenInput" class="form-control form-control-lg" type="password" autocomplete="current-password" placeholder="Token de acceso" required>
+            </div>
+            <div class="col-12 col-sm-auto d-grid">
+                <button class="btn btn-accent btn-lg" type="submit">Entrar</button>
+            </div>
+        </form>
+        <p id="authError" class="small text-danger mt-3 mb-0 d-none" role="alert"></p>
+    </section>
+
+    <section id="dashboard" class="d-none">
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6 col-xl-3">
+                <article class="metric-card card-surface h-100">
+                    <span class="metric-label">Bot principal</span>
+                    <strong id="mainStatus" class="metric-value">—</strong>
+                    <small id="mainStatusHint">Esperando estado</small>
+                </article>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <article class="metric-card card-surface h-100">
+                    <span class="metric-label">Lifecycle</span>
+                    <strong id="lifecycleStatus" class="metric-value">—</strong>
+                    <small>Estado del proceso</small>
+                </article>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <article class="metric-card card-surface h-100">
+                    <span class="metric-label">Cola de mensajes</span>
+                    <strong id="messageQueue" class="metric-value">—</strong>
+                    <small id="messageQueueHint">Pendientes / capacidad</small>
+                </article>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <article class="metric-card card-surface h-100">
+                    <span class="metric-label">Tiempo activo</span>
+                    <strong id="uptime" class="metric-value">—</strong>
+                    <small>Contenedor actual</small>
+                </article>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-xl-8">
+                <article class="console-card card-surface h-100">
+                    <div class="console-toolbar d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <div>
+                            <p class="eyebrow mb-1">LIVE OUTPUT</p>
+                            <h2 class="h5 mb-0">Consola del proceso</h2>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span id="streamStatus" class="small text-secondary">Sincronizando…</span>
+                            <button id="clearButton" class="btn btn-sm btn-outline-light" type="button">Limpiar vista</button>
+                        </div>
+                    </div>
+                    <div id="consoleOutput" class="console-output" role="log" aria-live="polite"></div>
+                </article>
+            </div>
+
+            <div class="col-12 col-xl-4">
+                <div class="d-grid gap-3">
+                    <article class="card-surface info-card">
+                        <p class="eyebrow mb-2">SERVICIOS</p>
+                        <div class="service-row"><span>PostgreSQL</span><strong id="databaseStatus">Comprobando</strong></div>
+                        <div class="service-row"><span>Cache distribuida</span><strong id="cacheStatus">Comprobando</strong></div>
+                        <div class="service-row"><span>Subbots conectados</span><strong id="subbotCount">0</strong></div>
+                    </article>
+
+                    <article class="card-surface info-card">
+                        <p class="eyebrow mb-2">VINCULACIÓN</p>
+                        <h2 class="h5">WhatsApp</h2>
+                        <p id="linkingHelp" class="text-secondary mb-0">La consola mostrará el código o la confirmación de conexión emitida por Baileys.</p>
+                    </article>
+
+                    <article class="card-surface info-card">
+                        <p class="eyebrow mb-2">SEGURIDAD</p>
+                        <p class="text-secondary small mb-0">Los secretos conocidos se redactan antes de almacenarse en el buffer. El token vive sólo en <code>sessionStorage</code>.</p>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script src="/console/app.js" defer></script>
+</body>
+</html>

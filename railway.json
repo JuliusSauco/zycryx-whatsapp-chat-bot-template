@@ -7,6 +7,8 @@
   "deploy": {
     "preDeployCommand": "npm run db:check",
     "startCommand": "npm run serve:checked",
+    "healthcheckPath": "/health/live",
+    "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }

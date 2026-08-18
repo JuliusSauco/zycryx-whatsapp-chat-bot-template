@@ -97,6 +97,7 @@ No configures simultáneamente clave maestra y passphrase. El modo base de datos
 | `HEALTH_HOST` | `127.0.0.1` | Interfaz donde escucha health/readiness/metrics. Usa una red privada o proxy autenticado al exponerla. |
 | `HEALTH_PORT` | `3000` | Puerto HTTP para `/health/live`, `/health/ready` y `/metrics`. |
 | `HEALTH_METRICS_TOKEN` | vacío | Si está definido, `/metrics` exige `Authorization: Bearer <token>`. |
+| `CONSOLE_VIEW_TOKEN` | vacío | Token Bearer obligatorio para la consola web `/console` y sus APIs. Si está vacío, la API de consola permanece deshabilitada. |
 | `DB_ADMIN_URL` | vacío | Conexión administrativa usada sólo por `db:setup-runtime-role`. |
 | `DB_RUNTIME_ROLE` | `zycryx_bot_app` | Rol DML sin DDL que se aprovisiona para el proceso. |
 | `DB_RUNTIME_PASSWORD` | vacío | Password de al menos 20 caracteres para ese rol; no la versionar. |

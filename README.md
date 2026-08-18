@@ -295,6 +295,20 @@ BOT_OWNER_NUMBERS=573001112233,51999888777
 | `npm run db:studio` | Abre Drizzle Studio. |
 | `npm run secrets:set -- <nombre> <valor>` | Guarda o rota un secreto cifrado. |
 | `npm run secrets:migrate-legacy` | Migra y verifica `api_tokens` base64 antes de eliminarla. |
+
+### Consola web operativa
+
+El mismo proceso expone una consola responsiva en `/console` mediante el puerto de health. La interfaz muestra estado de WhatsApp, lifecycle, colas, PostgreSQL, cache distribuida y un buffer redactado de la salida del proceso.
+
+Configura un token aleatorio largo antes de exponer el servicio:
+
+```env
+HEALTH_HOST=0.0.0.0
+HEALTH_PORT=3000
+CONSOLE_VIEW_TOKEN=un-token-aleatorio-de-al-menos-32-bytes
+```
+
+La página pública sólo contiene el formulario de acceso. Las APIs `/api/console/status` y `/api/console/logs` exigen `Authorization: Bearer`; el token se conserva únicamente en `sessionStorage` del navegador.
 | `npm run secrets:rotate` | Recifra secretos, credenciales y Signal keys con la versión activa. |
 | `npm run dev` | Ejecuta local con `tsx watch`. |
 | `npm run dev:dev` | Ejecuta con `NODE_ENV=dev`. |

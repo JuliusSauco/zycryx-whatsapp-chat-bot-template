@@ -89,6 +89,7 @@ export const ENV = {
     HEALTH_PORT: positiveInteger(process.env.HEALTH_PORT, 3000),
     HEALTH_HOST: process.env.HEALTH_HOST || '127.0.0.1',
     HEALTH_METRICS_TOKEN: process.env.HEALTH_METRICS_TOKEN || '',
+    CONSOLE_VIEW_TOKEN: process.env.CONSOLE_VIEW_TOKEN || '',
     HTTP_TIMEOUT_MS: positiveInteger(process.env.HTTP_TIMEOUT_MS, 15_000),
     DB_CACHE_TTL_MS: positiveInteger(process.env.DB_CACHE_TTL_MS, 300_000),
     AUDIO_CACHE_TTL_MS: positiveInteger(process.env.AUDIO_CACHE_TTL_MS, 300_000),

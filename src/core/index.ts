@@ -1,7 +1,12 @@
-import './env.js';
-import cfonts from 'cfonts';
-import {ENV} from './env.js';
-import {logError, logInfo} from '../lib/logger.js';
+import {installConsoleCapture} from '../lib/runtime-console.js';
+
+installConsoleCapture();
+
+const [{default: cfonts}, {ENV}, {logError, logInfo}] = await Promise.all([
+    import('cfonts'),
+    import('./env.js'),
+    import('../lib/logger.js'),
+]);
 
 logInfo('Iniciando 🚀🚀🚀')
 
