@@ -1,9 +1,42 @@
-import type {userWallets, usuarios} from '../../db/schema.js';
+import type {usuarios} from '../../db/schema.js';
 import type {UserRecord, UserResources, UserWallet} from '../../domain/users.js';
 
 export type UserRow = typeof usuarios.$inferSelect;
-export type WalletRow = typeof userWallets.$inferSelect;
-export type UserRecordRow = UserRow & {
+export type UserRecordRow = Pick<UserRow, 'id' | 'nombre'> & {
+    username?: string | null;
+    registered?: boolean | null;
+    num?: string | null;
+    lid?: string | null;
+    banned?: boolean | null;
+    razonBan?: string | null;
+    avisosBan?: number | null;
+    warnPv?: boolean | null;
+    warn?: number | null;
+    warnAntiporn?: number | null;
+    warnEstado?: number | null;
+    edad?: number | null;
+    gender?: string | null;
+    birthday?: string | null;
+    level?: number | null;
+    role?: string | null;
+    roleDescription?: string | null;
+    regTime?: Date | null;
+    serialNumber?: string | null;
+    stickerPackname?: string | null;
+    stickerAuthor?: string | null;
+    ryTime?: number | null;
+    lastwork?: number | null;
+    lastmiming?: number | null;
+    lastclaim?: number | null;
+    dailystreak?: number | null;
+    lastcofre?: number | null;
+    lastrob?: number | null;
+    lastslut?: number | null;
+    timevot?: number | null;
+    wait?: number | null;
+    crime?: number | null;
+    marry?: string | null;
+    marryRequest?: string | null;
     limite?: number | null;
     exp?: number | null;
     coins?: number | null;
@@ -52,20 +85,20 @@ export function mapUserRecord(row: UserRecordRow): UserRecord {
     return {
         id: row.id,
         nombre: row.nombre,
-        username: row.username,
+        username: row.username ?? null,
         registered: booleanOrFalse(row.registered),
-        num: row.num,
-        lid: row.lid,
+        num: row.num ?? null,
+        lid: row.lid ?? null,
         banned: booleanOrFalse(row.banned),
-        razonBan: row.razonBan,
+        razonBan: row.razonBan ?? null,
         avisosBan: numberOrZero(row.avisosBan),
         warnPv: booleanOrFalse(row.warnPv),
         warn: numberOrZero(row.warn),
         warnAntiporn: numberOrZero(row.warnAntiporn),
         warnEstado: numberOrZero(row.warnEstado),
-        edad: row.edad,
-        gender: row.gender,
-        birthday: row.birthday,
+        edad: row.edad ?? null,
+        gender: row.gender ?? null,
+        birthday: row.birthday ?? null,
         coins: numberOrZero(row.coins),
         limite: numberOrZero(row.limite),
         exp: numberOrZero(row.exp),
@@ -73,12 +106,12 @@ export function mapUserRecord(row: UserRecordRow): UserRecord {
         zyxcoin: numberOrZero(row.zyxcoin),
         level: numberOrZero(row.level),
         role: row.role ?? 'novato',
-        roleDescription: row.roleDescription,
-        regTime: row.regTime,
-        serialNumber: row.serialNumber,
-        serial_number: row.serialNumber,
-        stickerPackname: row.stickerPackname,
-        stickerAuthor: row.stickerAuthor,
+        roleDescription: row.roleDescription ?? null,
+        regTime: row.regTime ?? null,
+        serialNumber: row.serialNumber ?? null,
+        serial_number: row.serialNumber ?? null,
+        stickerPackname: row.stickerPackname ?? null,
+        stickerAuthor: row.stickerAuthor ?? null,
         ryTime: numberOrZero(row.ryTime),
         lastwork: numberOrZero(row.lastwork),
         lastmiming: numberOrZero(row.lastmiming),
@@ -90,8 +123,8 @@ export function mapUserRecord(row: UserRecordRow): UserRecord {
         timevot: numberOrZero(row.timevot),
         wait: numberOrZero(row.wait),
         crime: numberOrZero(row.crime),
-        marry: row.marry,
-        marryRequest: row.marryRequest,
+        marry: row.marry ?? null,
+        marryRequest: row.marryRequest ?? null,
     };
 }
 

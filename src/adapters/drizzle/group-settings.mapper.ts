@@ -1,9 +1,62 @@
-import type {groupSettings, userGroupRoles} from '../../db/schema.js';
+import type {userGroupRoles} from '../../db/schema.js';
 import type {ContextGroupSettings, GroupSettingsRecord, NsfwGroupSettings, UserGroupRoleRecord} from '../../domain/groups.js';
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode} from '../../types/config.js';
 import {createDefaultFamilyAccessMap} from '../../utils/family-access.js';
 
-export type GroupSettingsRow = typeof groupSettings.$inferSelect;
+export interface GroupSettingsRow {
+    groupId: string;
+    welcomeConfigId: number | null;
+    welcome: boolean | null;
+    detect: boolean | null;
+    antifake: boolean | null;
+    antilink: boolean | null;
+    antilink2: boolean | null;
+    virusTotal: boolean | null;
+    autoresponder: boolean | null;
+    autoresponderMode: string | null;
+    autoresponderTrigger: string | null;
+    gamesAccessMode: string | null;
+    toolsAccessMode: string | null;
+    rpgAccessMode: string | null;
+    downloadsAccessMode: string | null;
+    searchAccessMode: string | null;
+    stickersAccessMode: string | null;
+    convertersAccessMode: string | null;
+    funAccessMode: string | null;
+    modohorny: boolean | null;
+    nsfwAccessMode: string | null;
+    nsfwGifEnabled: boolean | null;
+    nsfwGifAccessMode: string | null;
+    audios: boolean | null;
+    antiStatus: boolean | null;
+    modoadmin: boolean | null;
+    photowelcome: boolean | null;
+    welcomeRegisteredBy: string | null;
+    welcomeHidetag: boolean | null;
+    welcomeHidetagMode: string | null;
+    welcomeGroupPhoto: boolean | null;
+    bye: boolean | null;
+    byeConfigId: number | null;
+    byeRegisteredBy: string | null;
+    byeHidetag: boolean | null;
+    byeHidetagMode: string | null;
+    byeGroupPhoto: boolean | null;
+    photobye: boolean | null;
+    autolevelup: boolean | null;
+    nsfwHorario: string | null;
+    sWelcome: string | null;
+    sBye: string | null;
+    sPromote: string | null;
+    sDemote: string | null;
+    sAutorespond: string | null;
+    banned: boolean | null;
+    expired: number | null;
+    memoryTtl: number | null;
+    primaryBot: string | null;
+    autoAcceptMode: string | null;
+    botAccessMode: string | null;
+    messageLogging: boolean | null;
+}
 export type UserGroupRoleRow = typeof userGroupRoles.$inferSelect;
 
 export type ContextGroupSettingsRow = Pick<

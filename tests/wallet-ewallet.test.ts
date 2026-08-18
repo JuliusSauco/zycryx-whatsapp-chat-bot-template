@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {getTableColumns} from 'drizzle-orm';
-import {userBankAccounts, userWallets, usuarios, walletTransactions} from '../src/db/schema.js';
+import {
+    accountBalances, economyResources, financialAccounts, financialOperations, ledgerEntries, usuarios,
+} from '../src/db/schema.js';
 import type {UserWallet} from '../src/domain/users.js';
 import balancePlugin, {buildWalletMessage, WALLET_COMMANDS} from '../src/plugins/economy/economy-wallet.js';
 import {before as antiPrivateBefore, isPrivateCommandAllowed} from '../src/plugins/hooks/_antiprivado.js';
@@ -18,9 +20,11 @@ import {repositories} from '../src/services/data-source.js';
 import {isEconomyInfoRequest} from '../src/plugins/economy/economy-info.helpers.js';
 import {formatTransferDate, isTransferHistoryRequest, parseHistoryPage} from '../src/plugins/economy/economy-transfer.js';
 
-const walletColumns = getTableColumns(userWallets);
 const userColumns = getTableColumns(usuarios);
-const transactionColumns = getTableColumns(walletTransactions);
+const accountColumns = getTableColumns(financialAccounts);
+const balanceColumns = getTableColumns(accountBalances);
+const operationColumns = getTableColumns(financialOperations);
+const ledgerColumns = getTableColumns(ledgerEntries);
 
 assert.deepEqual(WALLET_RESOURCES, ['limite', 'exp', 'coins', 'botcoin', 'zyxcoin']);
 assert.deepEqual(TRANSFERABLE_WALLET_RESOURCES, ['limite', 'exp', 'coins']);
@@ -39,14 +43,16 @@ assert.equal(parseHistoryPage('2'), 2);
 assert.equal(parseHistoryPage('0'), null);
 assert.match(formatTransferDate(new Date('2026-01-01T05:00:00Z')), /1\/01\/26/);
 
-for (const resource of WALLET_RESOURCES) assert.ok(walletColumns[resource], `missing wallet column ${resource}`);
 assert.equal('money' in userColumns, false);
 assert.equal('limite' in userColumns, false);
 assert.equal('exp' in userColumns, false);
 assert.equal('banco' in userColumns, false);
-assert.ok(getTableColumns(userBankAccounts).limite);
-assert.ok(transactionColumns.balanceAfter);
-assert.ok(transactionColumns.reason);
+assert.ok(getTableColumns(economyResources).code);
+assert.ok(accountColumns.accountType);
+assert.ok(balanceColumns.resourceCode);
+assert.ok(balanceColumns.balance);
+assert.ok(operationColumns.reason);
+assert.ok(ledgerColumns.balanceAfter);
 assert.equal(balancePlugin.private, undefined, 'wallet must run in groups and private chats');
 assert.deepEqual(WALLET_COMMANDS, ['wallet', 'ewallet', 'balance', 'bal', 'diamantes', 'diamond']);
 assert.deepEqual(balancePlugin.command, [...WALLET_COMMANDS]);
@@ -89,13 +95,13 @@ for (const alias of WALLET_COMMANDS) {
     assert.equal(result, undefined, `${alias} was blocked by anti_private`);
 }
 
-const migration = readFileSync('src/db/migrations/0031_user_ewallet.sql', 'utf8');
-assert.match(migration, /SELECT "id".*"limite".*"exp".*"money"/s);
-assert.match(migration, /ALTER TABLE "usuarios" DROP COLUMN "money"/);
-assert.match(migration, /'opening_balance'/);
-const bankMigration = readFileSync('src/db/migrations/0032_bank_system.sql', 'utf8');
-assert.match(bankMigration, /SELECT "id", GREATEST\(COALESCE\("banco", 0\), 0\)/);
-assert.match(bankMigration, /ALTER TABLE "usuarios" DROP COLUMN "banco"/);
+const schemaSql = readFileSync('database/schema.sql', 'utf8');
+assert.match(schemaSql, /CREATE TABLE "bot_economy"\."financial_accounts"/);
+assert.match(schemaSql, /CREATE TABLE "bot_economy"\."account_balances"/);
+assert.match(schemaSql, /CREATE TABLE "bot_economy"\."financial_operations"/);
+assert.match(schemaSql, /CREATE TABLE "bot_economy"\."ledger_entries"/);
+assert.doesNotMatch(schemaSql, /CREATE TABLE .*user_wallets/);
+assert.doesNotMatch(schemaSql, /CREATE TABLE .*user_bank_accounts/);
 
 const messages = readFileSync('resources/data/messages.json', 'utf8');
 assert.doesNotMatch(messages, /LoliCoins?/i);
@@ -128,10 +134,9 @@ const pluginSource = readFileSync('src/plugins/economy/economy-wallet.ts', 'utf8
 assert.doesNotMatch(pluginSource, /mentionedJid|m\.quoted/, 'wallet must ignore mentions and quoted users');
 
 const repositorySource = readFileSync('src/adapters/drizzle/user-wallet.repository.ts', 'utf8');
-assert.match(repositorySource, /eq\(walletTransactions\.reason, 'transfer'\)/);
-assert.match(repositorySource, /orderBy\(desc\(walletTransactions\.createdAt\), desc\(walletTransactions\.id\)\)/);
-assert.match(repositorySource, /operationId, counterpartyId: to/);
-assert.match(repositorySource, /operationId, counterpartyId: from/);
+assert.match(repositorySource, /eq\(financialOperations\.reason, 'transfer'\)/);
+assert.match(repositorySource, /orderBy\(desc\(ledgerEntries\.createdAt\), desc\(ledgerEntries\.id\)\)/);
+assert.match(repositorySource, /externalId, actorId: from, counterpartyId: to/);
 const transferPluginSource = readFileSync('src/plugins/economy/economy-transfer.ts', 'utf8');
 assert.match(transferPluginSource, /if \(isGroup\).*historyPrivate/);
 assert.match(transferPluginSource, /listWalletTransferHistory\(m\.sender, page\)/);

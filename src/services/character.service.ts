@@ -46,6 +46,6 @@ export async function completeCharacterSale(characterId: number, buyer: string, 
     await repositories.characters.completeSale(characterId, {buyer, price});
 }
 
-export async function voteCharacter(characterId: number, votes: number, price: number): Promise<void> {
-    await repositories.characters.vote(characterId, votes, price);
+export async function voteCharacter(characterId: number, actorId: string, price: number): Promise<void> {
+    await repositories.characters.vote(characterId, actorId, price);
 }

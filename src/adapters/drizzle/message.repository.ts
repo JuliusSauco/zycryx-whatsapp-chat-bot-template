@@ -1,19 +1,23 @@
 import {and, eq, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
-import {messages} from '../../db/schema.js';
+import {chats, messages, usuarios} from '../../db/schema.js';
 import type {MessageRepository} from '../../ports/repositories.js';
 
 export const messagesRepository: MessageRepository = {
     async incrementUserGroupCount(userId, groupId) {
-        await orm.insert(messages)
-            .values({userId, groupId, messageCount: 1, lastMessageAt: new Date()})
-            .onConflictDoUpdate({
-                target: [messages.userId, messages.groupId],
-                set: {
-                    messageCount: sql`${messages.messageCount} + 1`,
-                    lastMessageAt: new Date(),
-                },
-            });
+        await orm.transaction(async tx => {
+            await tx.insert(usuarios).values({id: userId}).onConflictDoNothing();
+            await tx.insert(chats).values({id: groupId, isGroup: true}).onConflictDoNothing();
+            await tx.insert(messages)
+                .values({userId, groupId, messageCount: 1, lastMessageAt: new Date()})
+                .onConflictDoUpdate({
+                    target: [messages.userId, messages.groupId],
+                    set: {
+                        messageCount: sql`${messages.messageCount} + 1`,
+                        lastMessageAt: new Date(),
+                    },
+                });
+        });
     },
 
     async deleteUserGroupCount(userId, groupId) {

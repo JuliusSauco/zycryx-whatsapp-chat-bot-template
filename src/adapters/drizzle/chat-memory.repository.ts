@@ -1,8 +1,9 @@
-import {eq, sql} from 'drizzle-orm';
+import {asc, eq, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
-import {chatMemory, groupSettings} from '../../db/schema.js';
+import {chatMemory, chatMemoryMessages, groupMemorySettings} from '../../db/schema.js';
 import type {ChatMemoryRepository} from '../../ports/repositories.js';
 import {mapChatMemoryRecord, mapExpirableChatMemory} from './chat-memory.mapper.js';
+import {normalizeAiHistory} from '../../domain/operations.js';
 
 export const chatMemoryRepository: ChatMemoryRepository = {
     async listExpirable() {
@@ -10,35 +11,47 @@ export const chatMemoryRepository: ChatMemoryRepository = {
             .select({
                 chat_id: chatMemory.chatId,
                 updated_at: chatMemory.updatedAt,
-                memory_ttl: groupSettings.memoryTtl,
+                memory_ttl: groupMemorySettings.ttlSeconds,
             })
             .from(chatMemory)
-            .innerJoin(groupSettings, eq(chatMemory.chatId, groupSettings.groupId))
-            .where(sql`${groupSettings.memoryTtl} > 0`);
+            .innerJoin(groupMemorySettings, eq(chatMemory.chatId, groupMemorySettings.groupId))
+            .where(sql`${groupMemorySettings.ttlSeconds} > 0`);
 
         return rows.map(mapExpirableChatMemory);
     },
 
     async findByChatId(chatId) {
-        const [row] = await orm
+        const [session] = await orm
             .select({
-                history: chatMemory.history,
                 updated_at: chatMemory.updatedAt,
             })
             .from(chatMemory)
             .where(eq(chatMemory.chatId, chatId))
             .limit(1);
 
-        return row ? mapChatMemoryRecord(row) : null;
+        if (!session) return null;
+        const messages = await orm.select({
+            role: chatMemoryMessages.role,
+            content: chatMemoryMessages.content,
+        }).from(chatMemoryMessages).where(eq(chatMemoryMessages.chatId, chatId))
+            .orderBy(asc(chatMemoryMessages.position));
+        return mapChatMemoryRecord({history: messages, updated_at: session.updated_at});
     },
 
     async upsert(chatId, history) {
-        await orm.insert(chatMemory)
-            .values({chatId, history, updatedAt: new Date()})
-            .onConflictDoUpdate({
-                target: chatMemory.chatId,
-                set: {history, updatedAt: new Date()},
-            });
+        const messages = normalizeAiHistory(history);
+        await orm.transaction(async tx => {
+            await tx.insert(chatMemory)
+                .values({chatId, updatedAt: new Date()})
+                .onConflictDoUpdate({target: chatMemory.chatId, set: {updatedAt: new Date()}});
+            await tx.delete(chatMemoryMessages).where(eq(chatMemoryMessages.chatId, chatId));
+            if (messages.length) await tx.insert(chatMemoryMessages).values(messages.map((message, position) => ({
+                chatId,
+                position,
+                role: message.role,
+                content: message.content,
+            })));
+        });
     },
 
     async deleteByChatId(chatId) {

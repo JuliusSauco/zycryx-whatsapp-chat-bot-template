@@ -110,10 +110,11 @@ adminAccess.games = {enabled: true, accessMode: 'owner'};
 assert.equal(await featureAccessGuard(context({isOwner: true, groupSettings: {familyAccess: adminAccess}}, {feature: 'games'})), null);
 assert.equal(await featureAccessGuard(context({isGroup: false, groupSettings: {familyAccess: disabledAccess}}, {feature: 'games'})), null);
 
-const migration = fs.readFileSync('src/db/migrations/0027_group_command_access_rules.sql', 'utf8');
-assert.match(migration, /scope.*family.*command/s);
-for (const family of ['games', 'tools', 'rpg', 'downloads', 'search', 'stickers', 'converters', 'fun', 'audio', 'gifs', 'nsfw', 'nsfw-gifs']) {
-    assert.match(migration, new RegExp(`'${family.replace('-', '\\-')}'`), `missing migration backfill for ${family}`);
-}
+const schemaSql = fs.readFileSync('database/schema.sql', 'utf8');
+assert.match(schemaSql, /CREATE TABLE "bot_groups"\."group_command_access_rules"/);
+assert.match(schemaSql, /scope.*in \('family', 'command'\)/s);
+assert.match(schemaSql, /PRIMARY KEY\("group_id","scope","target"\)/);
+assert.doesNotMatch(schemaSql, /INSERT INTO bot_groups\.group_command_access_rules/,
+    'family defaults belong to the domain; the database only stores group overrides');
 
 console.log('family-access.test.ts OK');

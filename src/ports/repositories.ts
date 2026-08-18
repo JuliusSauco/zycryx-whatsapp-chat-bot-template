@@ -326,7 +326,7 @@ export interface CharacterRepository {
     setForSale(characterId: number, input: CharacterSaleInput): Promise<void>;
     withdrawFromSale(characterId: number, removedAt: number): Promise<void>;
     completeSale(characterId: number, input: CompleteCharacterSaleInput): Promise<void>;
-    vote(characterId: number, votes: number, price: number): Promise<void>;
+    vote(characterId: number, actorId: string, price: number): Promise<void>;
 }
 
 export interface ApiTokenRepository {

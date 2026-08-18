@@ -16,14 +16,14 @@ Este documento resume el estado arquitectonico actual despues de cerrar P0, inic
 - P1 ya empezo con providers de descargas para YouTube, Spotify, TikTok, Threads, Instagram, Facebook, MediaFire y Drive.
 - `src/plugins/downloads/youtube-download.helpers.ts` queda como re-export temporal para compatibilidad.
 - La suite de pruebas cubre helpers, router, guards, context builder, servicios, comandos sensibles, providers y compuerta P0.
-- Los scripts de DB estan alineados: `src/db/schema.ts`, journal de migraciones y `database/schema.sql` limpio desde cero.
+- El modelo DB está normalizado por dominios y alineado entre `src/db/schema.ts` y el bootstrap PostgreSQL 18 `database/schema.sql`.
 
 ## Avance por area
 
 | Area | Avance | Lectura |
 |---|---:|---|
 | Core/handler/router/guards | 92% | Arquitectura estable y testeada; runtime global ya tiene fachada, quedan mejoras puntuales. |
-| Persistencia Drizzle/PostgreSQL | 95% | Local estable, migraciones y bootstrap manual alineados. |
+| Persistencia Drizzle/PostgreSQL | 100% | Siete schemas temáticos, bootstrap PG18/Supabase y repositorios alineados. |
 | SDK y contenido | 100% | Contrato nuevo cerrado; plugins y hooks migrados fuera de `definePlugin`, `message-template` y HTTP directo en plugins. |
 | Providers externos | 100% | P1 cerrado: descargas, IA, conversores, stalkers y stickers avanzados tienen providers por dominio. |
 | Testing | 75% | Core cubierto; faltan mas pruebas de providers, i18n y plugins complejos. |

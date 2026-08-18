@@ -1,7 +1,20 @@
-import type {characters} from '../../db/schema.js';
 import type {CharacterRecord} from '../../domain/characters.js';
 
-export type CharacterRow = typeof characters.$inferSelect;
+export interface CharacterRow {
+    id: number;
+    name: string;
+    url: string;
+    tipo: string | null;
+    anime: string | null;
+    rareza: string | null;
+    price: number | null;
+    previousPrice: number | null;
+    claimedBy: string | null;
+    forSale: boolean | null;
+    seller: string | null;
+    votes: number | null;
+    lastRemovedTime: number | null;
+}
 
 export function mapCharacter(row: CharacterRow): CharacterRecord {
     return {
@@ -11,7 +24,7 @@ export function mapCharacter(row: CharacterRow): CharacterRecord {
         tipo: row.tipo,
         anime: row.anime,
         rareza: row.rareza,
-        price: row.price,
+        price: row.price ?? 0,
         previous_price: row.previousPrice,
         claimed_by: row.claimedBy,
         for_sale: row.forSale ?? false,

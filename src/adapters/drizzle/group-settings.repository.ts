@@ -1,7 +1,20 @@
-import {and, eq, lt, sql} from 'drizzle-orm';
+import {and, eq, lt} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
-import {groupCommandAccessRules, groupSettings} from '../../db/schema.js';
+import {
+    groupAutoresponderSettings,
+    groupCommandAccessRules,
+    groupGreetings,
+    groupMemorySettings,
+    groupModerationSettings,
+    groupNsfwSettings,
+    groupRpgSettings,
+    groupSettings,
+    usuarios,
+} from '../../db/schema.js';
+import type {ConfigurableFeatureKey} from '../../domain/groups.js';
 import type {GroupSettingsRepository} from '../../ports/repositories.js';
+import type {AccessMode} from '../../types/config.js';
+import {defaultFamilyAccess, isConfigurableFeature, mergeFamilyAccessRules, normalizeFamilyAccessMode} from '../../utils/family-access.js';
 import {
     mapContextGroupSettings,
     mapGroupSettings,
@@ -9,8 +22,14 @@ import {
     normalizeAccessMode,
     normalizeAutoresponderTrigger,
     normalizeBotAccessMode,
+    type GroupSettingsRow,
 } from './group-settings.mapper.js';
-import {isConfigurableFeature, mergeFamilyAccessRules, normalizeFamilyAccessMode} from '../../utils/family-access.js';
+
+type Transaction = Parameters<Parameters<typeof orm.transaction>[0]>[0];
+
+async function ensureGroup(tx: Transaction, groupId: string): Promise<void> {
+    await tx.insert(groupSettings).values({groupId}).onConflictDoNothing();
+}
 
 async function listFamilyRules(groupId: string) {
     const rows = await orm.select({
@@ -18,11 +37,10 @@ async function listFamilyRules(groupId: string) {
         enabled: groupCommandAccessRules.enabled,
         accessMode: groupCommandAccessRules.accessMode,
     }).from(groupCommandAccessRules).where(and(
-        eq(groupCommandAccessRules.groupId, groupId),
-        eq(groupCommandAccessRules.scope, 'family'),
+        eq(groupCommandAccessRules.groupId, groupId), eq(groupCommandAccessRules.scope, 'family'),
     ));
     return rows.filter(row => isConfigurableFeature(row.target)).map(row => ({
-        target: row.target as import('../../domain/groups.js').ConfigurableFeatureKey,
+        target: row.target as ConfigurableFeatureKey,
         rule: {enabled: row.enabled, accessMode: normalizeFamilyAccessMode(row.accessMode)},
     }));
 }
@@ -33,8 +51,7 @@ async function listCommandRules(groupId: string) {
         enabled: groupCommandAccessRules.enabled,
         accessMode: groupCommandAccessRules.accessMode,
     }).from(groupCommandAccessRules).where(and(
-        eq(groupCommandAccessRules.groupId, groupId),
-        eq(groupCommandAccessRules.scope, 'command'),
+        eq(groupCommandAccessRules.groupId, groupId), eq(groupCommandAccessRules.scope, 'command'),
     ));
     return rows.map(row => ({
         target: row.target,
@@ -42,359 +59,319 @@ async function listCommandRules(groupId: string) {
     }));
 }
 
-async function upsertFamilyRule(groupId: string, feature: import('../../domain/groups.js').ConfigurableFeatureKey, enabled: boolean, accessMode: import('../../types/config.js').AccessMode) {
-    const updatedAt = new Date();
-    await orm.insert(groupCommandAccessRules).values({groupId, scope: 'family', target: feature, enabled, accessMode, updatedAt})
-        .onConflictDoUpdate({
-            target: [groupCommandAccessRules.groupId, groupCommandAccessRules.scope, groupCommandAccessRules.target],
-            set: {enabled, accessMode, updatedAt},
-        });
+async function upsertFamilyRule(groupId: string, feature: ConfigurableFeatureKey, enabled: boolean, accessMode: AccessMode) {
+    const fallback = defaultFamilyAccess(feature);
+    await orm.transaction(async tx => {
+        await ensureGroup(tx, groupId);
+        if (enabled === fallback.enabled && accessMode === fallback.accessMode) {
+            await tx.delete(groupCommandAccessRules).where(and(
+                eq(groupCommandAccessRules.groupId, groupId),
+                eq(groupCommandAccessRules.scope, 'family'),
+                eq(groupCommandAccessRules.target, feature),
+            ));
+            return;
+        }
+        await tx.insert(groupCommandAccessRules).values({groupId, scope: 'family', target: feature, enabled, accessMode})
+            .onConflictDoUpdate({
+                target: [groupCommandAccessRules.groupId, groupCommandAccessRules.scope, groupCommandAccessRules.target],
+                set: {enabled, accessMode, updatedAt: new Date()},
+            });
+    });
 }
 
-async function upsertCommandRule(groupId: string, command: string, enabled: boolean, accessMode: import('../../types/config.js').AccessMode) {
-    const updatedAt = new Date();
-    await orm.insert(groupCommandAccessRules).values({groupId, scope: 'command', target: command, enabled, accessMode, updatedAt})
-        .onConflictDoUpdate({
-            target: [groupCommandAccessRules.groupId, groupCommandAccessRules.scope, groupCommandAccessRules.target],
-            set: {enabled, accessMode, updatedAt},
-        });
+async function loadRow(groupId: string): Promise<{row: GroupSettingsRow; familyRules: Awaited<ReturnType<typeof listFamilyRules>>; commandRules: Awaited<ReturnType<typeof listCommandRules>>} | null> {
+    const [[core], [moderation], [autoresponder], [nsfw], [memory], [rpg], greetings, familyRules, commandRules] = await Promise.all([
+        orm.select().from(groupSettings).where(eq(groupSettings.groupId, groupId)).limit(1),
+        orm.select().from(groupModerationSettings).where(eq(groupModerationSettings.groupId, groupId)).limit(1),
+        orm.select().from(groupAutoresponderSettings).where(eq(groupAutoresponderSettings.groupId, groupId)).limit(1),
+        orm.select().from(groupNsfwSettings).where(eq(groupNsfwSettings.groupId, groupId)).limit(1),
+        orm.select().from(groupMemorySettings).where(eq(groupMemorySettings.groupId, groupId)).limit(1),
+        orm.select().from(groupRpgSettings).where(eq(groupRpgSettings.groupId, groupId)).limit(1),
+        orm.select().from(groupGreetings).where(eq(groupGreetings.groupId, groupId)),
+        listFamilyRules(groupId),
+        listCommandRules(groupId),
+    ]);
+    if (!core) return null;
+    const access = mergeFamilyAccessRules(familyRules);
+    const welcome = greetings.find(item => item.eventType === 'welcome');
+    const bye = greetings.find(item => item.eventType === 'bye');
+    const promote = greetings.find(item => item.eventType === 'promote');
+    const demote = greetings.find(item => item.eventType === 'demote');
+    const row: GroupSettingsRow = {
+        groupId,
+        welcomeConfigId: null,
+        welcome: welcome?.enabled ?? true,
+        detect: moderation?.detect ?? true,
+        antifake: moderation?.antifake ?? false,
+        antilink: moderation?.antilink ?? false,
+        antilink2: moderation?.antilink2 ?? false,
+        virusTotal: moderation?.virusTotal ?? false,
+        autoresponder: autoresponder?.enabled ?? true,
+        autoresponderMode: autoresponder?.accessMode ?? 'all',
+        autoresponderTrigger: autoresponder?.trigger ?? 'mention',
+        gamesAccessMode: access.games.accessMode,
+        toolsAccessMode: access.tools.accessMode,
+        rpgAccessMode: access.rpg.accessMode,
+        downloadsAccessMode: access.downloads.accessMode,
+        searchAccessMode: access.search.accessMode,
+        stickersAccessMode: access.stickers.accessMode,
+        convertersAccessMode: access.converters.accessMode,
+        funAccessMode: access.fun.accessMode,
+        modohorny: access.nsfw.enabled,
+        nsfwAccessMode: access.nsfw.accessMode,
+        nsfwGifEnabled: access['nsfw-gifs'].enabled,
+        nsfwGifAccessMode: access['nsfw-gifs'].accessMode,
+        audios: access.audio.enabled,
+        antiStatus: moderation?.antiStatus ?? false,
+        modoadmin: core.botAccessMode === 'admin',
+        photowelcome: welcome?.photoEnabled ?? true,
+        welcomeRegisteredBy: welcome?.registeredBy ?? null,
+        welcomeHidetag: welcome?.hidetagMode === 'all',
+        welcomeHidetagMode: welcome?.hidetagMode ?? 'off',
+        welcomeGroupPhoto: welcome?.useGroupPhoto ?? false,
+        bye: bye?.enabled ?? true,
+        byeConfigId: null,
+        byeRegisteredBy: bye?.registeredBy ?? null,
+        byeHidetag: bye?.hidetagMode === 'all',
+        byeHidetagMode: bye?.hidetagMode ?? 'off',
+        byeGroupPhoto: bye?.useGroupPhoto ?? false,
+        photobye: bye?.photoEnabled ?? true,
+        autolevelup: rpg?.autoLevelUp ?? true,
+        nsfwHorario: nsfw?.schedule ?? null,
+        sWelcome: welcome?.messageTemplate ?? null,
+        sBye: bye?.messageTemplate ?? null,
+        sPromote: promote?.messageTemplate ?? null,
+        sDemote: demote?.messageTemplate ?? null,
+        sAutorespond: autoresponder?.prompt ?? null,
+        banned: core.banned,
+        expired: core.expiresAt?.getTime() ?? 0,
+        memoryTtl: memory?.ttlSeconds ?? 86400,
+        primaryBot: core.primaryBot,
+        autoAcceptMode: core.autoAcceptMode,
+        botAccessMode: core.botAccessMode,
+        messageLogging: core.messageLogging,
+    };
+    return {row, familyRules, commandRules};
 }
 
 export const groupSettingsRepository: GroupSettingsRepository = {
     async findByGroupId(groupId) {
-        const [row] = await orm.select().from(groupSettings).where(eq(groupSettings.groupId, groupId)).limit(1);
-        return row ? mapGroupSettings(row) : null;
+        const loaded = await loadRow(groupId);
+        return loaded ? mapGroupSettings(loaded.row) : null;
     },
 
     async findContextSettings(groupId) {
-        const [[row], familyRules, commandRules] = await Promise.all([orm
-            .select({
-                banned: groupSettings.banned,
-                primaryBot: groupSettings.primaryBot,
-                modoadmin: groupSettings.modoadmin,
-                botAccessMode: groupSettings.botAccessMode,
-                antifake: groupSettings.antifake,
-                messageLogging: groupSettings.messageLogging,
-                antilink: groupSettings.antilink,
-                antilink2: groupSettings.antilink2,
-                virusTotal: groupSettings.virusTotal,
-                autoresponder: groupSettings.autoresponder,
-                autoresponderMode: groupSettings.autoresponderMode,
-                autoresponderTrigger: groupSettings.autoresponderTrigger,
-                gamesAccessMode: groupSettings.gamesAccessMode,
-                toolsAccessMode: groupSettings.toolsAccessMode,
-                rpgAccessMode: groupSettings.rpgAccessMode,
-                downloadsAccessMode: groupSettings.downloadsAccessMode,
-                searchAccessMode: groupSettings.searchAccessMode,
-                stickersAccessMode: groupSettings.stickersAccessMode,
-                convertersAccessMode: groupSettings.convertersAccessMode,
-                funAccessMode: groupSettings.funAccessMode,
-                modohorny: groupSettings.modohorny,
-                nsfwAccessMode: groupSettings.nsfwAccessMode,
-                nsfwGifEnabled: groupSettings.nsfwGifEnabled,
-                nsfwGifAccessMode: groupSettings.nsfwGifAccessMode,
-                nsfwHorario: groupSettings.nsfwHorario,
-                audios: groupSettings.audios,
-                autolevelup: groupSettings.autolevelup,
-            })
-            .from(groupSettings)
-            .where(eq(groupSettings.groupId, groupId))
-            .limit(1), listFamilyRules(groupId), listCommandRules(groupId)]);
-
-        return row ? {
-            ...mapContextGroupSettings(row),
-            familyAccess: mergeFamilyAccessRules(familyRules),
-            commandAccess: Object.fromEntries(commandRules.map(item => [item.target, item.rule])),
-        } : null;
-    },
-
-    async findNsfwSettings(groupId) {
-        const [[row], familyRules] = await Promise.all([orm
-            .select({
-                modohorny: groupSettings.modohorny,
-                nsfwAccessMode: groupSettings.nsfwAccessMode,
-                nsfwGifEnabled: groupSettings.nsfwGifEnabled,
-                nsfwGifAccessMode: groupSettings.nsfwGifAccessMode,
-                nsfwHorario: groupSettings.nsfwHorario,
-            })
-            .from(groupSettings)
-            .where(eq(groupSettings.groupId, groupId))
-            .limit(1), listFamilyRules(groupId)]);
-
-        if (!row) return null;
-        const mapped = mapNsfwGroupSettings(row);
-        const access = mergeFamilyAccessRules(familyRules);
-        return {...mapped,
-            modohorny: access.nsfw.enabled,
-            nsfwAccessMode: access.nsfw.accessMode,
-            nsfwGifEnabled: access['nsfw-gifs'].enabled,
-            nsfwGifAccessMode: access['nsfw-gifs'].accessMode,
+        const loaded = await loadRow(groupId);
+        if (!loaded) return null;
+        return {
+            ...mapContextGroupSettings(loaded.row),
+            familyAccess: mergeFamilyAccessRules(loaded.familyRules),
+            commandAccess: Object.fromEntries(loaded.commandRules.map(item => [item.target, item.rule])),
         };
     },
 
-    async setBooleanFlag(groupId, flag, value) {
-        const columns = {
-            welcome: groupSettings.welcome,
-            bye: groupSettings.bye,
-            detect: groupSettings.detect,
-            antilink: groupSettings.antilink,
-            antilink2: groupSettings.antilink2,
-            virusTotal: groupSettings.virusTotal,
-            autoresponder: groupSettings.autoresponder,
-            autolevelup: groupSettings.autolevelup,
-            antiporn: groupSettings.antiporn,
-            audios: groupSettings.audios,
-            antifake: groupSettings.antifake,
-            modohorny: groupSettings.modohorny,
-            modoadmin: groupSettings.modoadmin,
-            messageLogging: groupSettings.messageLogging,
-            welcomeHidetag: groupSettings.welcomeHidetag,
-            byeHidetag: groupSettings.byeHidetag,
-        } as const;
-        const column = columns[flag as keyof typeof columns];
-        if (!column) throw new Error(`Flag de group_settings no soportado: ${flag}`);
+    async findNsfwSettings(groupId) {
+        const loaded = await loadRow(groupId);
+        return loaded ? mapNsfwGroupSettings(loaded.row) : null;
+    },
 
-        await orm.insert(groupSettings)
-            .values({groupId, [flag]: value})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: {[flag]: value},
+    async setBooleanFlag(groupId, flag, value) {
+        if (flag === 'welcome' || flag === 'bye') {
+            await orm.transaction(async tx => {
+                await ensureGroup(tx, groupId);
+                await tx.insert(groupGreetings).values({groupId, eventType: flag, enabled: value})
+                    .onConflictDoUpdate({target: [groupGreetings.groupId, groupGreetings.eventType], set: {enabled: value, updatedAt: new Date()}});
             });
+            return;
+        }
+        const moderationProperty = {
+            detect: 'detect', antifake: 'antifake', antilink: 'antilink', antilink2: 'antilink2',
+            virusTotal: 'virusTotal', antiporn: 'antiporn',
+        } as const;
+        const property = moderationProperty[flag as keyof typeof moderationProperty];
+        if (property) {
+            await orm.transaction(async tx => {
+                await ensureGroup(tx, groupId);
+                await tx.insert(groupModerationSettings).values({groupId, [property]: value})
+                    .onConflictDoUpdate({target: groupModerationSettings.groupId, set: {[property]: value, updatedAt: new Date()}});
+            });
+            return;
+        }
+        if (flag === 'autoresponder') {
+            await this.setAutoresponderMode(groupId, value, 'all');
+            return;
+        }
+        if (flag === 'autolevelup') {
+            await orm.transaction(async tx => {
+                await ensureGroup(tx, groupId);
+                await tx.insert(groupRpgSettings).values({groupId, autoLevelUp: value})
+                    .onConflictDoUpdate({target: groupRpgSettings.groupId, set: {autoLevelUp: value, updatedAt: new Date()}});
+            });
+            return;
+        }
+        if (flag === 'audios') return upsertFamilyRule(groupId, 'audio', value, 'all');
+        if (flag === 'modohorny') return upsertFamilyRule(groupId, 'nsfw', value, 'owner');
+        if (flag === 'messageLogging') {
+            await orm.insert(groupSettings).values({groupId, messageLogging: value}).onConflictDoUpdate({
+                target: groupSettings.groupId, set: {messageLogging: value, updatedAt: new Date()},
+            });
+            return;
+        }
+        if (flag === 'modoadmin') return this.setBotAccessMode(groupId, value ? 'admin' : 'all');
+        if (flag === 'welcomeHidetag' || flag === 'byeHidetag') {
+            return this.setGreetingHidetagMode(groupId, flag === 'welcomeHidetag' ? 'welcome' : 'bye', value ? 'all' : 'off');
+        }
+        throw new Error(`Flag de grupo no soportado: ${flag}`);
     },
 
     async setAutoAcceptMode(groupId, mode) {
-        await orm.insert(groupSettings)
-            .values({groupId, autoAcceptMode: mode || 'off'})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: {autoAcceptMode: mode || 'off'},
-            });
+        await orm.insert(groupSettings).values({groupId, autoAcceptMode: mode || 'off'}).onConflictDoUpdate({
+            target: groupSettings.groupId, set: {autoAcceptMode: mode || 'off', updatedAt: new Date()},
+        });
     },
 
     async setBotAccessMode(groupId, mode) {
-        const normalizedMode = normalizeBotAccessMode(mode || null, false);
-        await orm.insert(groupSettings)
-            .values({groupId, botAccessMode: normalizedMode, modoadmin: normalizedMode === 'admin'})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: {botAccessMode: normalizedMode, modoadmin: normalizedMode === 'admin'},
-            });
+        const normalized = normalizeBotAccessMode(mode || null, false);
+        await orm.insert(groupSettings).values({groupId, botAccessMode: normalized}).onConflictDoUpdate({
+            target: groupSettings.groupId, set: {botAccessMode: normalized, updatedAt: new Date()},
+        });
     },
 
     async setAutoresponderMode(groupId, enabled, mode) {
-        const normalizedMode = normalizeAccessMode(mode || null);
-        await orm.insert(groupSettings)
-            .values({groupId, autoresponder: enabled, autoresponderMode: normalizedMode})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: {autoresponder: enabled, autoresponderMode: normalizedMode},
+        const accessMode = normalizeAccessMode(mode || null);
+        await orm.transaction(async tx => {
+            await ensureGroup(tx, groupId);
+            await tx.insert(groupAutoresponderSettings).values({groupId, enabled, accessMode}).onConflictDoUpdate({
+                target: groupAutoresponderSettings.groupId, set: {enabled, accessMode, updatedAt: new Date()},
             });
+        });
     },
 
     async setAutoresponderTrigger(groupId, trigger) {
-        const normalizedTrigger = normalizeAutoresponderTrigger(trigger || null);
-        await orm.insert(groupSettings)
-            .values({groupId, autoresponderTrigger: normalizedTrigger})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: {autoresponderTrigger: normalizedTrigger},
+        const normalized = normalizeAutoresponderTrigger(trigger || null);
+        await orm.transaction(async tx => {
+            await ensureGroup(tx, groupId);
+            await tx.insert(groupAutoresponderSettings).values({groupId, trigger: normalized}).onConflictDoUpdate({
+                target: groupAutoresponderSettings.groupId, set: {trigger: normalized, updatedAt: new Date()},
             });
+        });
     },
 
     async setNsfwMode(groupId, enabled, mode) {
-        const normalizedMode = normalizeAccessMode(mode || null);
-        await orm.insert(groupSettings)
-            .values({groupId, modohorny: enabled, nsfwAccessMode: normalizedMode})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: {modohorny: enabled, nsfwAccessMode: normalizedMode},
-            });
-        await upsertFamilyRule(groupId, 'nsfw', enabled, normalizedMode);
+        await upsertFamilyRule(groupId, 'nsfw', enabled, normalizeAccessMode(mode || null, 'owner'));
     },
 
     async setNsfwGifMode(groupId, enabled, mode) {
-        const normalizedMode = normalizeAccessMode(mode || null, 'owner');
-        await orm.insert(groupSettings)
-            .values({groupId, nsfwGifEnabled: enabled, nsfwGifAccessMode: normalizedMode})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: {nsfwGifEnabled: enabled, nsfwGifAccessMode: normalizedMode},
-            });
-        await upsertFamilyRule(groupId, 'nsfw-gifs', enabled, normalizedMode);
+        await upsertFamilyRule(groupId, 'nsfw-gifs', enabled, normalizeAccessMode(mode || null, 'owner'));
     },
 
-    async listFamilyAccessRules(groupId) {
-        return listFamilyRules(groupId);
-    },
+    async listFamilyAccessRules(groupId) { return listFamilyRules(groupId); },
 
     async upsertFamilyAccessRule(groupId, feature, rule) {
         await upsertFamilyRule(groupId, feature, rule.enabled, rule.accessMode);
     },
 
-    async listCommandAccessRules(groupId) {
-        return listCommandRules(groupId);
-    },
+    async listCommandAccessRules(groupId) { return listCommandRules(groupId); },
 
     async upsertCommandAccessRule(groupId, command, rule) {
-        await upsertCommandRule(groupId, command, rule.enabled, rule.accessMode);
+        await orm.transaction(async tx => {
+            await ensureGroup(tx, groupId);
+            await tx.insert(groupCommandAccessRules).values({groupId, scope: 'command', target: command, ...rule})
+                .onConflictDoUpdate({
+                    target: [groupCommandAccessRules.groupId, groupCommandAccessRules.scope, groupCommandAccessRules.target],
+                    set: {...rule, updatedAt: new Date()},
+                });
+        });
     },
 
     async setGreetingHidetagMode(groupId, type, mode) {
-        const normalizedMode = mode || 'off';
-        const isAllMode = normalizedMode === 'all';
-        const values = type === 'welcome'
-            ? {welcomeHidetagMode: normalizedMode, welcomeHidetag: isAllMode}
-            : {byeHidetagMode: normalizedMode, byeHidetag: isAllMode};
-
-        await orm.insert(groupSettings)
-            .values({groupId, ...values})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: values,
-            });
+        await orm.transaction(async tx => {
+            await ensureGroup(tx, groupId);
+            await tx.insert(groupGreetings).values({groupId, eventType: type, hidetagMode: mode || 'off'})
+                .onConflictDoUpdate({
+                    target: [groupGreetings.groupId, groupGreetings.eventType],
+                    set: {hidetagMode: mode || 'off', updatedAt: new Date()},
+                });
+        });
     },
 
     async setTextMessage({groupId, type, text, photoMode, registeredBy, groupPhoto}) {
-        const textPropertyByType = {
-            welcome: 'sWelcome',
-            bye: 'sBye',
-            promote: 'sPromote',
-            demote: 'sDemote',
-        } as const;
-        const photoPropertyByType = {
-            welcome: 'photowelcome',
-            bye: 'photobye',
-        } as const;
-
-        const textProperty = textPropertyByType[type];
-        const values: Record<string, string | boolean> = {[textProperty]: text};
-        const updates: Record<string, string | boolean> = {[textProperty]: text};
-
-        if ((type === 'welcome' || type === 'bye') && typeof photoMode === 'boolean') {
-            const photoProperty = photoPropertyByType[type];
-            values[photoProperty] = photoMode;
-            updates[photoProperty] = photoMode;
-        }
-        if (type === 'welcome') {
-            if (registeredBy) {
-                values.welcomeRegisteredBy = registeredBy;
-                updates.welcomeRegisteredBy = registeredBy;
-            }
-            if (typeof groupPhoto === 'boolean') {
-                values.welcomeGroupPhoto = groupPhoto;
-                updates.welcomeGroupPhoto = groupPhoto;
-            }
-        }
-        if (type === 'bye') {
-            if (registeredBy) {
-                values.byeRegisteredBy = registeredBy;
-                updates.byeRegisteredBy = registeredBy;
-            }
-            if (typeof groupPhoto === 'boolean') {
-                values.byeGroupPhoto = groupPhoto;
-                updates.byeGroupPhoto = groupPhoto;
-            }
-        }
-
-        await orm.insert(groupSettings)
-            .values({groupId, ...values})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: updates,
-            });
+        const values = {
+            messageTemplate: text,
+            ...(typeof photoMode === 'boolean' ? {photoEnabled: photoMode} : {}),
+            ...(registeredBy ? {registeredBy} : {}),
+            ...(typeof groupPhoto === 'boolean' ? {useGroupPhoto: groupPhoto} : {}),
+            updatedAt: new Date(),
+        };
+        await orm.transaction(async tx => {
+            await ensureGroup(tx, groupId);
+            if (registeredBy) await tx.insert(usuarios).values({id: registeredBy}).onConflictDoNothing();
+            await tx.insert(groupGreetings).values({groupId, eventType: type, ...values})
+                .onConflictDoUpdate({target: [groupGreetings.groupId, groupGreetings.eventType], set: values});
+        });
     },
 
     async setNsfwSchedule(groupId, schedule) {
-        await orm.insert(groupSettings)
-            .values({groupId, nsfwHorario: schedule})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: {nsfwHorario: schedule},
+        await orm.transaction(async tx => {
+            await ensureGroup(tx, groupId);
+            await tx.insert(groupNsfwSettings).values({groupId, schedule}).onConflictDoUpdate({
+                target: groupNsfwSettings.groupId, set: {schedule, updatedAt: new Date()},
             });
+        });
     },
 
     async setBanned(groupId, banned) {
-        await orm.insert(groupSettings)
-            .values({groupId, banned})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: {banned},
-            });
+        await orm.insert(groupSettings).values({groupId, banned}).onConflictDoUpdate({
+            target: groupSettings.groupId, set: {banned, updatedAt: new Date()},
+        });
     },
 
     async setPrimaryBot(groupId, botId) {
-        await orm.insert(groupSettings)
-            .values({groupId, primaryBot: botId})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: {primaryBot: botId},
-            });
+        await orm.insert(groupSettings).values({groupId, primaryBot: botId}).onConflictDoUpdate({
+            target: groupSettings.groupId, set: {primaryBot: botId, updatedAt: new Date()},
+        });
     },
 
     async setExpiration(groupId, expiresAt) {
-        await orm.insert(groupSettings)
-            .values({groupId, expired: expiresAt})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: {expired: expiresAt},
-            });
+        await orm.insert(groupSettings).values({groupId, expiresAt: new Date(expiresAt)}).onConflictDoUpdate({
+            target: groupSettings.groupId, set: {expiresAt: new Date(expiresAt), updatedAt: new Date()},
+        });
     },
 
     async setAutorespondPrompt(groupId, prompt) {
-        await orm.insert(groupSettings)
-            .values({groupId, sAutorespond: prompt})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: {sAutorespond: prompt},
+        await orm.transaction(async tx => {
+            await ensureGroup(tx, groupId);
+            await tx.insert(groupAutoresponderSettings).values({groupId, prompt}).onConflictDoUpdate({
+                target: groupAutoresponderSettings.groupId, set: {prompt, updatedAt: new Date()},
             });
+        });
     },
 
     async setMemoryTtl(groupId, seconds) {
-        await orm.insert(groupSettings)
-            .values({groupId, memoryTtl: seconds})
-            .onConflictDoUpdate({
-                target: groupSettings.groupId,
-                set: {memoryTtl: seconds},
+        await orm.transaction(async tx => {
+            await ensureGroup(tx, groupId);
+            await tx.insert(groupMemorySettings).values({groupId, ttlSeconds: seconds}).onConflictDoUpdate({
+                target: groupMemorySettings.groupId, set: {ttlSeconds: seconds, updatedAt: new Date()},
             });
+        });
     },
 
     async listBannedGroups() {
-        const rows = await orm
-            .select({group_id: groupSettings.groupId})
-            .from(groupSettings)
-            .where(eq(groupSettings.banned, true));
-
+        const rows = await orm.select({group_id: groupSettings.groupId}).from(groupSettings).where(eq(groupSettings.banned, true));
         return rows.map(row => row.group_id);
     },
 
     async listExpiredGroups(now) {
-        const rows = await orm
-            .select({
-                group_id: groupSettings.groupId,
-                expired: groupSettings.expired,
-            })
-            .from(groupSettings)
-            .where(and(
-                sql`${groupSettings.expired} IS NOT NULL`,
-                sql`${groupSettings.expired} > 0`,
-                lt(groupSettings.expired, now),
-            ));
-
-        return rows.map(row => ({
-            group_id: row.group_id,
-            expired: row.expired ?? 0,
-        }));
+        const rows = await orm.select({group_id: groupSettings.groupId, expiresAt: groupSettings.expiresAt})
+            .from(groupSettings).where(and(lt(groupSettings.expiresAt, new Date(now)), eq(groupSettings.banned, false)));
+        return rows.map(row => ({group_id: row.group_id, expired: row.expiresAt?.getTime() ?? 0}));
     },
 
     async clearExpiration(groupId) {
-        await orm.update(groupSettings)
-            .set({expired: null})
-            .where(eq(groupSettings.groupId, groupId));
+        await orm.update(groupSettings).set({expiresAt: null, updatedAt: new Date()}).where(eq(groupSettings.groupId, groupId));
     },
 
     async clearPrimaryBot(groupId) {
-        await orm.update(groupSettings)
-            .set({primaryBot: null})
-            .where(eq(groupSettings.groupId, groupId));
+        await orm.update(groupSettings).set({primaryBot: null, updatedAt: new Date()}).where(eq(groupSettings.groupId, groupId));
     },
 };

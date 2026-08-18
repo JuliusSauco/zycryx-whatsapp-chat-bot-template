@@ -1,20 +1,38 @@
-import {eq, sql} from 'drizzle-orm';
+import {asc, eq, inArray, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
-import {subbots} from '../../db/schema.js';
+import {subbotOwners, subbotPrefixes, subbots, usuarios} from '../../db/schema.js';
 import type {SubbotRepository} from '../../ports/repositories.js';
 import {mapSubbotConfig} from './subbot.mapper.js';
 
 export const subbotsRepository: SubbotRepository = {
     async findConfig(botId) {
-        const [row] = await orm.select().from(subbots).where(eq(subbots.id, botId)).limit(1);
-        return row ? mapSubbotConfig(row) : null;
+        const [[row], prefixes, owners] = await Promise.all([
+            orm.select().from(subbots).where(eq(subbots.id, botId)).limit(1),
+            orm.select({value: subbotPrefixes.prefix}).from(subbotPrefixes)
+                .where(eq(subbotPrefixes.botId, botId)).orderBy(asc(subbotPrefixes.position)),
+            orm.select({value: subbotOwners.ownerId}).from(subbotOwners)
+                .where(eq(subbotOwners.botId, botId)).orderBy(asc(subbotOwners.position)),
+        ]);
+        return row ? mapSubbotConfig(row, prefixes.map(item => item.value), owners.map(item => item.value)) : null;
     },
 
     async listConfigs(tipo) {
         const rows = tipo
             ? await orm.select().from(subbots).where(eq(subbots.tipo, tipo))
             : await orm.select().from(subbots);
-        return rows.map(mapSubbotConfig);
+        if (!rows.length) return [];
+        const botIds = rows.map(row => row.id);
+        const [prefixes, owners] = await Promise.all([
+            orm.select().from(subbotPrefixes).where(inArray(subbotPrefixes.botId, botIds))
+                .orderBy(asc(subbotPrefixes.botId), asc(subbotPrefixes.position)),
+            orm.select().from(subbotOwners).where(inArray(subbotOwners.botId, botIds))
+                .orderBy(asc(subbotOwners.botId), asc(subbotOwners.position)),
+        ]);
+        return rows.map(row => mapSubbotConfig(
+            row,
+            prefixes.filter(item => item.botId === row.id).map(item => item.prefix),
+            owners.filter(item => item.botId === row.id).map(item => item.ownerId),
+        ));
     },
 
     async countByType() {
@@ -91,20 +109,26 @@ export const subbotsRepository: SubbotRepository = {
     },
 
     async setPrefix(botId, prefix) {
-        await orm.insert(subbots)
-            .values({id: botId, prefix})
-            .onConflictDoUpdate({
-                target: subbots.id,
-                set: {prefix},
-            });
+        await orm.transaction(async tx => {
+            await tx.insert(subbots).values({id: botId}).onConflictDoNothing();
+            await tx.delete(subbotPrefixes).where(eq(subbotPrefixes.botId, botId));
+            if (prefix.length) await tx.insert(subbotPrefixes).values(
+                [...new Set(prefix)].map((value, position) => ({botId, prefix: value, position})),
+            );
+        });
     },
 
     async setOwners(botId, owners) {
-        await orm.insert(subbots)
-            .values({id: botId, owners})
-            .onConflictDoUpdate({
-                target: subbots.id,
-                set: {owners},
-            });
+        await orm.transaction(async tx => {
+            await tx.insert(subbots).values({id: botId}).onConflictDoNothing();
+            await tx.delete(subbotOwners).where(eq(subbotOwners.botId, botId));
+            const uniqueOwners = [...new Set(owners)];
+            if (uniqueOwners.length) {
+                await tx.insert(usuarios).values(uniqueOwners.map(id => ({id}))).onConflictDoNothing();
+                await tx.insert(subbotOwners).values(
+                    uniqueOwners.map((ownerId, position) => ({botId, ownerId, position})),
+                );
+            }
+        });
     },
 };

@@ -52,11 +52,11 @@ El detector integrado reinicia el proceso (exit 1) si hay mas de 50 en un minuto
 
 ### `relation "..." does not exist`
 
-Faltan migraciones: ejecuta `npm run db:migrate`. Recuerda que el bot **no** migra automaticamente al arrancar.
+Ejecuta `npm run db:check`. En una base realmente vacía, provisiona una sola vez con `npm run db:setup`; no lo ejecutes sobre una base que ya tenga tablas parciales. Los schemas del bot son fijos y no usan `DB_SCHEMA`.
 
-### `DB_SCHEMA` no se respeta
+### PostgreSQL anterior a 18
 
-`DB_SCHEMA` solo acepta identificadores simples (`[a-zA-Z_][a-zA-Z0-9_]*`); cualquier otro valor cae silenciosamente a `public`. Revisa tambien que corriste `npm run db:ensure-schema` (incluido en `db:migrate`).
+El bootstrap y `db:check` rechazan versiones anteriores porque el modelo usa UUIDv7 y restricciones temporales de PostgreSQL 18. Actualiza o crea un proyecto Supabase con PG18.
 
 ## Comandos y plugins
 

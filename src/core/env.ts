@@ -63,7 +63,6 @@ export const ENV = {
     DB_NAME: process.env.DB_NAME || 'zycryx_bot',
     DB_USER: process.env.DB_USER || 'postgres',
     DB_PASSWORD: process.env.DB_PASSWORD || '',
-    DB_SCHEMA: process.env.DB_SCHEMA || 'public',
     DATABASE_URL: process.env.DATABASE_URL || '',
     LOG_LEVEL: process.env.LOG_LEVEL || 'command',
     PERF_LOG_THRESHOLD_MS: parseInt(process.env.PERF_LOG_THRESHOLD_MS || '750', 10),

@@ -7,7 +7,7 @@ export interface ExpirableChatMemoryRow {
 }
 
 export interface ChatMemoryRecordRow {
-    history: unknown;
+    history: unknown[];
     updated_at: Date | null;
 }
 

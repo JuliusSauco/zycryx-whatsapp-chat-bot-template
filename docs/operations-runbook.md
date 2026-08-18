@@ -27,7 +27,7 @@ El chequeo valida Node.js, archivo `.env`, owners, PostgreSQL, herramientas del 
 2. Ejecutar `git pull`.
 3. Ejecutar `npm install`.
 4. Ejecutar `npm run build`.
-5. Ejecutar `npm run db:migrate` si hay migraciones nuevas.
+5. Ejecutar `NODE_ENV=prod npm run db:check` para validar la estructura sin modificarla.
 6. Ejecutar `NODE_ENV=prod npm run ops:check`.
 7. Reiniciar: `pm2 restart zycryx-bot`.
 8. Confirmar conexion en logs.
@@ -70,7 +70,7 @@ Indicadores: logs con `Sesión inválida` o codigos `401`, `403`, `500`.
 1. Verificar `.env.prod` o variables del sistema.
 2. Probar conexion PostgreSQL desde el servidor.
 3. Ejecutar `NODE_ENV=prod npm run ops:check`.
-4. Si faltan tablas, ejecutar `npm run db:migrate`.
+4. Si faltan tablas en una base nueva, ejecutar `npm run db:setup`; en una base existente detenerse y diagnosticar antes de cambiar estructura.
 
 ### Descargas o APIs externas fallan
 
@@ -105,7 +105,7 @@ No copies `.env.prod` en backups comunes. Si realmente necesitas incluirlo, usa 
 pg_restore --clean --if-exists --dbname "$DATABASE_URL" backups/<fecha>/database.dump
 ```
 
-3. Ejecutar migraciones pendientes: `NODE_ENV=prod npm run db:migrate`.
+3. Validar la estructura restaurada: `NODE_ENV=prod npm run db:check`.
 4. Validar entorno: `NODE_ENV=prod npm run ops:check`.
 5. Arrancar bot: `pm2 start zycryx-bot`.
 

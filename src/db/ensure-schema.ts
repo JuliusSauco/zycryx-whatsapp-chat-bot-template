@@ -1,32 +1,46 @@
-import {logInfo} from '../lib/logger.js';
 import pg from 'pg';
-import '../core/env.js';
+import {ENV} from '../core/env.js';
+import {logInfo} from '../lib/logger.js';
 
 const {Client} = pg;
+const REQUIRED_SCHEMAS = [
+    'bot_identity', 'bot_economy', 'bot_groups', 'bot_runtime',
+    'bot_content', 'bot_ai', 'bot_audit',
+] as const;
 
-function normalizeIdentifier(value: string, fallback: string): string {
-    return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(value) ? value : fallback;
-}
-
-const schema = normalizeIdentifier(process.env.DB_SCHEMA || 'public', 'public');
-
-const client = new Client(
-    process.env.DATABASE_URL
-        ? {connectionString: process.env.DATABASE_URL}
-        : {
-            host: process.env.DB_HOST || 'localhost',
-            port: Number(process.env.DB_PORT || 5432),
-            database: process.env.DB_NAME || 'zycryx_bot',
-            user: process.env.DB_USER || 'postgres',
-            password: process.env.DB_PASSWORD || '',
-        },
-);
+const client = new Client(ENV.DATABASE_URL
+    ? {connectionString: ENV.DATABASE_URL}
+    : {
+        host: ENV.DB_HOST,
+        port: ENV.DB_PORT,
+        database: ENV.DB_NAME,
+        user: ENV.DB_USER,
+        password: ENV.DB_PASSWORD,
+    });
 
 try {
     await client.connect();
-    await client.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
-    await client.query(`ALTER TABLE IF EXISTS ${schema}.group_settings ADD COLUMN IF NOT EXISTS virustotal BOOLEAN DEFAULT false`);
-    logInfo(`[DB] Schema listo: ${schema}`);
+    const [versionResult, schemasResult] = await Promise.all([
+        client.query<{versionNumber: number}>(
+            `SELECT current_setting('server_version_num')::integer AS "versionNumber"`,
+        ),
+        client.query<{schemaName: string}>(
+            `SELECT schema_name AS "schemaName"
+             FROM information_schema.schemata
+             WHERE schema_name = ANY($1::text[])`,
+            [REQUIRED_SCHEMAS],
+        ),
+    ]);
+    const versionNumber = versionResult.rows[0]?.versionNumber ?? 0;
+    if (versionNumber < 180000) {
+        throw new Error(`PostgreSQL 18 o superior es obligatorio; el servidor reporta ${versionNumber}.`);
+    }
+    const present = new Set(schemasResult.rows.map(row => row.schemaName));
+    const missing = REQUIRED_SCHEMAS.filter(schema => !present.has(schema));
+    if (missing.length) {
+        throw new Error(`Base sin inicializar. Faltan schemas: ${missing.join(', ')}. Ejecuta npm run db:setup.`);
+    }
+    logInfo(`[DB] PostgreSQL ${versionNumber}; schemas normalizados disponibles.`);
 } finally {
     await client.end();
 }

@@ -1,17 +1,19 @@
 import {eq} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
-import {reportes} from '../../db/schema.js';
+import {reportes, usuarios} from '../../db/schema.js';
 import type {ReportRepository} from '../../ports/repositories.js';
 
 export const reportsRepository: ReportRepository = {
     async create({senderId, senderName, message, type}) {
-        await orm.insert(reportes)
-            .values({
+        await orm.transaction(async tx => {
+            await tx.insert(usuarios).values({id: senderId, nombre: senderName}).onConflictDoNothing();
+            await tx.insert(reportes).values({
                 senderId,
                 senderName,
                 mensaje: message,
                 tipo: type,
             });
+        });
     },
 
     async listPending(limit) {

@@ -12,10 +12,18 @@ if (fs.existsSync(envFile)) {
     dotenv.config();
 }
 
-const dbSchema = process.env.DB_SCHEMA || 'public';
+const domainSchemas = [
+    'bot_identity',
+    'bot_economy',
+    'bot_groups',
+    'bot_runtime',
+    'bot_content',
+    'bot_ai',
+    'bot_audit',
+];
 
 function buildConnectionUrl(): string {
-    const searchPath = encodeURIComponent(`-c search_path=${dbSchema}`);
+    const searchPath = encodeURIComponent(`-c search_path=${[...domainSchemas, 'public', 'extensions'].join(',')}`);
     if (process.env.DATABASE_URL) {
         const separator = process.env.DATABASE_URL.includes('?') ? '&' : '?';
         return `${process.env.DATABASE_URL}${separator}options=${searchPath}`;
@@ -33,6 +41,6 @@ export default defineConfig({
     schema: './src/db/schema.ts',
     out: './src/db/migrations',
     dialect: 'postgresql',
-    schemaFilter: [dbSchema],
+    schemaFilter: domainSchemas,
     dbCredentials: {url: buildConnectionUrl()},
 });

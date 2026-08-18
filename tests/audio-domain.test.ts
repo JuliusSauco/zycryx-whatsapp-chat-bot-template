@@ -21,16 +21,16 @@ import {getAudioUrls, normalizeAudioEntry} from '../src/domain/audio-responses.j
 
 {
     const row: AudioResponseRow = {
+        id: '019c0000-0000-7000-8000-000000000001',
         scope: 'global',
         phrase: 'hola',
         regex: '^hola$',
-        audioUrls: ['hola.mp3'],
-        deleted: null,
-        createdAt: null,
-        updatedAt: null,
+        deleted: false,
+        createdAt: new Date(0),
+        updatedAt: new Date(0),
     };
 
-    assert.deepEqual(mapAudioResponseRecord(row), {
+    assert.deepEqual(mapAudioResponseRecord(row, ['hola.mp3']), {
         scope: 'global',
         phrase: 'hola',
         regex: '^hola$',

@@ -1,125 +1,222 @@
 import {sql} from 'drizzle-orm';
-import {bigint, boolean, check, date, index, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, uniqueIndex} from 'drizzle-orm/pg-core';
+import {bigint, boolean, check, customType, date, index, integer, pgSchema, primaryKey, text, timestamp, uniqueIndex, uuid} from 'drizzle-orm/pg-core';
 
-export const usuarios = pgTable('usuarios', {
-    id: text('id').primaryKey(),
-    nombre: text('nombre'),
-    username: text('username'),
-    registered: boolean('registered').default(false),
-    num: text('num'),
-    lid: text('lid').unique(),
-    banned: boolean('banned').default(false),
-    razonBan: text('razon_ban'),
-    avisosBan: integer('avisos_ban').default(0),
-    warnPv: boolean('warn_pv').default(false),
-    warn: integer('warn').default(0),
-    warnAntiporn: integer('warn_antiporn').default(0),
-    warnEstado: integer('warn_estado').default(0),
-    edad: integer('edad'),
-    gender: text('gender'),
-    birthday: date('birthday'),
-    level: integer('level').default(0),
-    role: text('role').notNull().default('novato'),
-    roleDescription: text('role_description'),
-    regTime: timestamp('reg_time'),
-    serialNumber: text('serial_number'),
-    stickerPackname: text('sticker_packname'),
-    stickerAuthor: text('sticker_author'),
-    ryTime: bigint('ry_time', {mode: 'number'}).default(0),
-    lastwork: bigint('lastwork', {mode: 'number'}).default(0),
-    lastmiming: bigint('lastmiming', {mode: 'number'}).default(0),
-    lastclaim: bigint('lastclaim', {mode: 'number'}).default(0),
-    dailystreak: bigint('dailystreak', {mode: 'number'}).default(0),
-    lastcofre: bigint('lastcofre', {mode: 'number'}).default(0),
-    lastrob: bigint('lastrob', {mode: 'number'}).default(0),
-    robDailyCount: integer('rob_daily_count').notNull().default(0),
-    robDay: date('rob_day'),
-    lastslut: bigint('lastslut', {mode: 'number'}).default(0),
-    timevot: bigint('timevot', {mode: 'number'}).default(0),
-    wait: bigint('wait', {mode: 'number'}).default(0),
-    crime: bigint('crime', {mode: 'number'}).default(0),
-    marry: text('marry'),
-    marryRequest: text('marry_request'),
+export const botIdentitySchema = pgSchema('bot_identity');
+export const botEconomySchema = pgSchema('bot_economy');
+export const botGroupsSchema = pgSchema('bot_groups');
+export const botRuntimeSchema = pgSchema('bot_runtime');
+export const botContentSchema = pgSchema('bot_content');
+export const botAiSchema = pgSchema('bot_ai');
+export const botAuditSchema = pgSchema('bot_audit');
+
+const timestampRange = customType<{data: string; driverData: string}>({
+    dataType: () => 'tstzrange',
 });
 
-export const userWallets = pgTable('user_wallets', {
-    userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
-    limite: integer('limite').notNull().default(10),
-    exp: integer('exp').notNull().default(0),
-    coins: integer('coins').notNull().default(100),
-    botcoin: integer('botcoin').notNull().default(0),
-    zyxcoin: integer('zyxcoin').notNull().default(0),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+export const usuarios = botIdentitySchema.table('users', {
+    id: text('id').primaryKey(),
+    nombre: text('nombre'),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+});
+
+export const userIdentities = botIdentitySchema.table('user_identities', {
+    userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    identityType: text('identity_type').notNull(),
+    identityValue: text('identity_value').notNull(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
 }, table => ({
-    limiteNonNegative: check('user_wallets_limite_non_negative', sql`${table.limite} >= 0`),
-    expNonNegative: check('user_wallets_exp_non_negative', sql`${table.exp} >= 0`),
-    coinsNonNegative: check('user_wallets_coins_non_negative', sql`${table.coins} >= 0`),
-    botcoinNonNegative: check('user_wallets_botcoin_non_negative', sql`${table.botcoin} >= 0`),
-    zyxcoinNonNegative: check('user_wallets_zyxcoin_non_negative', sql`${table.zyxcoin} >= 0`),
+    pk: primaryKey({columns: [table.userId, table.identityType]}),
+    typeValueUnique: uniqueIndex('user_identities_type_value_uidx').on(table.identityType, table.identityValue),
+    typeCheck: check('user_identities_type_check', sql`${table.identityType} in ('phone', 'lid', 'username')`),
 }));
 
-export const walletTransactions = pgTable('wallet_transactions', {
-    id: bigint('id', {mode: 'number'}).primaryKey().generatedAlwaysAsIdentity(),
+export const userProfiles = botIdentitySchema.table('user_profiles', {
+    userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
+    gender: text('gender'),
+    birthday: date('birthday'),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+});
+
+export const userRegistrations = botIdentitySchema.table('user_registrations', {
+    userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
+    serialNumber: text('serial_number').notNull().unique(),
+    registeredAt: timestamp('registered_at', {withTimezone: true}).notNull().defaultNow(),
+});
+
+export const userBans = botIdentitySchema.table('user_bans', {
+    userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
+    reason: text('reason'),
+    noticeCount: integer('notice_count').notNull().default(0),
+    bannedAt: timestamp('banned_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    noticeNonNegative: check('user_bans_notice_non_negative', sql`${table.noticeCount} >= 0`),
+}));
+
+export const userWarnings = botIdentitySchema.table('user_warnings', {
     userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
-    resource: text('resource').notNull(),
-    amount: integer('amount').notNull(),
-    balanceAfter: integer('balance_after').notNull(),
+    warningType: text('warning_type').notNull(),
+    count: integer('count').notNull().default(0),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    pk: primaryKey({columns: [table.userId, table.warningType]}),
+    countNonNegative: check('user_warnings_count_non_negative', sql`${table.count} >= 0`),
+    typeCheck: check('user_warnings_type_check', sql`${table.warningType} in ('general', 'antiporn', 'status')`),
+}));
+
+export const userPrivateChatStates = botIdentitySchema.table('user_private_chat_states', {
+    userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
+    warned: boolean('warned').notNull().default(false),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+});
+
+export const userProgress = botIdentitySchema.table('user_progress', {
+    userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
+    level: integer('level').notNull().default(0),
+    role: text('role').notNull().default('novato'),
+    roleDescription: text('role_description'),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    levelNonNegative: check('user_progress_level_non_negative', sql`${table.level} >= 0`),
+}));
+
+export const userStickerPreferences = botIdentitySchema.table('user_sticker_preferences', {
+    userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
+    packname: text('packname').notNull(),
+    author: text('author'),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+});
+
+export const userCooldowns = botIdentitySchema.table('user_cooldowns', {
+    userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    action: text('action').notNull(),
+    lastUsedAt: timestamp('last_used_at', {withTimezone: true}).notNull(),
+}, table => ({
+    pk: primaryKey({columns: [table.userId, table.action]}),
+    actionIdx: index('user_cooldowns_action_idx').on(table.action, table.lastUsedAt),
+}));
+
+export const userDailyRewards = botIdentitySchema.table('user_daily_rewards', {
+    userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
+    streak: integer('streak').notNull().default(0),
+}, table => ({
+    streakNonNegative: check('user_daily_rewards_streak_non_negative', sql`${table.streak} >= 0`),
+}));
+
+export const userRobberyStates = botIdentitySchema.table('user_robbery_states', {
+    userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
+    activityDay: date('activity_day'),
+    dailyCount: integer('daily_count').notNull().default(0),
+}, table => ({
+    countNonNegative: check('user_robbery_states_count_non_negative', sql`${table.dailyCount} >= 0`),
+}));
+
+export const marriages = botIdentitySchema.table('marriages', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+});
+
+export const marriageMembers = botIdentitySchema.table('marriage_members', {
+    marriageId: uuid('marriage_id').notNull().references(() => marriages.id, {onDelete: 'cascade'}),
+    userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
+}, table => ({
+    marriageIdx: index('marriage_members_marriage_idx').on(table.marriageId),
+}));
+
+export const marriageRequests = botIdentitySchema.table('marriage_requests', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
+    requesterId: text('requester_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    recipientId: text('recipient_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    status: text('status').notNull().default('pending'),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    resolvedAt: timestamp('resolved_at', {withTimezone: true}),
+    validDuring: timestampRange('valid_during').generatedAlwaysAs(
+        sql`tstzrange("created_at", COALESCE("resolved_at", 'infinity'::timestamptz), '[)')`,
+    ),
+}, table => ({
+    statusCheck: check('marriage_requests_status_check', sql`${table.status} in ('pending', 'accepted', 'rejected', 'cancelled')`),
+    differentUsers: check('marriage_requests_different_users', sql`${table.requesterId} <> ${table.recipientId}`),
+    recipientStatusIdx: index('marriage_requests_recipient_status_idx').on(table.recipientId, table.status),
+}));
+
+export const economyResources = botEconomySchema.table('resources', {
+    code: text('code').primaryKey(),
+    category: text('category').notNull(),
+    defaultWalletBalance: bigint('default_wallet_balance', {mode: 'number'}).notNull().default(0),
+    walletEnabled: boolean('wallet_enabled').notNull().default(true),
+    bankEnabled: boolean('bank_enabled').notNull().default(false),
+    transferable: boolean('transferable').notNull().default(false),
+}, table => ({
+    categoryCheck: check('resources_category_check', sql`${table.category} in ('currency', 'experience', 'quota')`),
+    defaultNonNegative: check('resources_default_non_negative', sql`${table.defaultWalletBalance} >= 0`),
+}));
+
+export const financialAccounts = botEconomySchema.table('financial_accounts', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
+    userId: text('user_id').references(() => usuarios.id, {onDelete: 'cascade'}),
+    accountType: text('account_type').notNull(),
+    status: text('status').notNull().default('active'),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    userTypeUnique: uniqueIndex('financial_accounts_user_type_uidx').on(table.userId, table.accountType),
+    oneReserve: uniqueIndex('financial_accounts_one_reserve_uidx').on(table.accountType)
+        .where(sql`${table.userId} IS NULL AND ${table.accountType} = 'reserve'`),
+    accountTypeCheck: check('financial_accounts_type_check', sql`${table.accountType} in ('wallet', 'bank', 'reserve')`),
+    statusCheck: check('financial_accounts_status_check', sql`${table.status} in ('active', 'frozen', 'closed')`),
+    ownerCheck: check('financial_accounts_owner_check', sql`(${table.accountType} = 'reserve' AND ${table.userId} IS NULL) OR (${table.accountType} <> 'reserve' AND ${table.userId} IS NOT NULL)`),
+}));
+
+export const accountBalances = botEconomySchema.table('account_balances', {
+    accountId: uuid('account_id').notNull().references(() => financialAccounts.id, {onDelete: 'cascade'}),
+    resourceCode: text('resource_code').notNull().references(() => economyResources.code, {onDelete: 'restrict'}),
+    balance: bigint('balance', {mode: 'number'}).notNull().default(0),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    pk: primaryKey({columns: [table.accountId, table.resourceCode]}),
+    balanceNonNegative: check('account_balances_non_negative', sql`${table.balance} >= 0`),
+}));
+
+export const financialOperations = botEconomySchema.table('financial_operations', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
+    externalId: text('external_id').unique(),
     reason: text('reason').notNull(),
     operation: text('operation'),
-    operationId: text('operation_id'),
+    actorId: text('actor_id').references(() => usuarios.id, {onDelete: 'set null'}),
     counterpartyId: text('counterparty_id').references(() => usuarios.id, {onDelete: 'set null'}),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+});
+
+export const ledgerEntries = botEconomySchema.table('ledger_entries', {
+    id: bigint('id', {mode: 'number'}).primaryKey().generatedAlwaysAsIdentity(),
+    operationId: uuid('operation_id').notNull().references(() => financialOperations.id, {onDelete: 'cascade'}),
+    accountId: uuid('account_id').notNull().references(() => financialAccounts.id, {onDelete: 'restrict'}),
+    resourceCode: text('resource_code').notNull().references(() => economyResources.code, {onDelete: 'restrict'}),
+    amount: bigint('amount', {mode: 'number'}).notNull(),
+    balanceAfter: bigint('balance_after', {mode: 'number'}).notNull(),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
 }, table => ({
-    userCreatedAtIdx: index('wallet_transactions_user_created_at_idx').on(table.userId, table.createdAt),
-    operationIdx: index('wallet_transactions_operation_idx').on(table.operationId),
-    resourceCheck: check('wallet_transactions_resource_check', sql`${table.resource} in ('limite', 'exp', 'coins', 'botcoin', 'zyxcoin')`),
-    balanceNonNegative: check('wallet_transactions_balance_non_negative', sql`${table.balanceAfter} >= 0`),
+    accountCreatedIdx: index('ledger_entries_account_created_idx').on(table.accountId, table.createdAt),
+    operationIdx: index('ledger_entries_operation_idx').on(table.operationId),
+    balanceNonNegative: check('ledger_entries_balance_non_negative', sql`${table.balanceAfter} >= 0`),
+    amountNonZero: check('ledger_entries_amount_non_zero', sql`${table.amount} <> 0`),
 }));
 
-export const userBankAccounts = pgTable('user_bank_accounts', {
-    userId: text('user_id').primaryKey().references(() => usuarios.id, {onDelete: 'cascade'}),
-    limite: integer('limite').notNull().default(0),
-    coins: integer('coins').notNull().default(0),
-    botcoin: integer('botcoin').notNull().default(0),
-    zyxcoin: integer('zyxcoin').notNull().default(0),
-    status: text('status').notNull().default('active'),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
-}, table => ({
-    limiteNonNegative: check('user_bank_accounts_limite_non_negative', sql`${table.limite} >= 0`),
-    coinsNonNegative: check('user_bank_accounts_coins_non_negative', sql`${table.coins} >= 0`),
-    botcoinNonNegative: check('user_bank_accounts_botcoin_non_negative', sql`${table.botcoin} >= 0`),
-    zyxcoinNonNegative: check('user_bank_accounts_zyxcoin_non_negative', sql`${table.zyxcoin} >= 0`),
-    statusCheck: check('user_bank_accounts_status_check', sql`${table.status} in ('active', 'frozen', 'closed')`),
-}));
-
-export const bankReserves = pgTable('bank_reserves', {
-    resource: text('resource').primaryKey(),
-    balance: bigint('balance', {mode: 'number'}).notNull().default(0),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
-}, table => ({
-    resourceCheck: check('bank_reserves_resource_check', sql`${table.resource} in ('limite', 'coins', 'botcoin', 'zyxcoin')`),
-    balanceNonNegative: check('bank_reserves_balance_non_negative', sql`${table.balance} >= 0`),
-}));
-
-export const bankExchangeRates = pgTable('bank_exchange_rates', {
-    sourceResource: text('source_resource').notNull(),
-    targetResource: text('target_resource').notNull(),
+export const bankExchangeRates = botEconomySchema.table('bank_exchange_rates', {
+    sourceResource: text('source_resource').notNull().references(() => economyResources.code, {onDelete: 'cascade'}),
+    targetResource: text('target_resource').notNull().references(() => economyResources.code, {onDelete: 'cascade'}),
     sourceAmount: integer('source_amount').notNull(),
     targetAmount: integer('target_amount').notNull().default(1),
     active: boolean('active').notNull().default(true),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
 }, table => ({
     pk: primaryKey({columns: [table.sourceResource, table.targetResource]}),
-    sourceCheck: check('bank_exchange_rates_source_check', sql`${table.sourceResource} in ('limite', 'exp', 'coins', 'botcoin', 'zyxcoin')`),
-    targetCheck: check('bank_exchange_rates_target_check', sql`${table.targetResource} in ('limite', 'coins', 'botcoin', 'zyxcoin')`),
     amountCheck: check('bank_exchange_rates_amount_check', sql`${table.sourceAmount} > 0 and ${table.targetAmount} > 0`),
     pairCheck: check('bank_exchange_rates_pair_check', sql`${table.sourceResource} <> ${table.targetResource}`),
 }));
 
-export const bankLoans = pgTable('bank_loans', {
+export const bankLoans = botEconomySchema.table('bank_loans', {
     id: bigint('id', {mode: 'number'}).primaryKey().generatedAlwaysAsIdentity(),
     userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
     principal: integer('principal').notNull(),
@@ -127,11 +224,11 @@ export const bankLoans = pgTable('bank_loans', {
     principalOutstanding: integer('principal_outstanding').notNull(),
     interestOutstanding: integer('interest_outstanding').notNull(),
     status: text('status').notNull().default('active'),
-    issuedAt: timestamp('issued_at').notNull().defaultNow(),
-    dueAt: timestamp('due_at').notNull(),
-    defaultAt: timestamp('default_at').notNull(),
-    paidAt: timestamp('paid_at'),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    issuedAt: timestamp('issued_at', {withTimezone: true}).notNull().defaultNow(),
+    dueAt: timestamp('due_at', {withTimezone: true}).notNull(),
+    defaultAt: timestamp('default_at', {withTimezone: true}).notNull(),
+    paidAt: timestamp('paid_at', {withTimezone: true}),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
 }, table => ({
     userStatusIdx: index('bank_loans_user_status_idx').on(table.userId, table.status),
     dueStatusIdx: index('bank_loans_due_status_idx').on(table.status, table.dueAt),
@@ -142,123 +239,134 @@ export const bankLoans = pgTable('bank_loans', {
     paidCheck: check('bank_loans_paid_check', sql`${table.status} <> 'paid' or (${table.principalOutstanding} = 0 and ${table.interestOutstanding} = 0)`),
 }));
 
-export const bankTransactions = pgTable('bank_transactions', {
-    id: bigint('id', {mode: 'number'}).primaryKey().generatedAlwaysAsIdentity(),
-    userId: text('user_id').references(() => usuarios.id, {onDelete: 'set null'}),
-    actorId: text('actor_id').references(() => usuarios.id, {onDelete: 'set null'}),
-    resource: text('resource').notNull(),
-    type: text('type').notNull(),
-    amount: bigint('amount', {mode: 'number'}).notNull(),
-    balanceAfter: bigint('balance_after', {mode: 'number'}).notNull(),
-    operationId: text('operation_id').notNull(),
-    loanId: bigint('loan_id', {mode: 'number'}).references(() => bankLoans.id, {onDelete: 'set null'}),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-}, table => ({
-    userCreatedAtIdx: index('bank_transactions_user_created_at_idx').on(table.userId, table.createdAt),
-    operationIdx: index('bank_transactions_operation_idx').on(table.operationId),
-    resourceCheck: check('bank_transactions_resource_check', sql`${table.resource} in ('limite', 'coins', 'botcoin', 'zyxcoin')`),
-    balanceNonNegative: check('bank_transactions_balance_non_negative', sql`${table.balanceAfter} >= 0`),
-}));
-
-export const bankLoanPayments = pgTable('bank_loan_payments', {
+export const bankLoanPayments = botEconomySchema.table('bank_loan_payments', {
     id: bigint('id', {mode: 'number'}).primaryKey().generatedAlwaysAsIdentity(),
     loanId: bigint('loan_id', {mode: 'number'}).notNull().references(() => bankLoans.id, {onDelete: 'cascade'}),
     amount: integer('amount').notNull(),
     principalPaid: integer('principal_paid').notNull(),
     interestPaid: integer('interest_paid').notNull(),
-    walletTransactionId: bigint('wallet_transaction_id', {mode: 'number'}).notNull().references(() => walletTransactions.id),
-    bankTransactionId: bigint('bank_transaction_id', {mode: 'number'}).notNull().references(() => bankTransactions.id),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
+    walletLedgerEntryId: bigint('wallet_ledger_entry_id', {mode: 'number'}).notNull().references(() => ledgerEntries.id),
+    reserveLedgerEntryId: bigint('reserve_ledger_entry_id', {mode: 'number'}).notNull().references(() => ledgerEntries.id),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
 }, table => ({
     loanCreatedAtIdx: index('bank_loan_payments_loan_created_at_idx').on(table.loanId, table.createdAt),
     amountCheck: check('bank_loan_payments_amount_check', sql`${table.amount} > 0 and ${table.principalPaid} >= 0 and ${table.interestPaid} >= 0 and ${table.amount} = ${table.principalPaid} + ${table.interestPaid}`),
 }));
 
-export const commandResourceReservations = pgTable('command_resource_reservations', {
+export const commandResourceReservations = botEconomySchema.table('command_resource_reservations', {
     id: text('id').primaryKey(),
-    userId: text('user_id').notNull(),
+    userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
     pluginId: text('plugin_id').notNull(),
     messageId: text('message_id').notNull(),
-    limitAmount: integer('limit_amount').notNull().default(0),
-    coinsAmount: integer('coins_amount').notNull().default(0),
-    alternativeCoinsAmount: integer('alternative_coins_amount').notNull().default(0),
     paymentResource: text('payment_resource').notNull().default('none'),
     requiredLevel: integer('required_level').notNull().default(0),
     status: text('status').notNull().default('pending'),
     releaseReason: text('release_reason'),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
-    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+    expiresAt: timestamp('expires_at', {withTimezone: true}).notNull(),
 }, table => ({
     pendingExpiryIdx: index('command_resource_reservations_pending_expiry_idx').on(table.status, table.expiresAt),
     userIdx: index('command_resource_reservations_user_idx').on(table.userId),
-    alternativeCoinsNonNegative: check('command_resource_reservations_alternative_coins_non_negative', sql`${table.alternativeCoinsAmount} >= 0`),
     paymentResourceCheck: check('command_resource_reservations_payment_resource_check', sql`${table.paymentResource} in ('limite', 'coins', 'mixed', 'none')`),
+    statusCheck: check('command_resource_reservations_status_check', sql`${table.status} in ('pending', 'committed', 'released')`),
+    levelNonNegative: check('command_resource_reservations_level_non_negative', sql`${table.requiredLevel} >= 0`),
+    releaseStateCheck: check('command_resource_reservations_release_state_check', sql`(${table.status} = 'released' AND ${table.releaseReason} IS NOT NULL) OR (${table.status} <> 'released' AND ${table.releaseReason} IS NULL)`),
 }));
 
-export const groupSettings = pgTable('group_settings', {
+export const commandReservationItems = botEconomySchema.table('command_reservation_items', {
+    reservationId: text('reservation_id').notNull().references(() => commandResourceReservations.id, {onDelete: 'cascade'}),
+    resourceCode: text('resource_code').notNull().references(() => economyResources.code, {onDelete: 'restrict'}),
+    itemType: text('item_type').notNull().default('charged'),
+    amount: bigint('amount', {mode: 'number'}).notNull(),
+}, table => ({
+    pk: primaryKey({columns: [table.reservationId, table.resourceCode, table.itemType]}),
+    amountPositive: check('command_reservation_items_amount_positive', sql`${table.amount} > 0`),
+    itemTypeCheck: check('command_reservation_items_type_check', sql`${table.itemType} in ('charged', 'alternative')`),
+}));
+
+export const groupSettings = botGroupsSchema.table('group_settings', {
     groupId: text('group_id').primaryKey(),
-    welcomeConfigId: serial('welcome_config_id'),
-    welcome: boolean('welcome').default(true),
-    detect: boolean('detect').default(true),
-    antifake: boolean('antifake').default(false),
-    antilink: boolean('antilink').default(false),
-    antilink2: boolean('antilink2').default(false),
-    virusTotal: boolean('virustotal').default(false),
-    autoresponder: boolean('autoresponder').default(true),
-    autoresponderMode: text('autoresponder_mode').default('all'),
-    autoresponderTrigger: text('autoresponder_trigger').default('mention'),
-    gamesAccessMode: text('games_access_mode').default('all'),
-    toolsAccessMode: text('tools_access_mode').default('all'),
-    rpgAccessMode: text('rpg_access_mode').default('all'),
-    downloadsAccessMode: text('downloads_access_mode').default('all'),
-    searchAccessMode: text('search_access_mode').default('all'),
-    stickersAccessMode: text('stickers_access_mode').default('all'),
-    convertersAccessMode: text('converters_access_mode').default('all'),
-    funAccessMode: text('fun_access_mode').default('all'),
-    modohorny: boolean('modohorny').default(false),
-    nsfwAccessMode: text('nsfw_access_mode').default('owner'),
-    nsfwGifEnabled: boolean('nsfw_gif_enabled').default(false),
-    nsfwGifAccessMode: text('nsfw_gif_access_mode').default('owner'),
-    audios: boolean('audios').default(false),
-    antiStatus: boolean('antistatus').default(false),
-    modoadmin: boolean('modoadmin').default(false),
-    photowelcome: boolean('photowelcome').default(true),
-    welcomeRegisteredBy: text('welcome_registered_by'),
-    welcomeHidetag: boolean('welcome_hidetag').default(false),
-    welcomeHidetagMode: text('welcome_hidetag_mode').default('off'),
-    welcomeGroupPhoto: boolean('welcome_group_photo').default(false),
-    bye: boolean('bye').default(true),
-    byeConfigId: serial('bye_config_id'),
-    byeRegisteredBy: text('bye_registered_by'),
-    byeHidetag: boolean('bye_hidetag').default(false),
-    byeHidetagMode: text('bye_hidetag_mode').default('off'),
-    byeGroupPhoto: boolean('bye_group_photo').default(false),
-    photobye: boolean('photobye').default(true),
-    autolevelup: boolean('autolevelup').default(true),
-    antiporn: boolean('antiporn').default(false),
-    nsfwHorario: text('nsfw_horario'),
-    sWelcome: text('swelcome'),
-    sBye: text('sbye'),
-    sPromote: text('spromote'),
-    sDemote: text('sdemote'),
-    sAutorespond: text('sautorespond'),
-    banned: boolean('banned').default(false),
-    expired: bigint('expired', {mode: 'number'}).default(0),
-    memoryTtl: integer('memory_ttl').default(86400),
+    banned: boolean('banned').notNull().default(false),
+    expiresAt: timestamp('expires_at', {withTimezone: true}),
     primaryBot: text('primary_bot'),
-    autoAcceptMode: text('autoaccept_mode').default('off'),
-    botAccessMode: text('bot_access_mode').default('all'),
-    messageLogging: boolean('message_logging').default(false),
+    autoAcceptMode: text('autoaccept_mode').notNull().default('off'),
+    botAccessMode: text('bot_access_mode').notNull().default('all'),
+    messageLogging: boolean('message_logging').notNull().default(false),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    autoAcceptModeCheck: check('group_settings_autoaccept_mode_check', sql`${table.autoAcceptMode} in ('off', 'on', 'on_hidetag_admin', 'on_hidetag_all', 'off_hidetag_admin', 'off_hidetag_all')`),
+    botAccessModeCheck: check('group_settings_bot_access_mode_check', sql`${table.botAccessMode} in ('all', 'admin', 'superadmin', 'owner')`),
+}));
+
+export const groupModerationSettings = botGroupsSchema.table('group_moderation_settings', {
+    groupId: text('group_id').primaryKey().references(() => groupSettings.groupId, {onDelete: 'cascade'}),
+    detect: boolean('detect').notNull().default(true),
+    antifake: boolean('antifake').notNull().default(false),
+    antilink: boolean('antilink').notNull().default(false),
+    antilink2: boolean('antilink2').notNull().default(false),
+    virusTotal: boolean('virustotal').notNull().default(false),
+    antiStatus: boolean('antistatus').notNull().default(false),
+    antiporn: boolean('antiporn').notNull().default(false),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
 });
 
-export const groupCommandAccessRules = pgTable('group_command_access_rules', {
-    groupId: text('group_id').notNull(),
+export const groupGreetings = botGroupsSchema.table('group_greetings', {
+    groupId: text('group_id').notNull().references(() => groupSettings.groupId, {onDelete: 'cascade'}),
+    eventType: text('event_type').notNull(),
+    enabled: boolean('enabled').notNull().default(true),
+    messageTemplate: text('message_template'),
+    photoEnabled: boolean('photo_enabled').notNull().default(true),
+    hidetagMode: text('hidetag_mode').notNull().default('off'),
+    useGroupPhoto: boolean('use_group_photo').notNull().default(false),
+    registeredBy: text('registered_by').references(() => usuarios.id, {onDelete: 'set null'}),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    pk: primaryKey({columns: [table.groupId, table.eventType]}),
+    eventTypeCheck: check('group_greetings_event_type_check', sql`${table.eventType} in ('welcome', 'bye', 'promote', 'demote')`),
+    hidetagModeCheck: check('group_greetings_hidetag_mode_check', sql`${table.hidetagMode} in ('off', 'admin', 'all')`),
+}));
+
+export const groupAutoresponderSettings = botGroupsSchema.table('group_autoresponder_settings', {
+    groupId: text('group_id').primaryKey().references(() => groupSettings.groupId, {onDelete: 'cascade'}),
+    enabled: boolean('enabled').notNull().default(true),
+    accessMode: text('access_mode').notNull().default('all'),
+    trigger: text('trigger').notNull().default('mention'),
+    prompt: text('prompt'),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    accessModeCheck: check('group_autoresponder_access_mode_check', sql`${table.accessMode} in ('all', 'admin', 'superadmin', 'owner')`),
+    triggerCheck: check('group_autoresponder_trigger_check', sql`${table.trigger} in ('mention', 'all')`),
+}));
+
+export const groupNsfwSettings = botGroupsSchema.table('group_nsfw_settings', {
+    groupId: text('group_id').primaryKey().references(() => groupSettings.groupId, {onDelete: 'cascade'}),
+    schedule: text('schedule'),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+});
+
+export const groupMemorySettings = botGroupsSchema.table('group_memory_settings', {
+    groupId: text('group_id').primaryKey().references(() => groupSettings.groupId, {onDelete: 'cascade'}),
+    ttlSeconds: integer('ttl_seconds').notNull().default(86400),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    ttlNonNegative: check('group_memory_settings_ttl_non_negative', sql`${table.ttlSeconds} >= 0`),
+}));
+
+export const groupRpgSettings = botGroupsSchema.table('group_rpg_settings', {
+    groupId: text('group_id').primaryKey().references(() => groupSettings.groupId, {onDelete: 'cascade'}),
+    autoLevelUp: boolean('auto_level_up').notNull().default(true),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+});
+
+export const groupCommandAccessRules = botGroupsSchema.table('group_command_access_rules', {
+    groupId: text('group_id').notNull().references(() => groupSettings.groupId, {onDelete: 'cascade'}),
     scope: text('scope').notNull(),
     target: text('target').notNull(),
     enabled: boolean('enabled').notNull().default(true),
     accessMode: text('access_mode').notNull().default('all'),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
 }, table => ({
     pk: primaryKey({columns: [table.groupId, table.scope, table.target]}),
     groupScopeIdx: index('group_command_access_rules_group_scope_idx').on(table.groupId, table.scope),
@@ -266,132 +374,222 @@ export const groupCommandAccessRules = pgTable('group_command_access_rules', {
     accessModeCheck: check('group_command_access_rules_access_mode_check', sql`${table.accessMode} in ('all', 'admin', 'superadmin', 'owner')`),
 }));
 
-export const groupCensoredUsers = pgTable('group_censored_users', {
-    groupId: text('group_id').notNull(),
-    userId: text('user_id').notNull(),
-    userLid: text('user_lid'),
-    censoredBy: text('censored_by').notNull(),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
+export const groupCensoredUsers = botGroupsSchema.table('group_censored_users', {
+    groupId: text('group_id').notNull().references(() => groupSettings.groupId, {onDelete: 'cascade'}),
+    userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    censoredBy: text('censored_by').notNull().references(() => usuarios.id, {onDelete: 'restrict'}),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
 }, table => ({
     pk: primaryKey({columns: [table.groupId, table.userId]}),
-    groupLidIdx: index('group_censored_users_group_lid_idx').on(table.groupId, table.userLid),
 }));
 
-export const chats = pgTable('chats', {
+export const chats = botGroupsSchema.table('chats', {
     id: text('id').primaryKey(),
-    isGroup: boolean('is_group').default(true),
-    timestamp: bigint('timestamp', {mode: 'number'}),
-    isActive: boolean('is_active').default(true),
-    botId: text('bot_id'),
-    joined: boolean('joined').default(true),
+    isGroup: boolean('is_group').notNull().default(true),
+    lastActivityAt: timestamp('last_activity_at', {withTimezone: true}),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
 });
 
-export const messages = pgTable('messages', {
-    userId: text('user_id').notNull(),
-    groupId: text('group_id').notNull(),
-    messageCount: integer('message_count').default(0),
-    lastMessageAt: timestamp('last_message_at').defaultNow(),
+export const messages = botGroupsSchema.table('user_group_activity_counters', {
+    userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    groupId: text('group_id').notNull().references(() => chats.id, {onDelete: 'cascade'}),
+    messageCount: integer('message_count').notNull().default(0),
+    lastMessageAt: timestamp('last_message_at', {withTimezone: true}).notNull().defaultNow(),
 }, table => ({
     pk: primaryKey({columns: [table.userId, table.groupId]}),
+    countNonNegative: check('user_group_activity_count_non_negative', sql`${table.messageCount} >= 0`),
 }));
 
-export const userGroupRoles = pgTable('user_group_roles', {
-    groupId: text('group_id').notNull(),
-    userId: text('user_id').notNull(),
+export const userGroupRoles = botGroupsSchema.table('user_group_roles', {
+    groupId: text('group_id').notNull().references(() => groupSettings.groupId, {onDelete: 'cascade'}),
+    userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
     role: text('role').notNull(),
     roleDescription: text('role_description'),
-    updatedBy: text('updated_by'),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    updatedBy: text('updated_by').references(() => usuarios.id, {onDelete: 'set null'}),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
 }, table => ({
     pk: primaryKey({columns: [table.groupId, table.userId]}),
     groupIdx: index('user_group_roles_group_idx').on(table.groupId),
     userIdx: index('user_group_roles_user_idx').on(table.userId),
 }));
 
-export const messageLogs = pgTable('message_logs', {
-    id: serial('id').primaryKey(),
+export const messageLogs = botAuditSchema.table('message_logs', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
     groupId: text('group_id').notNull(),
-    userId: text('user_id').notNull(),
+    userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
     messageId: text('message_id').notNull(),
     messageText: text('message_text').notNull(),
     messageType: text('message_type').notNull(),
-    isReply: boolean('is_reply').default(false),
+    isReply: boolean('is_reply').notNull().default(false),
     replyToMessageId: text('reply_to_message_id'),
-    isDeleted: boolean('is_deleted').default(false),
-    deletedAt: timestamp('deleted_at'),
-    deletedBy: text('deleted_by'),
-    deletedByLid: text('deleted_by_lid'),
-    createdAt: timestamp('created_at').defaultNow(),
+    isDeleted: boolean('is_deleted').notNull().default(false),
+    deletedAt: timestamp('deleted_at', {withTimezone: true}),
+    deletedBy: text('deleted_by').references(() => usuarios.id, {onDelete: 'set null'}),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
 }, table => ({
     groupCreatedAtIdx: index('message_logs_group_created_at_idx').on(table.groupId, table.createdAt),
     groupMessageIdIdx: index('message_logs_group_message_id_idx').on(table.groupId, table.messageId),
+    groupMessageUnique: uniqueIndex('message_logs_group_message_uidx').on(table.groupId, table.messageId),
     userIdx: index('message_logs_user_idx').on(table.userId),
 }));
 
-export const subbots = pgTable('subbots', {
+export const subbots = botRuntimeSchema.table('subbots', {
     id: text('id').primaryKey(),
-    tipo: text('tipo').default('null'),
+    tipo: text('tipo').notNull().default('null'),
     name: text('name'),
     logoUrl: text('logo_url'),
-    prefix: text('prefix').array().default(sql`ARRAY['/', '.', '#']::text[]`),
-    mode: text('mode').default('public'),
-    owners: text('owners').array(),
-    antiPrivate: boolean('anti_private').default(false),
-    antiCall: boolean('anti_call').default(true),
-    privacy: boolean('privacy').default(false),
-    prestar: boolean('prestar').default(false),
-});
+    mode: text('mode').notNull().default('public'),
+    antiPrivate: boolean('anti_private').notNull().default(false),
+    antiCall: boolean('anti_call').notNull().default(true),
+    privacy: boolean('privacy').notNull().default(false),
+    prestar: boolean('prestar').notNull().default(false),
+}, table => ({
+    modeCheck: check('subbots_mode_check', sql`${table.mode} in ('public', 'private')`),
+}));
 
-export const characters = pgTable('characters', {
-    id: serial('id').primaryKey(),
+export const subbotPrefixes = botRuntimeSchema.table('subbot_prefixes', {
+    botId: text('bot_id').notNull().references(() => subbots.id, {onDelete: 'cascade'}),
+    prefix: text('prefix').notNull(),
+    position: integer('position').notNull(),
+}, table => ({
+    pk: primaryKey({columns: [table.botId, table.prefix]}),
+    botPositionUnique: uniqueIndex('subbot_prefixes_bot_position_uidx').on(table.botId, table.position),
+    positionNonNegative: check('subbot_prefixes_position_non_negative', sql`${table.position} >= 0`),
+}));
+
+export const subbotOwners = botRuntimeSchema.table('subbot_owners', {
+    botId: text('bot_id').notNull().references(() => subbots.id, {onDelete: 'cascade'}),
+    ownerId: text('owner_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    position: integer('position').notNull(),
+}, table => ({
+    pk: primaryKey({columns: [table.botId, table.ownerId]}),
+    botPositionUnique: uniqueIndex('subbot_owners_bot_position_uidx').on(table.botId, table.position),
+    positionNonNegative: check('subbot_owners_position_non_negative', sql`${table.position} >= 0`),
+}));
+
+export const botChatMemberships = botRuntimeSchema.table('bot_chat_memberships', {
+    botId: text('bot_id').notNull().references(() => subbots.id, {onDelete: 'cascade'}),
+    chatId: text('chat_id').notNull().references(() => chats.id, {onDelete: 'cascade'}),
+    joined: boolean('joined').notNull().default(true),
+    joinedAt: timestamp('joined_at', {withTimezone: true}).notNull().defaultNow(),
+    leftAt: timestamp('left_at', {withTimezone: true}),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    pk: primaryKey({columns: [table.botId, table.chatId]}),
+    botJoinedIdx: index('bot_chat_memberships_bot_joined_idx').on(table.botId, table.joined),
+    stateCheck: check('bot_chat_memberships_state_check', sql`(${table.joined} AND ${table.leftAt} IS NULL) OR (NOT ${table.joined} AND ${table.leftAt} IS NOT NULL)`),
+}));
+
+export const characters = botContentSchema.table('characters', {
+    id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
     name: text('name').notNull(),
     url: text('url').notNull(),
     tipo: text('tipo'),
     anime: text('anime'),
     rareza: text('rareza'),
-    price: integer('price').notNull(),
-    previousPrice: integer('previous_price'),
-    claimedBy: text('claimed_by'),
-    forSale: boolean('for_sale').default(false),
-    seller: text('seller'),
-    votes: integer('votes').default(0),
-    lastRemovedTime: bigint('last_removed_time', {mode: 'number'}),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    urlUnique: uniqueIndex('characters_url_uidx').on(table.url),
+}));
+
+export const characterOwnerships = botContentSchema.table('character_ownerships', {
+    characterId: integer('character_id').primaryKey().references(() => characters.id, {onDelete: 'cascade'}),
+    ownerId: text('owner_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    acquiredAt: timestamp('acquired_at', {withTimezone: true}).notNull().defaultNow(),
 });
 
-export const reportes = pgTable('reportes', {
-    id: serial('id').primaryKey(),
-    senderId: text('sender_id').notNull(),
+export const characterPriceEvents = botContentSchema.table('character_price_events', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
+    characterId: integer('character_id').notNull().references(() => characters.id, {onDelete: 'cascade'}),
+    eventType: text('event_type').notNull(),
+    price: integer('price').notNull(),
+    actorId: text('actor_id').references(() => usuarios.id, {onDelete: 'set null'}),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    characterCreatedIdx: index('character_price_events_character_created_idx').on(table.characterId, table.createdAt),
+    typeCheck: check('character_price_events_type_check', sql`${table.eventType} in ('initial', 'vote', 'listing', 'sale', 'adjustment')`),
+    priceNonNegative: check('character_price_events_price_non_negative', sql`${table.price} >= 0`),
+}));
+
+export const characterMarketListings = botContentSchema.table('character_market_listings', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
+    characterId: integer('character_id').notNull().references(() => characters.id, {onDelete: 'cascade'}),
+    sellerId: text('seller_id').notNull().references(() => usuarios.id, {onDelete: 'restrict'}),
+    buyerId: text('buyer_id').references(() => usuarios.id, {onDelete: 'set null'}),
+    askingPrice: integer('asking_price').notNull(),
+    previousPrice: integer('previous_price'),
+    status: text('status').notNull().default('active'),
+    listedAt: timestamp('listed_at', {withTimezone: true}).notNull().defaultNow(),
+    closedAt: timestamp('closed_at', {withTimezone: true}),
+}, table => ({
+    characterStatusIdx: index('character_market_listings_character_status_idx').on(table.characterId, table.status),
+    oneActiveListing: uniqueIndex('character_market_listings_one_active_uidx').on(table.characterId)
+        .where(sql`${table.status} = 'active'`),
+    pricePositive: check('character_market_listings_price_positive', sql`${table.askingPrice} > 0`),
+    statusCheck: check('character_market_listings_status_check', sql`${table.status} in ('active', 'withdrawn', 'sold')`),
+    closedStateCheck: check('character_market_listings_closed_state_check', sql`(${table.status} = 'active' AND ${table.closedAt} IS NULL) OR (${table.status} <> 'active' AND ${table.closedAt} IS NOT NULL)`),
+}));
+
+export const reportes = botRuntimeSchema.table('reports', {
+    id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+    senderId: text('sender_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
     senderName: text('sender_name'),
     mensaje: text('mensaje').notNull(),
-    fecha: timestamp('fecha').defaultNow(),
-    enviado: boolean('enviado').default(false),
-    tipo: text('tipo').default('reporte'),
+    fecha: timestamp('fecha', {withTimezone: true}).notNull().defaultNow(),
+    enviado: boolean('enviado').notNull().default(false),
+    tipo: text('tipo').notNull().default('reporte'),
 });
 
-export const chatMemory = pgTable('chat_memory', {
+export const chatMemory = botAiSchema.table('chat_memory', {
     chatId: text('chat_id').primaryKey(),
-    history: jsonb('history'),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
 });
 
-export const stats = pgTable('stats', {
+export const chatMemoryMessages = botAiSchema.table('chat_memory_messages', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
+    chatId: text('chat_id').notNull().references(() => chatMemory.chatId, {onDelete: 'cascade'}),
+    position: integer('position').notNull(),
+    role: text('role').notNull(),
+    content: text('content').notNull(),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    chatPositionUnique: uniqueIndex('chat_memory_messages_chat_position_uidx').on(table.chatId, table.position),
+    chatCreatedAtIdx: index('chat_memory_messages_chat_created_at_idx').on(table.chatId, table.createdAt),
+    positionNonNegative: check('chat_memory_messages_position_non_negative', sql`${table.position} >= 0`),
+    roleCheck: check('chat_memory_messages_role_check', sql`${table.role} in ('system', 'user', 'assistant')`),
+}));
+
+export const stats = botRuntimeSchema.table('stats', {
     command: text('command').primaryKey(),
-    count: integer('count').default(1),
-});
+    count: integer('count').notNull().default(1),
+}, table => ({
+    countNonNegative: check('stats_count_non_negative', sql`${table.count} >= 0`),
+}));
 
-export const apiTokens = pgTable('api_tokens', {
+export const apiTokens = botRuntimeSchema.table('api_tokens', {
     name: text('name').primaryKey(),
     tokenB64: text('token_b64').notNull(),
 });
 
-export const audioResponses = pgTable('audio_responses', {
+export const audioResponses = botContentSchema.table('audio_responses', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
     scope: text('scope').notNull(),
     phrase: text('phrase').notNull(),
     regex: text('regex').notNull(),
-    audioUrls: text('audio_urls').array().notNull().default(sql`ARRAY[]::text[]`),
-    deleted: boolean('deleted').default(false),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    deleted: boolean('deleted').notNull().default(false),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
 }, table => ({
-    pk: primaryKey({columns: [table.scope, table.phrase]}),
+    scopePhraseUnique: uniqueIndex('audio_responses_scope_phrase_uidx').on(table.scope, table.phrase),
+}));
+
+export const audioResponseAssets = botContentSchema.table('audio_response_assets', {
+    responseId: uuid('response_id').notNull().references(() => audioResponses.id, {onDelete: 'cascade'}),
+    mediaUrl: text('media_url').notNull(),
+    position: integer('position').notNull(),
+}, table => ({
+    pk: primaryKey({columns: [table.responseId, table.mediaUrl]}),
+    responsePositionUnique: uniqueIndex('audio_response_assets_response_position_uidx').on(table.responseId, table.position),
+    positionNonNegative: check('audio_response_assets_position_non_negative', sql`${table.position} >= 0`),
 }));
