@@ -45,6 +45,10 @@ import type {
 } from '../domain/operations.js';
 import type {RobExperienceInput, RobExperienceResult} from '../domain/robbery.js';
 import type {BankBalances, BankExchangeRate, BankOverview, BankResource, BankTransferResult, CurrencyExchangeResult, ExchangeAmount, LoanPaymentResult, LoanRequestResult} from '../domain/bank.js';
+import type {
+    BuyRaffleTicketsResult, BuySecurityResult, DrawRaffleResult, EconomicResourceDefinition,
+    RaffleTicketPage, SecurityOverview, TicketPaymentResource,
+} from '../domain/store.js';
 
 export type {
     BannedUserInfo,
@@ -204,6 +208,29 @@ export interface BankRepository {
     requestLoan(input: {userId: string; amount: number; now: Date; operationId: string}): Promise<LoanRequestResult>;
     payLoan(input: {userId: string; amount: number | 'all'; now: Date; operationId: string}): Promise<LoanPaymentResult>;
     refreshLoanStatuses(now: Date): Promise<number>;
+}
+
+export interface StoreRepository {
+    listEconomicResources(): Promise<EconomicResourceDefinition[]>;
+    getSecurityOverview(userId: string): Promise<SecurityOverview>;
+    buySecurity(userId: string, now: Date, operationId: string): Promise<BuySecurityResult>;
+    deactivateSecurity(userId: string, now: Date): Promise<boolean>;
+    renewDueSecuritySubscriptions(now: Date, limit: number): Promise<{paid: number; deactivated: number}>;
+    buyRaffleTickets(input: {
+        userId: string;
+        quantity: number;
+        paymentResource?: TicketPaymentResource;
+        codes: string[];
+        operationId: string;
+    }): Promise<BuyRaffleTicketsResult>;
+    listAvailableRaffleTickets(page: number, pageSize: number): Promise<RaffleTicketPage>;
+    drawRaffle(input: {title: string; ownerId: string}): Promise<DrawRaffleResult>;
+}
+
+export interface DailyReminderRepository {
+    claimForBot(botId: string, activityDay: string): Promise<string[]>;
+    markSent(groupId: string, activityDay: string, messageId: string | null): Promise<void>;
+    markFailed(groupId: string, activityDay: string, error: string): Promise<void>;
 }
 
 export interface UserGroupRoleRepository {
@@ -416,6 +443,8 @@ export interface AppRepositories {
     userEconomy: UserEconomyRepository;
     userPreferences: UserPreferencesRepository;
     banks: BankRepository;
+    store: StoreRepository;
+    dailyReminders: DailyReminderRepository;
     commandResources: CommandResourceRepository;
     userGroupRoles: UserGroupRoleRepository;
     chats: ChatRepository;

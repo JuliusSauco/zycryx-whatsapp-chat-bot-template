@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
 import {buildContactUserUpsert} from '../src/core/contact-user-sync.js';
-import {repositories} from '../src/services/data-source.js';
+import {configureServiceRepositories} from '../src/services/data-source.js';
+import {createDrizzleRepositories} from '../src/adapters/drizzle/repositories.js';
 
-const originalUsers = repositories.users;
-
-repositories.users = {
-    ...originalUsers,
+const appRepositories = createDrizzleRepositories();
+appRepositories.userIdentity = {
+    ...appRepositories.userIdentity,
     findNumberByLid: async lid => lid === '12345@lid' ? '573001112233' : null,
 };
+configureServiceRepositories(appRepositories);
 
-try {
-    assert.deepEqual(await buildContactUserUpsert({
+assert.deepEqual(await buildContactUserUpsert({
         id: '573009998887@s.whatsapp.net',
         lid: '99887@lid',
         notify: 'Alias nuevo',
@@ -34,9 +34,6 @@ try {
         lid: '12345@lid',
     });
 
-    assert.equal(await buildContactUserUpsert({id: 'invalid', username: 'usuario'}), null);
-} finally {
-    repositories.users = originalUsers;
-}
+assert.equal(await buildContactUserUpsert({id: 'invalid', username: 'usuario'}), null);
 
 console.log('contact-user-sync.test.ts OK');

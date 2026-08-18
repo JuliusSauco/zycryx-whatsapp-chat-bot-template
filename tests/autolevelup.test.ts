@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
-import {repositories} from '../src/services/data-source.js';
+import {configureServiceRepositories, repositories} from '../src/services/data-source.js';
+import {createDrizzleRepositories} from '../src/adapters/drizzle/repositories.js';
 import {findLevel} from '../src/lib/levelling.js';
 import type {UserWallet} from '../src/domain/users.js';
 import type {BeforePluginContext} from '../src/types/context.js';
 import type {BotMessage} from '../src/types/message.js';
 import {renderToggleMenu} from '../src/plugins/config/config-toggle-menu.js';
+
+configureServiceRepositories(createDrizzleRepositories());
 
 globalThis.info = {md: 'https://example.com'} as never;
 const {

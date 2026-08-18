@@ -376,7 +376,39 @@
         "winner": "🎉 @{winner} *ganarte* y recibe *{xp} XP!"
       }
     },
+    "dailyReminder": {
+      "message": "`🌅 DINÁMICAS DIARIAS`\n\n👥 *{groupName}*, ¡ya comenzó un nuevo día!\n\n🎁 Reclama tu recompensa y conserva la racha con *.daily* o *.claim*.\n🏦 Protege tus recursos guardándolos con *.deposit <moneda> all*.\n🔐 Consulta tus saldos únicamente por privado con *.wallet*.\n🛡️ Revisa la seguridad disponible con *.store security*.\n\n_¡Participen en las dinámicas del grupo y hagan crecer su economía!_"
+    },
+    "store": {
+      "menu": "`🛍️ TIENDA`\n\nCompra mejoras y participaciones con tus recursos económicos.\n\n🛡️ *Seguridad*\nProtege tu E - WALLET y banco.\n• *{prefix}store security*\n• *{prefix}store buy security*\n\n🎟️ *Tickets de rifa*\nCada ticket cuesta *100 Coins* o *10 Límites*.\nMáximo: *5 tickets pendientes por usuario*.\n• *{prefix}store buy ticket [cantidad] [coins|limite]*\n\n📚 Guía completa: *{prefix}store --info*",
+      "guide": "`📚 GUÍA DE LA TIENDA`\n\n🛡️ *Seguridad económica*\nLa mejora disponible corresponde a tu nivel actual y cuesta *10 Coins × nivel por día*. Protege EXP, Coins, Límites y Botcoins. Zyxcoin está excluido.\n\n🎟️ *Rifas*\nCompra hasta 5 tickets pendientes. Cada uno recibe un código privado y participa una vez en el próximo sorteo.\n\n• *{prefix}store security*\n• *{prefix}store buy security*\n• *{prefix}store buy ticket 1 coins*\n• *{prefix}subscription security inactive*",
+      "security": "`🛡️ SEGURIDAD ECONÓMICA`\n\n🎚️ *Tu nivel:* {level}\n📌 *Estado:* {status}\n🔐 *Nivel protegido:* {tier}\n💳 *Costo diario actual:* {price} Coins\n📅 *Protección pagada hasta:* {paidUntil}\n\n`PRÓXIMAS MEJORAS`\n{previews}\n\nLa seguridad reduce robos de EXP, Coins, Límites y Botcoins en wallet y banco. *Zyxcoin no participa en robos ni seguridad.*\n\nComprar: *{prefix}store buy security*",
+      "securityPreview": "• Nivel *{level}*: {protection}% protegido · {price} Coins/día",
+      "levelTooLow": "⚠️ Necesitas al menos nivel 1 para comprar seguridad. Puedes consultar las mejoras de niveles 1 a 5 con *{prefix}store security*.",
+      "insufficientCoins": "⚠️ No tienes Coins suficientes para pagar el primer día de seguridad.",
+      "securityReceipt": "`🧾 SEGURIDAD ACTIVADA`\n\n🛡️ Nivel protegido: *{tier}*\n💳 Pagado: *{price} Coins*\n📅 Vigente hasta: *{paidUntil}*\n🪙 Coins restantes: *{balance}*\n\n👛 Saldos: *{prefix}wallet*\n🏦 Guardar dinero: *{prefix}deposit coins all*\n🛍️ Guía: *{prefix}store --info*",
+      "securityInactive": "✅ La renovación de seguridad quedó inactiva. La protección ya pagada se conserva hasta su vencimiento.",
+      "securityAlreadyInactive": "ℹ️ No tenías una suscripción de seguridad activa.",
+      "ticketInvalid": "⚠️ Puedes comprar entre 1 y 5 tickets pendientes por usuario.",
+      "ticketFunds": "⚠️ No tienes recursos suficientes. Cada ticket cuesta 100 Coins o 10 Límites.",
+      "ticketReceipt": "`🎟️ TICKETS COMPRADOS`\n\nCantidad: *{quantity}*\nPagaste: *{total} {resource}*\nCódigos privados:\n{codes}\n\nParticiparán una sola vez en el próximo sorteo. Máximo 5 tickets pendientes por usuario.",
+      "groupCompleted": "✅ @{user}, operación completada. Te envié el comprobante detallado por privado.",
+      "privateDeliveryFailed": "⚠️ @{user}, la operación fue completada, pero no pude enviarte el comprobante. Abre el chat privado del bot y usa *.wallet*.",
+      "raffleEmpty": "⚠️ No hay tickets pendientes para realizar la rifa.",
+      "raffleInvalidTitle": "⚠️ Usa *{prefix}start rifa <título>*.",
+      "raffleWinner": "`🎉 RIFA DE {title}`\n\n🏆 *GANADOR*\n👤 @{winner}\n🎟️ Código elegido: `{code}`\n📊 Participaciones: *{total}*",
+      "raffleListEmpty": "📭 No hay tickets pendientes para la próxima rifa.",
+      "raffleList": "`🎟️ PARTICIPANTES DE LA RIFA`\n\n{rows}\n\n📊 Tickets totales: *{total}*\n📄 Página *{page}/{pages}*",
+      "raffleListItem": "• @{user} — *{quantity} ticket(s)*",
+      "raffleInvalidPage": "⚠️ Esa página no existe."
+    },
     "economy": {
+      "shared": {
+        "groupCompleted": "✅ @{user}, operación completada. Te envié por privado el comprobante, tus saldos y las guías económicas.",
+        "privateDeliveryFailed": "⚠️ @{user}, la operación fue completada, pero no pude enviarte el comprobante. Abre el chat privado del bot y usa *.wallet*.",
+        "privateOnly": "🔐 Los saldos, deudas e historiales solo pueden consultarse en el chat privado del bot. Usa *{prefix}wallet* por privado.",
+        "privateGuide": "`📚 GUÍA ECONÓMICA`\n\n👛 Consulta tu dinero aquí por privado: *{prefix}wallet*\n🏦 Guarda recursos: *{prefix}deposit <moneda> all*\n🛡️ Seguridad para tu nivel {level}: *{securityPrice} Coins/día* con *{prefix}store buy security*\n\n_La seguridad cubre EXP, Coins, Límites y Botcoins. Zyxcoin no admite robos ni seguridad._"
+      },
       "wallet": {
         "public": "*╭━━〔 👛 E - WALLET PÚBLICA 〕━━╮*\n\n👤 @{user}\n├ ⚙️ *Nivel:* {level}\n├ ✨ *EXP:* {exp}\n╰ 💎 *Límite:* {diamonds}\n\n_Para consultar tus Coins y monedas privadas, usa *.wallet* en el chat privado del bot._",
         "private": "*╭━━〔 👛 E - WALLET 〕━━╮*\n\n👤 @{user}\n\n╭─「 📊 *RECURSOS PÚBLICOS* 」\n├ ⚙️ *Nivel:* {level}\n├ ✨ *EXP:* {exp}\n╰ 💎 *Límite:* {diamonds}\n\n╭─「 🔐 *MONEDAS PRIVADAS* 」\n├ 🪙 *Coins:* {coins}\n├ 🤖 *Botcoin:* {botcoin}\n╰ 🔷 *Zyxcoin:* {zyxcoin}\n\n╭─「 🏦 *BANCO CUSTODIAL* 」\n├ 💎 *Límite:* {bankLimit}\n├ 🪙 *Coins:* {bankCoins}\n├ 🤖 *Botcoin:* {bankBotcoin}\n╰ 🔷 *Zyxcoin:* {bankZyxcoin}\n{loanBlock}\n\n> *NOTA:* Puedes comprar 💎 usando:\n> *• {prefix}buy <cantidad>*\n> *• {prefix}buyall*\n> Consulta todas las tasas con *{prefix}exchange info*.",
@@ -481,7 +513,7 @@
       },
       "daily": {
         "alreadyClaimed": "⚠️ Ya reclamaste tu recompensa diaria, vuelve en *{time}* para reclamar de nuevo 🎁.",
-        "bonus": "\n\n🎉 *¡BONUS por 7 días de racha!* 🎉\n> +{bonusExp} XP extra\n> +{bonusLimit} Diamantes 💎\n> +{bonusCoins} Coins 🪙\n\n",
+        "bonus": "\n\n🎉 *¡BONUS por 10 días de racha!* 🎉\n> +{bonusExp} XP extra\n> +{bonusLimit} Diamantes 💎\n> +{bonusCoins} Coins 🪙\n\n",
         "reward": "*🔸 𝐇𝐀𝐒 𝐑𝐄𝐂𝐈𝐁𝐈𝐃𝐎:* Tu recompensa diaria de: *{currentExp} XP* (Día  {streak})\n{bonusText}> _*Mañana no te olviden de seguir reclamado tu recompensa ganaras: {nextExpShort} ({nextExp}) XP*_\n",
         "quoted": "🎁 Obtener un regalo 🎁"
       },
@@ -555,7 +587,7 @@
         ]
       },
       "rob": {
-        "info": "💰 *ROBO DE EXPERIENCIA*\n\nPon a prueba tu suerte robando XP a otro usuario. Tu nivel define cuánto puedes intentar robar.\n\n🎲 *ROBO ALEATORIO*\nUsa *.rob @usuario* o responde a su mensaje con *.rob*.\nEl bot elegirá una cantidad al azar entre *1 XP* y tu límite.\n\n🎯 *ROBO EXACTO*\nUsa *.rob cantidad @usuario*.\nEjemplo: *.rob 2567 @usuario*\nSolo funcionará si tu nivel permite robar esa cantidad.\n\n📈 *LÍMITE POR NIVEL*\nCada nivel permite robar hasta *1000 XP*.\nEjemplo: nivel 26 → máximo de *26000 XP*.\n\n🛡️ *CONDICIONES*\n• La víctima debe tener toda la XP que resulte o solicites.\n• No puedes robarte a ti mismo.\n• Solo los robos exitosos consumen un intento.\n• Puedes completar hasta *4 robos exitosos por día*.\n• Las esperas progresivas son de *1, 2, 3 y 4 horas*.\n• El contador se reinicia a las *00:00, hora de Colombia*, sin cancelar una espera activa.\n\n✨ *EJEMPLOS*\n*.rob @usuario* — robo aleatorio\n*.rob 2500 @usuario* — robo exacto\n*.rob* respondiendo — robo aleatorio\n*.rob 2500* respondiendo — robo exacto",
+        "info": "`💰 ROBO ECONÓMICO`\n\nTu nivel equivale a *1.000 EXP de capacidad por nivel*. Máximos equivalentes: 1.000 EXP, 10 Coins o 1 Límite por nivel; Botcoin se habilita desde nivel 10. Zyxcoin no puede robarse.\n\n• *.rob @usuario*\n• *.rob coins 25 @usuario*\n• *.rob limite 2 @usuario*\n• *.rob bank coins 10 @usuario*\n\nEl banco reduce la capacidad base al 50%. La seguridad de la víctima puede bloquear una parte adicional. Todos los recursos comparten 4 intentos diarios y esperas de 1, 2, 3 y 4 horas.",
         "missingUser": "❌ En usuarios no aparece en mi base de datos",
         "cooldown": "🚓 La policía está vigilando, vuelve en: *{time}*",
         "dailyLimit": "🔒 Alcanzaste el límite de *4 robos exitosos* de hoy. Podrás volver a robar en: *{time}*",
@@ -564,8 +596,11 @@
         "selfTarget": "❌ No puedes robarte a ti mismo.",
         "missingVictim": "❌ El usuario no se encuentra en mi base de datos.",
         "insufficientLevel": "❌ Tu nivel actual es {level}. Para robar esa cantidad necesitas nivel {requiredLevel}.\nTu máximo actual es *{maximum} XP*.",
-        "poorVictim": "@{user} tiene {available} XP y el robo requiere {required} XP.\n> No robes a un pobre v:",
-        "success": "🚨 *¡ROBO EXITOSO!*\n\n💰 Robaste *{amount} XP* a *@{user}*.\n\n📊 *ESTADO DEL LADRÓN*\n🎚️ Nivel actual: *{level}*\n💎 Máximo por tu nivel: *{maximum} XP*\n🎟️ Robos disponibles hoy: *{remaining}/4*\n⏳ Próximo robo: *{nextAvailable}*\n🔒 Bloqueo máximo: *{maxBlockStatus}*\n\n> _Solo los robos exitosos consumen un intento._\n> _Los intentos diarios se reinician a las 00:00._"
+        "poorVictim": "⚠️ La víctima no dispone del saldo necesario para completar ese robo.",
+        "unsupportedResource": "🔷 Ese recurso no admite robos. Zyxcoin está excluido del sistema de riesgo económico.",
+        "missingAccount": "⚠️ La víctima no tiene disponible esa cuenta económica.",
+        "securityBlocked": "`🛡️ ROBO BLOQUEADO`\n\nLa seguridad de @{user} bloqueó el intento de *{attempted} {resource}*.\n🎟️ Intentos disponibles: *{remaining}/4*\n⏳ Próximo intento: *{nextAvailable}*",
+        "success": "`🚨 ROBO ECONÓMICO EXITOSO`\n\n👤 Víctima: *@{user}*\n🏦 Origen: *{account}*\n{emoji} Recurso: *{resource}*\n🎯 Intentado: *{attempted}*\n🛡️ Bloqueado: *{blocked}*\n💰 Robado: *{amount}*\n\n🎚️ Nivel: *{level}* · Máximo bruto: *{maximum}*\n🎟️ Intentos disponibles: *{remaining}/4*\n⏳ Próximo intento: *{nextAvailable}*"
       },
       "work": {
         "cooldown": "*⏳ Debes descansar {time} antes de volver a trabajar*",
@@ -1394,6 +1429,11 @@
             "emoji": "🏦",
             "command": "menueconomia",
             "description": "Wallet, banco, préstamos, transferencias y cambios."
+          },
+          {
+            "emoji": "🛍️",
+            "command": "store",
+            "description": "Seguridad económica, tickets y artículos de la tienda."
           },
           {
             "emoji": "🚀",

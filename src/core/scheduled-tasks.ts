@@ -7,13 +7,20 @@ import {
     listExpiredGroups,
     markReportDelivered,
     markReportFailed,
+    claimDailyGroupReminders,
+    markDailyGroupReminderFailed,
+    markDailyGroupReminderSent,
+    renewStoreSubscriptions,
     updateBankLoanStatuses,
 } from '../services/runtime-tasks.service.js';
 import {logDebug, logError, logInfo} from '../lib/logger.js';
 import {pickRandom} from '../utils/random.js';
-import {getMainConnection} from './runtime-state.js';
+import {getMainConnection, getSubbotConnections} from './runtime-state.js';
 import {hostname} from 'node:os';
 import {getApplicationShutdownSignal} from './application-lifecycle.js';
+import {getBogotaReminderWindow} from '../domain/daily-reminders.js';
+import {getBotInstanceIdentity} from './bot-instance-identity.js';
+import {renderMessage} from '../services/content.service.js';
 
 let started = false;
 const timers = new Set<NodeJS.Timeout>();
@@ -43,6 +50,42 @@ export function startScheduledTasks(): void {
     scheduleNonOverlapping('chat-memory', 300_000, cleanExpiredChatMemory);
     scheduleNonOverlapping('resource-reservations', 300_000, cleanExpiredResourceReservations);
     scheduleNonOverlapping('loan-status', 300_000, refreshLoans);
+    scheduleNonOverlapping('store-subscriptions', 300_000, renewSubscriptions);
+    scheduleNonOverlapping('daily-group-reminders', 60_000, sendDailyGroupReminders);
+}
+
+async function renewSubscriptions(): Promise<void> {
+    const result = await renewStoreSubscriptions();
+    if (result.paid || result.deactivated) {
+        logInfo(`[STORE] Renovaciones: ${result.paid} pagadas, ${result.deactivated} desactivadas.`);
+    }
+}
+
+async function sendDailyGroupReminders(): Promise<void> {
+    const window = getBogotaReminderWindow(new Date());
+    if (!window.shouldRun) return;
+    const connections = [getMainConnection(), ...getSubbotConnections()].filter(connection => Boolean(connection));
+    for (const conn of connections) {
+        if (!conn || getApplicationShutdownSignal().aborted) return;
+        const identity = getBotInstanceIdentity(conn);
+        if (!identity?.botJid) continue;
+        const groups = await claimDailyGroupReminders(identity.instanceId, window.activityDay);
+        for (const groupId of groups) {
+            try {
+                const metadata = await conn.groupMetadata(groupId);
+                const mentions = metadata.participants.map(participant => participant.id);
+                const sent = await conn.sendMessage(groupId, {
+                    text: renderMessage('dailyReminder.message', {groupName: metadata.subject}),
+                    mentions,
+                });
+                await markDailyGroupReminderSent(groupId, window.activityDay, sent?.key?.id ?? null);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                await markDailyGroupReminderFailed(groupId, window.activityDay, message);
+                logError(`[REMINDER] Falló el recordatorio de ${groupId}:`, error);
+            }
+        }
+    }
 }
 
 export function stopScheduledTasks(): void {

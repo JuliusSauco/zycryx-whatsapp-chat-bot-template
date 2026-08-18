@@ -238,6 +238,12 @@ export const marriageRequests = botIdentitySchema.table('marriage_requests', {
 export const economyResources = botEconomySchema.table('resources', {
     code: text('code').primaryKey(),
     category: text('category').notNull(),
+    displayName: text('display_name').notNull(),
+    pluralName: text('plural_name').notNull(),
+    emoji: text('emoji').notNull(),
+    valueInExp: bigint('value_in_exp', {mode: 'number'}).notNull(),
+    robberyEnabled: boolean('robbery_enabled').notNull().default(false),
+    securityEligible: boolean('security_eligible').notNull().default(false),
     defaultWalletBalance: bigint('default_wallet_balance', {mode: 'number'}).notNull().default(0),
     walletEnabled: boolean('wallet_enabled').notNull().default(true),
     bankEnabled: boolean('bank_enabled').notNull().default(false),
@@ -245,6 +251,7 @@ export const economyResources = botEconomySchema.table('resources', {
 }, table => ({
     categoryCheck: check('resources_category_check', sql`${table.category} in ('currency', 'experience', 'quota')`),
     defaultNonNegative: check('resources_default_non_negative', sql`${table.defaultWalletBalance} >= 0`),
+    valuePositive: check('resources_value_in_exp_positive', sql`${table.valueInExp} > 0`),
 }));
 
 export const financialAccounts = botEconomySchema.table('financial_accounts', {
@@ -381,6 +388,91 @@ export const commandReservationItems = botEconomySchema.table('command_reservati
     itemTypeCheck: check('command_reservation_items_type_check', sql`${table.itemType} in ('charged', 'alternative')`),
 }));
 
+export const storeProducts = botEconomySchema.table('store_products', {
+    code: text('code').primaryKey(),
+    category: text('category').notNull(),
+    name: text('name').notNull(),
+    emoji: text('emoji').notNull(),
+    active: boolean('active').notNull().default(true),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    categoryCheck: check('store_products_category_check', sql`${table.category} in ('upgrade', 'ticket', 'item', 'character')`),
+}));
+
+export const userProductSubscriptions = botEconomySchema.table('user_product_subscriptions', {
+    userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    productCode: text('product_code').notNull().references(() => storeProducts.code, {onDelete: 'restrict'}),
+    tier: integer('tier').notNull(),
+    status: text('status').notNull().default('active'),
+    dailyPriceCoins: integer('daily_price_coins').notNull(),
+    paidUntil: timestamp('paid_until', {withTimezone: true}).notNull(),
+    nextChargeAt: timestamp('next_charge_at', {withTimezone: true}).notNull(),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    pk: primaryKey({columns: [table.userId, table.productCode]}),
+    dueIdx: index('user_product_subscriptions_due_idx').on(table.status, table.nextChargeAt),
+    tierCheck: check('user_product_subscriptions_tier_check', sql`${table.tier} between 1 and 100`),
+    priceCheck: check('user_product_subscriptions_price_check', sql`${table.dailyPriceCoins} > 0`),
+    statusCheck: check('user_product_subscriptions_status_check', sql`${table.status} in ('active', 'inactive')`),
+}));
+
+export const subscriptionChargeEvents = botEconomySchema.table('subscription_charge_events', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
+    userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    productCode: text('product_code').notNull().references(() => storeProducts.code, {onDelete: 'restrict'}),
+    scheduledFor: timestamp('scheduled_for', {withTimezone: true}).notNull(),
+    amountCoins: integer('amount_coins').notNull(),
+    status: text('status').notNull(),
+    financialOperationId: uuid('financial_operation_id').references(() => financialOperations.id, {onDelete: 'set null'}),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    uniqueCharge: uniqueIndex('subscription_charge_events_schedule_uidx').on(table.userId, table.productCode, table.scheduledFor),
+    statusCheck: check('subscription_charge_events_status_check', sql`${table.status} in ('paid', 'insufficient_funds')`),
+    amountCheck: check('subscription_charge_events_amount_check', sql`${table.amountCoins} > 0`),
+}));
+
+export const raffles = botEconomySchema.table('raffles', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
+    title: text('title').notNull(),
+    status: text('status').notNull().default('completed'),
+    startedBy: text('started_by').references(() => usuarios.id, {onDelete: 'set null'}),
+    startedAt: timestamp('started_at', {withTimezone: true}).notNull().defaultNow(),
+    drawnAt: timestamp('drawn_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    statusCheck: check('raffles_status_check', sql`${table.status} in ('completed', 'cancelled')`),
+}));
+
+export const raffleTickets = botEconomySchema.table('raffle_tickets', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
+    code: text('code').notNull().unique(),
+    buyerId: text('buyer_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    status: text('status').notNull().default('available'),
+    paymentResource: text('payment_resource').notNull(),
+    unitPrice: integer('unit_price').notNull(),
+    purchaseOperationId: uuid('purchase_operation_id').notNull().references(() => financialOperations.id, {onDelete: 'restrict'}),
+    purchasedAt: timestamp('purchased_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    statusIdx: index('raffle_tickets_status_purchased_idx').on(table.status, table.purchasedAt),
+    buyerIdx: index('raffle_tickets_buyer_idx').on(table.buyerId),
+    statusCheck: check('raffle_tickets_status_check', sql`${table.status} in ('available', 'winner', 'loser')`),
+    paymentCheck: check('raffle_tickets_payment_check', sql`${table.paymentResource} in ('coins', 'limite')`),
+    priceCheck: check('raffle_tickets_price_check', sql`${table.unitPrice} > 0`),
+}));
+
+export const raffleEntries = botEconomySchema.table('raffle_entries', {
+    raffleId: uuid('raffle_id').notNull().references(() => raffles.id, {onDelete: 'cascade'}),
+    ticketId: uuid('ticket_id').notNull().references(() => raffleTickets.id, {onDelete: 'restrict'}),
+    position: integer('position').notNull(),
+    selected: boolean('selected').notNull().default(false),
+}, table => ({
+    pk: primaryKey({columns: [table.raffleId, table.ticketId]}),
+    rafflePositionUnique: uniqueIndex('raffle_entries_position_uidx').on(table.raffleId, table.position),
+    oneWinner: uniqueIndex('raffle_entries_one_winner_uidx').on(table.raffleId).where(sql`${table.selected} = true`),
+    positionPositive: check('raffle_entries_position_positive', sql`${table.position} > 0`),
+}));
+
 export const groupSettings = botGroupsSchema.table('group_settings', {
     groupId: text('group_id').primaryKey(),
     banned: boolean('banned').notNull().default(false),
@@ -469,6 +561,35 @@ export const groupCommandAccessRules = botGroupsSchema.table('group_command_acce
     groupScopeIdx: index('group_command_access_rules_group_scope_idx').on(table.groupId, table.scope),
     scopeCheck: check('group_command_access_rules_scope_check', sql`${table.scope} in ('family', 'command')`),
     accessModeCheck: check('group_command_access_rules_access_mode_check', sql`${table.accessMode} in ('all', 'admin', 'superadmin', 'owner')`),
+}));
+
+export const groupDailyReminderSettings = botGroupsSchema.table('group_daily_reminder_settings', {
+    groupId: text('group_id').primaryKey().references(() => groupSettings.groupId, {onDelete: 'cascade'}),
+    enabled: boolean('enabled').notNull().default(true),
+    localTime: text('local_time').notNull().default('08:00'),
+    timezone: text('timezone').notNull().default('America/Bogota'),
+    updatedBy: text('updated_by').references(() => usuarios.id, {onDelete: 'set null'}),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    localTimeCheck: check('group_daily_reminder_settings_time_check', sql`${table.localTime} ~ '^[0-2][0-9]:[0-5][0-9]$'`),
+}));
+
+export const groupDailyReminderDeliveries = botGroupsSchema.table('group_daily_reminder_deliveries', {
+    groupId: text('group_id').notNull().references(() => groupSettings.groupId, {onDelete: 'cascade'}),
+    activityDay: date('activity_day').notNull(),
+    botId: text('bot_id').notNull().references(() => botInstances.id, {onDelete: 'cascade'}),
+    status: text('status').notNull().default('pending'),
+    attemptCount: integer('attempt_count').notNull().default(1),
+    messageId: text('message_id'),
+    lastError: text('last_error'),
+    sentAt: timestamp('sent_at', {withTimezone: true}),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    pk: primaryKey({columns: [table.groupId, table.activityDay]}),
+    dayStatusIdx: index('group_daily_reminder_deliveries_day_status_idx').on(table.activityDay, table.status),
+    botDayIdx: index('group_daily_reminder_deliveries_bot_day_idx').on(table.botId, table.activityDay),
+    statusCheck: check('group_daily_reminder_deliveries_status_check', sql`${table.status} in ('pending', 'sent', 'failed')`),
+    attemptCheck: check('group_daily_reminder_deliveries_attempt_check', sql`${table.attemptCount} > 0`),
 }));
 
 export const groupCensoredUsers = botGroupsSchema.table('group_censored_users', {

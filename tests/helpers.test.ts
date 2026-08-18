@@ -67,15 +67,15 @@ function testSetRoleHelpers(): void {
     assert.equal(parseRoleInput('@573001112233'), null);
 }
 
-function testUserRequestLocks(): void {
+async function testUserRequestLocks(): Promise<void> {
     const locks = createUserRequestLocks<{active: boolean}>();
 
-    assert.equal(locks.acquire('user-1', {active: true}), true);
-    assert.equal(locks.acquire('user-1', {active: false}), false);
+    assert.equal(await locks.acquire('user-1', {active: true}), true);
+    assert.equal(await locks.acquire('user-1', {active: false}), false);
     assert.deepEqual(locks.get('user-1'), {active: true});
     assert.equal(locks.has('user-1'), true);
 
-    locks.release('user-1');
+    await locks.release('user-1');
     assert.equal(locks.has('user-1'), false);
 }
 
@@ -166,8 +166,9 @@ async function testPluginSdk(): Promise<void> {
     assert.equal(replies[0], '/tobase64 texto');
 
     const locks = sdk.createUserLocks();
-    assert.equal(locks.acquire('user-1'), true);
-    assert.equal(locks.acquire('user-1'), false);
+    assert.equal(await locks.acquire('user-1'), true);
+    assert.equal(await locks.acquire('user-1'), false);
+    await locks.release('user-1');
 
     await sdk.sendMessage({text: 'hola'});
     assert.deepEqual(sent[0], {text: 'hola'});
@@ -352,7 +353,7 @@ testRandomHelpers();
 testCommandAliases();
 testOwnerNumberMerge();
 testSetRoleHelpers();
-testUserRequestLocks();
+await testUserRequestLocks();
 await testProviderFallback();
 testLegacyArrayRandom();
 testContentService();

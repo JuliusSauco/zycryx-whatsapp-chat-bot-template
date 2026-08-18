@@ -31,6 +31,7 @@ export const FAMILY_TOGGLES = aliases<FamilyToggle>([
     [['juegos', 'games'], {key: 'games', label: 'juegos'}],
     [['herramientas', 'tools'], {key: 'tools', label: 'herramientas'}],
     [['rpg', 'economia', 'economía'], {key: 'rpg', label: 'rpg'}],
+    [['store', 'tienda'], {key: 'store', label: 'tienda'}],
     [['descargas', 'downloads'], {key: 'downloads', label: 'descargas'}],
     [['buscadores', 'busquedas', 'búsquedas', 'search'], {key: 'search', label: 'buscadores'}],
     [['stickers', 'sticker'], {key: 'stickers', label: 'stickers'}],

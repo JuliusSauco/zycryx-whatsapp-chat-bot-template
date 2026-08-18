@@ -1,6 +1,7 @@
 import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import {exchangeBankCurrency, listBankExchangeRates} from '../../services/bank.service.js';
 import {isEconomyInfoRequest} from './economy-info.helpers.js';
+import {deliverPrivateReceipt} from '../store/store-receipt.helpers.js';
 
 export default defineSdkPlugin({
     help: ['buy [cantidad]', 'buy --info', 'buyall', 'buy all'],
@@ -8,8 +9,8 @@ export default defineSdkPlugin({
     feature: 'rpg',
     command: /^buy(all)?$/i,
     register: true,
-    private: true,
-    async execute(m, {command, args, usedPrefix, sdk}) {
+    async execute(m, context) {
+        const {command, args, usedPrefix, sdk} = context;
         if (isEconomyInfoRequest(args)) {
             const rates = await listBankExchangeRates();
             const rate = rates.find(item => item.sourceResource === 'exp' && item.targetResource === 'limite');
@@ -30,11 +31,12 @@ export default defineSdkPlugin({
         if (result.kind === 'insufficient_wallet') return sdk.reply.message('economy.buy.notEnoughExp');
         if (result.kind === 'insufficient_reserve') return sdk.reply.message('economy.exchange.insufficientReserve');
         if (result.kind !== 'success') return sdk.reply.message('economy.exchange.failed');
-        return sdk.reply.message('economy.buy.receipt', {
+        const receipt = sdk.content.renderMessage('economy.buy.receipt', {
             count: result.targetReceived,
             cost: result.sourceSpent,
             expBalance: result.sourceBalance,
             limitBalance: result.targetBalance,
         });
+        return deliverPrivateReceipt(m, context, receipt, 'economy.shared');
     },
 });

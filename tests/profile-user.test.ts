@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import type {GroupParticipant} from '@whiskeysockets/baileys';
 import type {UserRecord} from '../src/domain/users.js';
-import {repositories} from '../src/services/data-source.js';
+import {configureServiceRepositories, repositories} from '../src/services/data-source.js';
+import {createDrizzleRepositories} from '../src/adapters/drizzle/repositories.js';
+
+configureServiceRepositories(createDrizzleRepositories());
 import {resolveProfileUser, resolveStoredUserMention} from '../src/services/profile-user.service.js';
 import {DEFAULT_PROFILE_AVATAR, loadProfileMedia} from '../src/plugins/rpg/rpg-profile.helpers.js';
 

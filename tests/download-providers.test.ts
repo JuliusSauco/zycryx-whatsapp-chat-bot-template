@@ -13,6 +13,7 @@ import {buildFacebookDownloadProviders, isFacebookUrl} from '../src/providers/do
 import {buildDriveDownloadProviders, getFileMimetype} from '../src/providers/downloads/drive.provider.js';
 import {buildInstagramDownloadProviders, inferInstagramMediaType} from '../src/providers/downloads/instagram.provider.js';
 import {buildMediafireDownloadProviders} from '../src/providers/downloads/mediafire.provider.js';
+import {rememberYoutubeSelections} from '../src/lib/youtube-selection-store.js';
 import {buildTikTokDownloadProviders, isTikTokUrl} from '../src/providers/downloads/tiktok.provider.js';
 import {buildThreadsDownloadProviders, inferThreadsMediaType} from '../src/providers/downloads/threads.provider.js';
 import {buildAppleMusicDownloadProviders} from '../src/providers/downloads/applemusic.provider.js';
@@ -53,11 +54,12 @@ function testFormatting(): void {
 }
 
 function testIndexedYoutubeLinks(): void {
-    global.videoList = [{from: 'user@s.whatsapp.net', urls: ['https://youtu.be/one', 'https://youtu.be/two']}];
+    const scope = {botId: 'bot@s.whatsapp.net', chatId: 'chat@g.us', senderId: 'user@s.whatsapp.net'};
+    rememberYoutubeSelections(scope, ['https://youtu.be/one', 'https://youtu.be/two']);
 
-    assert.equal(resolveIndexedYoutubeLink('2', 'user@s.whatsapp.net'), 'https://youtu.be/two');
-    assert.equal(resolveIndexedYoutubeLink('3', 'user@s.whatsapp.net'), '');
-    assert.equal(resolveIndexedYoutubeLink('https://youtube.com/watch?v=abc', 'user@s.whatsapp.net'), 'https://youtube.com/watch?v=abc');
+    assert.equal(resolveIndexedYoutubeLink('2', scope), 'https://youtu.be/two');
+    assert.equal(resolveIndexedYoutubeLink('3', scope), '');
+    assert.equal(resolveIndexedYoutubeLink('https://youtube.com/watch?v=abc', scope), 'https://youtube.com/watch?v=abc');
 }
 
 function testYoutubeDownloadApiPolicy(): void {

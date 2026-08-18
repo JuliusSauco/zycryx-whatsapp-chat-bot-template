@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
 import {buildContext, groupMetaCache} from '../src/core/context-builder.js';
 import {setMainConnection} from '../src/core/runtime-state.js';
+import {registerBotInstanceIdentity} from '../src/core/bot-instance-identity.js';
 import {invalidateGroupSettings, invalidateSubbotConfig} from '../src/lib/db-cache.js';
-import {repositories} from '../src/services/data-source.js';
+import {configureServiceRepositories, repositories} from '../src/services/data-source.js';
+import {createDrizzleRepositories} from '../src/adapters/drizzle/repositories.js';
+
+configureServiceRepositories(createDrizzleRepositories());
 import type {SubbotConfig} from '../src/types/config.js';
 import type {ExtendedConn} from '../src/types/context.js';
 import type {BotMessage} from '../src/types/message.js';
@@ -110,6 +114,13 @@ function createConn(calls: Calls, options: {
         },
     } as unknown as ExtendedConn;
 
+    registerBotInstanceIdentity(conn, {
+        instanceId: options.isMain ? 'main-test' : `subbot-${botId.split('@')[0]}`,
+        sessionId: options.isMain ? 'main' : botId.split('@')[0]!,
+        instanceType: options.isMain ? 'main' : 'subbot',
+        botJid: botId,
+    });
+
     if (options.isMain) setMainConnection(conn);
     else setMainConnection({} as ExtendedConn);
 
@@ -176,7 +187,7 @@ async function testPrivateChatSenderAndOwnerResolution(): Promise<void> {
         assert.equal(globalThis.info.wm, 'BaseBot');
         assert.equal(globalThis.info.img2, 'base-logo');
         assert.deepEqual(calls.groupMetadata, []);
-        assert.deepEqual(calls.updateTipo, [{botId: '2222@s.whatsapp.net', tipo: 'oficial'}]);
+        assert.deepEqual(calls.updateTipo, []);
     });
 }
 
@@ -200,7 +211,7 @@ async function testCreatorFromGlobalOwnerAndFromMeSender(): Promise<void> {
         assert.equal(ctx.senderJid, '3333@s.whatsapp.net');
         assert.equal(ctx.isOwner, true);
         assert.equal(ctx.botJid, '3333@s.whatsapp.net');
-        assert.deepEqual(calls.updateTipo, [{botId: '3333@s.whatsapp.net', tipo: 'subbot'}]);
+        assert.deepEqual(calls.updateTipo, []);
     });
 }
 

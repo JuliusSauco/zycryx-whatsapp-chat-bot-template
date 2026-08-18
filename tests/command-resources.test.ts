@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import {repositories} from '../src/services/data-source.js';
+import {configureServiceRepositories, repositories} from '../src/services/data-source.js';
+import {createDrizzleRepositories} from '../src/adapters/drizzle/repositories.js';
+
+configureServiceRepositories(createDrizzleRepositories());
 import {
     checkCommandResources,
     commandResourceChargeMessage,

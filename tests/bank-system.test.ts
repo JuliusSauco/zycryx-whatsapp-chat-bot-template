@@ -73,12 +73,12 @@ assert.deepEqual(parseCustodyArguments(['botcoin', 'all']), {resource: 'botcoin'
 assert.equal(parseCustodyArguments(['exp', '20']), null);
 
 assert.equal(bankPlugin.private, true);
-assert.equal(depositPlugin.private, true);
-assert.equal(withdrawPlugin.private, true);
-assert.equal(loanPlugin.private, true);
+assert.equal(depositPlugin.private, undefined);
+assert.equal(withdrawPlugin.private, undefined);
+assert.equal(loanPlugin.private, undefined);
 assert.equal(reservePlugin.private, true);
-assert.equal(exchangePlugin.private, true);
-assert.equal(buyPlugin.private, true);
+assert.equal(exchangePlugin.private, undefined);
+assert.equal(buyPlugin.private, undefined);
 for (const plugin of [bankPlugin, depositPlugin, withdrawPlugin, loanPlugin, exchangePlugin, buyPlugin, walletPlugin, transferPlugin]) {
     assert.deepEqual(plugin.tags, ['economy']);
     assert.equal(plugin.feature, 'rpg');

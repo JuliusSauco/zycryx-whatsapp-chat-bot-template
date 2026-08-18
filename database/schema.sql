@@ -269,12 +269,93 @@ CREATE TABLE "bot_economy"."command_resource_reservations" (
 CREATE TABLE "bot_economy"."resources" (
 	"code" text PRIMARY KEY NOT NULL,
 	"category" text NOT NULL,
+	"display_name" text NOT NULL,
+	"plural_name" text NOT NULL,
+	"emoji" text NOT NULL,
+	"value_in_exp" bigint NOT NULL,
+	"robbery_enabled" boolean DEFAULT false NOT NULL,
+	"security_eligible" boolean DEFAULT false NOT NULL,
 	"default_wallet_balance" bigint DEFAULT 0 NOT NULL,
 	"wallet_enabled" boolean DEFAULT true NOT NULL,
 	"bank_enabled" boolean DEFAULT false NOT NULL,
 	"transferable" boolean DEFAULT false NOT NULL,
 	CONSTRAINT "resources_category_check" CHECK ("bot_economy"."resources"."category" in ('currency', 'experience', 'quota')),
-	CONSTRAINT "resources_default_non_negative" CHECK ("bot_economy"."resources"."default_wallet_balance" >= 0)
+	CONSTRAINT "resources_default_non_negative" CHECK ("bot_economy"."resources"."default_wallet_balance" >= 0),
+	CONSTRAINT "resources_value_in_exp_positive" CHECK ("bot_economy"."resources"."value_in_exp" > 0)
+);
+
+CREATE TABLE "bot_economy"."store_products" (
+	"code" text PRIMARY KEY NOT NULL,
+	"category" text NOT NULL,
+	"name" text NOT NULL,
+	"emoji" text NOT NULL,
+	"active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "store_products_category_check" CHECK ("bot_economy"."store_products"."category" in ('upgrade', 'ticket', 'item', 'character'))
+);
+
+CREATE TABLE "bot_economy"."user_product_subscriptions" (
+	"user_id" text NOT NULL,
+	"product_code" text NOT NULL,
+	"tier" integer NOT NULL,
+	"status" text DEFAULT 'active' NOT NULL,
+	"daily_price_coins" integer NOT NULL,
+	"paid_until" timestamp with time zone NOT NULL,
+	"next_charge_at" timestamp with time zone NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "user_product_subscriptions_user_id_product_code_pk" PRIMARY KEY("user_id","product_code"),
+	CONSTRAINT "user_product_subscriptions_tier_check" CHECK ("bot_economy"."user_product_subscriptions"."tier" between 1 and 100),
+	CONSTRAINT "user_product_subscriptions_price_check" CHECK ("bot_economy"."user_product_subscriptions"."daily_price_coins" > 0),
+	CONSTRAINT "user_product_subscriptions_status_check" CHECK ("bot_economy"."user_product_subscriptions"."status" in ('active', 'inactive'))
+);
+
+CREATE TABLE "bot_economy"."subscription_charge_events" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"user_id" text NOT NULL,
+	"product_code" text NOT NULL,
+	"scheduled_for" timestamp with time zone NOT NULL,
+	"amount_coins" integer NOT NULL,
+	"status" text NOT NULL,
+	"financial_operation_id" uuid,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "subscription_charge_events_status_check" CHECK ("bot_economy"."subscription_charge_events"."status" in ('paid', 'insufficient_funds')),
+	CONSTRAINT "subscription_charge_events_amount_check" CHECK ("bot_economy"."subscription_charge_events"."amount_coins" > 0)
+);
+
+CREATE TABLE "bot_economy"."raffles" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"title" text NOT NULL,
+	"status" text DEFAULT 'completed' NOT NULL,
+	"started_by" text,
+	"started_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"drawn_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "raffles_status_check" CHECK ("bot_economy"."raffles"."status" in ('completed', 'cancelled'))
+);
+
+CREATE TABLE "bot_economy"."raffle_tickets" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"code" text NOT NULL,
+	"buyer_id" text NOT NULL,
+	"status" text DEFAULT 'available' NOT NULL,
+	"payment_resource" text NOT NULL,
+	"unit_price" integer NOT NULL,
+	"purchase_operation_id" uuid NOT NULL,
+	"purchased_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "raffle_tickets_code_unique" UNIQUE("code"),
+	CONSTRAINT "raffle_tickets_status_check" CHECK ("bot_economy"."raffle_tickets"."status" in ('available', 'winner', 'loser')),
+	CONSTRAINT "raffle_tickets_payment_check" CHECK ("bot_economy"."raffle_tickets"."payment_resource" in ('coins', 'limite')),
+	CONSTRAINT "raffle_tickets_price_check" CHECK ("bot_economy"."raffle_tickets"."unit_price" > 0)
+);
+
+CREATE TABLE "bot_economy"."raffle_entries" (
+	"raffle_id" uuid NOT NULL,
+	"ticket_id" uuid NOT NULL,
+	"position" integer NOT NULL,
+	"selected" boolean DEFAULT false NOT NULL,
+	CONSTRAINT "raffle_entries_raffle_id_ticket_id_pk" PRIMARY KEY("raffle_id","ticket_id"),
+	CONSTRAINT "raffle_entries_position_positive" CHECK ("bot_economy"."raffle_entries"."position" > 0)
 );
 
 CREATE TABLE "bot_economy"."financial_accounts" (
@@ -375,6 +456,31 @@ CREATE TABLE "bot_groups"."group_rpg_settings" (
 	"group_id" text PRIMARY KEY NOT NULL,
 	"auto_level_up" boolean DEFAULT true NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE "bot_groups"."group_daily_reminder_settings" (
+	"group_id" text PRIMARY KEY NOT NULL,
+	"enabled" boolean DEFAULT true NOT NULL,
+	"local_time" text DEFAULT '08:00' NOT NULL,
+	"timezone" text DEFAULT 'America/Bogota' NOT NULL,
+	"updated_by" text,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "group_daily_reminder_settings_time_check" CHECK ("bot_groups"."group_daily_reminder_settings"."local_time" ~ '^[0-2][0-9]:[0-5][0-9]$')
+);
+
+CREATE TABLE "bot_groups"."group_daily_reminder_deliveries" (
+	"group_id" text NOT NULL,
+	"activity_day" date NOT NULL,
+	"bot_id" text NOT NULL,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"attempt_count" integer DEFAULT 1 NOT NULL,
+	"message_id" text,
+	"last_error" text,
+	"sent_at" timestamp with time zone,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "group_daily_reminder_deliveries_group_id_activity_day_pk" PRIMARY KEY("group_id","activity_day"),
+	CONSTRAINT "group_daily_reminder_deliveries_status_check" CHECK ("bot_groups"."group_daily_reminder_deliveries"."status" in ('pending', 'sent', 'failed')),
+	CONSTRAINT "group_daily_reminder_deliveries_attempt_check" CHECK ("bot_groups"."group_daily_reminder_deliveries"."attempt_count" > 0)
 );
 
 CREATE TABLE "bot_groups"."group_settings" (
@@ -638,6 +744,16 @@ ALTER TABLE "bot_ai"."chat_memory_messages" ADD CONSTRAINT "chat_memory_messages
 ALTER TABLE "bot_economy"."command_reservation_items" ADD CONSTRAINT "command_reservation_items_reservation_fk" FOREIGN KEY ("reservation_id") REFERENCES "bot_economy"."command_resource_reservations"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_economy"."command_reservation_items" ADD CONSTRAINT "command_reservation_items_resource_code_resources_code_fk" FOREIGN KEY ("resource_code") REFERENCES "bot_economy"."resources"("code") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "bot_economy"."command_resource_reservations" ADD CONSTRAINT "command_resource_reservations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_economy"."user_product_subscriptions" ADD CONSTRAINT "user_product_subscriptions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_economy"."user_product_subscriptions" ADD CONSTRAINT "user_product_subscriptions_product_code_store_products_code_fk" FOREIGN KEY ("product_code") REFERENCES "bot_economy"."store_products"("code") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "bot_economy"."subscription_charge_events" ADD CONSTRAINT "subscription_charge_events_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_economy"."subscription_charge_events" ADD CONSTRAINT "subscription_charge_events_product_code_store_products_code_fk" FOREIGN KEY ("product_code") REFERENCES "bot_economy"."store_products"("code") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "bot_economy"."subscription_charge_events" ADD CONSTRAINT "subscription_charge_events_financial_operation_id_financial_operations_id_fk" FOREIGN KEY ("financial_operation_id") REFERENCES "bot_economy"."financial_operations"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "bot_economy"."raffles" ADD CONSTRAINT "raffles_started_by_users_id_fk" FOREIGN KEY ("started_by") REFERENCES "bot_identity"."users"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "bot_economy"."raffle_tickets" ADD CONSTRAINT "raffle_tickets_buyer_id_users_id_fk" FOREIGN KEY ("buyer_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_economy"."raffle_tickets" ADD CONSTRAINT "raffle_tickets_purchase_operation_id_financial_operations_id_fk" FOREIGN KEY ("purchase_operation_id") REFERENCES "bot_economy"."financial_operations"("id") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "bot_economy"."raffle_entries" ADD CONSTRAINT "raffle_entries_raffle_id_raffles_id_fk" FOREIGN KEY ("raffle_id") REFERENCES "bot_economy"."raffles"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_economy"."raffle_entries" ADD CONSTRAINT "raffle_entries_ticket_id_raffle_tickets_id_fk" FOREIGN KEY ("ticket_id") REFERENCES "bot_economy"."raffle_tickets"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "bot_economy"."financial_accounts" ADD CONSTRAINT "financial_accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_economy"."financial_operations" ADD CONSTRAINT "financial_operations_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "bot_identity"."users"("id") ON DELETE set null ON UPDATE no action;
 ALTER TABLE "bot_economy"."financial_operations" ADD CONSTRAINT "financial_operations_counterparty_id_users_id_fk" FOREIGN KEY ("counterparty_id") REFERENCES "bot_identity"."users"("id") ON DELETE set null ON UPDATE no action;
@@ -652,6 +768,10 @@ ALTER TABLE "bot_groups"."group_memory_settings" ADD CONSTRAINT "group_memory_se
 ALTER TABLE "bot_groups"."group_moderation_settings" ADD CONSTRAINT "group_moderation_settings_group_id_group_settings_group_id_fk" FOREIGN KEY ("group_id") REFERENCES "bot_groups"."group_settings"("group_id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_groups"."group_nsfw_settings" ADD CONSTRAINT "group_nsfw_settings_group_id_group_settings_group_id_fk" FOREIGN KEY ("group_id") REFERENCES "bot_groups"."group_settings"("group_id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_groups"."group_rpg_settings" ADD CONSTRAINT "group_rpg_settings_group_id_group_settings_group_id_fk" FOREIGN KEY ("group_id") REFERENCES "bot_groups"."group_settings"("group_id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_groups"."group_daily_reminder_settings" ADD CONSTRAINT "group_daily_reminder_settings_group_id_group_settings_group_id_fk" FOREIGN KEY ("group_id") REFERENCES "bot_groups"."group_settings"("group_id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_groups"."group_daily_reminder_settings" ADD CONSTRAINT "group_daily_reminder_settings_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "bot_identity"."users"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "bot_groups"."group_daily_reminder_deliveries" ADD CONSTRAINT "group_daily_reminder_deliveries_group_id_group_settings_group_id_fk" FOREIGN KEY ("group_id") REFERENCES "bot_groups"."group_settings"("group_id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_groups"."group_daily_reminder_deliveries" ADD CONSTRAINT "group_daily_reminder_deliveries_bot_id_bot_instances_id_fk" FOREIGN KEY ("bot_id") REFERENCES "bot_runtime"."bot_instances"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_groups"."group_settings" ADD CONSTRAINT "group_settings_primary_bot_instance_fk" FOREIGN KEY ("primary_bot") REFERENCES "bot_runtime"."bot_instances"("id") ON DELETE set null ON UPDATE no action;
 ALTER TABLE "bot_economy"."ledger_entries" ADD CONSTRAINT "ledger_entries_operation_id_financial_operations_id_fk" FOREIGN KEY ("operation_id") REFERENCES "bot_economy"."financial_operations"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_economy"."ledger_entries" ADD CONSTRAINT "ledger_entries_account_id_financial_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "bot_economy"."financial_accounts"("id") ON DELETE restrict ON UPDATE no action;
@@ -704,6 +824,14 @@ CREATE UNIQUE INDEX "chat_memory_messages_chat_position_uidx" ON "bot_ai"."chat_
 CREATE INDEX "chat_memory_messages_chat_created_at_idx" ON "bot_ai"."chat_memory_messages" USING btree ("chat_id","created_at");
 CREATE INDEX "command_resource_reservations_pending_expiry_idx" ON "bot_economy"."command_resource_reservations" USING btree ("status","expires_at");
 CREATE INDEX "command_resource_reservations_user_idx" ON "bot_economy"."command_resource_reservations" USING btree ("user_id");
+CREATE INDEX "user_product_subscriptions_due_idx" ON "bot_economy"."user_product_subscriptions" USING btree ("status","next_charge_at");
+CREATE UNIQUE INDEX "subscription_charge_events_schedule_uidx" ON "bot_economy"."subscription_charge_events" USING btree ("user_id","product_code","scheduled_for");
+CREATE INDEX "raffle_tickets_status_purchased_idx" ON "bot_economy"."raffle_tickets" USING btree ("status","purchased_at");
+CREATE INDEX "raffle_tickets_buyer_idx" ON "bot_economy"."raffle_tickets" USING btree ("buyer_id");
+CREATE UNIQUE INDEX "raffle_entries_position_uidx" ON "bot_economy"."raffle_entries" USING btree ("raffle_id","position");
+CREATE UNIQUE INDEX "raffle_entries_one_winner_uidx" ON "bot_economy"."raffle_entries" USING btree ("raffle_id") WHERE "bot_economy"."raffle_entries"."selected" = true;
+CREATE INDEX "group_daily_reminder_deliveries_day_status_idx" ON "bot_groups"."group_daily_reminder_deliveries" USING btree ("activity_day","status");
+CREATE INDEX "group_daily_reminder_deliveries_bot_day_idx" ON "bot_groups"."group_daily_reminder_deliveries" USING btree ("bot_id","activity_day");
 CREATE UNIQUE INDEX "financial_accounts_user_type_uidx" ON "bot_economy"."financial_accounts" USING btree ("user_id","account_type");
 CREATE UNIQUE INDEX "financial_accounts_one_reserve_uidx" ON "bot_economy"."financial_accounts" USING btree ("account_type") WHERE "bot_economy"."financial_accounts"."user_id" IS NULL AND "bot_economy"."financial_accounts"."account_type" = 'reserve';
 CREATE INDEX "group_command_access_rules_group_scope_idx" ON "bot_groups"."group_command_access_rules" USING btree ("group_id","scope");
@@ -730,13 +858,19 @@ ALTER TABLE bot_identity.marriage_requests
 
 -- Catalog data replaces repeated resource columns and hard-coded exchange metadata.
 INSERT INTO bot_economy.resources
-    (code, category, default_wallet_balance, wallet_enabled, bank_enabled, transferable)
+    (code, category, display_name, plural_name, emoji, value_in_exp, robbery_enabled, security_eligible,
+     default_wallet_balance, wallet_enabled, bank_enabled, transferable)
 VALUES
-    ('limite',  'quota',      10,  true, true,  true),
-    ('exp',     'experience', 0,   true, false, true),
-    ('coins',   'currency',   100, true, true,  true),
-    ('botcoin', 'currency',   0,   true, true,  false),
-    ('zyxcoin', 'currency',   0,   true, true,  false);
+    ('limite',  'quota',      'Límite',  'Límites',  '💎', 1000,   true,  true,  10,  true, true,  true),
+    ('exp',     'experience', 'EXP',     'EXP',      '✨', 1,      true,  true,  0,   true, false, true),
+    ('coins',   'currency',   'Coin',    'Coins',    '🪙', 100,    true,  true,  100, true, true,  true),
+    ('botcoin', 'currency',   'Botcoin', 'Botcoins', '🤖', 10000,  true,  true,  0,   true, true,  false),
+    ('zyxcoin', 'currency',   'Zyxcoin', 'Zyxcoins', '🔷', 100000, false, false, 0,   true, true,  false);
+
+INSERT INTO bot_economy.store_products (code, category, name, emoji)
+VALUES
+    ('security', 'upgrade', 'Seguridad económica', '🛡️'),
+    ('raffle-ticket', 'ticket', 'Ticket de rifa', '🎟️');
 
 INSERT INTO bot_economy.bank_exchange_rates
     (source_resource, target_resource, source_amount, target_amount)

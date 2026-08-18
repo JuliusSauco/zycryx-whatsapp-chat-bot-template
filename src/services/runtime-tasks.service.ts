@@ -1,6 +1,7 @@
 import {repositories} from './data-source.js';
 import {releaseExpiredCommandResources} from './resource.service.js';
 import {refreshBankLoanStatuses} from './bank.service.js';
+import {renewDueSecuritySubscriptions} from './store.service.js';
 
 export async function listExpiredGroups(now: number) {
     return repositories.groupSettings.listExpiredGroups(now);
@@ -54,4 +55,20 @@ export async function cleanExpiredCommandResourceReservations(now = new Date()):
 
 export async function updateBankLoanStatuses(now = new Date()): Promise<number> {
     return refreshBankLoanStatuses(now);
+}
+
+export function renewStoreSubscriptions(now = new Date()) {
+    return renewDueSecuritySubscriptions(now);
+}
+
+export function claimDailyGroupReminders(botId: string, activityDay: string) {
+    return repositories.dailyReminders.claimForBot(botId, activityDay);
+}
+
+export function markDailyGroupReminderSent(groupId: string, activityDay: string, messageId: string | null) {
+    return repositories.dailyReminders.markSent(groupId, activityDay, messageId);
+}
+
+export function markDailyGroupReminderFailed(groupId: string, activityDay: string, error: string) {
+    return repositories.dailyReminders.markFailed(groupId, activityDay, error);
 }

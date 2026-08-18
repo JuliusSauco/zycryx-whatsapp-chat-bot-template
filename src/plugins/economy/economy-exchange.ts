@@ -4,6 +4,7 @@ import {exchangeBankCurrency, listBankExchangeRates} from '../../services/bank.s
 import {isWalletResource} from '../../services/wallet.service.js';
 import {isEconomyInfoRequest} from './economy-info.helpers.js';
 import type {BankExchangeRate} from '../../domain/bank.js';
+import {deliverPrivateReceipt} from '../store/store-receipt.helpers.js';
 
 function resourceLabel(resource: string): string {
     const labels: Record<string, string> = {
@@ -27,8 +28,8 @@ export default defineSdkPlugin({
     feature: 'rpg',
     command: ['exchange'],
     register: true,
-    private: true,
-    async execute(m, {args, usedPrefix, sdk}) {
+    async execute(m, context) {
+        const {args, usedPrefix, sdk} = context;
         if (isEconomyInfoRequest(args)) {
             const rates = await listBankExchangeRates();
             const rows = renderRates(rates, (key, values) => sdk.content.renderMessage(key, values));
@@ -57,7 +58,7 @@ export default defineSdkPlugin({
         if (result.kind === 'insufficient_wallet') return sdk.reply.message('economy.exchange.insufficientWallet');
         if (result.kind === 'insufficient_reserve') return sdk.reply.message('economy.exchange.insufficientReserve');
         if (result.kind !== 'success') return sdk.reply.message('economy.exchange.failed');
-        return sdk.reply.message('economy.exchange.receipt', {
+        const receipt = sdk.content.renderMessage('economy.exchange.receipt', {
             sourceSpent: result.sourceSpent,
             source: resourceLabel(result.rate.sourceResource),
             targetReceived: result.targetReceived,
@@ -65,5 +66,6 @@ export default defineSdkPlugin({
             sourceBalance: result.sourceBalance,
             targetBalance: result.targetBalance,
         });
+        return deliverPrivateReceipt(m, context, receipt, 'economy.shared');
     },
 });

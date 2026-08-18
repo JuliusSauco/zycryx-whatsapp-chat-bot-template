@@ -2,12 +2,7 @@ import {defineSdkPlugin} from '../../core/plugin-sdk.js';
 import {addWalletResourcesAndSetFields, getWallet} from '../../services/wallet.service.js';
 import {formatShortThousands, formatThousandsDot} from '../../utils/format.js';
 import {formatDurationHoursMinutesShort} from '../../utils/time.js';
-
-const free = 5000;
-const expIncrease = 1000;
-const bonusExp = 10000;
-const bonusLimit = 10;
-const bonusCoins = 5000;
+import {calculateDailyReward} from '../../domain/daily-rewards.js';
 
 export default defineSdkPlugin({
     command: ['daily', 'claim'],
@@ -28,23 +23,24 @@ export default defineSdkPlugin({
         });
 
         const newStreak = (now - lastClaim < 172800000) ? streak + 1 : 1;
-        const currentExp = free + (newStreak - 1) * expIncrease;
-        const nextExp = currentExp + expIncrease;
+        const reward = calculateDailyReward(newStreak);
+        const currentExp = reward.baseExp;
+        const nextExp = reward.nextBaseExp;
 
         let bonusText = "";
-        if (newStreak % 7 === 0) {
+        if (reward.hasBonus) {
             await addWalletResourcesAndSetFields({
                 userId: m.sender,
-                resources: {exp: currentExp + bonusExp, limite: bonusLimit, coins: bonusCoins},
+                resources: {exp: currentExp + reward.bonusExp, limite: reward.limits, coins: reward.coins},
                 fields: {lastclaim: now, dailystreak: newStreak},
                 reason: 'daily_reward',
                 operation: 'daily',
             });
 
             bonusText = sdk.content.renderMessage('rpg.daily.bonus', {
-                bonusExp: formatThousandsDot(bonusExp),
-                bonusLimit,
-                bonusCoins: formatThousandsDot(bonusCoins)
+                bonusExp: formatThousandsDot(reward.bonusExp),
+                bonusLimit: reward.limits,
+                bonusCoins: formatThousandsDot(reward.coins)
             });
         } else {
             await addWalletResourcesAndSetFields({

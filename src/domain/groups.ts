@@ -64,6 +64,7 @@ export type ConfigurableFeatureKey =
     | 'games'
     | 'tools'
     | 'rpg'
+    | 'store'
     | 'downloads'
     | 'search'
     | 'stickers'

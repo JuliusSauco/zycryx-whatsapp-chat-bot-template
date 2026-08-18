@@ -2,7 +2,7 @@ import type {AccessMode} from '../types/config.js';
 import type {ConfigurableFeatureKey, FamilyAccessMap, FamilyAccessRule} from '../domain/groups.js';
 
 export const CONFIGURABLE_FEATURES: readonly ConfigurableFeatureKey[] = [
-    'games', 'tools', 'rpg', 'downloads', 'search', 'stickers',
+    'games', 'tools', 'rpg', 'store', 'downloads', 'search', 'stickers',
     'converters', 'fun', 'audio', 'gifs', 'nsfw', 'nsfw-gifs',
 ];
 
@@ -34,7 +34,7 @@ export function isConfigurableFeature(value: string): value is ConfigurableFeatu
 
 export function familyAccessLabel(feature: ConfigurableFeatureKey): string {
     const labels: Record<ConfigurableFeatureKey, string> = {
-        games: 'juegos', tools: 'herramientas', rpg: 'RPG/economía', downloads: 'descargas',
+        games: 'juegos', tools: 'herramientas', rpg: 'RPG/economía', store: 'tienda', downloads: 'descargas',
         search: 'búsquedas', stickers: 'stickers', converters: 'convertidores', fun: 'diversión/random',
         audio: 'audios automáticos', gifs: 'GIFs/reacciones', nsfw: 'contenido NSFW', 'nsfw-gifs': 'GIFs NSFW',
     };

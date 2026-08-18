@@ -16,7 +16,10 @@ import {
     WALLET_RESOURCES,
     transferWalletResource,
 } from '../src/services/wallet.service.js';
-import {repositories} from '../src/services/data-source.js';
+import {configureServiceRepositories, repositories} from '../src/services/data-source.js';
+import {createDrizzleRepositories} from '../src/adapters/drizzle/repositories.js';
+
+configureServiceRepositories(createDrizzleRepositories());
 import {isEconomyInfoRequest} from '../src/plugins/economy/economy-info.helpers.js';
 import {formatTransferDate, isTransferHistoryRequest, parseHistoryPage} from '../src/plugins/economy/economy-transfer.js';
 
@@ -53,7 +56,7 @@ assert.ok(balanceColumns.resourceCode);
 assert.ok(balanceColumns.balance);
 assert.ok(operationColumns.reason);
 assert.ok(ledgerColumns.balanceAfter);
-assert.equal(balancePlugin.private, undefined, 'wallet must run in groups and private chats');
+assert.equal(balancePlugin.private, true, 'wallet balances must only be visible in private chats');
 assert.deepEqual(WALLET_COMMANDS, ['wallet', 'ewallet', 'balance', 'bal', 'diamantes', 'diamond']);
 assert.deepEqual(balancePlugin.command, [...WALLET_COMMANDS]);
 

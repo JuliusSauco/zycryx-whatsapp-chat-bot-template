@@ -9,7 +9,8 @@ const {getDecodedApiToken, invalidateApiTokenCache, setEncryptedApiToken} = awai
 const {db} = await import('../src/lib/postgres.js');
 
 const sessionId = `integration-${Date.now()}`;
-let auth = await useConfiguredAuthState({sessionId, sessionType: 'subbot', ownerId: 'integration-owner'});
+const botInstanceId = `integration-bot-${Date.now()}`;
+let auth = await useConfiguredAuthState({sessionId, botInstanceId, sessionType: 'subbot', ownerId: 'integration-owner'});
 auth.state.creds.registered = true;
 await auth.state.keys.set({
     'pre-key': {
@@ -21,7 +22,7 @@ await auth.saveCreds();
 await auth.flush();
 await auth.dispose();
 
-auth = await useConfiguredAuthState({sessionId, sessionType: 'subbot', ownerId: 'integration-owner'});
+auth = await useConfiguredAuthState({sessionId, botInstanceId, sessionType: 'subbot', ownerId: 'integration-owner'});
 assert.equal(auth.state.creds.registered, true);
 const preKeys = await auth.state.keys.get('pre-key', ['key:1']);
 assert.deepEqual([...preKeys['key:1'].public], [1, 2, 3]);

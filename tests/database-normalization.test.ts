@@ -17,7 +17,10 @@ for (const schema of expectedSchemas) {
 for (const table of [
     'user_identities', 'user_profiles', 'user_registrations', 'user_warnings',
     'resources', 'financial_accounts', 'account_balances', 'financial_operations', 'ledger_entries',
+    'store_products', 'user_product_subscriptions', 'subscription_charge_events',
+    'raffles', 'raffle_tickets', 'raffle_entries',
     'group_moderation_settings', 'group_greetings', 'group_command_access_rules',
+    'group_daily_reminder_settings', 'group_daily_reminder_deliveries',
     'subbot_prefixes', 'subbot_owners', 'bot_chat_memberships',
     'character_ownerships', 'character_price_events', 'character_market_listings',
     'chat_memory_messages', 'audio_response_assets', 'encryption_key_versions',
@@ -40,6 +43,7 @@ assert.match(sql, /valid_during WITHOUT OVERLAPS/);
 assert.match(sql, /ENABLE ROW LEVEL SECURITY/);
 assert.match(sql, /REVOKE ALL ON SCHEMA/);
 assert.match(sql, /bootstrap:reserve-capitalization/);
+assert.match(sql, /'zyxcoin'.*100000.*false.*false/s);
 assert.doesNotMatch(schemaSource, /\bjsonb\s*\(/i);
 assert.doesNotMatch(schemaSource, /\.array\s*\(\)/i);
 assert.doesNotMatch(schemaSource, /serial\s*\(/i);

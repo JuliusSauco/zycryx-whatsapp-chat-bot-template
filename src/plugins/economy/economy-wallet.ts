@@ -39,6 +39,7 @@ export default defineSdkPlugin({
     feature: 'rpg',
     command: [...WALLET_COMMANDS],
     register: true,
+    private: true,
     async execute(m, {args, isGroup, usedPrefix, sdk}) {
         if (isEconomyInfoRequest(args)) return sdk.reply.message('economy.wallet.guide', {prefix: usedPrefix});
         const user = await getWallet(m.sender);

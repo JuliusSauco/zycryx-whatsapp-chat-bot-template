@@ -15,6 +15,11 @@ const REQUIRED_RELATIONS = [
     'bot_security.encryption_key_versions',
     'bot_security.encrypted_secrets',
     'bot_runtime.report_deliveries',
+    'bot_economy.resources',
+    'bot_economy.store_products',
+    'bot_economy.user_product_subscriptions',
+    'bot_economy.raffle_tickets',
+    'bot_groups.group_daily_reminder_deliveries',
 ] as const;
 const REQUIRED_INDEXES = [
     'bot_runtime.bot_instances_type_status_idx',
@@ -24,6 +29,9 @@ const REQUIRED_INDEXES = [
     'bot_sessions.signal_keys_session_type_idx',
     'bot_groups.group_settings_primary_bot_idx',
     'bot_runtime.report_deliveries_pending_idx',
+    'bot_economy.user_product_subscriptions_due_idx',
+    'bot_economy.raffle_tickets_status_purchased_idx',
+    'bot_groups.group_daily_reminder_deliveries_day_status_idx',
 ] as const;
 const client = new Client(ENV.DATABASE_URL
     ? {connectionString: ENV.DATABASE_URL}

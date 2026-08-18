@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import type {GroupMetadata, GroupParticipant} from '@whiskeysockets/baileys';
-import {repositories} from '../src/services/data-source.js';
+import {configureServiceRepositories, repositories} from '../src/services/data-source.js';
+import {createDrizzleRepositories} from '../src/adapters/drizzle/repositories.js';
 import {censorGroupUser, findGroupCensoredUser, listGroupCensoredUsers, uncensorGroupUser} from '../src/services/censored-user.service.js';
 import {invalidateGroupCensoredUsers} from '../src/lib/db-cache.js';
 import {defaultCommandAccess} from '../src/utils/command-access.js';
@@ -10,6 +11,8 @@ import type {BeforePluginContext} from '../src/types/context.js';
 import type {BotMessage} from '../src/types/message.js';
 import {commandAccessGuard} from '../src/guards/command-access.guard.js';
 import type {GuardContext} from '../src/types/guard.js';
+
+configureServiceRepositories(createDrizzleRepositories());
 
 const originalRepository = repositories.censoredUsers;
 const groupId = '573000000000-1@g.us';

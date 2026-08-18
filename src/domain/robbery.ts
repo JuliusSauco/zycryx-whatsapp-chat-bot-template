@@ -1,10 +1,15 @@
 import {randomInt} from '../utils/random.js';
+import {getSecurityRemainingFactor} from './store.js';
+import type {WalletResource} from './users.js';
 
 export const ROB_EXP_PER_LEVEL = 1000;
 export const ROB_DAILY_LIMIT = 4;
 export const ROB_COOLDOWN_STEP_MS = 60 * 60 * 1000;
 export const ROB_TIME_ZONE = 'America/Bogota';
 export const MAX_ROB_EXP_AMOUNT = 2_000_000_000;
+export const BANK_ROBBERY_FACTOR = 0.5;
+export type RobberyResource = Exclude<WalletResource, 'zyxcoin'>;
+export type RobberyAccount = 'wallet' | 'bank';
 
 export interface RobExperienceInput {
     robberId: string;
@@ -12,6 +17,8 @@ export interface RobExperienceInput {
     /** Si se omite, se elige una cantidad aleatoria hasta el maximo del nivel. */
     amount?: number;
     attemptedAt: number;
+    resource?: RobberyResource;
+    account?: RobberyAccount;
 }
 
 export type RobExperienceResult =
@@ -23,11 +30,16 @@ export type RobExperienceResult =
         remainingRobberies: number;
         nextAvailableAt: number;
         dailyLimitReached: boolean;
+        resource: RobberyResource;
+        account: RobberyAccount;
+        attemptedAmount: number;
+        blockedAmount: number;
     }
+    | {kind: 'security_blocked'; resource: RobberyResource; account: RobberyAccount; attemptedAmount: number; remainingRobberies: number; nextAvailableAt: number}
     | {kind: 'missing_robber'}
     | {kind: 'missing_victim'}
     | {kind: 'same_user'}
-    | {kind: 'invalid_amount'}
+    | {kind: 'invalid_amount' | 'unsupported_resource' | 'missing_account'}
     | {kind: 'cooldown'; remainingMs: number}
     | {kind: 'daily_limit'; remainingMs: number; nextAvailableAt: number}
     | {kind: 'insufficient_level'; availableLevel: number; requiredLevel: number; maxAmount: number}
@@ -112,6 +124,36 @@ export function getNextRobAvailability(successAt: number, dailyCount: number): n
 export function getMaxRobExp(level: number): number {
     if (!Number.isFinite(level) || level <= 0) return 0;
     return Math.min(MAX_ROB_EXP_AMOUNT, Math.floor(level) * ROB_EXP_PER_LEVEL);
+}
+
+export function getMaxRobAmount(level: number, valueInExp: number): number {
+    if (!Number.isFinite(level) || level <= 0 || !Number.isSafeInteger(valueInExp) || valueInExp <= 0) return 0;
+    return Math.min(MAX_ROB_EXP_AMOUNT, Math.floor(Math.floor(level) * ROB_EXP_PER_LEVEL / valueInExp));
+}
+
+export function getRequiredRobLevelForResource(amount: number, valueInExp: number): number {
+    if (!Number.isSafeInteger(amount) || amount <= 0 || !Number.isSafeInteger(valueInExp) || valueInExp <= 0) return 0;
+    const expValue = amount * valueInExp;
+    if (!Number.isSafeInteger(expValue) || expValue > MAX_ROB_EXP_AMOUNT) return 0;
+    return Math.ceil(expValue / ROB_EXP_PER_LEVEL);
+}
+
+export function getRandomRobAmount(level: number, valueInExp: number): number {
+    const maxAmount = getMaxRobAmount(level, valueInExp);
+    return maxAmount > 0 ? randomInt(1, maxAmount) : 0;
+}
+
+export function applyRobberyProtection(
+    amount: number,
+    securityTier: number,
+    account: RobberyAccount,
+    randomValue = Math.random(),
+): number {
+    const accountFactor = account === 'bank' ? BANK_ROBBERY_FACTOR : 1;
+    const expected = amount * accountFactor * getSecurityRemainingFactor(securityTier);
+    const whole = Math.floor(expected);
+    const fraction = expected - whole;
+    return whole + (randomValue < fraction ? 1 : 0);
 }
 
 export function getRequiredRobLevel(amount: number): number {

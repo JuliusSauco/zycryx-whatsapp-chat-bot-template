@@ -430,11 +430,12 @@ const sections: ToggleSection[] = [
         navKey: 'comandos',
         title: 'Comandos',
         description: 'Permisos por familia: juegos, descargas, RPG y mas.',
-        summary: state => `juegos ${familyStatus(state, 'games')} | descargas ${familyStatus(state, 'downloads')} | rpg ${familyStatus(state, 'rpg')}`,
+        summary: state => `juegos ${familyStatus(state, 'games')} | descargas ${familyStatus(state, 'downloads')} | rpg ${familyStatus(state, 'rpg')} | tienda ${familyStatus(state, 'store')}`,
         items: state => [
             featureItem(state, 'Juegos', 'juegos', 'games'),
             featureItem(state, 'Herramientas', 'herramientas', 'tools'),
             featureItem(state, 'RPG', 'rpg', 'rpg'),
+            featureItem(state, 'Tienda', 'tienda', 'store'),
             switchItem(state, 'Autonivel RPG', 'autolevelup', getStatus(state, 'autolevelup')),
             featureItem(state, 'Descargas', 'descargas', 'downloads'),
             featureItem(state, 'Buscadores', 'buscadores', 'search'),

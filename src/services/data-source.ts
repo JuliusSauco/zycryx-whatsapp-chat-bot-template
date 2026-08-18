@@ -16,7 +16,22 @@ export function createRepositories(): AppRepositories {
 
 /** Fachada compatible sin dependencia services -> core/adapters. */
 export const repositories = new Proxy({} as AppRepositories, {
-    get(_target, property: keyof AppRepositories) {
+    get(_target, property: keyof AppRepositories | 'users') {
+        if (property === 'users') return createRepositories().userEconomy;
         return createRepositories()[property];
+    },
+    set(_target, property: keyof AppRepositories | 'users', value) {
+        if (property === 'users') {
+            const configured = createRepositories();
+            configured.userIdentity = value as AppRepositories['userIdentity'];
+            configured.userRegistration = value as AppRepositories['userRegistration'];
+            configured.userModeration = value as AppRepositories['userModeration'];
+            configured.userRelationships = value as AppRepositories['userRelationships'];
+            configured.userEconomy = value as AppRepositories['userEconomy'];
+            configured.userPreferences = value as AppRepositories['userPreferences'];
+            return true;
+        }
+        createRepositories()[property] = value as never;
+        return true;
     },
 });

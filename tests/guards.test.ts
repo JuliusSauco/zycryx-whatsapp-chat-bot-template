@@ -8,7 +8,10 @@ import {ownerGuard} from '../src/guards/owner.guard.js';
 import {resourceGuard} from '../src/guards/resource.guard.js';
 import {scopeGuard} from '../src/guards/scope.guard.js';
 import {runGuards} from '../src/guards/index.js';
-import {repositories} from '../src/services/data-source.js';
+import {configureServiceRepositories, repositories} from '../src/services/data-source.js';
+import {createDrizzleRepositories} from '../src/adapters/drizzle/repositories.js';
+
+configureServiceRepositories(createDrizzleRepositories());
 import {SILENT_REJECT, type GuardContext} from '../src/types/guard.js';
 import type {BotMessage} from '../src/types/message.js';
 import type {Plugin} from '../src/types/plugin.js';

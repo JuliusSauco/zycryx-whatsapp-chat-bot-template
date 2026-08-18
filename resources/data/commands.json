@@ -5,7 +5,7 @@
     "usageStyle": "Uso canonico sin prefijo; los menus agregan el prefijo activo automaticamente.",
     "aliasStyle": "Aliases documentales, no fuente de ruteo; el router sigue usando la metadata real del plugin."
   },
-  "fallbackEmojiByTag": {
+    "fallbackEmojiByTag": {
     "main": "ℹ️",
     "jadibot": "✨",
     "downloader": "🚀",
@@ -25,6 +25,7 @@
     "efec": "🎙️",
     "owner": "👑",
     "rpg": "🧰",
+    "store": "🛍️",
     "hot": "🔥"
   },
   "commands": {
@@ -313,10 +314,10 @@
     "setbirthday": {"emoji": "🎂", "usage": "setbirthday <dd/mm/aaaa>", "description": "Actualiza o borra tu fecha de cumpleaños.", "examples": ["setbirthday 10/05/2000"]},
     "perfil": {"emoji": "👤", "usage": "perfil", "description": "Muestra tu perfil, nivel y datos de usuario.", "aliases": ["profile"], "examples": ["perfil", "perfil @usuario"]},
     "wallet": {"emoji": "👛", "usage": "wallet [--info]", "description": "Muestra tu E - WALLET o abre la guía general de economía.", "aliases": ["ewallet", "balance", "bal", "diamantes", "diamond"], "examples": ["wallet", "wallet --info"]},
-    "daily": {"emoji": "🎁", "usage": "daily", "description": "Reclama tu recompensa diaria.", "aliases": ["claim"]},
+    "daily": {"emoji": "🎁", "usage": "daily", "description": "Gana 1.000 EXP por día de racha y un bono especial cada 10 días.", "aliases": ["claim"]},
     "work": {"emoji": "🛠️", "usage": "work", "description": "Trabaja para ganar recursos del RPG.", "aliases": ["trabajar", "chambear", "w", "chamba"]},
     "crime": {"emoji": "🕶️", "usage": "crime", "description": "Intenta ganar recursos con una accion arriesgada.", "aliases": ["crimen"], "scope": "group"},
-    "rob": {"emoji": "💰", "usage": "rob [cantidad] @usuario | rob --info", "description": "Roba una cantidad aleatoria de XP hasta el máximo de tu nivel, o una cantidad explícita.", "aliases": ["robar"], "examples": ["rob --info", "rob @usuario", "rob 2500 @usuario", "rob 2500 respondiendo a un mensaje"]},
+    "rob": {"emoji": "💰", "usage": "rob [banco] [exp|coins|limite|botcoin] [cantidad] @usuario", "description": "Intenta robar recursos según tu nivel; Zyxcoin está excluido.", "aliases": ["robar"], "examples": ["rob --info", "rob coins @usuario", "rob bank limite 1 @usuario"]},
     "transfer": {"emoji": "🤝", "usage": "transfer <tipo> <cantidad> @usuario | transfer history [página]", "description": "Transfiere recursos o consulta tu historial privado.", "aliases": ["payxp", "darxp", "dar", "enviar", "transferir"], "examples": ["transfer --info", "transfer xp 100 @usuario", "transfer history 2"]},
     "bank": {"emoji": "🏦", "usage": "bank [--info]", "description": "Muestra tus depósitos y deuda o explica el banco custodial.", "examples": ["bank", "bank --info"]},
     "deposit": {"emoji": "🏦", "usage": "deposit [recurso] <cantidad|all>", "description": "Deposita recursos de tu E - WALLET en custodia.", "aliases": ["dep", "depositar"], "examples": ["deposit --info", "deposit coins 500", "dep all"]},
@@ -324,7 +325,11 @@
     "loan": {"emoji": "📄", "usage": "loan [--info|info|request <cantidad>|pay <cantidad|all>]", "description": "Consulta, solicita o paga préstamos bancarios en Coins.", "examples": ["loan --info", "loan", "loan request 1000", "loan pay all"]},
     "bankreserve": {"emoji": "🏛️", "usage": "bankreserve <status|add|remove>", "description": "Gestiona las reservas institucionales del banco.", "scope": "private"},
     "buy": {"emoji": "🛒", "usage": "buy [cantidad|--info]", "description": "Compra Límites usando EXP o consulta la guía de compra.", "aliases": ["buyall"], "examples": ["buy --info", "buy 10", "buyall"]},
-    "exchange": {"emoji": "💱", "usage": "exchange <origen> <destino> <cantidad|all>", "description": "Cambia recursos usando las tasas institucionales del banco en privado.", "examples": ["exchange --info", "exchange info", "exchange coins limite 5", "exchange limite botcoin all"]},
+    "exchange": {"emoji": "💱", "usage": "exchange <origen> <destino> <cantidad|all>", "description": "Cambia recursos; el comprobante detallado se entrega por privado.", "examples": ["exchange --info", "exchange info", "exchange coins limite 5", "exchange limite botcoin all"]},
+    "store": {"emoji": "🛍️", "usage": "store [--info|security|buy security|buy ticket]", "description": "Abre la tienda, compra seguridad o tickets de rifa.", "aliases": ["tienda", "marketplace", "market", "compras", "webstore", "botstore"]},
+    "subscription": {"emoji": "🔁", "usage": "subscription security inactive", "description": "Desactiva la renovación automática de seguridad.", "aliases": ["suscripcion", "suscripción"]},
+    "listrifas": {"emoji": "📋", "usage": "listrifas1", "description": "Lista 20 compradores por página y sus tickets pendientes.", "aliases": ["listraffles1", "rafflelist1"], "requiredRole": "owner", "scope": "private"},
+    "start rifa": {"emoji": "🎉", "usage": "start rifa <título>", "description": "Sortea aleatoriamente un código pendiente y anuncia al ganador.", "aliases": ["star rifa", "iniciar rifa"], "requiredRole": "owner"},
     "minar": {"emoji": "⛏️", "usage": "minar", "description": "Mina recursos para tu cuenta.", "aliases": ["mine", "miming"]},
     "cofre": {"emoji": "🧰", "usage": "cofre", "description": "Abre un cofre de recompensas.", "aliases": ["coffer", "abrircofre", "cofreabrir"]},
     "nivel": {"emoji": "📈", "usage": "nivel", "description": "Muestra o actualiza tu progreso de nivel.", "aliases": ["lvl", "levelup", "level"]},

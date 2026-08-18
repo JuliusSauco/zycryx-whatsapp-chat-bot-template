@@ -1,8 +1,8 @@
 import {and, asc, count, desc, eq, inArray, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {
-    accountBalances, financialAccounts, financialOperations, ledgerEntries, userCooldowns,
-    userDailyRewards, userProgress, userRobberyStates, usuarios,
+    accountBalances, economyResources, financialAccounts, financialOperations, ledgerEntries, userCooldowns,
+    userDailyRewards, userProductSubscriptions, userProgress, userRobberyStates, usuarios,
 } from '../../db/schema.js';
 import type {RewardTimestampField, TransferableWalletResource, WalletResource} from '../../domain/users.js';
 import type {UserRepository} from '../../ports/repositories.js';
@@ -12,9 +12,10 @@ import {
     lockBalances, mapBalanceRows, updateBalance, WALLET_RESOURCES,
 } from './economy-account.helpers.js';
 import {
-    evaluateRobProgress, getMaxRobExp, getNextRobAvailability, getRandomRobExp,
-    getRequiredRobLevel, isValidRobAmount, ROB_DAILY_LIMIT,
+    applyRobberyProtection, evaluateRobProgress, getMaxRobAmount, getNextRobAvailability, getRandomRobAmount,
+    getRequiredRobLevelForResource, ROB_DAILY_LIMIT,
 } from '../../domain/robbery.js';
+import {SECURITY_PRODUCT_CODE} from '../../domain/store.js';
 
 const cooldownMillis = (action: RewardTimestampField | 'wait') => sql<number>`COALESCE((
     SELECT EXTRACT(EPOCH FROM last_used_at) * 1000 FROM bot_identity.user_cooldowns
@@ -236,21 +237,28 @@ export const walletUserRepositoryMethods: Pick<UserRepository,
         };
     },
 
-    async robExperience({robberId, victimId, amount, attemptedAt}) {
+    async robExperience({robberId, victimId, amount, attemptedAt, resource = 'exp', account = 'wallet'}) {
         if (robberId === victimId) return {kind: 'same_user'};
-        if (amount !== undefined && !isValidRobAmount(amount)) return {kind: 'invalid_amount'};
+        if (amount !== undefined && (!Number.isSafeInteger(amount) || amount <= 0)) return {kind: 'invalid_amount'};
         return orm.transaction(async tx => {
             const users = await tx.select({id: usuarios.id}).from(usuarios).where(inArray(usuarios.id, [robberId, victimId]))
                 .orderBy(asc(usuarios.id)).for('update');
             if (!users.some(row => row.id === robberId)) return {kind: 'missing_robber'} as const;
             if (!users.some(row => row.id === victimId)) return {kind: 'missing_victim'} as const;
-            const accounts = await tx.select({id: financialAccounts.id, userId: financialAccounts.userId}).from(financialAccounts)
-                .where(and(inArray(financialAccounts.userId, [robberId, victimId]), eq(financialAccounts.accountType, 'wallet')));
-            const robberAccount = accounts.find(row => row.userId === robberId);
-            const victimAccount = accounts.find(row => row.userId === victimId);
+            const [resourcePolicy] = await tx.select().from(economyResources).where(eq(economyResources.code, resource)).limit(1);
+            if (!resourcePolicy?.robberyEnabled || (account === 'bank' && !resourcePolicy.bankEnabled)) {
+                return {kind: 'unsupported_resource'} as const;
+            }
+            const accounts = await tx.select({id: financialAccounts.id, userId: financialAccounts.userId, type: financialAccounts.accountType})
+                .from(financialAccounts).where(and(
+                    inArray(financialAccounts.userId, [robberId, victimId]),
+                    inArray(financialAccounts.accountType, ['wallet', account]),
+                ));
+            const robberAccount = accounts.find(row => row.userId === robberId && row.type === 'wallet');
+            const victimAccount = accounts.find(row => row.userId === victimId && row.type === account);
             if (!robberAccount) return {kind: 'missing_robber'} as const;
-            if (!victimAccount) return {kind: 'missing_victim'} as const;
-            const balances = await lockBalances(tx, [robberAccount.id, victimAccount.id], ['exp']);
+            if (!victimAccount) return {kind: 'missing_account'} as const;
+            const balances = await lockBalances(tx, [robberAccount.id, victimAccount.id], [resource]);
             const robberBalance = balances.find(row => row.accountId === robberAccount.id);
             const victimBalance = balances.find(row => row.accountId === victimAccount.id);
             if (!robberBalance) return {kind: 'missing_robber'} as const;
@@ -267,33 +275,51 @@ export const walletUserRepositoryMethods: Pick<UserRepository,
             }, attemptedAt);
             if (progress.kind !== 'allowed') return progress;
             const availableLevel = Math.max(0, progressRow?.level ?? 0);
-            const maxAmount = getMaxRobExp(availableLevel);
-            const requestedAmount = amount ?? getRandomRobExp(availableLevel);
-            const requiredLevel = getRequiredRobLevel(requestedAmount);
+            const maxAmount = getMaxRobAmount(availableLevel, resourcePolicy.valueInExp);
+            const requestedAmount = amount ?? getRandomRobAmount(availableLevel, resourcePolicy.valueInExp);
+            const requiredLevel = getRequiredRobLevelForResource(requestedAmount, resourcePolicy.valueInExp);
             if (requiredLevel === 0 || availableLevel < requiredLevel) return {
                 kind: 'insufficient_level', availableLevel, requiredLevel: Math.max(1, requiredLevel), maxAmount,
             } as const;
-            if (victimBalance.balance < requestedAmount) return {
-                kind: 'insufficient_victim_exp', available: victimBalance.balance, required: requestedAmount,
-            } as const;
+            const [subscription] = resourcePolicy.securityEligible
+                ? await tx.select().from(userProductSubscriptions).where(and(
+                    eq(userProductSubscriptions.userId, victimId),
+                    eq(userProductSubscriptions.productCode, SECURITY_PRODUCT_CODE),
+                )).limit(1)
+                : [];
+            const securityTier = subscription && subscription.paidUntil.getTime() > attemptedAt ? subscription.tier : 0;
+            const appliedAmount = applyRobberyProtection(requestedAmount, securityTier, account);
             const dailyCount = progress.dailyCount + 1;
             const remainingRobberies = ROB_DAILY_LIMIT - dailyCount;
             const nextAvailableAt = getNextRobAvailability(attemptedAt, dailyCount);
-            const robberAfter = robberBalance.balance + requestedAmount;
-            const victimAfter = victimBalance.balance - requestedAmount;
-            await updateBalance(tx, victimAccount.id, 'exp', victimAfter);
-            await updateBalance(tx, robberAccount.id, 'exp', robberAfter);
-            const operationId = await createFinancialOperation(tx, {reason: 'robbery', operation: 'rob', actorId: robberId, counterpartyId: victimId});
-            await insertLedgerEntries(tx, operationId, [
-                {accountId: victimAccount.id, resourceCode: 'exp', amount: -requestedAmount, balanceAfter: victimAfter},
-                {accountId: robberAccount.id, resourceCode: 'exp', amount: requestedAmount, balanceAfter: robberAfter},
-            ]);
+            if (victimBalance.balance < appliedAmount) return {
+                kind: 'insufficient_victim_exp', available: victimBalance.balance, required: appliedAmount,
+            } as const;
             await tx.insert(userCooldowns).values({userId: robberId, action: 'lastrob', lastUsedAt: new Date(attemptedAt)})
                 .onConflictDoUpdate({target: [userCooldowns.userId, userCooldowns.action], set: {lastUsedAt: new Date(attemptedAt)}});
             await tx.insert(userRobberyStates).values({userId: robberId, dailyCount, activityDay: progress.dayKey})
                 .onConflictDoUpdate({target: userRobberyStates.userId, set: {dailyCount, activityDay: progress.dayKey}});
-            return {kind: 'success', amount: requestedAmount, availableLevel, maxAmount, remainingRobberies,
-                nextAvailableAt, dailyLimitReached: dailyCount >= ROB_DAILY_LIMIT} as const;
+            if (appliedAmount <= 0) return {
+                kind: 'security_blocked', resource, account, attemptedAmount: requestedAmount,
+                remainingRobberies, nextAvailableAt,
+            } as const;
+            const robberAfter = robberBalance.balance + appliedAmount;
+            const victimAfter = victimBalance.balance - appliedAmount;
+            await updateBalance(tx, victimAccount.id, resource, victimAfter);
+            await updateBalance(tx, robberAccount.id, resource, robberAfter);
+            const operationId = await createFinancialOperation(tx, {
+                reason: 'robbery', operation: `rob:${account}:${resource}`, actorId: robberId, counterpartyId: victimId,
+            });
+            await insertLedgerEntries(tx, operationId, [
+                {accountId: victimAccount.id, resourceCode: resource, amount: -appliedAmount, balanceAfter: victimAfter},
+                {accountId: robberAccount.id, resourceCode: resource, amount: appliedAmount, balanceAfter: robberAfter},
+            ]);
+            return {
+                kind: 'success', amount: appliedAmount, attemptedAmount: requestedAmount,
+                blockedAmount: requestedAmount - appliedAmount, resource, account,
+                availableLevel, maxAmount, remainingRobberies, nextAvailableAt,
+                dailyLimitReached: dailyCount >= ROB_DAILY_LIMIT,
+            } as const;
         });
     },
 

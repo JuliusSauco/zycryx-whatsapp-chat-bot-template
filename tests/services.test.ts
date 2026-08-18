@@ -1,4 +1,8 @@
 import assert from 'node:assert/strict';
+import {configureServiceRepositories} from '../src/services/data-source.js';
+import {createDrizzleRepositories} from '../src/adapters/drizzle/repositories.js';
+
+configureServiceRepositories(createDrizzleRepositories());
 import {invalidateApiTokenCache, getDecodedApiToken} from '../src/services/api-token.service.js';
 import {
     countChats,
@@ -178,7 +182,7 @@ async function testChatService(): Promise<void> {
 
         assert.deepEqual(calls.slice(0, 2), [
             ['upsertActiveChat', {chatId: 'chat-1', isGroup: true, timestamp: 123, botId: 'bot'}],
-            ['insertIfMissing', 'chat-1'],
+            ['markBotLeftGroup', 'group-1', 'bot'],
         ]);
         assert.equal(calls.some(call => Array.isArray(call) && call[0] === 'messageLogCreate'), true);
         assert.equal(calls.some(call => Array.isArray(call) && call[0] === 'messageLogDeleted'), true);
