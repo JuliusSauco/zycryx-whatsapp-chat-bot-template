@@ -13,6 +13,7 @@ import {getApplicationPhase} from './application-lifecycle.js';
 import {getCacheInvalidationListenerStatus} from '../lib/cache-invalidation-listener.js';
 import {getBotInstanceIdentity} from './bot-instance-identity.js';
 import {getRuntimeConsoleEntries} from '../lib/runtime-console.js';
+import {getMainLinkState, startMainLink, type MainLinkMethod} from './main-linking.js';
 
 let server: Server | null = null;
 const consoleAssets = {
@@ -39,21 +40,33 @@ async function handleRequest(
     request: IncomingMessage,
     response: ServerResponse,
 ): Promise<void> {
-        if (request.method !== 'GET') return sendJson(response, 405, {error: 'method-not-allowed'});
+        if (request.method !== 'GET' && request.method !== 'POST') {
+            return sendJson(response, 405, {error: 'method-not-allowed'});
+        }
         const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
 
         if (url.pathname === '/') {
+            if (request.method !== 'GET') return sendJson(response, 405, {error: 'method-not-allowed'});
             response.statusCode = 302;
             response.setHeader('location', '/console');
             response.end();
             return;
         }
-        if (url.pathname === '/console') return sendAsset(response, consoleAssets.html, 'text/html; charset=utf-8');
-        if (url.pathname === '/console/styles.css') return sendAsset(response, consoleAssets.css, 'text/css; charset=utf-8');
-        if (url.pathname === '/console/app.js') return sendAsset(response, consoleAssets.js, 'text/javascript; charset=utf-8');
+        if (url.pathname === '/console') return request.method === 'GET'
+            ? sendAsset(response, consoleAssets.html, 'text/html; charset=utf-8')
+            : sendJson(response, 405, {error: 'method-not-allowed'});
+        if (url.pathname === '/console/styles.css') return request.method === 'GET'
+            ? sendAsset(response, consoleAssets.css, 'text/css; charset=utf-8')
+            : sendJson(response, 405, {error: 'method-not-allowed'});
+        if (url.pathname === '/console/app.js') return request.method === 'GET'
+            ? sendAsset(response, consoleAssets.js, 'text/javascript; charset=utf-8')
+            : sendJson(response, 405, {error: 'method-not-allowed'});
 
-        if (url.pathname === '/health/live') return sendJson(response, 200, {status: 'live', uptimeSeconds: process.uptime()});
+        if (url.pathname === '/health/live') return request.method === 'GET'
+            ? sendJson(response, 200, {status: 'live', uptimeSeconds: process.uptime()})
+            : sendJson(response, 405, {error: 'method-not-allowed'});
         if (url.pathname === '/health/ready') {
+            if (request.method !== 'GET') return sendJson(response, 405, {error: 'method-not-allowed'});
             try {
                 await db.query('SELECT 1');
                 const readiness = readinessStatus();
@@ -64,6 +77,7 @@ async function handleRequest(
             }
         }
         if (url.pathname === '/metrics') {
+            if (request.method !== 'GET') return sendJson(response, 405, {error: 'method-not-allowed'});
             if (ENV.HEALTH_METRICS_TOKEN && request.headers.authorization !== `Bearer ${ENV.HEALTH_METRICS_TOKEN}`) {
                 return sendJson(response, 401, {error: 'unauthorized'});
             }
@@ -87,6 +101,7 @@ async function handleRequest(
             if (!ENV.CONSOLE_VIEW_TOKEN) return sendJson(response, 503, {error: 'console-disabled'});
             if (!isAuthorized(request, ENV.CONSOLE_VIEW_TOKEN)) return sendJson(response, 401, {error: 'unauthorized'});
             if (url.pathname === '/api/console/status') {
+                if (request.method !== 'GET') return sendJson(response, 405, {error: 'method-not-allowed'});
                 let database: 'ok' | 'unavailable' = 'ok';
                 try {
                     await db.query('SELECT 1');
@@ -101,15 +116,63 @@ async function handleRequest(
                     database,
                     uptimeSeconds: process.uptime(),
                     metrics: runtimeMetrics(),
+                    linking: getMainLinkState(),
                 });
             }
             if (url.pathname === '/api/console/logs') {
+                if (request.method !== 'GET') return sendJson(response, 405, {error: 'method-not-allowed'});
                 const rawAfter = Number.parseInt(url.searchParams.get('after') || '0', 10);
                 const after = Number.isSafeInteger(rawAfter) && rawAfter >= 0 ? rawAfter : 0;
                 return sendJson(response, 200, {entries: getRuntimeConsoleEntries(after)});
             }
+            if (url.pathname === '/api/console/link/start') {
+                if (request.method !== 'POST') return sendJson(response, 405, {error: 'method-not-allowed'});
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonBody(request);
+                } catch (error) {
+                    return sendJson(response, 400, {error: 'invalid-body', message: error instanceof Error ? error.message : 'Solicitud inválida.'});
+                }
+                const method = body.method === 'qr' || body.method === 'code' ? body.method as MainLinkMethod : null;
+                if (!method) return sendJson(response, 400, {error: 'invalid-method', message: 'Selecciona QR o código.'});
+                const phone = method === 'code' ? normalizeInternationalPhone(body.phone) : null;
+                if (method === 'code' && !phone) {
+                    return sendJson(response, 400, {error: 'invalid-phone', message: 'Escribe el número internacional con código de país (8 a 15 dígitos).'});
+                }
+                try {
+                    await startMainLink({method, phone, replaceSession: body.replaceSession === true});
+                    return sendJson(response, 202, {linking: getMainLinkState()});
+                } catch (error) {
+                    return sendJson(response, 409, {
+                        error: 'linking-conflict',
+                        message: error instanceof Error ? error.message : String(error),
+                        linking: getMainLinkState(),
+                    });
+                }
+            }
         }
         return sendJson(response, 404, {error: 'not-found'});
+}
+
+async function readJsonBody(request: IncomingMessage): Promise<Record<string, unknown>> {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    for await (const chunk of request) {
+        const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        size += buffer.length;
+        if (size > 4_096) throw new Error('El cuerpo de la solicitud es demasiado grande.');
+        chunks.push(buffer);
+    }
+    if (!chunks.length) return {};
+    const parsed: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('JSON inválido.');
+    return parsed as Record<string, unknown>;
+}
+
+function normalizeInternationalPhone(value: unknown): string | null {
+    if (typeof value !== 'string') return null;
+    const digits = value.replace(/\D/g, '');
+    return /^\d{8,15}$/.test(digits) ? digits : null;
 }
 
 export async function stopHealthServer(): Promise<void> {

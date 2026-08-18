@@ -12,25 +12,25 @@ Si marca errores, corrige eso primero. Si solo marca advertencias, revisalas seg
 
 ## Conexion y vinculacion
 
-### No aparece el QR en la terminal
+### No aparece el QR en la consola web
 
-- Verifica que elegiste la opcion 1 y que no existe una sesión activa para `main` en `bot_sessions.auth_sessions`. En modo legacy, revisa `BotSession/creds.json`.
-- El QR se renderiza desde el evento `connection.update` con `qrcode-terminal` (Baileys 7 deprecó `printQRInTerminal`). Si actualizaste Baileys y dejo de salir el QR, revisa que `main.ts` siga manejando el campo `qr` del evento.
-- Algunas terminales con fuentes no monoespaciadas deforman el QR; prueba con otra terminal o usa el codigo de emparejamiento (opcion 2).
+- Entra en `/console`, autentícate, selecciona **Escanear QR** y pulsa **Generar QR**.
+- Si queda en “Preparando”, revisa la conectividad con WhatsApp y los logs de la misma vista.
+- Puedes cambiar a **Usar código** y escribir el número internacional del bot si la cámara no reconoce el QR.
 
 ### El codigo de emparejamiento no llega o es rechazado
 
 - El numero debe ir en formato internacional sin `+` ni espacios.
 - WhatsApp limita la frecuencia de codigos; espera 1-2 minutos entre intentos.
-- Si el numero es de Mexico, el bot normaliza `52` a `521` automaticamente.
+- No incluyas prefijos de llamada, extensiones ni ceros locales que no formen parte del número internacional.
 
 ### `Sesión inválida (código 401/403/500)`
 
 La sesion fue cerrada o invalidada (por ejemplo "Cerrar sesion" desde el telefono). El bot detiene los reintentos automaticamente y queda esperando intervencion:
 
-1. Detener el proceso.
-2. Conservar un backup para diagnóstico y eliminar/revocar la sesión `main` en el almacenamiento activo.
-3. Arrancar de nuevo y re-vincular.
+1. Abre la consola web.
+2. Elige QR o código e introduce el número internacional cuando corresponda.
+3. Inicia la vinculación; el proceso revoca el estado inválido y guarda la sesión nueva al sincronizar.
 
 Otros codigos de cierre (red caida, `connectionReplaced`, `restartRequired`) usan reconexión single-flight con backoff exponencial y jitter.
 

@@ -17,7 +17,7 @@ Esta lista se mantiene fuera del README para separar la documentacion publica de
 
 Hallazgos de la auditoria de conexion/reconexion. Hoy los enmascara el reinicio automatico cada 3 horas; corregirlos es prerequisito para sesiones largas sin reinicio forzado.
 
-- [x] 100% - Restaurar QR de vinculacion del bot principal: Baileys 7 dejo `printQRInTerminal` como no-op; ahora se renderiza el campo `qr` de `connection.update` con `qrcode-terminal`.
+- [x] 100% - Restaurar QR de vinculacion del bot principal y exponerlo como imagen en la consola web, con selección explícita entre QR y código.
 - [x] 100% - Registrar `process.on('uncaughtException'/'unhandledRejection')` y los `setInterval` de limpieza una sola vez, fuera de `startBot()` (movidos a nivel de modulo en `main.ts` via `startMaintenanceTasks()`; `startSubBot` ya no re-registra listeners de proceso).
 - [x] 100% - No reintentar conexion cuando el codigo de cierre es terminal de sesion: `loggedOut` (401), `forbidden` (403) y `badSession` (500) detienen los reintentos y piden re-vinculacion. Nota: 428 (`connectionClosed`) y 440 (`connectionReplaced`) son transitorios y siguen reintentando, antes estaban mal clasificados como error de sesion.
 - [x] 100% - Depurar `globalThis.conns` al cerrar un subbot (remover por `userId` en `close`) y reemplazar la entrada vieja en `open` para que la reconexion registre el socket nuevo.

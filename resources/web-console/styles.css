@@ -146,6 +146,43 @@ body {
 }
 .pairing-label { display: block; margin-bottom: .15rem; color: var(--muted); font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; }
 .pairing-code-box strong { color: var(--accent); font-family: "Cascadia Code", Consolas, monospace; font-size: 1.2rem; letter-spacing: .1em; }
+.link-phase {
+    flex: 0 0 auto;
+    padding: .25rem .5rem;
+    border: 1px solid var(--surface-border);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+.link-method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; }
+.link-method-option {
+    display: flex;
+    align-items: flex-start;
+    gap: .55rem;
+    padding: .75rem;
+    border: 1px solid var(--surface-border);
+    border-radius: 13px;
+    background: rgba(3, 8, 15, .42);
+    cursor: pointer;
+}
+.link-method-option:has(input:checked) { border-color: rgba(50, 230, 161, .55); background: var(--accent-soft); }
+.link-method-option input { margin-top: .2rem; }
+.link-method-option strong, .link-method-option small { display: block; }
+.link-method-option small { margin-top: .15rem; color: var(--muted) !important; font-size: .7rem; line-height: 1.25; }
+.form-check-input:checked { border-color: var(--accent); background-color: var(--accent); }
+.input-group-text { border-color: rgba(148, 163, 184, .24); background: rgba(3, 8, 15, .8); color: var(--muted); }
+.form-text { color: var(--muted); }
+.qr-box { padding: 1rem; border: 1px solid rgba(50, 230, 161, .25); border-radius: 15px; background: #fff; text-align: center; }
+.qr-box img { display: block; width: min(100%, 300px); height: auto; margin: 0 auto; border-radius: 8px; }
+.qr-box p { color: #425466 !important; }
+.linked-account { display: flex; align-items: center; gap: .75rem; padding: .85rem; border: 1px solid rgba(50, 230, 161, .28); border-radius: 13px; background: var(--accent-soft); }
+.linked-check { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #032118; font-weight: 900; }
+.linked-account small, .linked-account strong { display: block; }
+.linked-account small { color: var(--muted); }
+.linked-account strong { color: var(--text); }
 code { color: #79e9bd; }
 
 @media (max-width: 575.98px) {
@@ -154,4 +191,5 @@ code { color: #79e9bd; }
     .console-output { height: 445px; font-size: .72rem; }
     .log-entry { grid-template-columns: 4.2rem 2.8rem 1fr; gap: .35rem; }
     .status-pill { max-width: 100%; }
+    .link-method-grid { grid-template-columns: 1fr; }
 }

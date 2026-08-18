@@ -6,13 +6,16 @@
         lastLogId: 0,
         timer: null,
         failures: 0,
+        connected: false,
     };
 
     const elements = Object.fromEntries([
         'authPanel', 'authForm', 'tokenInput', 'authError', 'dashboard', 'logoutButton',
         'connectionBadge', 'mainStatus', 'mainStatusHint', 'lifecycleStatus', 'messageQueue',
         'messageQueueHint', 'uptime', 'databaseStatus', 'cacheStatus', 'subbotCount',
-        'linkingHelp', 'pairingCodeBox', 'pairingCode', 'copyCodeButton',
+        'linkingHelp', 'linkPhase', 'linkForm', 'linkMethodFields', 'phoneField', 'botPhone',
+        'linkError', 'startLinkButton', 'qrBox', 'qrImage', 'pairingCodeBox', 'pairingCode',
+        'copyCodeButton', 'linkedAccount', 'linkedNumber',
         'consoleOutput', 'streamStatus', 'clearButton',
     ].map(id => [id, document.getElementById(id)]));
 
@@ -20,11 +23,13 @@
         return {Authorization: `Bearer ${state.token}`};
     }
 
-    async function api(path) {
-        const response = await fetch(path, {headers: authHeaders(), cache: 'no-store'});
+    async function api(path, options = {}) {
+        const headers = {...authHeaders(), ...(options.body ? {'Content-Type': 'application/json'} : {})};
+        const response = await fetch(path, {...options, headers, cache: 'no-store'});
         if (response.status === 401) throw new Error('unauthorized');
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json();
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.message || `HTTP ${response.status}`);
+        return payload;
     }
 
     function setBadge(type, label) {
@@ -45,8 +50,9 @@
     function renderStatus(payload) {
         const metrics = payload.metrics;
         const connected = metrics.sessions.mainConnected;
+        state.connected = connected;
         elements.mainStatus.textContent = connected ? 'Conectado' : 'Sin vincular';
-        elements.mainStatusHint.textContent = connected ? 'WhatsApp operativo' : 'Revisa el código en la consola';
+        elements.mainStatusHint.textContent = connected ? 'WhatsApp operativo' : 'Configura tu sesión en Vinculación';
         elements.lifecycleStatus.textContent = metrics.lifecycle.phase;
         elements.messageQueue.textContent = String(metrics.messages.pending);
         elements.messageQueueHint.textContent = `${metrics.messages.pending} / ${metrics.messages.capacity} pendientes`;
@@ -54,11 +60,31 @@
         elements.databaseStatus.textContent = payload.database === 'ok' ? 'Operativa' : 'No disponible';
         elements.cacheStatus.textContent = metrics.cacheInvalidation.connected ? 'Conectada' : 'Desconectada';
         elements.subbotCount.textContent = String(metrics.sessions.subbotsConnected);
-        elements.linkingHelp.textContent = connected
-            ? 'La sesión principal está vinculada y persistida en PostgreSQL.'
-            : 'Usa el código de emparejamiento visible en la consola. Se renueva automáticamente si expira.';
-        if (connected) elements.pairingCodeBox.classList.add('d-none');
+        renderLinking(payload.linking, connected);
         setBadge(connected ? 'online' : payload.ready ? 'warning' : 'warning', connected ? 'WhatsApp conectado' : 'Esperando vinculación');
+    }
+
+    function renderLinking(linking, connected) {
+        const phaseLabels = {idle: 'Sin sesión', preparing: 'Preparando', awaiting: 'Esperando', connected: 'Conectado', error: 'Error'};
+        elements.linkPhase.textContent = phaseLabels[linking.phase] || linking.phase;
+        elements.linkingHelp.textContent = linking.message;
+        elements.qrBox.classList.toggle('d-none', !linking.qrDataUrl || connected);
+        if (linking.qrDataUrl && elements.qrImage.src !== linking.qrDataUrl) elements.qrImage.src = linking.qrDataUrl;
+        elements.pairingCodeBox.classList.toggle('d-none', !linking.pairingCode || connected);
+        elements.pairingCode.textContent = linking.pairingCode || '—';
+        elements.linkedAccount.classList.toggle('d-none', !connected);
+        elements.linkedNumber.textContent = linking.linkedNumber ? `+${linking.linkedNumber}` : 'Cuenta de WhatsApp conectada';
+
+        const method = selectedLinkMethod();
+        const busy = linking.phase === 'preparing';
+        elements.linkMethodFields.disabled = busy;
+        elements.botPhone.disabled = busy;
+        elements.startLinkButton.disabled = busy;
+        elements.startLinkButton.textContent = busy
+            ? 'Preparando…'
+            : connected
+                ? `Cambiar sesión con ${method === 'qr' ? 'QR' : 'código'}`
+                : `${linking.phase === 'awaiting' ? 'Generar nuevo' : 'Generar'} ${method === 'qr' ? 'QR' : 'código'}`;
     }
 
     function appendLogs(entries) {
@@ -80,12 +106,6 @@
             const message = document.createElement('span');
             message.className = 'log-message';
             message.textContent = entry.message;
-
-            const pairingMatch = entry.message.match(/Código de emparejamiento:\s*([A-Z0-9-]{6,})/i);
-            if (pairingMatch) {
-                elements.pairingCode.textContent = pairingMatch[1];
-                elements.pairingCodeBox.classList.remove('d-none');
-            }
 
             row.append(time, level, message);
             fragment.appendChild(row);
@@ -160,6 +180,35 @@
     elements.clearButton.addEventListener('click', () => {
         elements.consoleOutput.replaceChildren();
     });
+    elements.linkForm.addEventListener('change', event => {
+        if (event.target.name !== 'linkMethod') return;
+        updateMethodForm();
+    });
+    elements.linkForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const method = selectedLinkMethod();
+        const phone = elements.botPhone.value.replace(/\D/g, '');
+        elements.linkError.classList.add('d-none');
+        if (method === 'code' && !/^\d{8,15}$/.test(phone)) {
+            return showLinkError('Escribe un número internacional válido de 8 a 15 dígitos.');
+        }
+        const replaceSession = state.connected;
+        if (replaceSession && !window.confirm('Esto cerrará la sesión de WhatsApp actual y la reemplazará. ¿Deseas continuar?')) return;
+        elements.startLinkButton.disabled = true;
+        elements.startLinkButton.textContent = 'Preparando…';
+        try {
+            const payload = await api('/api/console/link/start', {
+                method: 'POST',
+                body: JSON.stringify({method, phone: method === 'code' ? phone : null, replaceSession}),
+            });
+            renderLinking(payload.linking, false);
+            await refresh();
+        } catch (error) {
+            if (error.message === 'unauthorized') return logout('El token no es válido o cambió.');
+            showLinkError(error.message || 'No fue posible iniciar la vinculación.');
+            elements.startLinkButton.disabled = false;
+        }
+    });
     elements.copyCodeButton.addEventListener('click', async () => {
         const code = elements.pairingCode.textContent.trim();
         if (!code || code === '—') return;
@@ -175,5 +224,22 @@
         if (!document.hidden && state.token) void refresh();
     });
 
+    function selectedLinkMethod() {
+        return elements.linkForm.querySelector('input[name="linkMethod"]:checked')?.value || 'qr';
+    }
+
+    function updateMethodForm() {
+        const code = selectedLinkMethod() === 'code';
+        elements.phoneField.classList.toggle('d-none', !code);
+        elements.botPhone.required = code;
+        elements.startLinkButton.textContent = `${state.connected ? 'Cambiar sesión con' : 'Generar'} ${code ? 'código' : 'QR'}`;
+    }
+
+    function showLinkError(message) {
+        elements.linkError.textContent = message;
+        elements.linkError.classList.remove('d-none');
+    }
+
+    updateMethodForm();
     if (state.token) showDashboard();
 })();

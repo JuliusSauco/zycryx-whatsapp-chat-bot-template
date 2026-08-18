@@ -104,14 +104,58 @@
 
                     <article class="card-surface info-card">
                         <p class="eyebrow mb-2">VINCULACIÓN</p>
-                        <h2 class="h5">WhatsApp</h2>
-                        <p id="linkingHelp" class="text-secondary mb-0">La consola mostrará el código o la confirmación de conexión emitida por Baileys.</p>
+                        <div class="d-flex align-items-start justify-content-between gap-2">
+                            <div>
+                                <h2 class="h5 mb-1">Tu sesión de WhatsApp</h2>
+                                <p id="linkingHelp" class="text-secondary small mb-0">Elige QR o código para comenzar.</p>
+                            </div>
+                            <span id="linkPhase" class="link-phase">Sin sesión</span>
+                        </div>
+
+                        <form id="linkForm" class="mt-3" novalidate>
+                            <fieldset id="linkMethodFields">
+                                <legend class="visually-hidden">Método de vinculación</legend>
+                                <div class="link-method-grid">
+                                    <label class="link-method-option">
+                                        <input class="form-check-input" type="radio" name="linkMethod" value="qr" checked>
+                                        <span><strong>Escanear QR</strong><small>Con la cámara de WhatsApp</small></span>
+                                    </label>
+                                    <label class="link-method-option">
+                                        <input class="form-check-input" type="radio" name="linkMethod" value="code">
+                                        <span><strong>Usar código</strong><small>Con tu número internacional</small></span>
+                                    </label>
+                                </div>
+                            </fieldset>
+
+                            <div id="phoneField" class="mt-3 d-none">
+                                <label for="botPhone" class="form-label small fw-semibold">Número del bot</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">+</span>
+                                    <input id="botPhone" class="form-control" type="tel" inputmode="numeric" autocomplete="tel" placeholder="573001234567" maxlength="18">
+                                </div>
+                                <div class="form-text">Incluye el código de país, sin espacios ni el signo +.</div>
+                            </div>
+
+                            <div id="linkError" class="alert alert-danger py-2 px-3 small d-none mt-3 mb-0" role="alert"></div>
+                            <button id="startLinkButton" class="btn btn-accent w-100 mt-3" type="submit">Generar QR</button>
+                        </form>
+
+                        <div id="qrBox" class="qr-box d-none mt-3">
+                            <img id="qrImage" alt="Código QR para vincular WhatsApp">
+                            <p class="small text-secondary mb-0 mt-2">WhatsApp → Dispositivos vinculados → Vincular dispositivo</p>
+                        </div>
+
                         <div id="pairingCodeBox" class="pairing-code-box d-none mt-3">
                             <div>
-                                <span class="pairing-label">Código actual</span>
+                                <span class="pairing-label">Código de vinculación</span>
                                 <strong id="pairingCode">—</strong>
                             </div>
                             <button id="copyCodeButton" class="btn btn-sm btn-outline-light" type="button">Copiar</button>
+                        </div>
+
+                        <div id="linkedAccount" class="linked-account d-none mt-3">
+                            <span class="linked-check">✓</span>
+                            <div><small>Cuenta sincronizada</small><strong id="linkedNumber">—</strong></div>
                         </div>
                     </article>
 

@@ -2,8 +2,7 @@ import * as baileys from "@whiskeysockets/baileys";
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import readlineSync from "readline-sync";
-import qrcodeTerminal from "qrcode-terminal";
+import qrcode from "qrcode";
 import pino from "pino";
 import type {Logger} from "pino";
 import NodeCache from 'node-cache';
@@ -27,11 +26,18 @@ import {application} from './composition-root.js';
 import {
     disposeAllDatabaseAuthStates,
     configureBaileysAuthRepository,
+    deleteStoredAuthSession,
     flushAllDatabaseAuthStates,
     hasStoredAuthCredentials,
     listStoredSubbotSessionIds,
     useConfiguredAuthState,
 } from '../services/baileys-auth-state.service.js';
+import {
+    registerMainLinkStarter,
+    resetMainLinkState,
+    type MainLinkRequest,
+    updateMainLinkState,
+} from './main-linking.js';
 import {drainMessageQueue, stopMessageIntake} from './message-dispatch.js';
 import {ReconnectCoordinator} from './reconnect-coordinator.js';
 import {BaileysMessageCache} from '../lib/baileys-message-cache.js';
@@ -40,7 +46,7 @@ import {groupMetadataCache} from './group-metadata-cache.js';
 import {startCacheInvalidationListener, stopCacheInvalidationListener} from '../lib/cache-invalidation-listener.js';
 import {startHealthServer, stopHealthServer} from './health-server.js';
 import {preloadConfigResources} from './config.js';
-import {markBotInstanceConnected, registerBotInstanceIdentity, unregisterBotInstanceIdentity} from './bot-instance-identity.js';
+import {getBotInstanceIdentity, markBotInstanceConnected, registerBotInstanceIdentity, unregisterBotInstanceIdentity} from './bot-instance-identity.js';
 import {
     beginApplicationShutdown,
     isApplicationStopping,
@@ -75,8 +81,8 @@ const mainReconnect = new ReconnectCoordinator({
     maxDelayMs: 60_000,
     onError: (_key, error) => logError('[RECONNECT] Falló la reconexión principal:', error),
 });
-let usarCodigo = false;
-let numero = "";
+let activeLinkRequest: MainLinkRequest | null = null;
+const manualSocketClosures = new WeakSet<object>();
 
 // Códigos de cierre que indican sesión inválida/terminada: reconectar no sirve;
 // se revoca el estado activo y se solicita una nueva vinculación.
@@ -94,6 +100,7 @@ export async function startApplication(): Promise<void> {
     if (applicationStarted) return;
     applicationStarted = true;
     configureBaileysAuthRepository(application.baileysAuth);
+    registerMainLinkStarter(replaceMainSession);
     installProcessHandlers();
     try {
         await loadPlugins();
@@ -134,43 +141,80 @@ async function main() {
         : fs.existsSync(subbotsFolder) && fs.readdirSync(subbotsFolder)
             .some(folder => fs.existsSync(path.join(subbotsFolder, folder, "creds.json")));
 
-    if (!hayCredencialesPrincipal && !haySubbotsActivos) {
-        const mode = ENV.BOT_LINK_MODE.toLowerCase();
-        if (!['auto', 'qr', 'code', 'disabled'].includes(mode)) {
-            throw new Error(`BOT_LINK_MODE inválido: '${ENV.BOT_LINK_MODE}'. Usa auto, qr, code o disabled.`);
-        }
-        if (mode === 'disabled' || (mode === 'auto' && !process.stdin.isTTY)) {
-            throw new Error('No hay sesiones y el linking interactivo no está disponible. Configura BOT_LINK_MODE=qr o BOT_LINK_MODE=code.');
-        }
-        const selectedMode = mode === 'auto'
-            ? (readlineSync.question('Método de vinculación (1 = QR, 2 = código): ').trim() === '2' ? 'code' : 'qr')
-            : mode;
-        usarCodigo = selectedMode === 'code';
-        if (usarCodigo) {
-            const configuredPhone = ENV.BOT_LINK_PHONE.replace(/[^0-9]/g, '');
-            if (!configuredPhone && !process.stdin.isTTY) {
-                throw new Error('BOT_LINK_PHONE es obligatorio para vinculación por código sin terminal interactiva.');
-            }
-            numero = configuredPhone || readlineSync.question('Número internacional para vincular: ').replace(/[^0-9]/g, '');
-            if (numero.startsWith('52') && !numero.startsWith('521')) {
-                numero = '521' + numero.slice(2);
-            }
-        }
-    }
-
     await cargarSubbots();
     scheduleMaintenance(60_000, cargarSubbots);
 
-    if (hayCredencialesPrincipal || !haySubbotsActivos) {
+    if (hayCredencialesPrincipal) {
         try {
             await startBot();
         } catch (err: unknown) {
             logError(chalk.red("❌ Error al iniciar bot principal:"), err);
             throw err;
         }
-    } else {
+    } else if (haySubbotsActivos) {
         logWarn(chalk.yellow("⚠️ Subbots activos detectados. Bot principal desactivado automáticamente."));
+    } else {
+        resetMainLinkState();
+        logInfo('[AUTH] Sin sesión principal. Elige QR o código desde la consola web.');
     }
+}
+
+async function replaceMainSession(request: MainLinkRequest): Promise<void> {
+    const current = getMainConnection();
+    const connected = Boolean(getBotInstanceIdentity(current)?.botJid);
+    const hasAccount = Boolean(current?.user?.id);
+    if (connected && !request.replaceSession) {
+        throw new Error('Confirma que deseas reemplazar la sesión conectada.');
+    }
+
+    mainReconnect.cancel('main');
+    updateMainLinkState({
+        phase: 'preparing',
+        method: request.method,
+        phone: request.phone,
+        pairingCode: null,
+        qrDataUrl: null,
+        linkedNumber: null,
+        message: connected ? 'Cerrando la sesión anterior…' : 'Preparando una sesión nueva…',
+    });
+
+    try {
+        if (current) {
+            manualSocketClosures.add(current);
+            if (hasAccount) {
+                await Promise.race([
+                    current.logout(),
+                    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8_000)),
+                ]).catch(error => logWarn('[AUTH] WhatsApp no confirmó el cierre remoto:', error));
+            }
+            current.end(new Error('Sesión reemplazada desde la consola web'));
+            clearMainConnection(current);
+            unregisterBotInstanceIdentity(current);
+            await new Promise(resolve => setTimeout(resolve, 250));
+        }
+
+        await deleteMainSessionStorage();
+        activeLinkRequest = request;
+        await startBot(request);
+    } catch (error) {
+        activeLinkRequest = null;
+        updateMainLinkState({
+            phase: 'error',
+            pairingCode: null,
+            qrDataUrl: null,
+            message: error instanceof Error ? error.message : 'No se pudo preparar la sesión nueva.',
+        });
+        throw error;
+    }
+}
+
+async function deleteMainSessionStorage(): Promise<void> {
+    if (ENV.BAILEYS_AUTH_STATE_SOURCE === 'database') {
+        await deleteStoredAuthSession('main');
+        return;
+    }
+    await fs.promises.rm(BOT_SESSION_FOLDER, {recursive: true, force: true});
+    await fs.promises.mkdir(BOT_SESSION_FOLDER, {recursive: true});
 }
 
 async function cargarSubbots() {
@@ -202,12 +246,18 @@ async function cargarSubbots() {
     }
 }
 
-async function startBot() {
+async function startBot(linkRequest: MainLinkRequest | null = activeLinkRequest) {
     const version = await getBaileysVersion();
     const authState = await useConfiguredAuthState({
         sessionId: 'main', botInstanceId: 'main', sessionType: 'main', legacyFolder: BOT_SESSION_FOLDER,
     });
     const {state, saveCreds} = authState;
+    if (!state.creds.registered && !linkRequest) {
+        await authState.deleteSession();
+        resetMainLinkState('La sesión anterior incompleta fue eliminada. Elige QR o código para comenzar.');
+        logInfo('[AUTH] Sesión principal incompleta eliminada; esperando selección en la consola web.');
+        return;
+    }
     const msgRetryCounterCache = new NodeCache({stdTTL: 3600, checkperiod: 300, maxKeys: 10_000});
     const userDevicesCache = new NodeCache({stdTTL: 3600, checkperiod: 300, maxKeys: 10_000});
     const messageCache = new BaileysMessageCache();
@@ -259,13 +309,24 @@ async function startBot() {
 
         // Baileys 7 deprecó printQRInTerminal (la opción ya no hace nada),
         // así que el QR de vinculación se renderiza manualmente desde el evento.
-        if (qr && !usarCodigo && !state.creds.registered) {
-            qrcodeTerminal.generate(qr, {small: true});
-            logInfo(chalk.yellow('📲 Escanea el código QR desde WhatsApp para vincular el bot.'));
+        if (qr && linkRequest?.method === 'qr' && activeLinkRequest === linkRequest && !state.creds.registered) {
+            try {
+                const qrDataUrl = await qrcode.toDataURL(qr, {width: 360, margin: 2, errorCorrectionLevel: 'M'});
+                updateMainLinkState({
+                    phase: 'awaiting',
+                    qrDataUrl,
+                    pairingCode: null,
+                    message: 'Escanea este QR desde WhatsApp. Se actualizará si expira.',
+                });
+            } catch (error) {
+                updateMainLinkState({phase: 'error', message: 'No se pudo generar la imagen QR.'});
+                logError('[AUTH] No se pudo renderizar el QR:', error);
+            }
         }
 
         if (connection === "open") {
             mainReconnect.reset('main');
+            activeLinkRequest = null;
             markBotInstanceConnected(sock, sock.user?.id);
             try {
                 await authState.markConnected(sock.user?.id ?? null);
@@ -275,6 +336,15 @@ async function startBot() {
                 return;
             }
             logInfo(chalk.bold.greenBright('\n▣─────────────────────────────···\n│\n│❧ 𝙲𝙾𝙽𝙴𝙲𝚃𝙰𝙳𝙾 𝙲𝙾𝚁𝚁𝙴𝙲𝚃𝙰𝙼𝙴𝙽𝚃𝙴 𝙰𝙻 𝚆𝙷𝙰𝚃𝚂𝙰𝙿𝙿 ✅\n│\n▣─────────────────────────────···'));
+            updateMainLinkState({
+                phase: 'connected',
+                method: null,
+                phone: null,
+                pairingCode: null,
+                qrDataUrl: null,
+                linkedNumber: phoneFromJid(sock.user?.id),
+                message: 'Sesión sincronizada y guardada en PostgreSQL.',
+            });
 
             // Precarga de metadata de todos los grupos para evitar IQs lentos en el primer uso.
             void (async () => {
@@ -298,14 +368,21 @@ async function startBot() {
             unregisterBotInstanceIdentity(sock);
             messageCache.clear();
             if (isApplicationStopping()) return;
+            if (manualSocketClosures.has(sock)) {
+                manualSocketClosures.delete(sock);
+                return;
+            }
             if (SESSION_TERMINAL_CODES.includes(code)) {
                 const wasRegistered = state.creds.registered;
                 await authState.deleteSession().catch(error => logError('[AUTH] No se pudo revocar la sesión principal:', error));
                 if (!wasRegistered) {
+                    updateMainLinkState({phase: 'preparing', pairingCode: null, qrDataUrl: null, message: 'La vinculación expiró; generando una nueva…'});
                     logWarn(chalk.yellow(`♻️ La vinculación expiró (código ${code}). Se generará una nueva con backoff.`));
-                    mainReconnect.schedule('main', startBot);
+                    mainReconnect.schedule('main', () => startBot(activeLinkRequest));
                     return;
                 }
+                activeLinkRequest = null;
+                resetMainLinkState('La sesión dejó de ser válida. Elige QR o código para vincular otra cuenta.');
                 logError(chalk.red(`❌ Sesión inválida (código ${code}). Se eliminó del almacén activo; vuelve a vincular el bot.`));
                 return;
             }
@@ -319,16 +396,30 @@ async function startBot() {
         }
     });
 
-    if (usarCodigo && !state.creds.registered) {
+    if (linkRequest?.method === 'code' && linkRequest.phone && activeLinkRequest === linkRequest && !state.creds.registered) {
         setTimeout(async () => {
+            if (activeLinkRequest !== linkRequest) return;
             try {
-                const code = await sock.requestPairingCode(numero);
+                const code = await sock.requestPairingCode(linkRequest.phone!);
+                updateMainLinkState({
+                    phase: 'awaiting',
+                    pairingCode: code,
+                    qrDataUrl: null,
+                    message: 'Introduce este código en WhatsApp para sincronizar la cuenta.',
+                });
                 logInfo(chalk.yellow('Código de emparejamiento:'), chalk.greenBright(code));
-            } catch {
+            } catch (error) {
+                updateMainLinkState({phase: 'error', message: 'WhatsApp no pudo generar el código. Revisa el número e inténtalo nuevamente.'});
+                logError('[AUTH] No se pudo solicitar el código de emparejamiento:', error);
             }
         }, 2000);
     }
 
+}
+
+function phoneFromJid(jid: string | null | undefined): string | null {
+    if (!jid) return null;
+    return jid.split('@')[0]?.split(':')[0] || null;
 }
 
 /**

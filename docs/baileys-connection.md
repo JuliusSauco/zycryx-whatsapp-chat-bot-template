@@ -7,13 +7,13 @@ Referencia del arranque, vinculación y reconexión del bot principal y los subb
 1. `core/env.ts` carga `.env.<NODE_ENV>`.
 2. Se cargan y validan plugins críticos.
 3. Arrancan scheduler, mantenimiento y colas con shutdown explícito.
-4. `useConfiguredAuthState()` abre la sesión `main` y las sesiones de subbots.
-5. Si no hay credenciales registradas, el proceso ofrece QR o código de emparejamiento.
-6. `makeWASocket` recibe el auth state cacheado y crea el WebSocket.
+4. `useConfiguredAuthState()` abre las sesiones persistidas `main` y de subbots.
+5. Si no hay una sesión principal registrada, el proceso queda disponible y espera una elección desde la consola web.
+6. Al elegir QR o código, `makeWASocket` recibe un auth state nuevo y crea el WebSocket.
 
 ## Vinculación
 
-El QR se renderiza desde `connection.update` con `qrcode-terminal`. Para código de emparejamiento se solicita el número internacional sin `+`; los números mexicanos `52` se normalizan a `521`.
+La consola web protegida permite elegir entre QR y código. El QR de `connection.update` se transforma en una imagen responsive; para código se solicita el número internacional sin `+`. Una sesión incompleta anterior se elimina al arrancar. Reemplazar una sesión conectada exige confirmación explícita y cierra también el dispositivo remoto antes de crear la nueva.
 
 Por defecto `BAILEYS_AUTH_STATE_SOURCE=database`. Credenciales y Signal keys se cifran en PostgreSQL. Si no existe una sesión en DB y hay un `BotSession/creds.json` o una carpeta legacy de subbot, se importa automáticamente sin borrar el origen. Consulta `docs/baileys-database-sessions.md`.
 

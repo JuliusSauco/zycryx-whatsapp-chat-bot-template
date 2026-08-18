@@ -43,8 +43,6 @@ export const ENV = {
     BOT_GROUP_LINKS: process.env.BOT_GROUP_LINKS || '',
     BOT_CHANNEL_LINKS: process.env.BOT_CHANNEL_LINKS || '',
     BOT_MOD_GROUP_ID: process.env.BOT_MOD_GROUP_ID || '',
-    BOT_LINK_MODE: process.env.BOT_LINK_MODE || 'auto',
-    BOT_LINK_PHONE: process.env.BOT_LINK_PHONE || '',
     BOT_OWNER_NUMBERS: process.env.BOT_OWNER_NUMBERS || '',
     BOT_FIXED_OWNER_JIDS: process.env.BOT_FIXED_OWNER_JIDS || '',
     API_BASE_URL: process.env.API_BASE_URL || 'https://api.delirius.store',

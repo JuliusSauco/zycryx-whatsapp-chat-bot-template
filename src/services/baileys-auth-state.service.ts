@@ -401,6 +401,11 @@ export function hasStoredAuthCredentials(sessionId: string): Promise<boolean> {
 }
 
 export async function deleteStoredAuthSession(sessionId: string): Promise<void> {
+    const active = activeStates.get(sessionId);
+    if (active) {
+        await active.deleteSession();
+        return;
+    }
     await authRepository().deleteSession(sessionId);
 }
 

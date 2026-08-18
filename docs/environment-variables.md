@@ -62,8 +62,6 @@ NODE_ENV=prod npm run ops:check
 | `MESSAGE_QUEUE_CONCURRENCY` | `32` | Máximo global de mensajes procesados simultáneamente. |
 | `MESSAGE_QUEUE_PER_CHAT_LIMIT` | `50` | Backpressure por bot/chat antes de rechazar trabajo nuevo. |
 | `MESSAGE_QUEUE_GLOBAL_LIMIT` | `2000` | Límite total de mensajes pendientes. |
-| `BOT_LINK_MODE` | `auto` | `auto`, `qr`, `code` o `disabled`. En procesos sin TTY se debe seleccionar un modo explícito. |
-| `BOT_LINK_PHONE` | vacío | Número internacional usado por `BOT_LINK_MODE=code` cuando no hay terminal interactiva. |
 
 ## Sesiones y cifrado
 
