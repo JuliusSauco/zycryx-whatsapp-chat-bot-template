@@ -412,7 +412,7 @@
       "wallet": {
         "public": "*╭━━〔 👛 E - WALLET PÚBLICA 〕━━╮*\n\n👤 @{user}\n\n╭─「 📊 *SALDOS PÚBLICOS* 」\n├ ⚙️ *Nivel:* {level}\n├ ✨ *EXP:* {exp}\n╰ 🪙 *Coins:* {coins}\n\n🔐 _Límite, Botcoin, Zyxcoin, banco y préstamos solo se muestran por privado con *{prefix}wallet*._\n\n🛡️ *Protege tus ganancias:* convierte la EXP a un recurso bancable con *{prefix}exchange exp limite all* y guárdalo con *{prefix}deposit limite all*.",
         "private": "*╭━━〔 👛 E - WALLET 〕━━╮*\n\n👤 @{user}\n\n╭─「 📊 *SALDOS PÚBLICOS* 」\n├ ⚙️ *Nivel:* {level}\n├ ✨ *EXP:* {exp}\n╰ 🪙 *Coins:* {coins}\n\n╭─「 🔐 *SALDOS PRIVADOS* 」\n├ 💎 *Límite:* {diamonds}\n├ 🤖 *Botcoin:* {botcoin}\n╰ 🔷 *Zyxcoin:* {zyxcoin}\n\n╭─「 🏦 *BANCO CUSTODIAL* 」\n├ 💎 *Límite:* {bankLimit}\n├ 🪙 *Coins:* {bankCoins}\n├ 🤖 *Botcoin:* {bankBotcoin}\n╰ 🔷 *Zyxcoin:* {bankZyxcoin}\n{loanBlock}\n\n🛡️ *Protege tus ganancias:* convierte la EXP a un recurso bancable con *{prefix}exchange exp limite all* y guárdalo con *{prefix}deposit limite all*.\nConsulta todas las tasas con *{prefix}exchange info*.",
-        "guide": "*╭━━〔 👛 GUÍA DE E - WALLET 〕━━╮*\n\n🌐 En grupos, *{prefix}wallet* solo muestra EXP y Coins.\n🔐 En privado también muestra Límite, Botcoin, Zyxcoin, banco y préstamos.\n\n├ 👛 *{prefix}wallet*\n│  Consulta tus saldos.\n├ 🏦 *{prefix}bank* o *{prefix}banco*\n│  Consulta depósitos y deuda solo por privado.\n├ 📥 *{prefix}deposit*\n│  Guarda recursos en el banco.\n├ 📤 *{prefix}withdraw*\n│  Retira recursos custodiados.\n├ 📄 *{prefix}loan*\n│  Solicita o paga préstamos.\n├ 💱 *{prefix}exchange*\n│  Convierte recursos.\n├ 🛒 *{prefix}buy*\n│  Compra Límites con EXP.\n╰ 🤝 *{prefix}transfer*\n   Envía recursos a otro usuario.\n\n🛡️ Convierte tu EXP con *{prefix}exchange exp limite all* y protégela en el banco con *{prefix}deposit limite all*.\n_Usa cualquier comando con *--info* para abrir su guía._"
+        "guide": "*╭━━〔 👛 GUÍA DE E - WALLET 〕━━╮*\n\n🌐 En grupos, *{prefix}wallet* solo muestra EXP y Coins.\n🔐 En privado también muestra Límite, Botcoin, Zyxcoin, banco y préstamos.\n\n├ 👛 *{prefix}wallet*\n│  Consulta tus saldos.\n├ 🏦 *{prefix}bank* o *{prefix}banco*\n│  Consulta depósitos y deuda solo por privado.\n├ 📥 *{prefix}deposit*\n│  Guarda recursos en el banco.\n├ 📤 *{prefix}withdraw*\n│  Retira recursos custodiados.\n├ 📄 *{prefix}loan*\n│  Solicita o paga préstamos.\n├ 💱 *{prefix}exchange*\n│  Convierte recursos dentro de tu E - WALLET.\n├ 🛒 *{prefix}buy*\n│  Compra Límites dentro de tu E - WALLET.\n╰ 🤝 *{prefix}transfer*\n   Transfiere recursos exclusivamente de banco a banco.\n\n🛡️ Convierte tu EXP con *{prefix}exchange exp limite all* y protégela en el banco con *{prefix}deposit limite all*.\n_Usa cualquier comando con *--info* o *help* para abrir su guía._"
       },
       "bank": {
         "status": "*╭━━〔 🏦 BANCO CUSTODIAL 〕━━╮*\n\n╭─「 *DEPÓSITOS* 」\n├ 💎 *Límite:* {limite}\n├ 🪙 *Coins:* {coins}\n├ 🤖 *Botcoin:* {botcoin}\n╰ 🔷 *Zyxcoin:* {zyxcoin}\n\n{loanSummary}\n\n_Usa *{prefix}deposit* o *{prefix}withdraw* para mover recursos._",
@@ -426,7 +426,7 @@
         "withdraw": "✅ Retiraste *{amount} {resource}*.\n👛 E - WALLET: {walletBalance}\n🏦 Banco: {bankBalance}",
         "groupGuideSent": "✅ @{user}, el banco se usa por privado. Te envié la guía completa a tu chat privado.",
         "groupGuideFailed": "⚠️ @{user}, no pude enviarte la guía. Abre el chat privado del bot y usa *.bank* o *.banco*.",
-        "guide": "*╭━━〔 🏦 GUÍA COMPLETA DEL BANCO 〕━━╮*\n\n🔐 *El banco se usa siempre por privado.* Si escribes *{prefix}bank* o *{prefix}banco* en un grupo, esta guía llegará a tu chat privado sin publicar saldos ni deudas.\n\n╭─「 👛 *CONSULTAS* 」\n├ *{prefix}wallet* — E - WALLET y saldos bancarios\n├ *{prefix}bank* — depósitos y deuda\n╰ *{prefix}banco* — alias equivalente de bank\n\n╭─「 📥 *GUARDAR DINERO* 」\n├ *{prefix}deposit coins 500*\n├ *{prefix}deposit limite 10*\n├ *{prefix}deposit botcoin all*\n╰ *{prefix}deposit zyxcoin all*\n\n╭─「 📤 *RETIRAR DINERO* 」\n├ *{prefix}withdraw coins 100*\n├ *{prefix}withdraw limite all*\n╰ *{prefix}withdraw zyxcoin 1*\n\n╭─「 📄 *PRÉSTAMOS EN COINS* 」\n├ *{prefix}loan* — consulta deuda y cupo\n├ *{prefix}loan request 1000* — solicita 1.000 Coins\n├ *{prefix}loan pay 250* — pago parcial\n╰ *{prefix}loan pay all* — paga toda la deuda\n\n╭─「 💱 *CONVERTIR Y PROTEGER EXP* 」\n├ *{prefix}exchange info* — consulta tasas activas\n├ *{prefix}exchange exp limite all* — convierte toda la EXP posible\n╰ *{prefix}deposit limite all* — guarda el resultado en el banco\n\n*Recursos bancables:* Límite, Coins, Botcoin y Zyxcoin.\n_EXP no se puede depositar directamente: conviértela primero y guarda el recurso recibido para mantenerlo seguro._"
+        "guide": "*╭━━〔 🏦 GUÍA COMPLETA DEL BANCO 〕━━╮*\n\n🔐 *El banco se usa siempre por privado.* Si escribes *{prefix}bank* o *{prefix}banco* en un grupo, esta guía llegará a tu chat privado sin publicar saldos ni deudas.\n\n╭─「 👛 *CONSULTAS* 」\n├ *{prefix}wallet* — E - WALLET y saldos bancarios\n├ *{prefix}bank* — depósitos y deuda\n╰ *{prefix}banco* — alias equivalente de bank\n\n╭─「 📥 *GUARDAR DINERO* 」\n├ *{prefix}deposit coins 500*\n├ *{prefix}deposit limite 10*\n├ *{prefix}deposit botcoin all*\n╰ *{prefix}deposit zyxcoin all*\n\n╭─「 📤 *RETIRAR DINERO* 」\n├ *{prefix}withdraw coins 100*\n├ *{prefix}withdraw limite all*\n╰ *{prefix}withdraw zyxcoin 1*\n\n╭─「 🤝 *TRANSFERIR ENTRE BANCOS* 」\n├ *{prefix}transfer coins 100 @usuario*\n├ *{prefix}transfer limite 5 @usuario*\n╰ *{prefix}transfer history* — historial bancario\n\n╭─「 📄 *PRÉSTAMOS EN COINS* 」\n├ *{prefix}loan* — consulta deuda y cupo\n├ *{prefix}loan request 1000* — solicita 1.000 Coins\n├ *{prefix}loan pay 250* — pago parcial\n╰ *{prefix}loan pay all* — paga toda la deuda\n\n╭─「 💱 *CONVERTIR Y PROTEGER EXP* 」\n├ *{prefix}exchange info* — consulta tasas activas\n├ *{prefix}exchange exp limite all* — convierte toda la EXP posible en tu E - WALLET\n╰ *{prefix}deposit limite all* — guarda el resultado en el banco\n\n*Recursos bancables:* Límite, Coins, Botcoin y Zyxcoin.\n_El banco solo aumenta con depósitos o transferencias recibidas; solo disminuye con retiros o transferencias enviadas. Las compras y cambios nunca lo usan._"
       },
       "deposit": {
         "guide": "*📥 GUÍA DE DEPÓSITOS*\n\nMueve recursos desde tu E - WALLET hacia tu cuenta bancaria.\n\n├ *{prefix}deposit coins 500*\n├ *{prefix}deposit limite 10*\n├ *{prefix}deposit botcoin all*\n╰ *{prefix}dep 10* — deposita 10 Límites\n\n*Recursos:* limite, coins, botcoin y zyxcoin.\n_EXP no se puede depositar._"
@@ -473,19 +473,21 @@
         "cancelled": "*CANCELADO*",
         "invalidResource": "❌ Recurso inválido.",
         "notEnough": "⚠️ *𝙉𝙊 𝙏𝙄𝙀𝙉𝙀 𝙎𝙐𝙁𝙄𝘾𝙄𝙀𝙉𝙏𝙀 {resource}*",
-        "success": "✅ *TRANSFERENCIA HECHA:*\n\n*{amount} {resource} para* @{user}",
+        "success": "✅ *TRANSFERENCIA BANCARIA HECHA:*\n\n*{amount} {resource} para* @{user}\n🏦 Saldo bancario restante: {balance}",
+        "failed": "⚠️ No fue posible completar la transferencia bancaria.",
         "alreadyPending": "𝙀𝙨𝙩𝙖𝙨 𝙝𝙖𝙘𝙞𝙚𝙣𝙙𝙤 𝙪𝙣𝙖 𝙩𝙧𝙖𝙣𝙨𝙛𝙚𝙧𝙚𝙣𝙘𝙞𝙖",
-        "usage": "`⧼⧼⧼ 💱 𝙏𝙍𝘼𝙉𝙎𝙁𝙀𝙍𝙀𝙉𝘾𝙄𝘼 💱 ⧽⧽⧽`\n\n> *{command} tipo cantidad @tag*\n\n`❏ 𝙀𝙅𝙀𝙈𝙋𝙇𝙊 :`\n* *{command} exp 30 @0*\n\n┏•「 *✅ 𝙍𝙀𝘾𝙐𝙍𝙎𝙊𝙎 𝘿𝙄𝙎𝙋𝙊𝙉𝙄𝘽𝙇𝙀𝙎* 」\n┃\n┃ 💎 𝘿𝙞𝙖𝙢𝙖𝙣𝙩𝙚𝙨 = limite\n┃ 🪙 𝘾𝙤𝙞𝙣𝙨 = coins\n┃ ⚡ 𝙀𝙭𝙥𝙚𝙧𝙞𝙚𝙣𝙘𝙞𝙖 = exp\n┗•",
+        "usage": "`⧼⧼⧼ 🏦 𝙏𝙍𝘼𝙉𝙎𝙁𝙀𝙍𝙀𝙉𝘾𝙄𝘼 𝘽𝘼𝙉𝘾𝘼𝙍𝙄𝘼 🏦 ⧽⧽⧽`\n\n> *{command} tipo cantidad @tag*\n\n`❏ 𝙀𝙅𝙀𝙈𝙋𝙇𝙊 :`\n* *{command} coins 30 @0*\n\n┏•「 *✅ 𝙍𝙀𝘾𝙐𝙍𝙎𝙊𝙎 𝘿𝙄𝙎𝙋𝙊𝙉𝙄𝘽𝙇𝙀𝙎* 」\n┃ 💎 limite\n┃ 🪙 coins\n┃ 🤖 botcoin\n┃ 🔷 zyxcoin\n┗•\n\n_La transferencia sale del banco del remitente y entra al banco del destinatario._",
         "missingTarget": "⚠️ *𝙀𝙏𝙄𝙌𝙐𝙀𝙏𝙀 𝘼𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊*",
+        "sameUser": "⚠️ No puedes hacer una transferencia bancaria a tu propia cuenta.",
         "targetNotFound": "⚠️ *𝙀𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊 {user} 𝙉𝙊 𝙎𝙀 𝙀𝙉𝘾𝙐𝙀𝙉𝙏𝙍𝘼 𝙀𝙉 𝙈𝙄 db*",
         "confirm": "`ESTÁS A PUNTO DE HACER ESTA TRANSFERENCIA`\n\n> 💹 *{amount} {resource} para* *@{user}*\n\n`¿DESEAS CONTINUAR?`\n> Tienes 60 segundos.\n\n> Escribe: (si) para aceptar\n> Escribe: (no) para cancelar",
         "timeout": "*SU TIEMPO SE HA TERMINADO*",
-        "guide": "*🤝 GUÍA DE TRANSFERENCIAS*\n\nEnvía recursos directamente de una E - WALLET a otra.\n\n├ *{prefix}transfer coins 100 @usuario*\n├ *{prefix}transfer limite 5 @usuario*\n╰ *{prefix}transfer exp 1000 @usuario*\n\n*Transferibles:* limite, coins y exp.\n_Botcoin y Zyxcoin no se pueden transferir._\n\nResponde *si* para confirmar o *no* para cancelar.\n📜 Historial privado: *{prefix}transfer history*",
+        "guide": "*🤝 GUÍA DE TRANSFERENCIAS BANCARIAS*\n\nEnvía recursos exclusivamente del banco del remitente al banco del destinatario. Nunca usa las E - WALLET.\n\n├ *{prefix}transfer coins 100 @usuario*\n├ *{prefix}transfer limite 5 @usuario*\n├ *{prefix}transfer botcoin 2 @usuario*\n╰ *{prefix}transfer zyxcoin 1 @usuario*\n\n*Transferibles:* limite, coins, botcoin y zyxcoin.\n\nResponde *si* para confirmar o *no* para cancelar.\n📜 Historial bancario privado: *{prefix}transfer history*",
         "historyPrivate": "🔐 Tu historial es privado. Usa *{prefix}transfer history* en el chat privado del bot.",
         "historyInvalidPage": "⚠️ Página inválida. Usa *{prefix}transfer history* o indica una página positiva.",
-        "historyEmpty": "📭 Todavía no tienes transferencias enviadas ni recibidas.",
-        "history": "*╭━━〔 📜 HISTORIAL DE TRANSFERENCIAS 〕━━╮*\n\n{rows}\n\n📄 Página *{page}/{totalPages}* · {totalItems} movimientos",
-        "historyItem": "{direction} · *{amount} {resource}*\n👤 @{counterparty}\n💰 Saldo resultante: {balance}\n🕒 {date}"
+        "historyEmpty": "📭 Todavía no tienes transferencias bancarias enviadas ni recibidas.",
+        "history": "*╭━━〔 📜 HISTORIAL BANCARIO 〕━━╮*\n\n{rows}\n\n📄 Página *{page}/{totalPages}* · {totalItems} movimientos",
+        "historyItem": "{direction} · *{amount} {resource}*\n👤 @{counterparty}\n🏦 Saldo bancario resultante: {balance}\n🕒 {date}"
       },
       "adminAdd": {
         "missingTarget": "⚠️ Etiqueta a una persona con el @tag",
@@ -589,7 +591,7 @@
         ]
       },
       "rob": {
-        "info": "`💰 ROBO ECONÓMICO`\n\nTu nivel equivale a *1.000 EXP de capacidad por nivel*. Máximos equivalentes: 1.000 EXP, 10 Coins o 1 Límite por nivel; Botcoin se habilita desde nivel 10. Zyxcoin no puede robarse.\n\n• *.rob @usuario*\n• *.rob coins 25 @usuario*\n• *.rob limite 2 @usuario*\n• *.rob bank coins 10 @usuario*\n\nEl banco reduce la capacidad base al 50%. La seguridad de la víctima puede bloquear una parte adicional. Todos los recursos comparten 4 intentos diarios y esperas de 1, 2, 3 y 4 horas.",
+        "info": "`💰 ROBO ECONÓMICO`\n\nTu nivel equivale a *1.000 EXP de capacidad por nivel*. Máximos equivalentes: 1.000 EXP, 10 Coins o 1 Límite por nivel; Botcoin se habilita desde nivel 10. El banco y Zyxcoin no pueden robarse.\n\n• *.rob @usuario*\n• *.rob coins 25 @usuario*\n• *.rob limite 2 @usuario*\n\nLos robos solo afectan la E - WALLET. La seguridad de la víctima puede bloquear una parte. Todos los recursos comparten 4 intentos diarios y esperas de 1, 2, 3 y 4 horas.",
         "missingUser": "❌ En usuarios no aparece en mi base de datos",
         "cooldown": "🚓 La policía está vigilando, vuelve en: *{time}*",
         "dailyLimit": "🔒 Alcanzaste el límite de *4 robos exitosos* de hoy. Podrás volver a robar en: *{time}*",
@@ -599,7 +601,7 @@
         "missingVictim": "❌ El usuario no se encuentra en mi base de datos.",
         "insufficientLevel": "❌ Tu nivel actual es {level}. Para robar esa cantidad necesitas nivel {requiredLevel}.\nTu máximo actual es *{maximum} XP*.",
         "poorVictim": "⚠️ La víctima no dispone del saldo necesario para completar ese robo.",
-        "unsupportedResource": "🔷 Ese recurso no admite robos. Zyxcoin está excluido del sistema de riesgo económico.",
+        "unsupportedResource": "🔷 Ese recurso o cuenta no admite robos. El banco y Zyxcoin están excluidos del sistema de riesgo económico.",
         "missingAccount": "⚠️ La víctima no tiene disponible esa cuenta económica.",
         "securityBlocked": "`🛡️ ROBO BLOQUEADO`\n\nLa seguridad de @{user} bloqueó el intento de *{attempted} {resource}*.\n🎟️ Intentos disponibles: *{remaining}/4*\n⏳ Próximo intento: *{nextAvailable}*",
         "success": "`🚨 ROBO ECONÓMICO EXITOSO`\n\n👤 Víctima: *@{user}*\n🏦 Origen: *{account}*\n{emoji} Recurso: *{resource}*\n🎯 Intentado: *{attempted}*\n🛡️ Bloqueado: *{blocked}*\n💰 Robado: *{amount}*\n\n🎚️ Nivel: *{level}* · Máximo bruto: *{maximum}*\n🎟️ Intentos disponibles: *{remaining}/4*\n⏳ Próximo intento: *{nextAvailable}*"

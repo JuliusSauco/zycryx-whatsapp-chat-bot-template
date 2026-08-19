@@ -12,7 +12,11 @@ import {
     ROB_COOLDOWN_STEP_MS,
     ROB_DAILY_LIMIT,
 } from '../src/domain/robbery.js';
-import {parseRobAmount} from '../src/plugins/rpg/rpg-rob.js';
+import {parseRobAmount, parseRobRequest} from '../src/plugins/rpg/rpg-rob.js';
+
+assert.deepEqual(parseRobRequest(['bank', 'coins', '10']), {kind: 'unsupported_resource'});
+assert.deepEqual(parseRobRequest(['banco', 'limite', '1']), {kind: 'unsupported_resource'});
+assert.deepEqual(parseRobRequest(['help']), {kind: 'info'});
 
 assert.equal(getMaxRobExp(0), 0);
 assert.equal(getMaxRobExp(1), 1000);

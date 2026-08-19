@@ -251,22 +251,23 @@ export const walletUserRepositoryMethods: Pick<UserRepository,
     async robExperience({robberId, victimId, amount, attemptedAt, resource = 'exp', account = 'wallet'}) {
         if (robberId === victimId) return {kind: 'same_user'};
         if (amount !== undefined && (!Number.isSafeInteger(amount) || amount <= 0)) return {kind: 'invalid_amount'};
+        if (account !== 'wallet') return {kind: 'unsupported_resource'};
         return orm.transaction(async tx => {
             const users = await tx.select({id: usuarios.id}).from(usuarios).where(inArray(usuarios.id, [robberId, victimId]))
                 .orderBy(asc(usuarios.id)).for('update');
             if (!users.some(row => row.id === robberId)) return {kind: 'missing_robber'} as const;
             if (!users.some(row => row.id === victimId)) return {kind: 'missing_victim'} as const;
             const [resourcePolicy] = await tx.select().from(economyResources).where(eq(economyResources.code, resource)).limit(1);
-            if (!resourcePolicy?.robberyEnabled || (account === 'bank' && !resourcePolicy.bankEnabled)) {
+            if (!resourcePolicy?.robberyEnabled) {
                 return {kind: 'unsupported_resource'} as const;
             }
             const accounts = await tx.select({id: financialAccounts.id, userId: financialAccounts.userId, type: financialAccounts.accountType})
                 .from(financialAccounts).where(and(
                     inArray(financialAccounts.userId, [robberId, victimId]),
-                    inArray(financialAccounts.accountType, ['wallet', account]),
+                    eq(financialAccounts.accountType, 'wallet'),
                 ));
             const robberAccount = accounts.find(row => row.userId === robberId && row.type === 'wallet');
-            const victimAccount = accounts.find(row => row.userId === victimId && row.type === account);
+            const victimAccount = accounts.find(row => row.userId === victimId && row.type === 'wallet');
             if (!robberAccount) return {kind: 'missing_robber'} as const;
             if (!victimAccount) return {kind: 'missing_account'} as const;
             const balances = await lockBalances(tx, [robberAccount.id, victimAccount.id], [resource]);

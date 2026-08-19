@@ -152,7 +152,9 @@ assert.match(repositorySource, /orderBy\(desc\(ledgerEntries\.createdAt\), desc\
 assert.match(repositorySource, /externalId, actorId: from, counterpartyId: to/);
 const transferPluginSource = readFileSync('src/plugins/economy/economy-transfer.ts', 'utf8');
 assert.match(transferPluginSource, /if \(isGroup\).*historyPrivate/);
-assert.match(transferPluginSource, /listWalletTransferHistory\(m\.sender, page\)/);
+assert.match(transferPluginSource, /listBankTransferHistory\(m\.sender, page\)/);
+assert.match(transferPluginSource, /transferBankResource\(\{from: sender, to, resource: type, amount: count\}\)/);
+assert.doesNotMatch(transferPluginSource, /transferWalletResource|listWalletTransferHistory/);
 assert.doesNotMatch(transferPluginSource.slice(
     transferPluginSource.indexOf('if (isTransferHistoryRequest'),
     transferPluginSource.indexOf('if (confirmations.get'),

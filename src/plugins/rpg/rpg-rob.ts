@@ -16,6 +16,8 @@ export type RobRequestSelection =
     | {kind: 'invalid'}
     | {kind: 'unsupported_resource'};
 
+const ROB_INFO_ARGUMENTS = new Set(['--info', 'help', 'ayuda']);
+
 export default defineSdkPlugin({
     help: ['rob [cantidad] @usuario', 'rob --info', 'robar [cantidad] @usuario'],
     tags: ['rpg'],
@@ -107,7 +109,7 @@ export default defineSdkPlugin({
 
 /** Distingue la cantidad del numero contenido en una mencion de WhatsApp. */
 export function parseRobAmount(args: readonly string[]): RobAmountSelection {
-    if (args.some(arg => arg.toLowerCase() === '--info')) return {kind: 'info'};
+    if (args.some(arg => ROB_INFO_ARGUMENTS.has(arg.toLowerCase()))) return {kind: 'info'};
 
     const amountArgs = args.filter(arg => !arg.startsWith('@'));
     if (amountArgs.length === 0) return {kind: 'automatic'};
@@ -127,13 +129,12 @@ const RESOURCE_ALIASES: Record<string, RobberyResource> = {
 };
 
 export function parseRobRequest(args: readonly string[]): RobRequestSelection {
-    if (args.some(arg => arg.toLowerCase() === '--info')) return {kind: 'info'};
+    if (args.some(arg => ROB_INFO_ARGUMENTS.has(arg.toLowerCase()))) return {kind: 'info'};
     const values = args.filter(arg => !arg.startsWith('@')).map(arg => arg.toLowerCase());
     let account: RobberyAccount = 'wallet';
     if (['wallet', 'billetera', 'cartera'].includes(values[0] ?? '')) values.shift();
     else if (['bank', 'banco'].includes(values[0] ?? '')) {
-        account = 'bank';
-        values.shift();
+        return {kind: 'unsupported_resource'};
     }
     let resource: RobberyResource = 'exp';
     if (values[0] && !/^\d+$/.test(values[0])) {

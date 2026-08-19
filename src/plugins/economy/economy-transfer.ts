@@ -1,8 +1,9 @@
 import {defineSdkPlugin} from '../../core/plugin-sdk.js';
+import {isBankResource, type BankResource} from '../../domain/bank.js';
 import {createPendingActionStore} from '../../lib/ephemeral-state.js';
-import {getWallet, isTransferableWalletResource, listWalletTransferHistory, transferWalletResource} from '../../services/wallet.service.js';
+import {getBankOverview, listBankTransferHistory, transferBankResource} from '../../services/bank.service.js';
+import {getWallet} from '../../services/wallet.service.js';
 import type {BotMessage} from '../../types/message.js';
-import type {TransferableWalletResource} from '../../domain/users.js';
 import {content} from '../../services/content.service.js';
 import {isEconomyInfoRequest} from './economy-info.helpers.js';
 
@@ -10,7 +11,7 @@ interface TransferConfirmation {
     sender: string;
     to: string;
     message: BotMessage;
-    type: TransferableWalletResource;
+    type: BankResource;
     count: number;
 }
 
@@ -41,13 +42,17 @@ export default defineSdkPlugin({
             return m.reply(content.message('economy.transfer.cancelled'));
         }
         if (/^si$/i.test(m.originalText)) {
-            if (!isTransferableWalletResource(type)) return m.reply(content.message('economy.transfer.invalidResource'));
-            const transferred = await transferWalletResource({from: sender, to, resource: type, amount: count, operation: 'transfer'});
-            if (!transferred) return m.reply(content.renderMessage('economy.transfer.notEnough', {resource: type.toUpperCase()}));
+            if (!isBankResource(type)) return m.reply(content.message('economy.transfer.invalidResource'));
+            const result = await transferBankResource({from: sender, to, resource: type, amount: count});
+            if (result.kind === 'insufficient_bank') {
+                return m.reply(content.renderMessage('economy.transfer.notEnough', {resource: type.toUpperCase()}));
+            }
+            if (result.kind !== 'success') return m.reply(content.message('economy.transfer.failed'));
             await m.reply(content.renderMessage('economy.transfer.success', {
                 amount: count,
                 resource: type,
                 user: to.replace(/@s\.whatsapp\.net/g, ''),
+                balance: result.senderBankBalance,
             }), null, {mentions: [to]});
             confirmations.cancel(sender);
         }
@@ -58,7 +63,7 @@ export default defineSdkPlugin({
             if (isGroup) return sdk.reply.message('economy.transfer.historyPrivate', {prefix: usedPrefix});
             const page = parseHistoryPage(args[1]);
             if (page === null) return sdk.reply.message('economy.transfer.historyInvalidPage', {prefix: usedPrefix});
-            const history = await listWalletTransferHistory(m.sender, page);
+            const history = await listBankTransferHistory(m.sender, page);
             if (history.totalItems === 0) return sdk.reply.message('economy.transfer.historyEmpty');
             if (page > history.totalPages) {
                 return sdk.reply.message('economy.transfer.historyInvalidPage', {prefix: usedPrefix});
@@ -80,17 +85,21 @@ export default defineSdkPlugin({
             }, null, {mentions});
         }
         if (confirmations.get(m.sender)) return sdk.reply.message('economy.transfer.alreadyPending');
-        const user = await getWallet(m.sender);
+        const [user, bank] = await Promise.all([getWallet(m.sender), getBankOverview(m.sender)]);
         if (!user) return;
         const usage = sdk.content.renderMessage('economy.transfer.usage', {command: usedPrefix + command}).trim();
         const type = (args[0] || '').toLowerCase();
-        if (!isTransferableWalletResource(type)) return sdk.reply.text(usage, m.chat, {mentions: await conn.parseMention(usage)});
-        const count = Math.min(Number.MAX_SAFE_INTEGER, Math.max(1, isNumber(args[1]) ? parseInt(args[1]!) : 1));
+        if (!isBankResource(type)) return sdk.reply.text(usage, m.chat, {mentions: await conn.parseMention(usage)});
+        const count = Number(args[1]);
+        if (!Number.isSafeInteger(count) || count <= 0) {
+            return sdk.reply.text(usage, m.chat, {mentions: await conn.parseMention(usage)});
+        }
         const who = m.mentionedJid?.[0] || (args[2] ? `${args[2].replace(/[@ .+-]/g, '')}@s.whatsapp.net` : '');
         if (!who) return sdk.reply.message('economy.transfer.missingTarget');
+        if (who === m.sender) return sdk.reply.message('economy.transfer.sameUser');
         const userTo = await getWallet(who);
         if (!userTo) return sdk.reply.message('economy.transfer.targetNotFound', {user: who});
-        if (user[type] < count) return sdk.reply.message('economy.transfer.notEnough', {resource: type.toUpperCase()});
+        if (bank.balances[type] < count) return sdk.reply.message('economy.transfer.notEnough', {resource: type.toUpperCase()});
 
         const confirm = sdk.content.renderMessage('economy.transfer.confirm', {
             amount: count,
@@ -101,10 +110,6 @@ export default defineSdkPlugin({
         confirmations.start(m.sender, {sender: m.sender, to: who, message: m, type, count});
     },
 });
-
-function isNumber(value: string | undefined): boolean {
-    return value !== undefined && !Number.isNaN(Number(value));
-}
 
 export function isTransferHistoryRequest(args: readonly string[]): boolean {
     return ['history', 'historial'].includes(args[0]?.toLowerCase() ?? '');

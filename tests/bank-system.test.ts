@@ -131,6 +131,19 @@ const custodyMethod = repositorySource.slice(
     repositorySource.indexOf('async getReserves'),
 );
 assert.doesNotMatch(custodyMethod, /getReserveAccountId/);
+const accountTransferMethod = repositorySource.slice(
+    repositorySource.indexOf('async transferBetweenAccounts'),
+    repositorySource.indexOf('async listTransferHistory'),
+);
+assert.match(accountTransferMethod, /eq\(financialAccounts\.accountType, 'bank'\)/);
+assert.match(accountTransferMethod, /reason: 'bank_transfer', operation: 'transfer'/);
+assert.doesNotMatch(accountTransferMethod, /accountType, 'wallet'/);
+const exchangeMethod = repositorySource.slice(
+    repositorySource.indexOf('async exchangeCurrency'),
+    repositorySource.indexOf('async requestLoan'),
+);
+assert.match(exchangeMethod, /getAccountId\(tx, userId, 'wallet'\)/);
+assert.doesNotMatch(exchangeMethod, /getAccountId\(tx, userId, 'bank'\)/);
 
 const walletPluginSource = readFileSync('src/plugins/economy/economy-wallet.ts', 'utf8');
 assert.match(walletPluginSource, /isGroup \? undefined : await getBankOverview/);
@@ -152,6 +165,9 @@ for (const fragment of ['deposit coins 500', 'withdraw coins 100', 'loan request
     assert.match(bankMessages.guide, new RegExp(fragment));
 }
 assert.match(bankMessages.guide, /siempre por privado/);
+const transferMessages = messageManifest.pluginMessages.economy.transfer as Record<string, string>;
+assert.match(transferMessages.guide, /banco del remitente al banco del destinatario/);
+assert.match(transferMessages.guide, /Nunca usa las E - WALLET/);
 assert.equal('bankReserve' in messageManifest.pluginMessages.owner, false);
 
 console.log('bank-system.test.ts OK');

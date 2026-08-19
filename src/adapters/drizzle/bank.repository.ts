@@ -1,7 +1,8 @@
-import {and, asc, eq, inArray, or, sql} from 'drizzle-orm';
+import {and, asc, count, desc, eq, inArray, or, sql} from 'drizzle-orm';
 import {orm} from '../../db/client.js';
 import {
     accountBalances, bankExchangeRates, bankLoanPayments, bankLoans, financialAccounts,
+    financialOperations, ledgerEntries,
     userProgress, userRegistrations, usuarios,
 } from '../../db/schema.js';
 import {
@@ -102,6 +103,75 @@ export const bankRepository: BankRepository = {
             ]);
             return {kind: 'success', amount: applied, walletBalance: walletAfter, bankBalance: bankAfter} as const;
         });
+    },
+
+    async transferBetweenAccounts({from, to, resource, amount, operationId: externalId}) {
+        if (from === to) return {kind: 'same_user'} as const;
+        if (!Number.isSafeInteger(amount) || amount <= 0) return {kind: 'invalid_amount'} as const;
+        return orm.transaction(async tx => {
+            const accounts = await tx.select({
+                id: financialAccounts.id,
+                userId: financialAccounts.userId,
+                status: financialAccounts.status,
+            }).from(financialAccounts).where(and(
+                inArray(financialAccounts.userId, [from, to]),
+                eq(financialAccounts.accountType, 'bank'),
+            ));
+            const sender = accounts.find(row => row.userId === from);
+            const receiver = accounts.find(row => row.userId === to);
+            if (!sender || !receiver) return {kind: 'missing_account'} as const;
+            if (sender.status !== 'active' || receiver.status !== 'active') return {kind: 'inactive_account'} as const;
+            const rows = await lockBalances(tx, [sender.id, receiver.id], [resource]);
+            const senderBalance = rows.find(row => row.accountId === sender.id);
+            const receiverBalance = rows.find(row => row.accountId === receiver.id);
+            if (!senderBalance || !receiverBalance) return {kind: 'missing_account'} as const;
+            if (senderBalance.balance < amount) return {kind: 'insufficient_bank'} as const;
+            const senderAfter = senderBalance.balance - amount;
+            const receiverAfter = receiverBalance.balance + amount;
+            if (!Number.isSafeInteger(receiverAfter) || receiverAfter > MAX_INTEGER) return {kind: 'overflow'} as const;
+            await updateBalance(tx, sender.id, resource, senderAfter);
+            await updateBalance(tx, receiver.id, resource, receiverAfter);
+            const operationId = await createFinancialOperation(tx, {
+                reason: 'bank_transfer', operation: 'transfer', externalId, actorId: from, counterpartyId: to,
+            });
+            await insertLedgerEntries(tx, operationId, [
+                {accountId: sender.id, resourceCode: resource, amount: -amount, balanceAfter: senderAfter},
+                {accountId: receiver.id, resourceCode: resource, amount, balanceAfter: receiverAfter},
+            ]);
+            return {kind: 'success', amount, senderBankBalance: senderAfter, receiverBankBalance: receiverAfter} as const;
+        });
+    },
+
+    async listTransferHistory(userId, page, pageSize) {
+        const offset = (page - 1) * pageSize;
+        const where = and(
+            eq(financialAccounts.userId, userId),
+            eq(financialAccounts.accountType, 'bank'),
+            eq(financialOperations.reason, 'bank_transfer'),
+            eq(financialOperations.operation, 'transfer'),
+        );
+        const [[totalRow], rows] = await Promise.all([
+            orm.select({value: count()}).from(ledgerEntries)
+                .innerJoin(financialAccounts, eq(financialAccounts.id, ledgerEntries.accountId))
+                .innerJoin(financialOperations, eq(financialOperations.id, ledgerEntries.operationId)).where(where),
+            orm.select({
+                id: ledgerEntries.id,
+                resource: ledgerEntries.resourceCode,
+                amount: ledgerEntries.amount,
+                balanceAfter: ledgerEntries.balanceAfter,
+                counterpartyId: financialOperations.counterpartyId,
+                operationId: financialOperations.externalId,
+                createdAt: ledgerEntries.createdAt,
+            }).from(ledgerEntries)
+                .innerJoin(financialAccounts, eq(financialAccounts.id, ledgerEntries.accountId))
+                .innerJoin(financialOperations, eq(financialOperations.id, ledgerEntries.operationId))
+                .where(where).orderBy(desc(ledgerEntries.createdAt), desc(ledgerEntries.id)).limit(pageSize).offset(offset),
+        ]);
+        const totalItems = totalRow?.value ?? 0;
+        return {
+            items: rows.map(row => ({...row, resource: row.resource as BankResource})),
+            page, pageSize, totalItems, totalPages: totalItems === 0 ? 0 : Math.ceil(totalItems / pageSize),
+        };
     },
 
     async getReserves() {

@@ -193,6 +193,14 @@ export interface BankRepository {
         amount: number | 'all';
         operationId: string;
     }): Promise<BankTransferResult>;
+    transferBetweenAccounts(input: {
+        from: string;
+        to: string;
+        resource: BankResource;
+        amount: number;
+        operationId: string;
+    }): Promise<import('../domain/bank.js').BankAccountTransferResult>;
+    listTransferHistory(userId: string, page: number, pageSize: number): Promise<import('../domain/bank.js').BankTransferHistoryPage>;
     getReserves(): Promise<BankBalances>;
     adjustReserve(input: {
         actorId: string;

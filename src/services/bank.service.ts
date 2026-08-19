@@ -18,6 +18,23 @@ export async function transferBankCustody(input: {
     return repositories.banks.transferCustody({...input, operationId: randomUUID()});
 }
 
+export async function transferBankResource(input: {
+    from: string;
+    to: string;
+    resource: BankResource;
+    amount: number;
+}) {
+    await Promise.all([
+        repositories.banks.ensureAccount(input.from),
+        repositories.banks.ensureAccount(input.to),
+    ]);
+    return repositories.banks.transferBetweenAccounts({...input, operationId: randomUUID()});
+}
+
+export function listBankTransferHistory(userId: string, page = 1, pageSize = 10) {
+    return repositories.banks.listTransferHistory(userId, page, pageSize);
+}
+
 export function getBankReserves() {
     return repositories.banks.getReserves();
 }

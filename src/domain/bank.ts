@@ -45,9 +45,31 @@ export interface BankOverview {
     loan: BankLoan | null;
 }
 
+export interface BankTransferHistoryItem {
+    id: number;
+    resource: BankResource;
+    amount: number;
+    balanceAfter: number;
+    counterpartyId: string | null;
+    operationId: string | null;
+    createdAt: Date;
+}
+
+export interface BankTransferHistoryPage {
+    items: BankTransferHistoryItem[];
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+}
+
 export type BankTransferResult =
     | {kind: 'success'; amount: number; walletBalance: number; bankBalance: number}
     | {kind: 'missing_account' | 'inactive_account' | 'insufficient_wallet' | 'insufficient_bank' | 'overflow'};
+
+export type BankAccountTransferResult =
+    | {kind: 'success'; amount: number; senderBankBalance: number; receiverBankBalance: number}
+    | {kind: 'same_user' | 'missing_account' | 'inactive_account' | 'invalid_amount' | 'insufficient_bank' | 'overflow'};
 
 export type LoanRequestResult =
     | {kind: 'success'; loan: BankLoan; walletBalance: number; reserveBalance: number}
