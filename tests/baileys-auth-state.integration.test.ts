@@ -4,9 +4,12 @@ if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL es obligatorio para
 if (!process.env.BOT_SECRETS_MASTER_KEY_B64) throw new Error('BOT_SECRETS_MASTER_KEY_B64 es obligatorio para el test de integración.');
 process.env.BAILEYS_AUTH_STATE_SOURCE = 'database';
 
-const {useConfiguredAuthState} = await import('../src/services/baileys-auth-state.service.js');
+const {application} = await import('../src/core/composition-root.js');
+const {configureBaileysAuthRepository, useConfiguredAuthState} = await import('../src/services/baileys-auth-state.service.js');
 const {getDecodedApiToken, invalidateApiTokenCache, setEncryptedApiToken} = await import('../src/services/api-token.service.js');
 const {db} = await import('../src/lib/postgres.js');
+
+configureBaileysAuthRepository(application.baileysAuth);
 
 const sessionId = `integration-${Date.now()}`;
 const botInstanceId = `integration-bot-${Date.now()}`;
