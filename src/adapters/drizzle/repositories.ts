@@ -18,6 +18,7 @@ import {censoredUserRepository} from './censored-user.repository.js';
 import {bankRepository} from './bank.repository.js';
 import {storeRepository} from './store.repository.js';
 import {dailyReminderRepository} from './daily-reminder.repository.js';
+import {roleplayRepository} from './roleplay.repository.js';
 
 export function createDrizzleRepositories(): AppRepositories {
     return {
@@ -29,6 +30,7 @@ export function createDrizzleRepositories(): AppRepositories {
         userPreferences: userRepository,
         banks: bankRepository,
         store: storeRepository,
+        roleplay: roleplayRepository,
         dailyReminders: dailyReminderRepository,
         commandResources: commandResourceRepository,
         userGroupRoles: userGroupRoleRepository,

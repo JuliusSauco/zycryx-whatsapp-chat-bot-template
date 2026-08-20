@@ -12,6 +12,8 @@ import {
     markDailyGroupReminderSent,
     renewStoreSubscriptions,
     updateBankLoanStatuses,
+    billDueRoleplayContracts,
+    cleanExpiredRoleplayActions,
 } from '../services/runtime-tasks.service.js';
 import {logDebug, logError, logInfo} from '../lib/logger.js';
 import {pickRandom} from '../utils/random.js';
@@ -51,7 +53,49 @@ export function startScheduledTasks(): void {
     scheduleNonOverlapping('resource-reservations', 300_000, cleanExpiredResourceReservations);
     scheduleNonOverlapping('loan-status', 300_000, refreshLoans);
     scheduleNonOverlapping('store-subscriptions', 300_000, renewSubscriptions);
+    scheduleNonOverlapping('roleplay-billing', 60_000, billRoleplayContracts);
+    scheduleNonOverlapping('roleplay-actions', 300_000, cleanRoleplayActions);
     scheduleNonOverlapping('daily-group-reminders', 60_000, sendDailyGroupReminders);
+}
+
+async function billRoleplayContracts(): Promise<void> {
+    const events = await billDueRoleplayContracts();
+    if (!events.length) return;
+    const connections = [getMainConnection(), ...getSubbotConnections()].filter(connection => Boolean(connection));
+    for (const event of events) {
+        const buyerTag = `@${event.buyerId.split('@')[0]}`;
+        const beneficiaryTag = `@${event.beneficiaryId.split('@')[0]}`;
+        const key = event.kind === 'charged'
+            ? 'roleplay.billingCharged'
+            : event.kind === 'released'
+                ? 'roleplay.billingReleased'
+            : event.kind === 'completed'
+                ? 'roleplay.billingCompleted'
+                : 'roleplay.billingInsufficient';
+        const text = renderMessage(key, {
+            buyer: buyerTag,
+            beneficiary: beneficiaryTag,
+            price: event.hourlyPriceCoins,
+            hours: event.releasedHours,
+        });
+        for (const conn of connections) {
+            if (!conn) continue;
+            try {
+                await conn.sendMessage(event.groupId, {
+                    text,
+                    mentions: [event.buyerId, event.beneficiaryId],
+                });
+                break;
+            } catch (error) {
+                logDebug(`[ROLEPLAY] La conexión no pudo notificar ${event.contractId}: ${String(error)}`);
+            }
+        }
+    }
+}
+
+async function cleanRoleplayActions(): Promise<void> {
+    const deleted = await cleanExpiredRoleplayActions();
+    if (deleted) logDebug(`[ROLEPLAY] Mensajes de acción vencidos eliminados: ${deleted}`);
 }
 
 async function renewSubscriptions(): Promise<void> {

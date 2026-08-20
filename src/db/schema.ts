@@ -270,11 +270,11 @@ export const financialAccounts = botEconomySchema.table('financial_accounts', {
     updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
 }, table => ({
     userTypeUnique: uniqueIndex('financial_accounts_user_type_uidx').on(table.userId, table.accountType),
-    oneReserve: uniqueIndex('financial_accounts_one_reserve_uidx').on(table.accountType)
-        .where(sql`${table.userId} IS NULL AND ${table.accountType} = 'reserve'`),
-    accountTypeCheck: check('financial_accounts_type_check', sql`${table.accountType} in ('wallet', 'bank', 'reserve')`),
+    oneInstitutionalAccount: uniqueIndex('financial_accounts_one_institutional_uidx').on(table.accountType)
+        .where(sql`${table.userId} IS NULL AND ${table.accountType} in ('reserve', 'escrow')`),
+    accountTypeCheck: check('financial_accounts_type_check', sql`${table.accountType} in ('wallet', 'bank', 'reserve', 'escrow')`),
     statusCheck: check('financial_accounts_status_check', sql`${table.status} in ('active', 'frozen', 'closed')`),
-    ownerCheck: check('financial_accounts_owner_check', sql`(${table.accountType} = 'reserve' AND ${table.userId} IS NULL) OR (${table.accountType} <> 'reserve' AND ${table.userId} IS NOT NULL)`),
+    ownerCheck: check('financial_accounts_owner_check', sql`(${table.accountType} in ('reserve', 'escrow') AND ${table.userId} IS NULL) OR (${table.accountType} in ('wallet', 'bank') AND ${table.userId} IS NOT NULL)`),
 }));
 
 export const accountBalances = botEconomySchema.table('account_balances', {
@@ -405,6 +405,35 @@ export const storeProducts = botEconomySchema.table('store_products', {
     updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
 }, table => ({
     categoryCheck: check('store_products_category_check', sql`${table.category} in ('upgrade', 'ticket', 'item', 'character')`),
+}));
+
+export const userProductEntitlements = botEconomySchema.table('user_product_entitlements', {
+    userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    productCode: text('product_code').notNull().references(() => storeProducts.code, {onDelete: 'restrict'}),
+    purchaseOperationId: uuid('purchase_operation_id').notNull().references(() => financialOperations.id, {onDelete: 'restrict'}),
+    acquiredAt: timestamp('acquired_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    pk: primaryKey({columns: [table.userId, table.productCode]}),
+    productIdx: index('user_product_entitlements_product_idx').on(table.productCode),
+    purchaseOperationIdx: index('user_product_entitlements_purchase_operation_idx').on(table.purchaseOperationId),
+}));
+
+export const roleplayRoles = botEconomySchema.table('roleplay_roles', {
+    code: text('code').primaryKey(),
+    productCode: text('product_code').notNull().unique().references(() => storeProducts.code, {onDelete: 'restrict'}),
+    name: text('name').notNull(),
+    emoji: text('emoji').notNull(),
+    baseHourlyPriceCoins: integer('base_hourly_price_coins').notNull(),
+    hourlyPricePerLevelCoins: integer('hourly_price_per_level_coins').notNull(),
+    customPriceFromLevel: integer('custom_price_from_level').notNull(),
+    maxActiveBuyers: integer('max_active_buyers').notNull(),
+    active: boolean('active').notNull().default(true),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    priceCheck: check('roleplay_roles_price_check', sql`${table.baseHourlyPriceCoins} > 0 AND ${table.hourlyPricePerLevelCoins} > 0`),
+    levelCheck: check('roleplay_roles_level_check', sql`${table.customPriceFromLevel} > 0`),
+    buyersCheck: check('roleplay_roles_buyers_check', sql`${table.maxActiveBuyers} between 1 and 5`),
 }));
 
 export const userProductSubscriptions = botEconomySchema.table('user_product_subscriptions', {
@@ -615,6 +644,106 @@ export const chats = botGroupsSchema.table('chats', {
     isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
 });
+
+export const roleplaySessions = botEconomySchema.table('roleplay_sessions', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
+    roleCode: text('role_code').notNull().references(() => roleplayRoles.code, {onDelete: 'restrict'}),
+    groupId: text('group_id').notNull().references(() => chats.id, {onDelete: 'cascade'}),
+    beneficiaryId: text('beneficiary_id').notNull().references(() => usuarios.id, {onDelete: 'restrict'}),
+    targetId: text('target_id').references(() => usuarios.id, {onDelete: 'set null'}),
+    hourlyPriceCoins: integer('hourly_price_coins').notNull(),
+    beneficiaryLevel: integer('beneficiary_level').notNull(),
+    pricingMode: text('pricing_mode').notNull(),
+    offerMessage: text('offer_message').notNull(),
+    status: text('status').notNull().default('waiting'),
+    acceptedOnce: boolean('accepted_once').notNull().default(false),
+    openedAt: timestamp('opened_at', {withTimezone: true}).notNull().defaultNow(),
+    closedAt: timestamp('closed_at', {withTimezone: true}),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    oneOpenPerBeneficiary: uniqueIndex('roleplay_sessions_one_open_beneficiary_uidx')
+        .on(table.groupId, table.beneficiaryId, table.roleCode)
+        .where(sql`${table.status} in ('waiting', 'active')`),
+    groupStatusIdx: index('roleplay_sessions_group_status_idx').on(table.groupId, table.status, table.openedAt),
+    roleIdx: index('roleplay_sessions_role_idx').on(table.roleCode),
+    beneficiaryIdx: index('roleplay_sessions_beneficiary_idx').on(table.beneficiaryId),
+    targetStatusIdx: index('roleplay_sessions_target_status_idx').on(table.targetId, table.status),
+    priceCheck: check('roleplay_sessions_price_check', sql`${table.hourlyPriceCoins} >= 1000`),
+    levelCheck: check('roleplay_sessions_level_check', sql`${table.beneficiaryLevel} >= 1`),
+    pricingCheck: check('roleplay_sessions_pricing_check', sql`${table.pricingMode} in ('automatic', 'custom')`),
+    statusCheck: check('roleplay_sessions_status_check', sql`${table.status} in ('waiting', 'active', 'closed')`),
+    closeStateCheck: check('roleplay_sessions_close_state_check', sql`(${table.status} = 'closed' AND ${table.closedAt} IS NOT NULL) OR (${table.status} <> 'closed' AND ${table.closedAt} IS NULL)`),
+    targetCheck: check('roleplay_sessions_target_check', sql`${table.targetId} IS NULL OR ${table.targetId} <> ${table.beneficiaryId}`),
+}));
+
+export const roleplayContracts = botEconomySchema.table('roleplay_contracts', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
+    sessionId: uuid('session_id').notNull().references(() => roleplaySessions.id, {onDelete: 'cascade'}),
+    buyerId: text('buyer_id').notNull().references(() => usuarios.id, {onDelete: 'restrict'}),
+    mode: text('mode').notNull(),
+    requestedHours: integer('requested_hours'),
+    releasedHours: integer('released_hours').notNull().default(1),
+    status: text('status').notNull().default('active'),
+    startedAt: timestamp('started_at', {withTimezone: true}).notNull().defaultNow(),
+    nextChargeAt: timestamp('next_charge_at', {withTimezone: true}).notNull(),
+    endsAt: timestamp('ends_at', {withTimezone: true}),
+    endedAt: timestamp('ended_at', {withTimezone: true}),
+    endedBy: text('ended_by').references(() => usuarios.id, {onDelete: 'set null'}),
+    endReason: text('end_reason'),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    oneActiveBuyer: uniqueIndex('roleplay_contracts_one_active_buyer_uidx')
+        .on(table.sessionId, table.buyerId)
+        .where(sql`${table.status} = 'active'`),
+    dueIdx: index('roleplay_contracts_due_idx').on(table.status, table.nextChargeAt),
+    buyerStatusIdx: index('roleplay_contracts_buyer_status_idx').on(table.buyerId, table.status),
+    sessionStatusIdx: index('roleplay_contracts_session_status_idx').on(table.sessionId, table.status),
+    endedByIdx: index('roleplay_contracts_ended_by_idx').on(table.endedBy),
+    modeCheck: check('roleplay_contracts_mode_check', sql`${table.mode} in ('fixed', 'indefinite')`),
+    statusCheck: check('roleplay_contracts_status_check', sql`${table.status} in ('active', 'completed', 'cancelled', 'insufficient_funds')`),
+    hoursCheck: check('roleplay_contracts_hours_check', sql`(${table.mode} = 'fixed' AND ${table.requestedHours} between 1 and 168 AND ${table.endsAt} IS NOT NULL) OR (${table.mode} = 'indefinite' AND ${table.requestedHours} IS NULL AND ${table.endsAt} IS NULL)`),
+    releasedCheck: check('roleplay_contracts_released_check', sql`${table.releasedHours} >= 1 AND (${table.requestedHours} IS NULL OR ${table.releasedHours} <= ${table.requestedHours})`),
+    endStateCheck: check('roleplay_contracts_end_state_check', sql`(${table.status} = 'active' AND ${table.endedAt} IS NULL AND ${table.endReason} IS NULL) OR (${table.status} <> 'active' AND ${table.endedAt} IS NOT NULL AND ${table.endReason} IS NOT NULL)`),
+}));
+
+export const roleplayChargeEvents = botEconomySchema.table('roleplay_charge_events', {
+    id: uuid('id').primaryKey().default(sql`uuidv7()`),
+    contractId: uuid('contract_id').notNull().references(() => roleplayContracts.id, {onDelete: 'cascade'}),
+    sequence: integer('sequence').notNull(),
+    eventType: text('event_type').notNull(),
+    scheduledFor: timestamp('scheduled_for', {withTimezone: true}).notNull(),
+    amountCoins: integer('amount_coins').notNull(),
+    status: text('status').notNull(),
+    financialOperationId: uuid('financial_operation_id').references(() => financialOperations.id, {onDelete: 'set null'}),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+}, table => ({
+    contractSequenceTypeUnique: uniqueIndex('roleplay_charge_events_contract_sequence_type_uidx')
+        .on(table.contractId, table.sequence, table.eventType),
+    contractCreatedIdx: index('roleplay_charge_events_contract_created_idx').on(table.contractId, table.createdAt),
+    financialOperationIdx: index('roleplay_charge_events_financial_operation_idx').on(table.financialOperationId),
+    sequenceCheck: check('roleplay_charge_events_sequence_check', sql`${table.sequence} >= 0`),
+    amountCheck: check('roleplay_charge_events_amount_check', sql`${table.amountCoins} > 0`),
+    typeCheck: check('roleplay_charge_events_type_check', sql`${table.eventType} in ('prepayment', 'hourly_release', 'hourly_charge', 'refund')`),
+    statusCheck: check('roleplay_charge_events_status_check', sql`${table.status} in ('paid', 'insufficient_funds', 'refunded')`),
+}));
+
+export const roleplayActionMessages = botRuntimeSchema.table('roleplay_action_messages', {
+    messageId: text('message_id').primaryKey(),
+    contractId: uuid('contract_id').notNull().references(() => roleplayContracts.id, {onDelete: 'cascade'}),
+    groupId: text('group_id').notNull().references(() => chats.id, {onDelete: 'cascade'}),
+    actorId: text('actor_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    targetId: text('target_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),
+    actionCode: text('action_code').notNull(),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    expiresAt: timestamp('expires_at', {withTimezone: true}).notNull(),
+}, table => ({
+    contractCreatedIdx: index('roleplay_action_messages_contract_created_idx').on(table.contractId, table.createdAt),
+    groupIdx: index('roleplay_action_messages_group_idx').on(table.groupId),
+    actorIdx: index('roleplay_action_messages_actor_idx').on(table.actorId),
+    targetIdx: index('roleplay_action_messages_target_idx').on(table.targetId),
+    expiryIdx: index('roleplay_action_messages_expiry_idx').on(table.expiresAt),
+    actorTargetCheck: check('roleplay_action_messages_actor_target_check', sql`${table.actorId} <> ${table.targetId}`),
+}));
 
 export const messages = botGroupsSchema.table('user_group_activity_counters', {
     userId: text('user_id').notNull().references(() => usuarios.id, {onDelete: 'cascade'}),

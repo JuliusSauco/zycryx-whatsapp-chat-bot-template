@@ -50,6 +50,10 @@ import type {
     BuyRaffleTicketsResult, BuySecurityResult, DrawRaffleResult, EconomicResourceDefinition,
     RaffleTicketPage, SecurityOverview, TicketPaymentResource,
 } from '../domain/store.js';
+import type {
+    AcceptRoleplayResult, BuyRoleplayEntitlementResult, EndRoleplayResult, OpenRoleplaySessionResult,
+    RoleplayActionContext, RoleplayBillingEvent, RoleplayContract, RoleplayContractMode, RoleplayCounterparty, RoleplaySession,
+} from '../domain/roleplay.js';
 
 export type {
     BannedUserInfo,
@@ -236,6 +240,67 @@ export interface StoreRepository {
     }): Promise<BuyRaffleTicketsResult>;
     listAvailableRaffleTickets(page: number, pageSize: number): Promise<RaffleTicketPage>;
     drawRaffle(input: {title: string; ownerId: string}): Promise<DrawRaffleResult>;
+}
+
+export interface RoleplayRepository {
+    buyEntitlement(input: {
+        userId: string;
+        productCode: string;
+        priceCoins: number;
+        operationId: string;
+        now: Date;
+    }): Promise<BuyRoleplayEntitlementResult>;
+    hasEntitlement(userId: string, productCode: string): Promise<boolean>;
+    openSession(input: {
+        roleCode: string;
+        productCode: string;
+        groupId: string;
+        beneficiaryId: string;
+        targetId: string | null;
+        requestedPriceCoins?: number;
+        offerMessage: string;
+        now: Date;
+    }): Promise<OpenRoleplaySessionResult>;
+    getSession(sessionId: string): Promise<RoleplaySession | null>;
+    findOpenSession(input: {groupId: string; beneficiaryId: string; roleCode: string}): Promise<RoleplaySession | null>;
+    listAvailableSessions(input: {groupId: string; buyerId: string; roleCode: string}): Promise<RoleplaySession[]>;
+    acceptSession(input: {
+        sessionId: string;
+        buyerId: string;
+        mode: RoleplayContractMode;
+        hours: number | null;
+        now: Date;
+        operationId: string;
+    }): Promise<AcceptRoleplayResult>;
+    acceptAll(input: {
+        groupId: string;
+        buyerId: string;
+        roleCode: string;
+        now: Date;
+        operationIds: string[];
+    }): Promise<{kind: 'success'; contracts: RoleplayContract[]; totalCoins: number; walletCoins: number} | {kind: 'none' | 'insufficient_wallet' | 'session_full'}>;
+    endContracts(input: {
+        groupId: string;
+        actorId: string;
+        roleCode: string;
+        counterpartyId?: string;
+        quotedMessageId?: string;
+        now: Date;
+        operationId: string;
+    }): Promise<EndRoleplayResult>;
+    listActiveCounterparties(input: {groupId: string; actorId: string; roleCode: string}): Promise<RoleplayCounterparty[]>;
+    recordActionMessage(input: {
+        messageId: string;
+        contractId: string;
+        groupId: string;
+        actorId: string;
+        targetId: string;
+        actionCode: string;
+        expiresAt: Date;
+    }): Promise<void>;
+    findActionContract(input: {messageId: string; actorId: string}): Promise<RoleplayActionContext | null>;
+    processDueContracts(now: Date, limit: number): Promise<RoleplayBillingEvent[]>;
+    cleanExpiredActionMessages(now: Date): Promise<number>;
 }
 
 export interface DailyReminderRepository {
@@ -464,6 +529,7 @@ export interface AppRepositories {
     userPreferences: UserPreferencesRepository;
     banks: BankRepository;
     store: StoreRepository;
+    roleplay: RoleplayRepository;
     dailyReminders: DailyReminderRepository;
     commandResources: CommandResourceRepository;
     userGroupRoles: UserGroupRoleRepository;

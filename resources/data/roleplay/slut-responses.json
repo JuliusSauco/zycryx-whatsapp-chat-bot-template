@@ -1,0 +1,1180 @@
+{
+  "schemaVersion": 1,
+  "role": "slut",
+  "selection": {
+    "strategy": "random",
+    "avoidImmediateRepeat": true
+  },
+  "actions": {
+    "69": {
+      "displayName": "posición 69",
+      "responses": [
+        {
+          "id": "69-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* se acomoda frente a {buyer}, sigue su ritmo y convierte la iniciativa en un intercambio cercano y coordinado, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "69-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* se acomoda frente a {buyer}, sigue su ritmo y convierte la iniciativa en un intercambio cercano y coordinado. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "69-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* se acomoda frente a {buyer}, sigue su ritmo y convierte la iniciativa en un intercambio cercano y coordinado. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "69-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* se acomoda frente a {buyer}, sigue su ritmo y convierte la iniciativa en un intercambio cercano y coordinado. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "69-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* se acomoda frente a {buyer}, sigue su ritmo y convierte la iniciativa en un intercambio cercano y coordinado. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "69-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* se acomoda frente a {buyer}, sigue su ritmo y convierte la iniciativa en un intercambio cercano y coordinado. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "69-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: se acomoda frente a {buyer}, sigue su ritmo y convierte la iniciativa en un intercambio cercano y coordinado. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "69-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; se acomoda frente a {buyer}, sigue su ritmo y convierte la iniciativa en un intercambio cercano y coordinado. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "69-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* se acomoda frente a {buyer}, sigue su ritmo y convierte la iniciativa en un intercambio cercano y coordinado. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "69-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* se acomoda frente a {buyer}, sigue su ritmo y convierte la iniciativa en un intercambio cercano y coordinado. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "ab": {
+      "displayName": "abrazar",
+      "responses": [
+        {
+          "id": "ab-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* rodea a {buyer} con los brazos, lo mantiene cerca y transforma el abrazo recibido en un momento cálido dentro de la sesión, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "ab-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* rodea a {buyer} con los brazos, lo mantiene cerca y transforma el abrazo recibido en un momento cálido dentro de la sesión. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "ab-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* rodea a {buyer} con los brazos, lo mantiene cerca y transforma el abrazo recibido en un momento cálido dentro de la sesión. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "ab-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* rodea a {buyer} con los brazos, lo mantiene cerca y transforma el abrazo recibido en un momento cálido dentro de la sesión. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "ab-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* rodea a {buyer} con los brazos, lo mantiene cerca y transforma el abrazo recibido en un momento cálido dentro de la sesión. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "ab-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* rodea a {buyer} con los brazos, lo mantiene cerca y transforma el abrazo recibido en un momento cálido dentro de la sesión. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "ab-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: rodea a {buyer} con los brazos, lo mantiene cerca y transforma el abrazo recibido en un momento cálido dentro de la sesión. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "ab-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; rodea a {buyer} con los brazos, lo mantiene cerca y transforma el abrazo recibido en un momento cálido dentro de la sesión. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "ab-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* rodea a {buyer} con los brazos, lo mantiene cerca y transforma el abrazo recibido en un momento cálido dentro de la sesión. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "ab-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* rodea a {buyer} con los brazos, lo mantiene cerca y transforma el abrazo recibido en un momento cálido dentro de la sesión. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "ah": {
+      "displayName": "ahorcar",
+      "responses": [
+        {
+          "id": "ah-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* sigue el juego intenso de {buyer} con cuidado, mantiene la escena bajo control y responde desde el tono acordado para el rol, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "ah-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* sigue el juego intenso de {buyer} con cuidado, mantiene la escena bajo control y responde desde el tono acordado para el rol. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "ah-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* sigue el juego intenso de {buyer} con cuidado, mantiene la escena bajo control y responde desde el tono acordado para el rol. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "ah-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* sigue el juego intenso de {buyer} con cuidado, mantiene la escena bajo control y responde desde el tono acordado para el rol. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "ah-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* sigue el juego intenso de {buyer} con cuidado, mantiene la escena bajo control y responde desde el tono acordado para el rol. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "ah-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* sigue el juego intenso de {buyer} con cuidado, mantiene la escena bajo control y responde desde el tono acordado para el rol. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "ah-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: sigue el juego intenso de {buyer} con cuidado, mantiene la escena bajo control y responde desde el tono acordado para el rol. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "ah-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; sigue el juego intenso de {buyer} con cuidado, mantiene la escena bajo control y responde desde el tono acordado para el rol. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "ah-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* sigue el juego intenso de {buyer} con cuidado, mantiene la escena bajo control y responde desde el tono acordado para el rol. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "ah-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* sigue el juego intenso de {buyer} con cuidado, mantiene la escena bajo control y responde desde el tono acordado para el rol. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "an": {
+      "displayName": "sexo anal",
+      "responses": [
+        {
+          "id": "an-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* recibe la iniciativa de {buyer}, acompaña el ritmo de la escena y responde con una actitud atrevida y completamente dedicada, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "an-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* recibe la iniciativa de {buyer}, acompaña el ritmo de la escena y responde con una actitud atrevida y completamente dedicada. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "an-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* recibe la iniciativa de {buyer}, acompaña el ritmo de la escena y responde con una actitud atrevida y completamente dedicada. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "an-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* recibe la iniciativa de {buyer}, acompaña el ritmo de la escena y responde con una actitud atrevida y completamente dedicada. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "an-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* recibe la iniciativa de {buyer}, acompaña el ritmo de la escena y responde con una actitud atrevida y completamente dedicada. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "an-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* recibe la iniciativa de {buyer}, acompaña el ritmo de la escena y responde con una actitud atrevida y completamente dedicada. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "an-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: recibe la iniciativa de {buyer}, acompaña el ritmo de la escena y responde con una actitud atrevida y completamente dedicada. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "an-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; recibe la iniciativa de {buyer}, acompaña el ritmo de la escena y responde con una actitud atrevida y completamente dedicada. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "an-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* recibe la iniciativa de {buyer}, acompaña el ritmo de la escena y responde con una actitud atrevida y completamente dedicada. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "an-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* recibe la iniciativa de {buyer}, acompaña el ritmo de la escena y responde con una actitud atrevida y completamente dedicada. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "ap": {
+      "displayName": "agarrar los cachetes",
+      "responses": [
+        {
+          "id": "ap-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* se deja tomar por {buyer}, sonríe ante el gesto y responde acercándose para convertirlo en un momento juguetón, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "ap-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* se deja tomar por {buyer}, sonríe ante el gesto y responde acercándose para convertirlo en un momento juguetón. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "ap-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* se deja tomar por {buyer}, sonríe ante el gesto y responde acercándose para convertirlo en un momento juguetón. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "ap-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* se deja tomar por {buyer}, sonríe ante el gesto y responde acercándose para convertirlo en un momento juguetón. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "ap-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* se deja tomar por {buyer}, sonríe ante el gesto y responde acercándose para convertirlo en un momento juguetón. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "ap-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* se deja tomar por {buyer}, sonríe ante el gesto y responde acercándose para convertirlo en un momento juguetón. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "ap-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: se deja tomar por {buyer}, sonríe ante el gesto y responde acercándose para convertirlo en un momento juguetón. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "ap-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; se deja tomar por {buyer}, sonríe ante el gesto y responde acercándose para convertirlo en un momento juguetón. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "ap-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* se deja tomar por {buyer}, sonríe ante el gesto y responde acercándose para convertirlo en un momento juguetón. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "ap-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* se deja tomar por {buyer}, sonríe ante el gesto y responde acercándose para convertirlo en un momento juguetón. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "bt": {
+      "displayName": "morder",
+      "responses": [
+        {
+          "id": "bt-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* siente la mordida de {buyer}, reacciona con una sonrisa desafiante y devuelve la atención sin apartarse de su lado, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "bt-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* siente la mordida de {buyer}, reacciona con una sonrisa desafiante y devuelve la atención sin apartarse de su lado. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "bt-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* siente la mordida de {buyer}, reacciona con una sonrisa desafiante y devuelve la atención sin apartarse de su lado. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "bt-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* siente la mordida de {buyer}, reacciona con una sonrisa desafiante y devuelve la atención sin apartarse de su lado. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "bt-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* siente la mordida de {buyer}, reacciona con una sonrisa desafiante y devuelve la atención sin apartarse de su lado. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "bt-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* siente la mordida de {buyer}, reacciona con una sonrisa desafiante y devuelve la atención sin apartarse de su lado. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "bt-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: siente la mordida de {buyer}, reacciona con una sonrisa desafiante y devuelve la atención sin apartarse de su lado. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "bt-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; siente la mordida de {buyer}, reacciona con una sonrisa desafiante y devuelve la atención sin apartarse de su lado. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "bt-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* siente la mordida de {buyer}, reacciona con una sonrisa desafiante y devuelve la atención sin apartarse de su lado. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "bt-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* siente la mordida de {buyer}, reacciona con una sonrisa desafiante y devuelve la atención sin apartarse de su lado. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "cog": {
+      "displayName": "follar",
+      "responses": [
+        {
+          "id": "cog-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* corresponde a la iniciativa de {buyer}, sigue la intensidad del encuentro y permanece concentrada en la experiencia compartida, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "cog-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* corresponde a la iniciativa de {buyer}, sigue la intensidad del encuentro y permanece concentrada en la experiencia compartida. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "cog-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* corresponde a la iniciativa de {buyer}, sigue la intensidad del encuentro y permanece concentrada en la experiencia compartida. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "cog-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* corresponde a la iniciativa de {buyer}, sigue la intensidad del encuentro y permanece concentrada en la experiencia compartida. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "cog-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* corresponde a la iniciativa de {buyer}, sigue la intensidad del encuentro y permanece concentrada en la experiencia compartida. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "cog-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* corresponde a la iniciativa de {buyer}, sigue la intensidad del encuentro y permanece concentrada en la experiencia compartida. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "cog-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: corresponde a la iniciativa de {buyer}, sigue la intensidad del encuentro y permanece concentrada en la experiencia compartida. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "cog-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; corresponde a la iniciativa de {buyer}, sigue la intensidad del encuentro y permanece concentrada en la experiencia compartida. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "cog-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* corresponde a la iniciativa de {buyer}, sigue la intensidad del encuentro y permanece concentrada en la experiencia compartida. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "cog-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* corresponde a la iniciativa de {buyer}, sigue la intensidad del encuentro y permanece concentrada en la experiencia compartida. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "cowgirl": {
+      "displayName": "cowgirl",
+      "responses": [
+        {
+          "id": "cowgirl-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* toma el control frente a {buyer}, marca el ritmo de la escena y responde con seguridad a cada gesto recibido, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "cowgirl-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* toma el control frente a {buyer}, marca el ritmo de la escena y responde con seguridad a cada gesto recibido. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "cowgirl-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* toma el control frente a {buyer}, marca el ritmo de la escena y responde con seguridad a cada gesto recibido. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "cowgirl-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* toma el control frente a {buyer}, marca el ritmo de la escena y responde con seguridad a cada gesto recibido. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "cowgirl-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* toma el control frente a {buyer}, marca el ritmo de la escena y responde con seguridad a cada gesto recibido. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "cowgirl-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* toma el control frente a {buyer}, marca el ritmo de la escena y responde con seguridad a cada gesto recibido. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "cowgirl-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: toma el control frente a {buyer}, marca el ritmo de la escena y responde con seguridad a cada gesto recibido. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "cowgirl-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; toma el control frente a {buyer}, marca el ritmo de la escena y responde con seguridad a cada gesto recibido. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "cowgirl-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* toma el control frente a {buyer}, marca el ritmo de la escena y responde con seguridad a cada gesto recibido. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "cowgirl-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* toma el control frente a {buyer}, marca el ritmo de la escena y responde con seguridad a cada gesto recibido. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "dogst": {
+      "displayName": "posición de perrito",
+      "responses": [
+        {
+          "id": "dogst-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* acompaña el ritmo propuesto por {buyer}, mantiene la escena intensa y responde de forma cercana durante el contrato, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "dogst-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* acompaña el ritmo propuesto por {buyer}, mantiene la escena intensa y responde de forma cercana durante el contrato. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "dogst-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* acompaña el ritmo propuesto por {buyer}, mantiene la escena intensa y responde de forma cercana durante el contrato. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "dogst-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* acompaña el ritmo propuesto por {buyer}, mantiene la escena intensa y responde de forma cercana durante el contrato. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "dogst-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* acompaña el ritmo propuesto por {buyer}, mantiene la escena intensa y responde de forma cercana durante el contrato. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "dogst-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* acompaña el ritmo propuesto por {buyer}, mantiene la escena intensa y responde de forma cercana durante el contrato. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "dogst-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: acompaña el ritmo propuesto por {buyer}, mantiene la escena intensa y responde de forma cercana durante el contrato. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "dogst-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; acompaña el ritmo propuesto por {buyer}, mantiene la escena intensa y responde de forma cercana durante el contrato. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "dogst-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* acompaña el ritmo propuesto por {buyer}, mantiene la escena intensa y responde de forma cercana durante el contrato. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "dogst-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* acompaña el ritmo propuesto por {buyer}, mantiene la escena intensa y responde de forma cercana durante el contrato. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "dedeo": {
+      "displayName": "dedeo",
+      "responses": [
+        {
+          "id": "dedeo-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* reacciona al contacto de {buyer}, se acerca todavía más y corresponde con una actitud atrevida dentro de la sesión, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "dedeo-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* reacciona al contacto de {buyer}, se acerca todavía más y corresponde con una actitud atrevida dentro de la sesión. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "dedeo-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* reacciona al contacto de {buyer}, se acerca todavía más y corresponde con una actitud atrevida dentro de la sesión. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "dedeo-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* reacciona al contacto de {buyer}, se acerca todavía más y corresponde con una actitud atrevida dentro de la sesión. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "dedeo-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* reacciona al contacto de {buyer}, se acerca todavía más y corresponde con una actitud atrevida dentro de la sesión. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "dedeo-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* reacciona al contacto de {buyer}, se acerca todavía más y corresponde con una actitud atrevida dentro de la sesión. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "dedeo-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: reacciona al contacto de {buyer}, se acerca todavía más y corresponde con una actitud atrevida dentro de la sesión. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "dedeo-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; reacciona al contacto de {buyer}, se acerca todavía más y corresponde con una actitud atrevida dentro de la sesión. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "dedeo-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* reacciona al contacto de {buyer}, se acerca todavía más y corresponde con una actitud atrevida dentro de la sesión. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "dedeo-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* reacciona al contacto de {buyer}, se acerca todavía más y corresponde con una actitud atrevida dentro de la sesión. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "deepthroat": {
+      "displayName": "deepthroat",
+      "responses": [
+        {
+          "id": "deepthroat-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* acepta el juego oral de {buyer}, sostiene la intensidad de la escena y responde con toda su atención puesta en el momento, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "deepthroat-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* acepta el juego oral de {buyer}, sostiene la intensidad de la escena y responde con toda su atención puesta en el momento. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "deepthroat-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* acepta el juego oral de {buyer}, sostiene la intensidad de la escena y responde con toda su atención puesta en el momento. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "deepthroat-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* acepta el juego oral de {buyer}, sostiene la intensidad de la escena y responde con toda su atención puesta en el momento. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "deepthroat-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* acepta el juego oral de {buyer}, sostiene la intensidad de la escena y responde con toda su atención puesta en el momento. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "deepthroat-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* acepta el juego oral de {buyer}, sostiene la intensidad de la escena y responde con toda su atención puesta en el momento. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "deepthroat-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: acepta el juego oral de {buyer}, sostiene la intensidad de la escena y responde con toda su atención puesta en el momento. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "deepthroat-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; acepta el juego oral de {buyer}, sostiene la intensidad de la escena y responde con toda su atención puesta en el momento. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "deepthroat-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* acepta el juego oral de {buyer}, sostiene la intensidad de la escena y responde con toda su atención puesta en el momento. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "deepthroat-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* acepta el juego oral de {buyer}, sostiene la intensidad de la escena y responde con toda su atención puesta en el momento. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "espadasos": {
+      "displayName": "espadazos",
+      "responses": [
+        {
+          "id": "espadasos-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* acepta el duelo íntimo de {buyer}, responde al desafío y mantiene el juego intenso sin perder la complicidad entre ambos, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "espadasos-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* acepta el duelo íntimo de {buyer}, responde al desafío y mantiene el juego intenso sin perder la complicidad entre ambos. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "espadasos-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* acepta el duelo íntimo de {buyer}, responde al desafío y mantiene el juego intenso sin perder la complicidad entre ambos. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "espadasos-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* acepta el duelo íntimo de {buyer}, responde al desafío y mantiene el juego intenso sin perder la complicidad entre ambos. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "espadasos-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* acepta el duelo íntimo de {buyer}, responde al desafío y mantiene el juego intenso sin perder la complicidad entre ambos. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "espadasos-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* acepta el duelo íntimo de {buyer}, responde al desafío y mantiene el juego intenso sin perder la complicidad entre ambos. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "espadasos-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: acepta el duelo íntimo de {buyer}, responde al desafío y mantiene el juego intenso sin perder la complicidad entre ambos. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "espadasos-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; acepta el duelo íntimo de {buyer}, responde al desafío y mantiene el juego intenso sin perder la complicidad entre ambos. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "espadasos-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* acepta el duelo íntimo de {buyer}, responde al desafío y mantiene el juego intenso sin perder la complicidad entre ambos. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "espadasos-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* acepta el duelo íntimo de {buyer}, responde al desafío y mantiene el juego intenso sin perder la complicidad entre ambos. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "fap": {
+      "displayName": "masturbación",
+      "responses": [
+        {
+          "id": "fap-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* observa la iniciativa de {buyer}, se acerca con una expresión provocadora y responde acompañando el momento dentro del rol, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "fap-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* observa la iniciativa de {buyer}, se acerca con una expresión provocadora y responde acompañando el momento dentro del rol. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "fap-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* observa la iniciativa de {buyer}, se acerca con una expresión provocadora y responde acompañando el momento dentro del rol. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "fap-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* observa la iniciativa de {buyer}, se acerca con una expresión provocadora y responde acompañando el momento dentro del rol. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "fap-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* observa la iniciativa de {buyer}, se acerca con una expresión provocadora y responde acompañando el momento dentro del rol. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "fap-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* observa la iniciativa de {buyer}, se acerca con una expresión provocadora y responde acompañando el momento dentro del rol. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "fap-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: observa la iniciativa de {buyer}, se acerca con una expresión provocadora y responde acompañando el momento dentro del rol. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "fap-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; observa la iniciativa de {buyer}, se acerca con una expresión provocadora y responde acompañando el momento dentro del rol. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "fap-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* observa la iniciativa de {buyer}, se acerca con una expresión provocadora y responde acompañando el momento dentro del rol. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "fap-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* observa la iniciativa de {buyer}, se acerca con una expresión provocadora y responde acompañando el momento dentro del rol. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "fg": {
+      "displayName": "golpear",
+      "responses": [
+        {
+          "id": "fg-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* recibe el gesto de {buyer} como parte de la escena, responde con carácter y mantiene claro que todo sucede dentro del juego acordado, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "fg-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* recibe el gesto de {buyer} como parte de la escena, responde con carácter y mantiene claro que todo sucede dentro del juego acordado. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "fg-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* recibe el gesto de {buyer} como parte de la escena, responde con carácter y mantiene claro que todo sucede dentro del juego acordado. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "fg-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* recibe el gesto de {buyer} como parte de la escena, responde con carácter y mantiene claro que todo sucede dentro del juego acordado. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "fg-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* recibe el gesto de {buyer} como parte de la escena, responde con carácter y mantiene claro que todo sucede dentro del juego acordado. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "fg-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* recibe el gesto de {buyer} como parte de la escena, responde con carácter y mantiene claro que todo sucede dentro del juego acordado. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "fg-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: recibe el gesto de {buyer} como parte de la escena, responde con carácter y mantiene claro que todo sucede dentro del juego acordado. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "fg-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; recibe el gesto de {buyer} como parte de la escena, responde con carácter y mantiene claro que todo sucede dentro del juego acordado. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "fg-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* recibe el gesto de {buyer} como parte de la escena, responde con carácter y mantiene claro que todo sucede dentro del juego acordado. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "fg-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* recibe el gesto de {buyer} como parte de la escena, responde con carácter y mantiene claro que todo sucede dentro del juego acordado. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "kc": {
+      "displayName": "besar en la mejilla",
+      "responses": [
+        {
+          "id": "kc-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* recibe el beso de {buyer}, sonríe con ternura y le devuelve un gesto cariñoso antes de continuar la sesión, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "kc-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* recibe el beso de {buyer}, sonríe con ternura y le devuelve un gesto cariñoso antes de continuar la sesión. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "kc-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* recibe el beso de {buyer}, sonríe con ternura y le devuelve un gesto cariñoso antes de continuar la sesión. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "kc-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* recibe el beso de {buyer}, sonríe con ternura y le devuelve un gesto cariñoso antes de continuar la sesión. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "kc-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* recibe el beso de {buyer}, sonríe con ternura y le devuelve un gesto cariñoso antes de continuar la sesión. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "kc-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* recibe el beso de {buyer}, sonríe con ternura y le devuelve un gesto cariñoso antes de continuar la sesión. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "kc-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: recibe el beso de {buyer}, sonríe con ternura y le devuelve un gesto cariñoso antes de continuar la sesión. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "kc-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; recibe el beso de {buyer}, sonríe con ternura y le devuelve un gesto cariñoso antes de continuar la sesión. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "kc-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* recibe el beso de {buyer}, sonríe con ternura y le devuelve un gesto cariñoso antes de continuar la sesión. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "kc-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* recibe el beso de {buyer}, sonríe con ternura y le devuelve un gesto cariñoso antes de continuar la sesión. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "kill": {
+      "displayName": "asesinar dentro del rol",
+      "responses": [
+        {
+          "id": "kill-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* entra en la escena dramática propuesta por {buyer}, interpreta el momento y responde con intensidad cinematográfica, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "kill-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* entra en la escena dramática propuesta por {buyer}, interpreta el momento y responde con intensidad cinematográfica. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "kill-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* entra en la escena dramática propuesta por {buyer}, interpreta el momento y responde con intensidad cinematográfica. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "kill-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* entra en la escena dramática propuesta por {buyer}, interpreta el momento y responde con intensidad cinematográfica. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "kill-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* entra en la escena dramática propuesta por {buyer}, interpreta el momento y responde con intensidad cinematográfica. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "kill-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* entra en la escena dramática propuesta por {buyer}, interpreta el momento y responde con intensidad cinematográfica. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "kill-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: entra en la escena dramática propuesta por {buyer}, interpreta el momento y responde con intensidad cinematográfica. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "kill-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; entra en la escena dramática propuesta por {buyer}, interpreta el momento y responde con intensidad cinematográfica. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "kill-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* entra en la escena dramática propuesta por {buyer}, interpreta el momento y responde con intensidad cinematográfica. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "kill-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* entra en la escena dramática propuesta por {buyer}, interpreta el momento y responde con intensidad cinematográfica. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "kiss": {
+      "displayName": "besar",
+      "responses": [
+        {
+          "id": "kiss-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* recibe el beso de {buyer}, se queda cerca y lo corresponde lentamente mientras conserva toda la atención sobre su compañero, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "kiss-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* recibe el beso de {buyer}, se queda cerca y lo corresponde lentamente mientras conserva toda la atención sobre su compañero. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "kiss-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* recibe el beso de {buyer}, se queda cerca y lo corresponde lentamente mientras conserva toda la atención sobre su compañero. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "kiss-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* recibe el beso de {buyer}, se queda cerca y lo corresponde lentamente mientras conserva toda la atención sobre su compañero. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "kiss-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* recibe el beso de {buyer}, se queda cerca y lo corresponde lentamente mientras conserva toda la atención sobre su compañero. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "kiss-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* recibe el beso de {buyer}, se queda cerca y lo corresponde lentamente mientras conserva toda la atención sobre su compañero. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "kiss-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: recibe el beso de {buyer}, se queda cerca y lo corresponde lentamente mientras conserva toda la atención sobre su compañero. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "kiss-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; recibe el beso de {buyer}, se queda cerca y lo corresponde lentamente mientras conserva toda la atención sobre su compañero. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "kiss-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* recibe el beso de {buyer}, se queda cerca y lo corresponde lentamente mientras conserva toda la atención sobre su compañero. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "kiss-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* recibe el beso de {buyer}, se queda cerca y lo corresponde lentamente mientras conserva toda la atención sobre su compañero. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "lam": {
+      "displayName": "lamer",
+      "responses": [
+        {
+          "id": "lam-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* siente la acción de {buyer}, responde con una expresión juguetona y prolonga el acercamiento dentro de la sesión, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "lam-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* siente la acción de {buyer}, responde con una expresión juguetona y prolonga el acercamiento dentro de la sesión. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "lam-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* siente la acción de {buyer}, responde con una expresión juguetona y prolonga el acercamiento dentro de la sesión. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "lam-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* siente la acción de {buyer}, responde con una expresión juguetona y prolonga el acercamiento dentro de la sesión. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "lam-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* siente la acción de {buyer}, responde con una expresión juguetona y prolonga el acercamiento dentro de la sesión. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "lam-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* siente la acción de {buyer}, responde con una expresión juguetona y prolonga el acercamiento dentro de la sesión. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "lam-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: siente la acción de {buyer}, responde con una expresión juguetona y prolonga el acercamiento dentro de la sesión. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "lam-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; siente la acción de {buyer}, responde con una expresión juguetona y prolonga el acercamiento dentro de la sesión. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "lam-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* siente la acción de {buyer}, responde con una expresión juguetona y prolonga el acercamiento dentro de la sesión. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "lam-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* siente la acción de {buyer}, responde con una expresión juguetona y prolonga el acercamiento dentro de la sesión. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "les": {
+      "displayName": "sexo lésbico",
+      "responses": [
+        {
+          "id": "les-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* corresponde al acercamiento de {buyer}, continúa la escena con delicadeza e intensidad y mantiene una conexión personal, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "les-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* corresponde al acercamiento de {buyer}, continúa la escena con delicadeza e intensidad y mantiene una conexión personal. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "les-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* corresponde al acercamiento de {buyer}, continúa la escena con delicadeza e intensidad y mantiene una conexión personal. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "les-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* corresponde al acercamiento de {buyer}, continúa la escena con delicadeza e intensidad y mantiene una conexión personal. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "les-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* corresponde al acercamiento de {buyer}, continúa la escena con delicadeza e intensidad y mantiene una conexión personal. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "les-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* corresponde al acercamiento de {buyer}, continúa la escena con delicadeza e intensidad y mantiene una conexión personal. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "les-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: corresponde al acercamiento de {buyer}, continúa la escena con delicadeza e intensidad y mantiene una conexión personal. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "les-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; corresponde al acercamiento de {buyer}, continúa la escena con delicadeza e intensidad y mantiene una conexión personal. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "les-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* corresponde al acercamiento de {buyer}, continúa la escena con delicadeza e intensidad y mantiene una conexión personal. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "les-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* corresponde al acercamiento de {buyer}, continúa la escena con delicadeza e intensidad y mantiene una conexión personal. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "manosear": {
+      "displayName": "manosear",
+      "responses": [
+        {
+          "id": "manosear-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* reacciona al contacto de {buyer}, se acerca con confianza y responde de forma provocadora sin abandonar el tono del rol, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "manosear-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* reacciona al contacto de {buyer}, se acerca con confianza y responde de forma provocadora sin abandonar el tono del rol. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "manosear-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* reacciona al contacto de {buyer}, se acerca con confianza y responde de forma provocadora sin abandonar el tono del rol. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "manosear-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* reacciona al contacto de {buyer}, se acerca con confianza y responde de forma provocadora sin abandonar el tono del rol. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "manosear-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* reacciona al contacto de {buyer}, se acerca con confianza y responde de forma provocadora sin abandonar el tono del rol. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "manosear-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* reacciona al contacto de {buyer}, se acerca con confianza y responde de forma provocadora sin abandonar el tono del rol. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "manosear-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: reacciona al contacto de {buyer}, se acerca con confianza y responde de forma provocadora sin abandonar el tono del rol. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "manosear-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; reacciona al contacto de {buyer}, se acerca con confianza y responde de forma provocadora sin abandonar el tono del rol. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "manosear-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* reacciona al contacto de {buyer}, se acerca con confianza y responde de forma provocadora sin abandonar el tono del rol. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "manosear-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* reacciona al contacto de {buyer}, se acerca con confianza y responde de forma provocadora sin abandonar el tono del rol. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "oral": {
+      "displayName": "sexo oral",
+      "responses": [
+        {
+          "id": "oral-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* recibe la iniciativa oral de {buyer}, acompaña la escena con atención y responde manteniendo la cercanía entre ambos, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "oral-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* recibe la iniciativa oral de {buyer}, acompaña la escena con atención y responde manteniendo la cercanía entre ambos. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "oral-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* recibe la iniciativa oral de {buyer}, acompaña la escena con atención y responde manteniendo la cercanía entre ambos. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "oral-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* recibe la iniciativa oral de {buyer}, acompaña la escena con atención y responde manteniendo la cercanía entre ambos. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "oral-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* recibe la iniciativa oral de {buyer}, acompaña la escena con atención y responde manteniendo la cercanía entre ambos. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "oral-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* recibe la iniciativa oral de {buyer}, acompaña la escena con atención y responde manteniendo la cercanía entre ambos. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "oral-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: recibe la iniciativa oral de {buyer}, acompaña la escena con atención y responde manteniendo la cercanía entre ambos. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "oral-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; recibe la iniciativa oral de {buyer}, acompaña la escena con atención y responde manteniendo la cercanía entre ambos. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "oral-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* recibe la iniciativa oral de {buyer}, acompaña la escena con atención y responde manteniendo la cercanía entre ambos. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "oral-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* recibe la iniciativa oral de {buyer}, acompaña la escena con atención y responde manteniendo la cercanía entre ambos. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "pat": {
+      "displayName": "acariciar",
+      "responses": [
+        {
+          "id": "pat-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* siente la caricia de {buyer}, se relaja a su lado y devuelve el gesto con una atención suave y personal, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "pat-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* siente la caricia de {buyer}, se relaja a su lado y devuelve el gesto con una atención suave y personal. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "pat-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* siente la caricia de {buyer}, se relaja a su lado y devuelve el gesto con una atención suave y personal. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "pat-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* siente la caricia de {buyer}, se relaja a su lado y devuelve el gesto con una atención suave y personal. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "pat-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* siente la caricia de {buyer}, se relaja a su lado y devuelve el gesto con una atención suave y personal. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "pat-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* siente la caricia de {buyer}, se relaja a su lado y devuelve el gesto con una atención suave y personal. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "pat-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: siente la caricia de {buyer}, se relaja a su lado y devuelve el gesto con una atención suave y personal. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "pat-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; siente la caricia de {buyer}, se relaja a su lado y devuelve el gesto con una atención suave y personal. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "pat-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* siente la caricia de {buyer}, se relaja a su lado y devuelve el gesto con una atención suave y personal. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "pat-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* siente la caricia de {buyer}, se relaja a su lado y devuelve el gesto con una atención suave y personal. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "preg": {
+      "displayName": "escena de embarazo",
+      "responses": [
+        {
+          "id": "preg-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* sigue la broma de {buyer}, interpreta la sorpresa y responde con una reacción dramática y cómplice dentro del rol, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "preg-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* sigue la broma de {buyer}, interpreta la sorpresa y responde con una reacción dramática y cómplice dentro del rol. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "preg-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* sigue la broma de {buyer}, interpreta la sorpresa y responde con una reacción dramática y cómplice dentro del rol. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "preg-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* sigue la broma de {buyer}, interpreta la sorpresa y responde con una reacción dramática y cómplice dentro del rol. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "preg-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* sigue la broma de {buyer}, interpreta la sorpresa y responde con una reacción dramática y cómplice dentro del rol. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "preg-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* sigue la broma de {buyer}, interpreta la sorpresa y responde con una reacción dramática y cómplice dentro del rol. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "preg-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: sigue la broma de {buyer}, interpreta la sorpresa y responde con una reacción dramática y cómplice dentro del rol. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "preg-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; sigue la broma de {buyer}, interpreta la sorpresa y responde con una reacción dramática y cómplice dentro del rol. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "preg-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* sigue la broma de {buyer}, interpreta la sorpresa y responde con una reacción dramática y cómplice dentro del rol. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "preg-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* sigue la broma de {buyer}, interpreta la sorpresa y responde con una reacción dramática y cómplice dentro del rol. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "spank": {
+      "displayName": "nalguear",
+      "responses": [
+        {
+          "id": "spank-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* siente la nalgada de {buyer}, se gira con una mirada desafiante y responde manteniendo la intensidad juguetona, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "spank-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* siente la nalgada de {buyer}, se gira con una mirada desafiante y responde manteniendo la intensidad juguetona. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "spank-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* siente la nalgada de {buyer}, se gira con una mirada desafiante y responde manteniendo la intensidad juguetona. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "spank-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* siente la nalgada de {buyer}, se gira con una mirada desafiante y responde manteniendo la intensidad juguetona. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "spank-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* siente la nalgada de {buyer}, se gira con una mirada desafiante y responde manteniendo la intensidad juguetona. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "spank-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* siente la nalgada de {buyer}, se gira con una mirada desafiante y responde manteniendo la intensidad juguetona. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "spank-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: siente la nalgada de {buyer}, se gira con una mirada desafiante y responde manteniendo la intensidad juguetona. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "spank-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; siente la nalgada de {buyer}, se gira con una mirada desafiante y responde manteniendo la intensidad juguetona. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "spank-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* siente la nalgada de {buyer}, se gira con una mirada desafiante y responde manteniendo la intensidad juguetona. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "spank-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* siente la nalgada de {buyer}, se gira con una mirada desafiante y responde manteniendo la intensidad juguetona. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "titfuck": {
+      "displayName": "titfuck",
+      "responses": [
+        {
+          "id": "titfuck-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* acompaña la iniciativa de {buyer}, mantiene el contacto cercano y responde con una actitud atrevida y dedicada, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "titfuck-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* acompaña la iniciativa de {buyer}, mantiene el contacto cercano y responde con una actitud atrevida y dedicada. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "titfuck-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* acompaña la iniciativa de {buyer}, mantiene el contacto cercano y responde con una actitud atrevida y dedicada. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "titfuck-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* acompaña la iniciativa de {buyer}, mantiene el contacto cercano y responde con una actitud atrevida y dedicada. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "titfuck-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* acompaña la iniciativa de {buyer}, mantiene el contacto cercano y responde con una actitud atrevida y dedicada. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "titfuck-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* acompaña la iniciativa de {buyer}, mantiene el contacto cercano y responde con una actitud atrevida y dedicada. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "titfuck-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: acompaña la iniciativa de {buyer}, mantiene el contacto cercano y responde con una actitud atrevida y dedicada. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "titfuck-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; acompaña la iniciativa de {buyer}, mantiene el contacto cercano y responde con una actitud atrevida y dedicada. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "titfuck-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* acompaña la iniciativa de {buyer}, mantiene el contacto cercano y responde con una actitud atrevida y dedicada. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "titfuck-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* acompaña la iniciativa de {buyer}, mantiene el contacto cercano y responde con una actitud atrevida y dedicada. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    },
+    "venirse": {
+      "displayName": "venirse",
+      "responses": [
+        {
+          "id": "venirse-response-01",
+          "text": "`💋 RESPUESTA DEL ROL`\n\n*{beneficiary}* reacciona al clímax de {buyer}, permanece cerca y responde prolongando el momento con una atención personal, haciéndole saber que recibió su acción de *{action}* y que continúa presente, atenta y dispuesta a seguir interactuando mientras el contrato permanezca activo. 🔥\n\n🪙 *Tarifa:* {price} Coins por hora"
+        },
+        {
+          "id": "venirse-response-02",
+          "text": "`🔥 ACCIÓN CORRESPONDIDA`\n\nSin hacer esperar a *{buyer}*, *{beneficiary}* reacciona al clímax de {buyer}, permanece cerca y responde prolongando el momento con una atención personal. La respuesta es personal para este contrato y mantiene vivo el ambiente que ambos construyeron durante el roleo. 💋"
+        },
+        {
+          "id": "venirse-response-03",
+          "text": "`🌹 MOMENTO PARA {buyer}`\n\n*{beneficiary}* reacciona al clímax de {buyer}, permanece cerca y responde prolongando el momento con una atención personal. Después sostiene la atención sobre *{buyer}* y le deja claro que puede continuar con otra acción mientras todavía tengan tiempo disponible. ✨"
+        },
+        {
+          "id": "venirse-response-04",
+          "text": "`💞 EL ROL CONTINÚA`\n\nLa iniciativa de *{buyer}* provoca que *{beneficiary}* reacciona al clímax de {buyer}, permanece cerca y responde prolongando el momento con una atención personal. Cada movimiento permanece ligado exclusivamente a su contrato activo y a la confianza creada entre los dos. 🔥"
+        },
+        {
+          "id": "venirse-response-05",
+          "text": "`✨ RESPUESTA DE {beneficiary}`\n\n*{beneficiary}* reacciona al clímax de {buyer}, permanece cerca y responde prolongando el momento con una atención personal. Con una actitud cómplice, reconoce la acción de *{buyer}* y conserva el momento cercano, personal y preparado para que la sesión continúe. 💋"
+        },
+        {
+          "id": "venirse-response-06",
+          "text": "`🌙 SESIÓN EN CURSO`\n\nAl recibir la acción de *{buyer}*, *{beneficiary}* reacciona al clímax de {buyer}, permanece cerca y responde prolongando el momento con una atención personal. Luego permanece a su lado, pendiente de su reacción y lista para corresponder a lo que decida hacer después. 💕"
+        },
+        {
+          "id": "venirse-response-07",
+          "text": "`🔥 ATENCIÓN PERSONAL`\n\nToda la atención de *{beneficiary}* se concentra en *{buyer}*: reacciona al clímax de {buyer}, permanece cerca y responde prolongando el momento con una atención personal. La escena de *{action}* queda entre ambos y continúa con el tono personal acordado para su sesión. 😈"
+        },
+        {
+          "id": "venirse-response-08",
+          "text": "`💋 RESPUESTA INMEDIATA`\n\n*{beneficiary}* no ignora lo que acaba de hacer *{buyer}*; reacciona al clímax de {buyer}, permanece cerca y responde prolongando el momento con una atención personal. Su respuesta confirma que sigue participando activamente y disfrutando de la interacción dentro del rol. 🔥"
+        },
+        {
+          "id": "venirse-response-09",
+          "text": "`💝 MOMENTO COMPARTIDO`\n\nCon una expresión cómplice, *{beneficiary}* reacciona al clímax de {buyer}, permanece cerca y responde prolongando el momento con una atención personal. Así convierte la acción de *{buyer}* en otro instante exclusivo de la sesión que mantienen activa. ✨"
+        },
+        {
+          "id": "venirse-response-10",
+          "text": "`🔥 EL JUEGO SIGUE`\n\n*{beneficiary}* reacciona al clímax de {buyer}, permanece cerca y responde prolongando el momento con una atención personal. Antes de separarse, mantiene la mirada sobre *{buyer}* y lo invita a continuar explorando las acciones disponibles durante el tiempo contratado. 💋"
+        }
+      ]
+    }
+  }
+}

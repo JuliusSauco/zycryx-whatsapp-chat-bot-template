@@ -9,7 +9,7 @@ import {
 import type {WalletResource, WalletTransactionReason} from '../../domain/users.js';
 
 export type Transaction = Parameters<Parameters<typeof orm.transaction>[0]>[0];
-export type AccountType = 'wallet' | 'bank' | 'reserve';
+export type AccountType = 'wallet' | 'bank' | 'reserve' | 'escrow';
 
 export const WALLET_RESOURCES: readonly WalletResource[] = ['limite', 'exp', 'coins', 'botcoin', 'zyxcoin'];
 export const BANK_RESOURCE_CODES = ['limite', 'coins', 'botcoin', 'zyxcoin'] as const;
@@ -79,7 +79,7 @@ export async function ensureUserAccounts(tx: Transaction, userId: string, openin
 export async function getAccountId(
     tx: Transaction,
     userId: string,
-    accountType: Exclude<AccountType, 'reserve'>,
+    accountType: Extract<AccountType, 'wallet' | 'bank'>,
 ): Promise<string | null> {
     const [row] = await tx.select({id: financialAccounts.id}).from(financialAccounts).where(and(
         eq(financialAccounts.userId, userId), eq(financialAccounts.accountType, accountType),
@@ -88,13 +88,21 @@ export async function getAccountId(
 }
 
 export async function getReserveAccountId(tx: Transaction): Promise<string> {
+    return getInstitutionalAccountId(tx, 'reserve');
+}
+
+export async function getEscrowAccountId(tx: Transaction): Promise<string> {
+    return getInstitutionalAccountId(tx, 'escrow');
+}
+
+async function getInstitutionalAccountId(tx: Transaction, accountType: 'reserve' | 'escrow'): Promise<string> {
     const [existing] = await tx.select({id: financialAccounts.id}).from(financialAccounts)
-        .where(and(eq(financialAccounts.accountType, 'reserve'), sql`${financialAccounts.userId} IS NULL`)).limit(1);
+        .where(and(eq(financialAccounts.accountType, accountType), sql`${financialAccounts.userId} IS NULL`)).limit(1);
     if (existing) return existing.id;
-    await tx.insert(financialAccounts).values({accountType: 'reserve'}).onConflictDoNothing();
+    await tx.insert(financialAccounts).values({accountType}).onConflictDoNothing();
     const [created] = await tx.select({id: financialAccounts.id}).from(financialAccounts)
-        .where(and(eq(financialAccounts.accountType, 'reserve'), sql`${financialAccounts.userId} IS NULL`)).limit(1);
-    if (!created) throw new Error('No se pudo crear la cuenta de reserva');
+        .where(and(eq(financialAccounts.accountType, accountType), sql`${financialAccounts.userId} IS NULL`)).limit(1);
+    if (!created) throw new Error(`No se pudo crear la cuenta institucional ${accountType}`);
     await tx.insert(accountBalances).values(BANK_RESOURCE_CODES.map(resourceCode => ({
         accountId: created.id, resourceCode, balance: 0,
     }))).onConflictDoNothing();

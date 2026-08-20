@@ -5,6 +5,7 @@ import {
 } from '../../domain/store.js';
 import {buyRaffleTickets, buySecurity, getSecurityOverview} from '../../services/store.service.js';
 import {deliverPrivateReceipt} from './store-receipt.helpers.js';
+import {buySlutRoleEntitlement} from '../../services/roleplay.service.js';
 
 const STORE_COMMANDS = ['store', 'tienda', 'marketplace', 'market', 'compras', 'webstore', 'botstore'] as const;
 
@@ -19,7 +20,7 @@ function ticketResource(value: string | undefined): TicketPaymentResource | unde
 }
 
 export default defineSdkPlugin({
-    help: ['store', 'store --info', 'store security', 'store buy security', 'store buy ticket <cantidad> [coins|limite]'],
+    help: ['store', 'store --info', 'store security', 'store buy security', 'store buy role-slut', 'store buy ticket <cantidad> [coins|limite]'],
     tags: ['store'],
     feature: 'store',
     command: [...STORE_COMMANDS],
@@ -32,6 +33,18 @@ export default defineSdkPlugin({
 
         const isBuy = ['buy', 'comprar', 'compra'].includes(values[0] ?? '');
         const item = isBuy ? values[1] : values[0];
+        if (isBuy && ['role-slut', 'slut', 'licencia-slut'].includes(item ?? '')) {
+            const result = await buySlutRoleEntitlement(m.sender);
+            if (result.kind === 'missing_user') return sdk.reply.message('rpg.shared.missingUser');
+            if (result.kind === 'insufficient_wallet') return sdk.reply.message('roleplay.insufficientWallet', {prefix: usedPrefix});
+            if (result.kind !== 'success') return sdk.reply.message('rpg.shared.missingUser');
+            if (result.alreadyOwned) return sdk.reply.message('store.roleSlutOwned', {prefix: usedPrefix});
+            const receipt = sdk.content.renderMessage('store.roleSlutReceipt', {
+                balance: result.walletCoins,
+                prefix: usedPrefix,
+            });
+            return deliverPrivateReceipt(m, context, receipt);
+        }
         if (['security', 'seguridad'].includes(item ?? '') && !isBuy) {
             const overview = await getSecurityOverview(m.sender);
             const previews = getSecurityPreviewLevels(overview.level).map(level => sdk.content.renderMessage('store.securityPreview', {

@@ -18,6 +18,12 @@ const REQUIRED_RELATIONS = [
     'bot_economy.resources',
     'bot_economy.store_products',
     'bot_economy.user_product_subscriptions',
+    'bot_economy.user_product_entitlements',
+    'bot_economy.roleplay_roles',
+    'bot_economy.roleplay_sessions',
+    'bot_economy.roleplay_contracts',
+    'bot_economy.roleplay_charge_events',
+    'bot_runtime.roleplay_action_messages',
     'bot_economy.raffle_tickets',
     'bot_groups.group_daily_reminder_deliveries',
 ] as const;
@@ -30,6 +36,9 @@ const REQUIRED_INDEXES = [
     'bot_groups.group_settings_primary_bot_idx',
     'bot_runtime.report_deliveries_pending_idx',
     'bot_economy.user_product_subscriptions_due_idx',
+    'bot_economy.roleplay_sessions_one_open_beneficiary_uidx',
+    'bot_economy.roleplay_contracts_due_idx',
+    'bot_economy.roleplay_charge_events_contract_sequence_type_uidx',
     'bot_economy.raffle_tickets_status_purchased_idx',
     'bot_groups.group_daily_reminder_deliveries_day_status_idx',
 ] as const;

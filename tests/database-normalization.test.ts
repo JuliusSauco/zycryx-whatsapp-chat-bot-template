@@ -18,7 +18,8 @@ for (const schema of expectedSchemas) {
 for (const table of [
     'user_identities', 'user_profiles', 'user_registrations', 'user_warnings',
     'resources', 'financial_accounts', 'account_balances', 'financial_operations', 'ledger_entries',
-    'store_products', 'user_product_subscriptions', 'subscription_charge_events',
+    'store_products', 'user_product_subscriptions', 'subscription_charge_events', 'user_product_entitlements',
+    'roleplay_roles', 'roleplay_sessions', 'roleplay_contracts', 'roleplay_charge_events', 'roleplay_action_messages',
     'raffles', 'raffle_tickets', 'raffle_entries',
     'group_moderation_settings', 'group_greetings', 'group_command_access_rules',
     'group_daily_reminder_settings', 'group_daily_reminder_deliveries',

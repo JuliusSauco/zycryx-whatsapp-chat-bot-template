@@ -435,6 +435,7 @@ const sections: ToggleSection[] = [
             featureItem(state, 'Juegos', 'juegos', 'games'),
             featureItem(state, 'Herramientas', 'herramientas', 'tools'),
             featureItem(state, 'RPG', 'rpg', 'rpg'),
+            featureItem(state, 'Juegos de rol', 'roleplay', 'roleplay'),
             featureItem(state, 'Tienda', 'tienda', 'store'),
             switchItem(state, 'Autonivel RPG', 'autolevelup', getStatus(state, 'autolevelup')),
             featureItem(state, 'Descargas', 'descargas', 'downloads'),

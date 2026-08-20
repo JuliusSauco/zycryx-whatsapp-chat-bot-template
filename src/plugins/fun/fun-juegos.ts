@@ -4,7 +4,6 @@ import {
     isDoxxeoCommand,
     isPercentageCommand,
     isTopCommand,
-    replyActionTarget,
     replyDoxxeo,
     replyFreeTop,
     replyGayCanvas,
@@ -17,18 +16,14 @@ import {
 } from './fun-juegos.helpers.js';
 
 export default defineSdkPlugin({
-    help: ["love", "gay2", "lesbiana", "pajero", "pajera", "puto", "puta", "manco", "manca", "rata", "prostituta", "prostituto", "amigorandom", "amistad", "formarpareja", "gay", "personalidad", "ship", "topgays", "top", "topputos", "toplindos", "toppajer@s", "topshipost", "toppanafresco", "topgrasa", "topintegrantes", "topfamos@s", "topsostero", "top5parejas", "Doxxeo", "doxxeo", "follar"],
+    help: ["love", "gay2", "lesbiana", "pajero", "pajera", "puto", "puta", "manco", "manca", "rata", "prostituta", "prostituto", "amigorandom", "amistad", "formarpareja", "gay", "personalidad", "ship", "topgays", "top", "topputos", "toplindos", "toppajer@s", "topshipost", "toppanafresco", "topgrasa", "topintegrantes", "topfamos@s", "topsostero", "top5parejas", "Doxxeo", "doxxeo"],
     tags: ['game'],
-    command: /^(love|gay2|lesbiana|pajero|pajera|puto|puta|manco|manca|rata|prostituta|prostituto|amigorandom|amistad|formarpareja|formarparejas|gay|personalidad|ship|shippear|topgays|top|topput@s|topputos|toplindos|toplind@s|toppajer@s|toppajeros|topshipost|topshiposters|toppanafresco|topgrasa|toppanafrescos|toplagrasa|topintegrante|topintegrantes|topotakus|topfamosos|topfamos@s|topsostero|topparejas|top5parejas|Doxxeo|doxxeo|doxxear|Doxxear|doxeo|doxear|doxxeame|doxeame|violar|follar)$/i,
+    command: /^(love|gay2|lesbiana|pajero|pajera|puto|puta|manco|manca|rata|prostituta|prostituto|amigorandom|amistad|formarpareja|formarparejas|gay|personalidad|ship|shippear|topgays|top|topput@s|topputos|toplindos|toplind@s|toppajer@s|toppajeros|topshipost|topshiposters|toppanafresco|topgrasa|toppanafrescos|toplagrasa|topintegrante|topintegrantes|topotakus|topfamosos|topfamos@s|topsostero|topparejas|top5parejas|Doxxeo|doxxeo|doxxear|Doxxear|doxeo|doxear|doxxeame|doxeame)$/i,
     register: true,
     async execute(m, {conn, metadata, command, text, usedPrefix, sdk}) {
         try {
             if (command === 'amistad' || command === 'amigorandom') {
                 await replyRandomPair(m, metadata.participants, 'friendship');
-            }
-
-            if (command === 'follar' || command === 'violar') {
-                await replyActionTarget(conn, m, command, text, metadata.participants);
             }
 
             if (command === 'formarpareja' || command === 'formarparejas') {

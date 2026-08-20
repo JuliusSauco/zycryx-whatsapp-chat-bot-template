@@ -2,6 +2,7 @@ import {repositories} from './data-source.js';
 import {releaseExpiredCommandResources} from './resource.service.js';
 import {refreshBankLoanStatuses} from './bank.service.js';
 import {renewDueSecuritySubscriptions} from './store.service.js';
+import {cleanExpiredRoleplayActionMessages, processDueRoleplayContracts} from './roleplay.service.js';
 
 export async function listExpiredGroups(now: number) {
     return repositories.groupSettings.listExpiredGroups(now);
@@ -59,6 +60,14 @@ export async function updateBankLoanStatuses(now = new Date()): Promise<number> 
 
 export function renewStoreSubscriptions(now = new Date()) {
     return renewDueSecuritySubscriptions(now);
+}
+
+export function billDueRoleplayContracts(now = new Date()) {
+    return processDueRoleplayContracts(now);
+}
+
+export function cleanExpiredRoleplayActions(now = new Date()) {
+    return cleanExpiredRoleplayActionMessages(now);
 }
 
 export function claimDailyGroupReminders(botId: string, activityDay: string) {

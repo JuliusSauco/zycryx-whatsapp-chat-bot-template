@@ -297,6 +297,105 @@ CREATE TABLE "bot_economy"."store_products" (
 	CONSTRAINT "store_products_category_check" CHECK ("bot_economy"."store_products"."category" in ('upgrade', 'ticket', 'item', 'character'))
 );
 
+CREATE TABLE "bot_economy"."user_product_entitlements" (
+	"user_id" text NOT NULL,
+	"product_code" text NOT NULL,
+	"purchase_operation_id" uuid NOT NULL,
+	"acquired_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "user_product_entitlements_user_id_product_code_pk" PRIMARY KEY("user_id","product_code")
+);
+
+CREATE TABLE "bot_economy"."roleplay_roles" (
+	"code" text PRIMARY KEY NOT NULL,
+	"product_code" text NOT NULL,
+	"name" text NOT NULL,
+	"emoji" text NOT NULL,
+	"base_hourly_price_coins" integer NOT NULL,
+	"hourly_price_per_level_coins" integer NOT NULL,
+	"custom_price_from_level" integer NOT NULL,
+	"max_active_buyers" integer NOT NULL,
+	"active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "roleplay_roles_product_code_unique" UNIQUE("product_code"),
+	CONSTRAINT "roleplay_roles_price_check" CHECK ("bot_economy"."roleplay_roles"."base_hourly_price_coins" > 0 AND "bot_economy"."roleplay_roles"."hourly_price_per_level_coins" > 0),
+	CONSTRAINT "roleplay_roles_level_check" CHECK ("bot_economy"."roleplay_roles"."custom_price_from_level" > 0),
+	CONSTRAINT "roleplay_roles_buyers_check" CHECK ("bot_economy"."roleplay_roles"."max_active_buyers" between 1 and 5)
+);
+
+CREATE TABLE "bot_economy"."roleplay_sessions" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"role_code" text NOT NULL,
+	"group_id" text NOT NULL,
+	"beneficiary_id" text NOT NULL,
+	"target_id" text,
+	"hourly_price_coins" integer NOT NULL,
+	"beneficiary_level" integer NOT NULL,
+	"pricing_mode" text NOT NULL,
+	"offer_message" text NOT NULL,
+	"status" text DEFAULT 'waiting' NOT NULL,
+	"accepted_once" boolean DEFAULT false NOT NULL,
+	"opened_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"closed_at" timestamp with time zone,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "roleplay_sessions_price_check" CHECK ("bot_economy"."roleplay_sessions"."hourly_price_coins" >= 1000),
+	CONSTRAINT "roleplay_sessions_level_check" CHECK ("bot_economy"."roleplay_sessions"."beneficiary_level" >= 1),
+	CONSTRAINT "roleplay_sessions_pricing_check" CHECK ("bot_economy"."roleplay_sessions"."pricing_mode" in ('automatic', 'custom')),
+	CONSTRAINT "roleplay_sessions_status_check" CHECK ("bot_economy"."roleplay_sessions"."status" in ('waiting', 'active', 'closed')),
+	CONSTRAINT "roleplay_sessions_close_state_check" CHECK (("bot_economy"."roleplay_sessions"."status" = 'closed' AND "bot_economy"."roleplay_sessions"."closed_at" IS NOT NULL) OR ("bot_economy"."roleplay_sessions"."status" <> 'closed' AND "bot_economy"."roleplay_sessions"."closed_at" IS NULL)),
+	CONSTRAINT "roleplay_sessions_target_check" CHECK ("bot_economy"."roleplay_sessions"."target_id" IS NULL OR "bot_economy"."roleplay_sessions"."target_id" <> "bot_economy"."roleplay_sessions"."beneficiary_id")
+);
+
+CREATE TABLE "bot_economy"."roleplay_contracts" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"session_id" uuid NOT NULL,
+	"buyer_id" text NOT NULL,
+	"mode" text NOT NULL,
+	"requested_hours" integer,
+	"released_hours" integer DEFAULT 1 NOT NULL,
+	"status" text DEFAULT 'active' NOT NULL,
+	"started_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"next_charge_at" timestamp with time zone NOT NULL,
+	"ends_at" timestamp with time zone,
+	"ended_at" timestamp with time zone,
+	"ended_by" text,
+	"end_reason" text,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "roleplay_contracts_mode_check" CHECK ("bot_economy"."roleplay_contracts"."mode" in ('fixed', 'indefinite')),
+	CONSTRAINT "roleplay_contracts_status_check" CHECK ("bot_economy"."roleplay_contracts"."status" in ('active', 'completed', 'cancelled', 'insufficient_funds')),
+	CONSTRAINT "roleplay_contracts_hours_check" CHECK (("bot_economy"."roleplay_contracts"."mode" = 'fixed' AND "bot_economy"."roleplay_contracts"."requested_hours" between 1 and 168 AND "bot_economy"."roleplay_contracts"."ends_at" IS NOT NULL) OR ("bot_economy"."roleplay_contracts"."mode" = 'indefinite' AND "bot_economy"."roleplay_contracts"."requested_hours" IS NULL AND "bot_economy"."roleplay_contracts"."ends_at" IS NULL)),
+	CONSTRAINT "roleplay_contracts_released_check" CHECK ("bot_economy"."roleplay_contracts"."released_hours" >= 1 AND ("bot_economy"."roleplay_contracts"."requested_hours" IS NULL OR "bot_economy"."roleplay_contracts"."released_hours" <= "bot_economy"."roleplay_contracts"."requested_hours")),
+	CONSTRAINT "roleplay_contracts_end_state_check" CHECK (("bot_economy"."roleplay_contracts"."status" = 'active' AND "bot_economy"."roleplay_contracts"."ended_at" IS NULL AND "bot_economy"."roleplay_contracts"."end_reason" IS NULL) OR ("bot_economy"."roleplay_contracts"."status" <> 'active' AND "bot_economy"."roleplay_contracts"."ended_at" IS NOT NULL AND "bot_economy"."roleplay_contracts"."end_reason" IS NOT NULL))
+);
+
+CREATE TABLE "bot_economy"."roleplay_charge_events" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"contract_id" uuid NOT NULL,
+	"sequence" integer NOT NULL,
+	"event_type" text NOT NULL,
+	"scheduled_for" timestamp with time zone NOT NULL,
+	"amount_coins" integer NOT NULL,
+	"status" text NOT NULL,
+	"financial_operation_id" uuid,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "roleplay_charge_events_sequence_check" CHECK ("bot_economy"."roleplay_charge_events"."sequence" >= 0),
+	CONSTRAINT "roleplay_charge_events_amount_check" CHECK ("bot_economy"."roleplay_charge_events"."amount_coins" > 0),
+	CONSTRAINT "roleplay_charge_events_type_check" CHECK ("bot_economy"."roleplay_charge_events"."event_type" in ('prepayment', 'hourly_release', 'hourly_charge', 'refund')),
+	CONSTRAINT "roleplay_charge_events_status_check" CHECK ("bot_economy"."roleplay_charge_events"."status" in ('paid', 'insufficient_funds', 'refunded'))
+);
+
+CREATE TABLE "bot_runtime"."roleplay_action_messages" (
+	"message_id" text PRIMARY KEY NOT NULL,
+	"contract_id" uuid NOT NULL,
+	"group_id" text NOT NULL,
+	"actor_id" text NOT NULL,
+	"target_id" text NOT NULL,
+	"action_code" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "roleplay_action_messages_actor_target_check" CHECK ("bot_runtime"."roleplay_action_messages"."actor_id" <> "bot_runtime"."roleplay_action_messages"."target_id")
+);
+
 CREATE TABLE "bot_economy"."user_product_subscriptions" (
 	"user_id" text NOT NULL,
 	"product_code" text NOT NULL,
@@ -367,9 +466,9 @@ CREATE TABLE "bot_economy"."financial_accounts" (
 	"status" text DEFAULT 'active' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "financial_accounts_type_check" CHECK ("bot_economy"."financial_accounts"."account_type" in ('wallet', 'bank', 'reserve')),
+	CONSTRAINT "financial_accounts_type_check" CHECK ("bot_economy"."financial_accounts"."account_type" in ('wallet', 'bank', 'reserve', 'escrow')),
 	CONSTRAINT "financial_accounts_status_check" CHECK ("bot_economy"."financial_accounts"."status" in ('active', 'frozen', 'closed')),
-	CONSTRAINT "financial_accounts_owner_check" CHECK (("bot_economy"."financial_accounts"."account_type" = 'reserve' AND "bot_economy"."financial_accounts"."user_id" IS NULL) OR ("bot_economy"."financial_accounts"."account_type" <> 'reserve' AND "bot_economy"."financial_accounts"."user_id" IS NOT NULL))
+	CONSTRAINT "financial_accounts_owner_check" CHECK (("bot_economy"."financial_accounts"."account_type" in ('reserve', 'escrow') AND "bot_economy"."financial_accounts"."user_id" IS NULL) OR ("bot_economy"."financial_accounts"."account_type" in ('wallet', 'bank') AND "bot_economy"."financial_accounts"."user_id" IS NOT NULL))
 );
 
 CREATE TABLE "bot_economy"."financial_operations" (
@@ -808,6 +907,23 @@ ALTER TABLE "bot_identity"."user_registrations" ADD CONSTRAINT "user_registratio
 ALTER TABLE "bot_identity"."user_robbery_states" ADD CONSTRAINT "user_robbery_states_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_identity"."user_sticker_preferences" ADD CONSTRAINT "user_sticker_preferences_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "bot_identity"."user_warnings" ADD CONSTRAINT "user_warnings_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_economy"."user_product_entitlements" ADD CONSTRAINT "user_product_entitlements_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_economy"."user_product_entitlements" ADD CONSTRAINT "user_product_entitlements_product_code_store_products_code_fk" FOREIGN KEY ("product_code") REFERENCES "bot_economy"."store_products"("code") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "bot_economy"."user_product_entitlements" ADD CONSTRAINT "user_product_entitlements_purchase_operation_id_financial_operations_id_fk" FOREIGN KEY ("purchase_operation_id") REFERENCES "bot_economy"."financial_operations"("id") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "bot_economy"."roleplay_roles" ADD CONSTRAINT "roleplay_roles_product_code_store_products_code_fk" FOREIGN KEY ("product_code") REFERENCES "bot_economy"."store_products"("code") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "bot_economy"."roleplay_sessions" ADD CONSTRAINT "roleplay_sessions_role_code_roleplay_roles_code_fk" FOREIGN KEY ("role_code") REFERENCES "bot_economy"."roleplay_roles"("code") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "bot_economy"."roleplay_sessions" ADD CONSTRAINT "roleplay_sessions_group_id_chats_id_fk" FOREIGN KEY ("group_id") REFERENCES "bot_groups"."chats"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_economy"."roleplay_sessions" ADD CONSTRAINT "roleplay_sessions_beneficiary_id_users_id_fk" FOREIGN KEY ("beneficiary_id") REFERENCES "bot_identity"."users"("id") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "bot_economy"."roleplay_sessions" ADD CONSTRAINT "roleplay_sessions_target_id_users_id_fk" FOREIGN KEY ("target_id") REFERENCES "bot_identity"."users"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "bot_economy"."roleplay_contracts" ADD CONSTRAINT "roleplay_contracts_session_id_roleplay_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "bot_economy"."roleplay_sessions"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_economy"."roleplay_contracts" ADD CONSTRAINT "roleplay_contracts_buyer_id_users_id_fk" FOREIGN KEY ("buyer_id") REFERENCES "bot_identity"."users"("id") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "bot_economy"."roleplay_contracts" ADD CONSTRAINT "roleplay_contracts_ended_by_users_id_fk" FOREIGN KEY ("ended_by") REFERENCES "bot_identity"."users"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "bot_economy"."roleplay_charge_events" ADD CONSTRAINT "roleplay_charge_events_contract_id_roleplay_contracts_id_fk" FOREIGN KEY ("contract_id") REFERENCES "bot_economy"."roleplay_contracts"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_economy"."roleplay_charge_events" ADD CONSTRAINT "roleplay_charge_events_financial_operation_id_financial_operations_id_fk" FOREIGN KEY ("financial_operation_id") REFERENCES "bot_economy"."financial_operations"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "bot_runtime"."roleplay_action_messages" ADD CONSTRAINT "roleplay_action_messages_contract_id_roleplay_contracts_id_fk" FOREIGN KEY ("contract_id") REFERENCES "bot_economy"."roleplay_contracts"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_runtime"."roleplay_action_messages" ADD CONSTRAINT "roleplay_action_messages_group_id_chats_id_fk" FOREIGN KEY ("group_id") REFERENCES "bot_groups"."chats"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_runtime"."roleplay_action_messages" ADD CONSTRAINT "roleplay_action_messages_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "bot_runtime"."roleplay_action_messages" ADD CONSTRAINT "roleplay_action_messages_target_id_users_id_fk" FOREIGN KEY ("target_id") REFERENCES "bot_identity"."users"("id") ON DELETE cascade ON UPDATE no action;
 CREATE UNIQUE INDEX "audio_response_assets_response_position_uidx" ON "bot_content"."audio_response_assets" USING btree ("response_id","position");
 CREATE INDEX "auth_sessions_lease_idx" ON "bot_sessions"."auth_sessions" USING btree ("lease_expires_at");
 CREATE INDEX "signal_keys_session_type_idx" ON "bot_sessions"."signal_keys" USING btree ("session_id","key_type");
@@ -838,7 +954,27 @@ CREATE UNIQUE INDEX "raffle_entries_one_winner_uidx" ON "bot_economy"."raffle_en
 CREATE INDEX "group_daily_reminder_deliveries_day_status_idx" ON "bot_groups"."group_daily_reminder_deliveries" USING btree ("activity_day","status");
 CREATE INDEX "group_daily_reminder_deliveries_bot_day_idx" ON "bot_groups"."group_daily_reminder_deliveries" USING btree ("bot_id","activity_day");
 CREATE UNIQUE INDEX "financial_accounts_user_type_uidx" ON "bot_economy"."financial_accounts" USING btree ("user_id","account_type");
-CREATE UNIQUE INDEX "financial_accounts_one_reserve_uidx" ON "bot_economy"."financial_accounts" USING btree ("account_type") WHERE "bot_economy"."financial_accounts"."user_id" IS NULL AND "bot_economy"."financial_accounts"."account_type" = 'reserve';
+CREATE UNIQUE INDEX "financial_accounts_one_institutional_uidx" ON "bot_economy"."financial_accounts" USING btree ("account_type") WHERE "bot_economy"."financial_accounts"."user_id" IS NULL AND "bot_economy"."financial_accounts"."account_type" in ('reserve', 'escrow');
+CREATE INDEX "user_product_entitlements_product_idx" ON "bot_economy"."user_product_entitlements" USING btree ("product_code");
+CREATE INDEX "user_product_entitlements_purchase_operation_idx" ON "bot_economy"."user_product_entitlements" USING btree ("purchase_operation_id");
+CREATE UNIQUE INDEX "roleplay_sessions_one_open_beneficiary_uidx" ON "bot_economy"."roleplay_sessions" USING btree ("group_id","beneficiary_id","role_code") WHERE "bot_economy"."roleplay_sessions"."status" in ('waiting', 'active');
+CREATE INDEX "roleplay_sessions_group_status_idx" ON "bot_economy"."roleplay_sessions" USING btree ("group_id","status","opened_at");
+CREATE INDEX "roleplay_sessions_role_idx" ON "bot_economy"."roleplay_sessions" USING btree ("role_code");
+CREATE INDEX "roleplay_sessions_beneficiary_idx" ON "bot_economy"."roleplay_sessions" USING btree ("beneficiary_id");
+CREATE INDEX "roleplay_sessions_target_status_idx" ON "bot_economy"."roleplay_sessions" USING btree ("target_id","status");
+CREATE UNIQUE INDEX "roleplay_contracts_one_active_buyer_uidx" ON "bot_economy"."roleplay_contracts" USING btree ("session_id","buyer_id") WHERE "bot_economy"."roleplay_contracts"."status" = 'active';
+CREATE INDEX "roleplay_contracts_due_idx" ON "bot_economy"."roleplay_contracts" USING btree ("status","next_charge_at");
+CREATE INDEX "roleplay_contracts_buyer_status_idx" ON "bot_economy"."roleplay_contracts" USING btree ("buyer_id","status");
+CREATE INDEX "roleplay_contracts_session_status_idx" ON "bot_economy"."roleplay_contracts" USING btree ("session_id","status");
+CREATE INDEX "roleplay_contracts_ended_by_idx" ON "bot_economy"."roleplay_contracts" USING btree ("ended_by");
+CREATE UNIQUE INDEX "roleplay_charge_events_contract_sequence_type_uidx" ON "bot_economy"."roleplay_charge_events" USING btree ("contract_id","sequence","event_type");
+CREATE INDEX "roleplay_charge_events_contract_created_idx" ON "bot_economy"."roleplay_charge_events" USING btree ("contract_id","created_at");
+CREATE INDEX "roleplay_charge_events_financial_operation_idx" ON "bot_economy"."roleplay_charge_events" USING btree ("financial_operation_id");
+CREATE INDEX "roleplay_action_messages_contract_created_idx" ON "bot_runtime"."roleplay_action_messages" USING btree ("contract_id","created_at");
+CREATE INDEX "roleplay_action_messages_group_idx" ON "bot_runtime"."roleplay_action_messages" USING btree ("group_id");
+CREATE INDEX "roleplay_action_messages_actor_idx" ON "bot_runtime"."roleplay_action_messages" USING btree ("actor_id");
+CREATE INDEX "roleplay_action_messages_target_idx" ON "bot_runtime"."roleplay_action_messages" USING btree ("target_id");
+CREATE INDEX "roleplay_action_messages_expiry_idx" ON "bot_runtime"."roleplay_action_messages" USING btree ("expires_at");
 CREATE INDEX "group_command_access_rules_group_scope_idx" ON "bot_groups"."group_command_access_rules" USING btree ("group_id","scope");
 CREATE INDEX "group_settings_primary_bot_idx" ON "bot_groups"."group_settings" USING btree ("primary_bot");
 CREATE INDEX "ledger_entries_account_created_idx" ON "bot_economy"."ledger_entries" USING btree ("account_id","created_at");
@@ -875,7 +1011,14 @@ VALUES
 INSERT INTO bot_economy.store_products (code, category, name, emoji)
 VALUES
     ('security', 'upgrade', 'Seguridad económica', '🛡️'),
-    ('raffle-ticket', 'ticket', 'Ticket de rifa', '🎟️');
+    ('raffle-ticket', 'ticket', 'Ticket de rifa', '🎟️'),
+    ('role-slut', 'item', 'Licencia Slut', '💋');
+
+INSERT INTO bot_economy.roleplay_roles
+    (code, product_code, name, emoji, base_hourly_price_coins, hourly_price_per_level_coins,
+     custom_price_from_level, max_active_buyers)
+VALUES
+    ('slut', 'role-slut', 'Slut', '💋', 1000, 1000, 10, 5);
 
 INSERT INTO bot_economy.bank_exchange_rates
     (source_resource, target_resource, source_amount, target_amount)
@@ -911,6 +1054,17 @@ INSERT INTO bot_economy.ledger_entries
 SELECT initial_operation.id, balance_rows.account_id, balance_rows.resource_code,
        balance_rows.balance, balance_rows.balance
 FROM initial_operation CROSS JOIN balance_rows;
+
+-- Prepaid fixed roleplay hours are held separately from institutional reserves.
+WITH escrow_account AS (
+    INSERT INTO bot_economy.financial_accounts (account_type)
+    VALUES ('escrow')
+    RETURNING id
+)
+INSERT INTO bot_economy.account_balances (account_id, resource_code, balance)
+SELECT escrow_account.id, resource.code, 0
+FROM escrow_account
+CROSS JOIN (VALUES ('coins'::text)) AS resource(code);
 
 -- Database-owned timestamps protect invariants when writes do not pass through Drizzle.
 CREATE FUNCTION bot_runtime.set_updated_at()
