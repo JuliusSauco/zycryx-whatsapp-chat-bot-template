@@ -1,7 +1,8 @@
 import type {AccessMode, AutoAcceptMode, AutoresponderTrigger, GreetingHidetagMode, GroupSettings, SubbotConfig} from '../../types/config.js';
 import type {CommandAccessMap, ConfigurableFeatureKey, FamilyAccessMap} from '../../domain/groups.js';
 import {defaultFamilyAccess} from '../../utils/family-access.js';
-import {CENSORED_COMMAND_ACCESS_KEY, defaultCommandAccess} from '../../utils/command-access.js';
+import {CENSORED_COMMAND_ACCESS_KEY, DAILY_REMINDER_COMMAND_ACCESS_KEY, defaultCommandAccess} from '../../utils/command-access.js';
+import type {DailyReminderSettings} from '../../domain/daily-reminders.js';
 
 export type ToggleSectionKey = 'saludos' | 'moderacion' | 'acceso' | 'familias' | 'ia' | 'adulto' | 'subbot';
 
@@ -13,6 +14,7 @@ export interface ToggleMenuState {
     disabledIcon: string;
     notGroupIcon: string;
     group: Partial<GroupSettings>;
+    dailyReminder?: DailyReminderSettings;
     familyAccess: FamilyAccessMap;
     commandAccess: CommandAccessMap;
     subbot: Partial<SubbotConfig> | null;
@@ -312,7 +314,7 @@ const sections: ToggleSection[] = [
         key: 'saludos',
         title: 'Saludos',
         description: 'Bienvenida, despedida e hidetag.',
-        summary: state => `welcome ${getStatus(state, 'welcome')} | bye ${getStatus(state, 'bye')}`,
+        summary: state => `welcome ${getStatus(state, 'welcome')} | bye ${getStatus(state, 'bye')} | diario ${state.dailyReminder?.enabled === false ? state.disabledIcon : state.enabledIcon}`,
         items: state => [
             {
                 label: 'Bienvenida',
@@ -336,6 +338,18 @@ const sections: ToggleSection[] = [
                     `${state.prefix}enable bye --hidetag`,
                     `${state.prefix}disable bye`,
                     `${state.prefix}disable bye --hidetag`,
+                ],
+            },
+            {
+                label: 'Recordatorio diario',
+                status: `${state.dailyReminder?.enabled === false ? state.disabledIcon : state.enabledIcon} (${accessModeLabel((state.commandAccess?.[DAILY_REMINDER_COMMAND_ACCESS_KEY] || defaultCommandAccess(DAILY_REMINDER_COMMAND_ACCESS_KEY)).accessMode)})`,
+                minimumRole: 'admin',
+                commands: [
+                    `${state.prefix}recordatoriodiario on`,
+                    `${state.prefix}recordatoriodiario off`,
+                    `${state.prefix}recordatoriodiario permisos admin`,
+                    {text: `${state.prefix}recordatoriodiario permisos superadmin`, minimumRole: 'superadmin'},
+                    {text: `${state.prefix}recordatoriodiario permisos owner`, minimumRole: 'owner'},
                 ],
             },
         ],

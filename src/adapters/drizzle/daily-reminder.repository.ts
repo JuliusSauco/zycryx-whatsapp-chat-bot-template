@@ -6,6 +6,25 @@ import {
 import type {DailyReminderRepository} from '../../ports/repositories.js';
 
 export const dailyReminderRepository: DailyReminderRepository = {
+    async findSettings(groupId) {
+        const [row] = await orm.select({
+            enabled: groupDailyReminderSettings.enabled,
+            localTime: groupDailyReminderSettings.localTime,
+            timezone: groupDailyReminderSettings.timezone,
+        }).from(groupDailyReminderSettings)
+            .where(eq(groupDailyReminderSettings.groupId, groupId))
+            .limit(1);
+        return row ?? null;
+    },
+
+    async setEnabled(groupId, enabled, updatedBy) {
+        await orm.insert(groupDailyReminderSettings).values({groupId, enabled, updatedBy})
+            .onConflictDoUpdate({
+                target: groupDailyReminderSettings.groupId,
+                set: {enabled, updatedBy, updatedAt: new Date()},
+            });
+    },
+
     async claimForBot(botId, activityDay) {
         const candidates = await orm.select({groupId: groupSettings.groupId})
             .from(botChatMemberships)

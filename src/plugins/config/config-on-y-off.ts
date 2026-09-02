@@ -10,6 +10,7 @@ import {getFamilyManagerLevel, getRequiredFamilyManagerLevel} from '../../utils/
 import {CENSORED_COMMAND_ACCESS_KEY, defaultCommandAccess} from '../../utils/command-access.js'
 import {FAMILY_TOGGLES, GROUP_BOOLEAN_TOGGLES} from './config-toggle-registry.js'
 import {requireBotInstanceIdentity} from '../../core/bot-instance-identity.js'
+import {getDailyReminderSettings} from '../../services/daily-reminder.service.js'
 
 function getAutoAcceptModeLabel(mode?: AutoAcceptMode | null): string {
     switch (mode || 'off') {
@@ -147,6 +148,7 @@ export default defineSdkPlugin({
     const contextSettings = await getContextGroupSettings(chatId)
     const familyAccess = contextSettings.familyAccess
     const commandAccess = contextSettings.commandAccess
+    const dailyReminder = m.isGroup ? await getDailyReminderSettings(chatId) : undefined
     const enabledIcon = content.message('config.toggle.enabledIcon')
     const disabledIcon = content.message('config.toggle.disabledIcon')
     const notGroupIcon = content.message('config.toggle.notGroupIcon')
@@ -164,6 +166,7 @@ export default defineSdkPlugin({
         disabledIcon,
         notGroupIcon,
         group: chat,
+        dailyReminder,
         familyAccess,
         commandAccess,
         subbot: botConfig,

@@ -315,6 +315,7 @@
     "perfil": {"emoji": "👤", "usage": "perfil", "description": "Muestra tu perfil, nivel y datos de usuario.", "aliases": ["profile"], "examples": ["perfil", "perfil @usuario"]},
     "wallet": {"emoji": "👛", "usage": "wallet [--info]", "description": "Muestra tu E - WALLET o abre la guía general de economía.", "aliases": ["ewallet", "balance", "bal", "diamantes", "diamond"], "examples": ["wallet", "wallet --info"]},
     "daily": {"emoji": "🎁", "usage": "daily", "description": "Gana 1.000 EXP por día de racha y un bono especial cada 10 días.", "aliases": ["claim"]},
+    "recordatoriodiario": {"emoji": "🌅", "usage": "recordatoriodiario <estado|on|off|permisos>", "description": "Configura el aviso diario del grupo y quién puede administrarlo.", "aliases": ["dailyreminder"], "requiredRole": "admin", "scope": "group", "examples": ["recordatoriodiario estado", "recordatoriodiario off", "recordatoriodiario permisos superadmin"]},
     "work": {"emoji": "🛠️", "usage": "work", "description": "Trabaja para ganar recursos del RPG.", "aliases": ["trabajar", "chambear", "w", "chamba"]},
     "crime": {"emoji": "🕶️", "usage": "crime", "description": "Intenta ganar recursos con una accion arriesgada.", "aliases": ["crimen"], "scope": "group"},
     "rob": {"emoji": "💰", "usage": "rob [exp|coins|limite|botcoin] [cantidad] @usuario", "description": "Intenta robar recursos de la E - WALLET según tu nivel; el banco y Zyxcoin están excluidos.", "aliases": ["robar"], "examples": ["rob --info", "rob coins @usuario", "rob limite 1 @usuario"]},

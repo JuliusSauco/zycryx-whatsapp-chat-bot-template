@@ -23,6 +23,7 @@ import {getApplicationShutdownSignal} from './application-lifecycle.js';
 import {getBogotaReminderWindow} from '../domain/daily-reminders.js';
 import {getBotInstanceIdentity} from './bot-instance-identity.js';
 import {renderMessage} from '../services/content.service.js';
+import {createDailyReminderContent} from '../services/daily-reminder.service.js';
 
 let started = false;
 const timers = new Set<NodeJS.Timeout>();
@@ -117,11 +118,7 @@ async function sendDailyGroupReminders(): Promise<void> {
         for (const groupId of groups) {
             try {
                 const metadata = await conn.groupMetadata(groupId);
-                const mentions = metadata.participants.map(participant => participant.id);
-                const sent = await conn.sendMessage(groupId, {
-                    text: renderMessage('dailyReminder.message', {groupName: metadata.subject}),
-                    mentions,
-                });
+                const sent = await conn.sendMessage(groupId, createDailyReminderContent(metadata.subject));
                 await markDailyGroupReminderSent(groupId, window.activityDay, sent?.key?.id ?? null);
             } catch (error) {
                 const message = error instanceof Error ? error.message : String(error);

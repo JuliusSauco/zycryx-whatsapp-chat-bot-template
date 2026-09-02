@@ -30,6 +30,7 @@ import type {
 import type {CensoredUserRecord, UpsertCensoredUserInput} from '../domain/censored-users.js';
 import type {BotInstanceType, SubbotBooleanFlag, SubbotConfig, SubbotTypeCounts} from '../domain/subbots.js';
 import type {AudioResponseRecord, UpsertAudioResponseInput} from '../domain/audio-responses.js';
+import type {DailyReminderSettings} from '../domain/daily-reminders.js';
 import type {
     CharacterClaimOwner,
     CharacterRecord,
@@ -304,6 +305,8 @@ export interface RoleplayRepository {
 }
 
 export interface DailyReminderRepository {
+    findSettings(groupId: string): Promise<DailyReminderSettings | null>;
+    setEnabled(groupId: string, enabled: boolean, updatedBy: string): Promise<void>;
     claimForBot(botId: string, activityDay: string): Promise<string[]>;
     markSent(groupId: string, activityDay: string, messageId: string | null): Promise<void>;
     markFailed(groupId: string, activityDay: string, error: string): Promise<void>;

@@ -377,7 +377,19 @@
       }
     },
     "dailyReminder": {
-      "message": "`🌅 DINÁMICAS DIARIAS`\n\n👥 *{groupName}*, ¡ya comenzó un nuevo día!\n\n🎁 Reclama tu recompensa y conserva la racha con *.daily* o *.claim*.\n🏦 Protege tus recursos guardándolos con *.deposit <moneda> all*.\n🔐 Consulta tus saldos únicamente por privado con *.wallet*.\n🛡️ Revisa la seguridad disponible con *.store security*.\n\n_¡Participen en las dinámicas del grupo y hagan crecer su economía!_"
+      "message": "`🌅 UN NUEVO DIA EN {groupName}`\n\n🎁 Reclama tu recompensa y conserva la racha con *.daily* o *.claim*.\n🏦 Protege tus recursos guardándolos con *.deposit <moneda> all*.\n🔐 Consulta tus saldos únicamente por privado con *.wallet*.\n🛡️ Revisa la seguridad disponible con *.store security*.\n\n⚙️ *Admins:* configura este aviso con *.recordatoriodiario on|off*.\n\n_¡Participen en las dinámicas del grupo y hagan crecer su economía!_",
+      "config": {
+        "enabled": "activado",
+        "disabled": "apagado",
+        "updated": "✅ Recordatorio diario *{status}* para este grupo.",
+        "status": "`🌅 RECORDATORIO DIARIO`\n\n📌 *Estado:* {status}\n🔐 *Configuración:* {access}\n\n• *.recordatoriodiario on*\n• *.recordatoriodiario off*\n• *.recordatoriodiario permisos <admin|superadmin|owner>*",
+        "permissionUpdated": "✅ El recordatorio diario ahora puede ser configurado por: *{access}*.",
+        "permissionDenied": {
+          "1": "Solo los administradores pueden cambiar este permiso.",
+          "2": "Solo el creador del grupo o un owner puede cambiar este permiso.",
+          "3": "Solo un owner del bot puede cambiar este permiso."
+        }
+      }
     },
     "roleplay": {
       "menu": "`🎭 JUEGOS DE ROL`\n\n💋 *Slut*\nOfertas y contratos pagados por hora con Coins de la E-Wallet.\n\n• *{prefix}roll slut [--precio N] [@usuario] [mensaje]*\n• *{prefix}roll aceptar @usuario [horas|i]*\n• *{prefix}roll aceptar todos*\n• *{prefix}roll slut acciones*\n• *{prefix}roll slut end [@usuario]*\n\n🛍️ Licencia requerida: *{prefix}store buy role-slut*",
